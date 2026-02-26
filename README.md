@@ -34,21 +34,19 @@ gleam add yog
 import gleam/int
 import gleam/io
 import gleam/option.{None, Some}
-import yog/model.{Directed}
+import yog
 import yog/pathfinding
-import gleam/int
-import gleam/io
 
 pub fn main() {
   // Create a directed graph
   let graph =
-    model.new(Directed)
-    |> model.add_node(1, "Start")
-    |> model.add_node(2, "Middle")
-    |> model.add_node(3, "End")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-    |> model.add_edge(from: 2, to: 3, with: 3)
-    |> model.add_edge(from: 1, to: 3, with: 10)
+    yog.directed()
+    |> yog.add_node(1, "Start")
+    |> yog.add_node(2, "Middle")
+    |> yog.add_node(3, "End")
+    |> yog.add_edge(from: 1, to: 2, with: 5)
+    |> yog.add_edge(from: 2, to: 3, with: 3)
+    |> yog.add_edge(from: 1, to: 3, with: 10)
 
   // Find shortest path
   case pathfinding.shortest_path(
@@ -71,24 +69,73 @@ pub fn main() {
 
 ## API Overview
 
-### Core Graph Operations (`yog/model`)
+### Core Graph Operations
+
+The `yog` module provides convenient functions for graph operations:
 
 ```gleam
+import yog
+
 // Create graphs
-let graph = model.new(Directed)  // or Undirected
+let graph = yog.directed()  // or yog.undirected()
 
 // Add nodes with data
-|> model.add_node(1, "Node A")
-|> model.add_node(2, "Node B")
+|> yog.add_node(1, "Node A")
+|> yog.add_node(2, "Node B")
 
 // Add edges with weights
-|> model.add_edge(from: 1, to: 2, with: 10)
+|> yog.add_edge(from: 1, to: 2, with: 10)
 
 // Query the graph
-let successors = model.successors(graph, 1)        // Outgoing edges [#(2, 10)]
-let predecessors = model.predecessors(graph, 1)   // Incoming edges []
-let neighbors = model.neighbors(graph, 2)         // All connected nodes [#(1, 10)]
+let successors = yog.successors(graph, 1)        // Outgoing edges [#(2, 10)]
+let predecessors = yog.predecessors(graph, 1)    // Incoming edges []
+let neighbors = yog.neighbors(graph, 2)          // All connected nodes [#(1, 10)]
 ```
+
+You can also use `yog/model` directly if you prefer:
+```gleam
+import yog/model.{Directed}
+let graph = model.new(Directed)
+```
+
+### Building Graphs with Labels (`yog/builder/labeled`)
+
+The core graph uses integer node IDs, but you can build graphs using strings or any other type as labels:
+
+```gleam
+import yog
+import yog/builder/labeled
+
+// Build a graph with string labels
+let builder =
+  labeled.directed()
+  |> labeled.add_edge(from: "home", to: "work", with: 10)
+  |> labeled.add_edge(from: "work", to: "gym", with: 5)
+  |> labeled.add_edge(from: "home", to: "gym", with: 20)
+
+// Convert to a Graph for use with algorithms
+let graph = labeled.to_graph(builder)
+
+// Get node IDs to use with algorithms
+let assert Ok(home_id) = labeled.get_id(builder, "home")
+let assert Ok(gym_id) = labeled.get_id(builder, "gym")
+
+// Now use with any graph algorithm
+pathfinding.shortest_path(
+  in: graph,
+  from: home_id,
+  to: gym_id,
+  with_zero: 0,
+  with_add: int.add,
+  with_compare: int.compare,
+)
+
+// You can also query by label
+let assert Ok(work_connections) = labeled.successors(builder, "work")
+// => [#("gym", 5)]
+```
+
+The builder automatically manages the mapping between labels and internal integer IDs, making it easy to work with naturally labeled data.
 
 ### Pathfinding (`yog/pathfinding`)
 
@@ -156,6 +203,51 @@ case pathfinding.bellman_ford(
 ```
 
 **Time Complexity:** O(VE)
+
+#### Single-Source Distances
+
+Best for: Finding distances to multiple destinations, or finding the closest target among many options
+
+```gleam
+// Compute distances from source to all reachable nodes
+let distances = pathfinding.single_source_distances(
+  in: graph,
+  from: start_node,
+  with_zero: 0,
+  with_add: int.add,
+  with_compare: int.compare
+)
+// => dict.from_list([#(1, 0), #(2, 5), #(3, 8), #(4, 15)])
+
+// Find closest target among multiple options
+let targets = [10, 20, 30]
+let closest = targets
+  |> list.filter_map(fn(t) { dict.get(distances, t) })
+  |> list.sort(int.compare)
+  |> list.first
+// => Ok(5)
+
+// Combine with transform.transpose for reverse pathfinding
+import yog/transform
+
+let reversed = transform.transpose(graph)  // O(1) operation!
+let distances_from_goal = pathfinding.single_source_distances(
+  in: reversed,
+  from: goal,
+  with_zero: 0,
+  with_add: int.add,
+  with_compare: int.compare
+)
+// Now you have distances TO the goal FROM any node
+```
+
+**Time Complexity:** O((V + E) log V)
+
+**Use Cases:**
+- Finding nearest target among multiple options (e.g., nearest exit, closest resource)
+- Computing distance maps for game AI
+- Network routing table generation
+- Reverse pathfinding with `transform.transpose`
 
 ### Graph Traversal (`yog/traversal`)
 
