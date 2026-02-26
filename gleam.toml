@@ -1,0 +1,11 @@
+name = "yog"
+version = "0.1.0"
+description = "A graph algorithm library"
+licences = ["Apache-2.0"] # Or your preferred license
+repository = { type = "github", user = "code-shoily", repo = "yog" }
+
+[dependencies]
+gleam_stdlib = ">= 0.44.0 and < 2.0.0"
+
+[dev-dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"
