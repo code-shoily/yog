@@ -121,6 +121,20 @@ pub fn neighbors(graph: Graph(n, e), id: NodeId) -> List(#(NodeId, e)) {
   }
 }
 
+/// Returns all unique node IDs that have edges in the graph.
+/// This includes all nodes that appear in either out_edges or in_edges.
+pub fn all_nodes(graph: Graph(n, e)) -> List(NodeId) {
+  list.flatten([dict.keys(graph.out_edges), dict.keys(graph.in_edges)])
+  |> list.unique()
+}
+
+/// Returns just the NodeIds of successors (without edge weights).
+/// Convenient for traversal algorithms that only need the IDs.
+pub fn successor_ids(graph: Graph(n, e), id: NodeId) -> List(NodeId) {
+  successors(graph, id)
+  |> list.map(fn(edge) { edge.0 })
+}
+
 fn do_add_directed_edge(
   graph: Graph(n, e),
   src: NodeId,
@@ -145,18 +159,4 @@ fn do_add_directed_edge(
   let new_in = dict.upsert(graph.in_edges, dst, in_update_fn)
 
   Graph(..graph, out_edges: new_out, in_edges: new_in)
-}
-
-/// Returns all unique node IDs that have edges in the graph.
-/// This includes all nodes that appear in either out_edges or in_edges.
-pub fn all_nodes(graph: Graph(n, e)) -> List(NodeId) {
-  list.flatten([dict.keys(graph.out_edges), dict.keys(graph.in_edges)])
-  |> list.unique()
-}
-
-/// Returns just the NodeIds of successors (without edge weights).
-/// Convenient for traversal algorithms that only need the IDs.
-pub fn successor_ids(graph: Graph(n, e), id: NodeId) -> List(NodeId) {
-  successors(graph, id)
-  |> list.map(fn(edge) { edge.0 })
 }
