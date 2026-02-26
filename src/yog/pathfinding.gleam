@@ -71,7 +71,8 @@ fn do_dijkstra(
       case current == goal {
         True -> Some(Path(nodes: list.reverse(path), total_weight: dist))
         False -> {
-          let should_explore = should_explore_node(visited, current, dist, compare)
+          let should_explore =
+            should_explore_node(visited, current, dist, compare)
 
           case should_explore {
             False ->
@@ -189,7 +190,8 @@ fn do_a_star(graph, goal, frontier, visited, add, compare, h) {
         True -> Some(Path(nodes: list.reverse(path), total_weight: dist))
         False -> {
           // G-SAFE BRANCHING (No guards)
-          let should_explore = should_explore_node(visited, current, dist, compare)
+          let should_explore =
+            should_explore_node(visited, current, dist, compare)
 
           case should_explore {
             False ->

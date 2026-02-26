@@ -1,6 +1,6 @@
-import gleeunit/should
 import gleam/dict
 import gleam/list
+import gleeunit/should
 import yog/internal/dsu
 
 // ============= Creation Tests =============

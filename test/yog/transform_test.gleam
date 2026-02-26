@@ -1,7 +1,7 @@
-import gleeunit/should
 import gleam/dict
 import gleam/int
 import gleam/string
+import gleeunit/should
 import yog/model.{Directed, Undirected}
 import yog/transform
 
@@ -173,12 +173,13 @@ pub fn map_nodes_with_type_change_test() {
     |> model.add_node(3, "15")
 
   // Parse strings to integers
-  let mapped = transform.map_nodes(graph, fn(s) {
-    case int.parse(s) {
-      Ok(n) -> n
-      Error(_) -> 0
-    }
-  })
+  let mapped =
+    transform.map_nodes(graph, fn(s) {
+      case int.parse(s) {
+        Ok(n) -> n
+        Error(_) -> 0
+      }
+    })
 
   dict.get(mapped.nodes, 1)
   |> should.equal(Ok(5))
@@ -400,8 +401,7 @@ pub fn filter_nodes_prunes_edges_test() {
     |> model.add_edge(from: 2, to: 3, with: 20)
     |> model.add_edge(from: 1, to: 3, with: 30)
 
-  let filtered =
-    transform.filter_nodes(graph, fn(s) { s == "keep" })
+  let filtered = transform.filter_nodes(graph, fn(s) { s == "keep" })
 
   // Nodes 1 and 3 remain
   dict.size(filtered.nodes)

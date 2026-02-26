@@ -1,7 +1,7 @@
-import gleeunit/should
 import gleam/int
 import gleam/list
 import gleam/order
+import gleeunit/should
 import yog/internal/heap
 
 // ============= Creation Tests =============
@@ -291,9 +291,8 @@ pub fn merge_symmetric_test() {
 pub fn heap_sort_random_elements_test() {
   let unsorted = [5, 2, 8, 1, 9, 3, 7, 4, 6]
 
-  let h = list.fold(unsorted, heap.new(), fn(h, v) {
-    heap.insert(h, v, int.compare)
-  })
+  let h =
+    list.fold(unsorted, heap.new(), fn(h, v) { heap.insert(h, v, int.compare) })
 
   extract_all(h, int.compare)
   |> should.equal([1, 2, 3, 4, 5, 6, 7, 8, 9])
@@ -302,9 +301,8 @@ pub fn heap_sort_random_elements_test() {
 pub fn heap_sort_already_sorted_test() {
   let sorted = [1, 2, 3, 4, 5]
 
-  let h = list.fold(sorted, heap.new(), fn(h, v) {
-    heap.insert(h, v, int.compare)
-  })
+  let h =
+    list.fold(sorted, heap.new(), fn(h, v) { heap.insert(h, v, int.compare) })
 
   extract_all(h, int.compare)
   |> should.equal([1, 2, 3, 4, 5])
@@ -313,9 +311,8 @@ pub fn heap_sort_already_sorted_test() {
 pub fn heap_sort_reverse_sorted_test() {
   let reverse = [5, 4, 3, 2, 1]
 
-  let h = list.fold(reverse, heap.new(), fn(h, v) {
-    heap.insert(h, v, int.compare)
-  })
+  let h =
+    list.fold(reverse, heap.new(), fn(h, v) { heap.insert(h, v, int.compare) })
 
   extract_all(h, int.compare)
   |> should.equal([1, 2, 3, 4, 5])
@@ -324,9 +321,8 @@ pub fn heap_sort_reverse_sorted_test() {
 pub fn heap_sort_with_duplicates_test() {
   let with_dups = [5, 2, 5, 1, 3, 2, 1, 5]
 
-  let h = list.fold(with_dups, heap.new(), fn(h, v) {
-    heap.insert(h, v, int.compare)
-  })
+  let h =
+    list.fold(with_dups, heap.new(), fn(h, v) { heap.insert(h, v, int.compare) })
 
   extract_all(h, int.compare)
   |> should.equal([1, 1, 2, 2, 3, 5, 5, 5])
@@ -394,9 +390,8 @@ pub fn large_heap_operations_test() {
   // Build a heap with 100 elements
   let numbers = list.range(1, 100)
 
-  let h = list.fold(numbers, heap.new(), fn(h, v) {
-    heap.insert(h, v, int.compare)
-  })
+  let h =
+    list.fold(numbers, heap.new(), fn(h, v) { heap.insert(h, v, int.compare) })
 
   // Verify min
   heap.find_min(h)
@@ -416,9 +411,8 @@ pub fn shuffled_large_heap_test() {
   let numbers = list.range(1, 50)
   let shuffled = list.reverse(numbers)
 
-  let h = list.fold(shuffled, heap.new(), fn(h, v) {
-    heap.insert(h, v, int.compare)
-  })
+  let h =
+    list.fold(shuffled, heap.new(), fn(h, v) { heap.insert(h, v, int.compare) })
 
   // Extract first 10 elements
   let first_10 = extract_n(h, 10, int.compare)
@@ -429,11 +423,16 @@ pub fn shuffled_large_heap_test() {
 
 pub fn multiple_heap_merge_test() {
   // Create 5 small heaps
-  let h1 = heap.new() |> heap.insert(10, int.compare) |> heap.insert(20, int.compare)
-  let h2 = heap.new() |> heap.insert(5, int.compare) |> heap.insert(15, int.compare)
-  let h3 = heap.new() |> heap.insert(25, int.compare) |> heap.insert(30, int.compare)
-  let h4 = heap.new() |> heap.insert(1, int.compare) |> heap.insert(35, int.compare)
-  let h5 = heap.new() |> heap.insert(12, int.compare) |> heap.insert(18, int.compare)
+  let h1 =
+    heap.new() |> heap.insert(10, int.compare) |> heap.insert(20, int.compare)
+  let h2 =
+    heap.new() |> heap.insert(5, int.compare) |> heap.insert(15, int.compare)
+  let h3 =
+    heap.new() |> heap.insert(25, int.compare) |> heap.insert(30, int.compare)
+  let h4 =
+    heap.new() |> heap.insert(1, int.compare) |> heap.insert(35, int.compare)
+  let h5 =
+    heap.new() |> heap.insert(12, int.compare) |> heap.insert(18, int.compare)
 
   // Merge them all
   let merged =
@@ -486,7 +485,10 @@ pub fn max_heap_test() {
 // ============= Helper Functions =============
 
 // Recursively extract all elements from heap in sorted order
-fn extract_all(h: heap.Heap(Int), compare: fn(Int, Int) -> order.Order) -> List(Int) {
+fn extract_all(
+  h: heap.Heap(Int),
+  compare: fn(Int, Int) -> order.Order,
+) -> List(Int) {
   case heap.find_min(h) {
     Error(Nil) -> []
     Ok(min) -> {

@@ -1,7 +1,7 @@
-import gleeunit/should
 import gleam/float
 import gleam/int
 import gleam/option.{None, Some}
+import gleeunit/should
 import yog/model.{Directed, Undirected}
 import yog/pathfinding
 
@@ -81,7 +81,7 @@ pub fn shortest_path_no_path_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 5)
-    // No edge to node 3
+  // No edge to node 3
 
   let result =
     pathfinding.shortest_path(
@@ -283,7 +283,7 @@ pub fn shortest_path_with_cycle_test() {
     |> model.add_edge(from: 1, to: 2, with: 1)
     |> model.add_edge(from: 2, to: 3, with: 1)
     |> model.add_edge(from: 3, to: 1, with: 1)
-    // Cycle: 1->2->3->1
+  // Cycle: 1->2->3->1
 
   let result =
     pathfinding.shortest_path(
@@ -533,7 +533,7 @@ pub fn shortest_path_disconnected_test() {
     |> model.add_node(4, "D")
     |> model.add_edge(from: 1, to: 2, with: 1)
     |> model.add_edge(from: 3, to: 4, with: 1)
-    // Two disconnected components: {1,2} and {3,4}
+  // Two disconnected components: {1,2} and {3,4}
 
   let result =
     pathfinding.shortest_path(
@@ -601,11 +601,16 @@ pub fn astar_manhattan_distance_test() {
   // Node positions: 1=(0,0), 2=(1,0), 3=(2,0), 4=(0,1), 5=(1,1), 6=(2,1)
   let manhattan = fn(from: Int, to: Int) -> Int {
     case from, to {
-      1, 6 -> 3  // |0-2| + |0-1| = 3
-      2, 6 -> 2  // |1-2| + |0-1| = 2
-      3, 6 -> 1  // |2-2| + |0-1| = 1
-      4, 6 -> 3  // |0-2| + |1-1| = 2
-      5, 6 -> 1  // |1-2| + |1-1| = 1
+      1, 6 -> 3
+      // |0-2| + |0-1| = 3
+      2, 6 -> 2
+      // |1-2| + |0-1| = 2
+      3, 6 -> 1
+      // |2-2| + |0-1| = 1
+      4, 6 -> 3
+      // |0-2| + |1-1| = 2
+      5, 6 -> 1
+      // |1-2| + |1-1| = 1
       _, _ -> 0
     }
   }
@@ -647,8 +652,10 @@ pub fn astar_better_than_greedy_test() {
   // Heuristic that prefers node 2 initially
   let h = fn(from: Int, to: Int) -> Int {
     case from, to {
-      2, 4 -> 10  // Underestimate for node 2
-      3, 4 -> 1   // Good estimate for node 3
+      2, 4 -> 10
+      // Underestimate for node 2
+      3, 4 -> 1
+      // Good estimate for node 3
       _, _ -> 0
     }
   }
@@ -1057,7 +1064,10 @@ pub fn bellman_ford_basic_test() {
 
   result
   |> should.equal(
-    pathfinding.ShortestPath(pathfinding.Path(nodes: [1, 2, 3], total_weight: 15)),
+    pathfinding.ShortestPath(pathfinding.Path(
+      nodes: [1, 2, 3],
+      total_weight: 15,
+    )),
   )
 }
 
@@ -1113,9 +1123,10 @@ pub fn bellman_ford_negative_optimal_test() {
   // Path through 2,3 is 2+2-10=-6, direct is 5
   result
   |> should.equal(
-    pathfinding.ShortestPath(
-      pathfinding.Path(nodes: [1, 2, 3, 4], total_weight: -6),
-    ),
+    pathfinding.ShortestPath(pathfinding.Path(
+      nodes: [1, 2, 3, 4],
+      total_weight: -6,
+    )),
   )
 }
 
@@ -1275,9 +1286,10 @@ pub fn bellman_ford_mixed_weights_test() {
   // Best path: 1->3->2->4 with cost 2+(-6)+3=-1
   result
   |> should.equal(
-    pathfinding.ShortestPath(
-      pathfinding.Path(nodes: [1, 3, 2, 4], total_weight: -1),
-    ),
+    pathfinding.ShortestPath(pathfinding.Path(
+      nodes: [1, 3, 2, 4],
+      total_weight: -1,
+    )),
   )
 }
 

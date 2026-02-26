@@ -1,8 +1,8 @@
-import gleeunit/should
 import gleam/int
 import gleam/list
-import yog/model.{Directed}
+import gleeunit/should
 import yog/components
+import yog/model.{Directed}
 
 // ============= Basic SCC Tests =============
 
@@ -224,7 +224,7 @@ pub fn scc_diamond_with_cycle_test() {
     |> model.add_edge(from: 2, to: 4, with: 1)
     |> model.add_edge(from: 3, to: 4, with: 1)
     |> model.add_edge(from: 4, to: 2, with: 1)
-    // Cycle: 2->4->2
+  // Cycle: 2->4->2
 
   let result = components.strongly_connected_components(graph)
 

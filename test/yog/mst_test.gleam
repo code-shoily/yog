@@ -1,6 +1,6 @@
-import gleeunit/should
 import gleam/int
 import gleam/list
+import gleeunit/should
 import yog/model.{Undirected}
 import yog/mst
 
@@ -27,8 +27,7 @@ pub fn mst_simple_triangle_test() {
   |> should.equal(2)
 
   // Total weight should be 1+2=3 (edges 1-2 and 2-3)
-  let total_weight =
-    list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
+  let total_weight = list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
 
   total_weight
   |> should.equal(3)
@@ -58,8 +57,7 @@ pub fn mst_linear_chain_test() {
   |> should.equal(2)
 
   // Total weight should be 15
-  let total_weight =
-    list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
+  let total_weight = list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
 
   total_weight
   |> should.equal(15)
@@ -144,8 +142,7 @@ pub fn mst_square_with_diagonal_test() {
   |> should.equal(3)
 
   // Total weight should be 3 (three edges of weight 1)
-  let total_weight =
-    list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
+  let total_weight = list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
 
   total_weight
   |> should.equal(3)
@@ -171,8 +168,7 @@ pub fn mst_classic_kruskal_test() {
   |> should.equal(3)
 
   // Should select edges 1-2 (1), 2-3 (2), 3-4 (3) for total weight 6
-  let total_weight =
-    list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
+  let total_weight = list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
 
   total_weight
   |> should.equal(6)
@@ -201,8 +197,7 @@ pub fn mst_pentagon_test() {
   |> should.equal(4)
 
   // Should select edges 1,2,3,4 (not 5) for total weight 10
-  let total_weight =
-    list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
+  let total_weight = list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
 
   total_weight
   |> should.equal(10)
@@ -229,8 +224,7 @@ pub fn mst_disconnected_two_components_test() {
   |> should.equal(2)
 
   // Should be a forest, not a tree
-  let total_weight =
-    list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
+  let total_weight = list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
 
   total_weight
   |> should.equal(3)
@@ -268,7 +262,7 @@ pub fn mst_with_isolated_nodes_test() {
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    // Nodes 3 and 4 are isolated
+  // Nodes 3 and 4 are isolated
 
   let result = mst.kruskal(in: graph, with_compare: int.compare)
 
@@ -298,8 +292,7 @@ pub fn mst_all_same_weights_test() {
   |> should.equal(3)
 
   // All edges have weight 5, so total is 15
-  let total_weight =
-    list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
+  let total_weight = list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
 
   total_weight
   |> should.equal(15)
@@ -319,8 +312,7 @@ pub fn mst_zero_weight_edges_test() {
   list.length(result)
   |> should.equal(2)
 
-  let total_weight =
-    list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
+  let total_weight = list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
 
   total_weight
   |> should.equal(0)
@@ -350,8 +342,7 @@ pub fn mst_complete_graph_k4_test() {
   |> should.equal(3)
 
   // Should select edges with weights 1, 2, 3
-  let total_weight =
-    list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
+  let total_weight = list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
 
   total_weight
   |> should.equal(6)
@@ -384,8 +375,7 @@ pub fn mst_complete_graph_k5_test() {
   |> should.equal(4)
 
   // Should select edges with weights 1, 2, 3, 4
-  let total_weight =
-    list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
+  let total_weight = list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
 
   total_weight
   |> should.equal(10)
@@ -451,8 +441,7 @@ pub fn mst_larger_graph_test() {
   |> should.equal(9)
 
   // Should have total weight 1+2+3+4+5+6+7+8+9 = 45
-  let total_weight =
-    list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
+  let total_weight = list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
 
   total_weight
   |> should.equal(45)
