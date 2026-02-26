@@ -14,7 +14,7 @@ A graph algorithm library for Gleam, providing implementations of classic graph 
   - Bellman-Ford (supports negative weights, detects cycles)
 - **Graph Traversal**: BFS and DFS with early termination support
 - **Graph Transformations**: Transpose (O(1)!), map nodes/edges, filter, merge
-- **Graph Visualization**: Mermaid diagram generation with path highlighting
+- **Graph Visualization**: Mermaid, DOT (Graphviz), and JSON rendering with path highlighting
 - **Minimum Spanning Tree**: Kruskal's algorithm with Union-Find
 - **Topological Sorting**: Kahn's algorithm with lexicographical variant
 - **Strongly Connected Components**: Tarjan's algorithm
@@ -517,6 +517,176 @@ graph LR
 
 **Use for:** Documentation, debugging, presentations, teaching algorithms
 
+#### DOT (Graphviz) Rendering
+
+Generate DOT format diagrams that can be rendered with Graphviz tools.
+
+```gleam
+import gleam/io
+import yog/model
+import yog/render
+
+pub fn main() {
+  let graph =
+    model.new(model.Directed)
+    |> model.add_node(1, "Start")
+    |> model.add_node(2, "Process")
+    |> model.add_node(3, "End")
+    |> model.add_edge(from: 1, to: 2, with: "5")
+    |> model.add_edge(from: 2, to: 3, with: "3")
+
+  let diagram = render.to_dot(graph, render.default_dot_options())
+  io.println(diagram)
+}
+```
+
+This outputs:
+
+```dot
+digraph G {
+  node [shape=ellipse];
+  edge [fontname="Helvetica", fontsize=10];
+  1 [label="1"];
+  2 [label="2"];
+  3 [label="3"];
+  1 -> 2 [label="5"];
+  2 -> 3 [label="3"];
+}
+```
+
+You can render this with Graphviz:
+
+```sh
+gleam run | dot -Tpng -o graph.png
+gleam run | dot -Tsvg -o graph.svg
+```
+
+**Custom DOT Options:**
+
+```gleam
+let options = render.DotOptions(
+  node_label: fn(id, data) { data },
+  edge_label: fn(weight) { weight <> " km" },
+  highlighted_nodes: None,
+  highlighted_edges: None,
+  node_shape: "box",        // "circle", "ellipse", "box", etc.
+  highlight_color: "blue",   // Color for highlighted elements
+)
+
+let diagram = render.to_dot(graph, options)
+```
+
+**Highlight Paths with DOT:**
+
+```gleam
+case pathfinding.shortest_path(
+  in: graph,
+  from: 1,
+  to: 3,
+  with_zero: 0,
+  with_add: int.add,
+  with_compare: int.compare,
+) {
+  Some(path) -> {
+    let options = render.path_to_dot_options(path, render.default_dot_options())
+    let diagram = render.to_dot(graph_for_render, options)
+    io.println(diagram)
+  }
+  None -> io.println("No path found")
+}
+```
+
+**Time Complexity:** O(V + E)
+
+**Use for:** Publication-quality graphics, scientific papers, generating PNG/SVG/PDF output
+
+#### JSON Rendering
+
+Export graphs as JSON for web-based visualization libraries like D3.js, Cytoscape.js, or Vis.js.
+
+```gleam
+import gleam/io
+import yog/model
+import yog/render
+
+pub fn main() {
+  let graph =
+    model.new(model.Directed)
+    |> model.add_node(1, "Alice")
+    |> model.add_node(2, "Bob")
+    |> model.add_node(3, "Carol")
+    |> model.add_edge(from: 1, to: 2, with: "follows")
+    |> model.add_edge(from: 2, to: 3, with: "follows")
+
+  let json_string = render.to_json(graph, render.default_json_options())
+  io.println(json_string)
+}
+```
+
+This outputs:
+
+```json
+{
+  "nodes": [
+    {"id": 1, "label": "Alice"},
+    {"id": 2, "label": "Bob"},
+    {"id": 3, "label": "Carol"}
+  ],
+  "edges": [
+    {"source": 1, "target": 2, "weight": "follows"},
+    {"source": 2, "target": 3, "weight": "follows"}
+  ]
+}
+```
+
+**Custom JSON Mappers:**
+
+```gleam
+import gleam/json
+
+let options = render.JsonOptions(
+  node_mapper: fn(id, data) {
+    json.object([
+      #("id", json.int(id)),
+      #("name", json.string(data)),
+      #("group", json.int(1)),
+    ])
+  },
+  edge_mapper: fn(from, to, weight) {
+    json.object([
+      #("source", json.int(from)),
+      #("target", json.int(to)),
+      #("value", json.int(5)),
+      #("label", json.string(weight)),
+    ])
+  },
+)
+
+let json_string = render.to_json(graph, options)
+```
+
+This allows you to customize the JSON structure to match your visualization library's requirements.
+
+**Example with D3.js Force Graph:**
+
+```javascript
+// In your web page
+fetch('/api/graph')
+  .then(response => response.json())
+  .then(data => {
+    const simulation = d3.forceSimulation(data.nodes)
+      .force("link", d3.forceLink(data.edges).id(d => d.id))
+      .force("charge", d3.forceManyBody())
+      .force("center", d3.forceCenter(width / 2, height / 2));
+
+    // Render your graph...
+  });
+```
+
+**Time Complexity:** O(V + E)
+
+**Use for:** Web applications, interactive visualizations, REST APIs, data export
+
 ## Working with Different Weight Types
 
 Yog is generic over edge weights. You can use any type that supports addition and comparison:
@@ -737,7 +907,7 @@ Run the test suite:
 gleam test
 ```
 
-All 275 tests pass, covering:
+All 302 tests pass, covering:
 
 - Graph construction and operations
 - All pathfinding algorithms
@@ -754,7 +924,7 @@ Yog is designed with these principles:
 1. **Functional and Immutable**: All operations return new graphs, no mutation
 2. **Generic and Flexible**: Works with any weight type that supports addition and comparison
 3. **Type-Safe**: Leverages Gleam's type system to prevent errors at compile time
-4. **Well-Tested**: Comprehensive test suite with 275 tests
+4. **Well-Tested**: Comprehensive test suite with 302 tests
 5. **Documented**: Every public function has documentation with examples
 6. **Efficient**: Uses optimal algorithms and data structures (pairing heaps, union-find with path compression, O(1) transpose)
 

@@ -8,16 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0] - Unreleased
 
 ### Added
-- **Visualization module (`yog/render`)** - Generate Mermaid diagrams from graphs
+- **Visualization module (`yog/render`)** - Generate diagrams from graphs in multiple formats
   - `to_mermaid()` - Convert graphs to Mermaid syntax for GitHub/GitLab markdown
-  - `path_to_options()` - Helper to highlight pathfinding results
-  - Support for custom node and edge labels
-  - Path highlighting with CSS classes
-  - Complete test coverage (20 tests)
+  - `to_dot()` - Convert graphs to DOT (Graphviz) format for publication-quality graphics
+  - `to_json()` - Export graphs as JSON for web-based visualization libraries (D3.js, Cytoscape, etc.)
+  - `path_to_options()` - Helper to highlight pathfinding results in Mermaid diagrams
+  - `path_to_dot_options()` - Helper to highlight pathfinding results in DOT diagrams
+  - Support for custom node and edge labels across all formats
+  - Path highlighting with CSS classes (Mermaid) and color attributes (DOT)
+  - Customizable JSON structure via mapper functions
+  - Complete test coverage (47 tests)
 - City navigation example demonstrating pathfinding with visualization
 
 ### Fixed
-- Undirected graphs now render each edge only once (previously showed duplicates)
+- Undirected graphs now render each edge only once in all formats (previously showed duplicates)
 
 ## [1.0.0] - 2025-02-26
 
