@@ -3,7 +3,7 @@
 [![Package Version](https://img.shields.io/hexpm/v/yog)](https://hex.pm/packages/yog)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/yog/)
 
-A comprehensive graph algorithm library for Gleam, providing efficient implementations of classic graph algorithms with a clean, functional API.
+A graph algorithm library for Gleam, providing implementations of classic graph algorithms with a functional API.
 
 ## Features
 
@@ -30,6 +30,9 @@ gleam add yog
 ## Quick Start
 
 ```gleam
+import gleam/int
+import gleam/io
+import gleam/option.{None, Some}
 import yog/model.{Directed}
 import yog/pathfinding
 import gleam/int
@@ -57,6 +60,7 @@ pub fn main() {
   ) {
     Some(path) -> {
       // Path(nodes: [1, 2, 3], total_weight: 8)
+      // Outputs: Found path with weight: 8
       io.println("Found path with weight: " <> int.to_string(path.total_weight))
     }
     None -> io.println("No path found")
@@ -80,9 +84,9 @@ let graph = model.new(Directed)  // or Undirected
 |> model.add_edge(from: 1, to: 2, with: 10)
 
 // Query the graph
-let successors = model.successors(graph, 1)        // Outgoing edges
-let predecessors = model.predecessors(graph, 1)   // Incoming edges
-let neighbors = model.neighbors(graph, 1)         // All connected nodes
+let successors = model.successors(graph, 1)        // Outgoing edges [#(2, 10)]
+let predecessors = model.predecessors(graph, 1)   // Incoming edges []
+let neighbors = model.neighbors(graph, 2)         // All connected nodes [#(1, 10)]
 ```
 
 ### Pathfinding (`yog/pathfinding`)
@@ -158,20 +162,25 @@ case pathfinding.bellman_ford(
 import yog/traversal.{BreadthFirst, DepthFirst}
 
 // Full traversal
+let start_node = 1
+
 let visited = traversal.walk(
   from: start_node,
   in: graph,
   using: BreadthFirst  // or DepthFirst
 )
-// => [1, 2, 3, 4, 5]
+// => [1, 2, 3]
 
 // Early termination
+let target = 2
+
 let path_to_target = traversal.walk_until(
   from: start_node,
   in: graph,
   using: BreadthFirst,
   until: fn(node) { node == target }
 )
+// => [1, 2]
 ```
 
 **Time Complexity:** O(V + E)
@@ -187,7 +196,7 @@ let mst_edges = mst.kruskal(
   in: graph,
   with_compare: int.compare
 )
-// => [Edge(1, 2, 5), Edge(2, 3, 3), ...]
+// => [Edge(2, 3, 3), Edge(1, 2, 5)]
 ```
 
 **Time Complexity:** O(E log E)
@@ -201,7 +210,7 @@ import yog/topological_sort
 
 // Standard topological sort
 case topological_sort.topological_sort(graph) {
-  Ok(ordering) -> // [1, 2, 3, 4]
+  Ok(ordering) -> // [1, 2, 3]
   Error(Nil) -> // Cycle detected
 }
 
@@ -232,7 +241,7 @@ let sccs = components.strongly_connected_components(graph)
 
 ### Graph Transformations (`yog/transform`)
 
-Powerful functional operations for transforming and manipulating graphs.
+Functional operations for transforming and manipulating graphs.
 
 #### Transpose (O(1) Reverse All Edges!)
 
@@ -360,115 +369,145 @@ pathfinding.shortest_path(
 ### Example 1: Social Network Analysis
 
 ```gleam
-import yog/model.{Directed}
 import yog/components
+import yog/model.{Directed}
 
-// Model a social network where edges represent "follows" relationships
-let social_graph =
-  model.new(Directed)
-  |> model.add_node(1, "Alice")
-  |> model.add_node(2, "Bob")
-  |> model.add_node(3, "Carol")
-  |> model.add_edge(from: 1, to: 2, with: Nil)
-  |> model.add_edge(from: 2, to: 3, with: Nil)
-  |> model.add_edge(from: 3, to: 1, with: Nil)
+pub fn main() {
+  // Model a social network where edges represent "follows" relationships
+  let social_graph =
+    model.new(Directed)
+    |> model.add_node(1, "Alice")
+    |> model.add_node(2, "Bob")
+    |> model.add_node(3, "Carol")
+    |> model.add_edge(from: 1, to: 2, with: Nil)
+    |> model.add_edge(from: 2, to: 3, with: Nil)
+    |> model.add_edge(from: 3, to: 1, with: Nil)
 
-// Find groups of mutually connected users
-let communities = components.strongly_connected_components(social_graph)
-// => [[1, 2, 3]]  // All three users form a strongly connected community
+  // Find groups of mutually connected users
+  let communities = components.strongly_connected_components(social_graph)
+  echo communities
+  // => [[1, 2, 3]]  // All three users form a strongly connected community
+}
 ```
 
 ### Example 2: Task Scheduling
 
 ```gleam
+import gleam/io
+import gleam/string
 import yog/model.{Directed}
 import yog/topological_sort
 
-// Model tasks with dependencies
-let tasks =
-  model.new(Directed)
-  |> model.add_node(1, "Design")
-  |> model.add_node(2, "Implement")
-  |> model.add_node(3, "Test")
-  |> model.add_node(4, "Deploy")
-  |> model.add_edge(from: 1, to: 2, with: Nil)  // Design before Implement
-  |> model.add_edge(from: 2, to: 3, with: Nil)  // Implement before Test
-  |> model.add_edge(from: 3, to: 4, with: Nil)  // Test before Deploy
+pub fn main() {
+  // Model tasks with dependencies
+  let tasks =
+    model.new(Directed)
+    |> model.add_node(1, "Design")
+    |> model.add_node(2, "Implement")
+    |> model.add_node(3, "Test")
+    |> model.add_node(4, "Deploy")
+    |> model.add_edge(from: 1, to: 2, with: Nil)
+    // Design before Implement
+    |> model.add_edge(from: 2, to: 3, with: Nil)
+    // Implement before Test
+    |> model.add_edge(from: 3, to: 4, with: Nil)
+  // Test before Deploy
 
-case topological_sort.topological_sort(tasks) {
-  Ok(order) -> {
-    // order = [1, 2, 3, 4] - valid execution order
-    io.println("Execute tasks in order: " <> string.inspect(order))
+  case topological_sort.topological_sort(tasks) {
+    Ok(order) -> {
+      // order = [1, 2, 3, 4] - valid execution order
+      io.println("Execute tasks in order: " <> string.inspect(order))
+    }
+    Error(Nil) -> io.println("Circular dependency detected!")
   }
-  Error(Nil) -> io.println("Circular dependency detected!")
 }
 ```
 
 ### Example 3: GPS Navigation
 
 ```gleam
+import gleam/int
+import gleam/io
+import gleam/option.{None, Some}
 import yog/model.{Undirected}
 import yog/pathfinding
 
-// Model road network with travel times
-let road_network =
-  model.new(Undirected)
-  |> model.add_node(1, "Home")
-  |> model.add_node(2, "Office")
-  |> model.add_node(3, "Mall")
-  |> model.add_edge(from: 1, to: 2, with: 15)  // 15 minutes
-  |> model.add_edge(from: 2, to: 3, with: 10)
-  |> model.add_edge(from: 1, to: 3, with: 30)
+pub fn main() {
+  // Model road network with travel times
+  let road_network =
+    model.new(Undirected)
+    |> model.add_node(1, "Home")
+    |> model.add_node(2, "Office")
+    |> model.add_node(3, "Mall")
+    |> model.add_edge(from: 1, to: 2, with: 15)
+    // 15 minutes
+    |> model.add_edge(from: 2, to: 3, with: 10)
+    |> model.add_edge(from: 1, to: 3, with: 30)
 
-// Use A* with straight-line distance heuristic
-let straight_line_distance = fn(from, to) {
-  // Simplified: in reality would use coordinates
-  case from == to {
-    True -> 0
-    False -> 5  // Optimistic estimate
+  // Use A* with straight-line distance heuristic
+  let straight_line_distance = fn(from, to) {
+    // Simplified: in reality would use coordinates
+    case from == to {
+      True -> 0
+      False -> 5
+      // Optimistic estimate
+    }
   }
-}
 
-case pathfinding.a_star(
-  in: road_network,
-  from: 1,
-  to: 3,
-  with_zero: 0,
-  with_add: int.add,
-  with_compare: int.compare,
-  heuristic: straight_line_distance
-) {
-  Some(path) -> {
-    // Path(nodes: [1, 2, 3], total_weight: 25)
-    io.println("Fastest route takes " <> int.to_string(path.total_weight) <> " minutes")
+  case
+    pathfinding.a_star(
+      in: road_network,
+      from: 1,
+      to: 3,
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+      heuristic: straight_line_distance,
+    )
+  {
+    Some(path) -> {
+      // Path(nodes: [1, 2, 3], total_weight: 25)
+      // Prints: Fastest route takes 25 minutes
+      io.println(
+        "Fastest route takes " <> int.to_string(path.total_weight) <> " minutes",
+      )
+    }
+    None -> io.println("No route found")
   }
-  None -> io.println("No route found")
 }
 ```
 
 ### Example 4: Network Cable Layout (Minimum Spanning Tree)
 
 ```gleam
+import gleam/int
+import gleam/io
+import gleam/list
 import yog/model.{Undirected}
 import yog/mst
 
-// Model buildings and cable costs
-let buildings =
-  model.new(Undirected)
-  |> model.add_node(1, "Building A")
-  |> model.add_node(2, "Building B")
-  |> model.add_node(3, "Building C")
-  |> model.add_node(4, "Building D")
-  |> model.add_edge(from: 1, to: 2, with: 100)  // $100 to connect
-  |> model.add_edge(from: 1, to: 3, with: 150)
-  |> model.add_edge(from: 2, to: 3, with: 50)
-  |> model.add_edge(from: 2, to: 4, with: 200)
-  |> model.add_edge(from: 3, to: 4, with: 100)
+pub fn main() {
+  // Model buildings and cable costs
+  let buildings =
+    model.new(Undirected)
+    |> model.add_node(1, "Building A")
+    |> model.add_node(2, "Building B")
+    |> model.add_node(3, "Building C")
+    |> model.add_node(4, "Building D")
+    |> model.add_edge(from: 1, to: 2, with: 100)
+    // $100 to connect
+    |> model.add_edge(from: 1, to: 3, with: 150)
+    |> model.add_edge(from: 2, to: 3, with: 50)
+    |> model.add_edge(from: 2, to: 4, with: 200)
+    |> model.add_edge(from: 3, to: 4, with: 100)
 
-// Find minimum cost to connect all buildings
-let cables = mst.kruskal(in: buildings, with_compare: int.compare)
-let total_cost = list.fold(cables, 0, fn(sum, edge) { sum + edge.weight })
-// => 250 (connects all buildings with minimum cable cost)
+  // Find minimum cost to connect all buildings
+  let cables = mst.kruskal(in: buildings, with_compare: int.compare)
+  let total_cost = list.fold(cables, 0, fn(sum, edge) { sum + edge.weight })
+  // => 250 (connects all buildings with minimum cable cost)
+  // Prints: Minimum cable cost is 250
+  io.println("Minimum cable cost is " <> int.to_string(total_cost))
+}
 ```
 
 ## Testing
@@ -479,7 +518,7 @@ Run the test suite:
 gleam test
 ```
 
-All 256 tests pass, covering:
+Alltests pass, covering:
 
 - Graph construction and operations
 - All pathfinding algorithms
@@ -543,7 +582,7 @@ Contributions are welcome! Please ensure:
 
 ## Acknowledgments
 
-Yog implements classic algorithms from graph theory and computer science literature. The implementations are optimized for Gleam's functional programming paradigm while maintaining algorithmic efficiency.
+Yog implements classic algorithms from graph theory and computer science literature. I tried to keep the implementations optimized for Gleam's functional programming paradigm while maintaining algorithmic efficiency.
 
 ---
 
