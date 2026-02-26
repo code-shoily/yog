@@ -1,6 +1,6 @@
 name = "yog"
-version = "1.1.0"
-description = "Comprehensive graph algorithm library with Dijkstra, A*, Bellman-Ford, BFS/DFS, MST, topological sort, SCC, O(1) transpose, and Mermaid visualization"
+version = "1.2.0"
+description = "Graph algorithm library: Dijkstra, A*, Bellman-Ford, BFS/DFS, MST, topological sort, SCC. Grid builder for 2D pathfinding. O(1) transpose. Mermaid/DOT visualization."
 licences = ["Apache-2.0"]
 repository = { type = "github", user = "code-shoily", repo = "yog" }
 

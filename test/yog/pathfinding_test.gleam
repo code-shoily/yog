@@ -1,5 +1,7 @@
+import gleam/dict
 import gleam/float
 import gleam/int
+import gleam/list
 import gleam/option.{None, Some}
 import gleeunit/should
 import yog/model.{Directed, Undirected}
@@ -1465,4 +1467,384 @@ pub fn bellman_ford_empty_graph_test() {
 
   result
   |> should.equal(pathfinding.NoPath)
+}
+
+// ============= Single Source Distances Tests =============
+
+// Basic single source distances
+pub fn single_source_distances_basic_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edge(from: 1, to: 2, with: 5)
+    |> model.add_edge(from: 2, to: 3, with: 3)
+    |> model.add_edge(from: 1, to: 4, with: 10)
+
+  let distances =
+    pathfinding.single_source_distances(
+      in: graph,
+      from: 1,
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // Should have distances to all reachable nodes
+  distances
+  |> dict.get(1)
+  |> should.equal(Ok(0))
+
+  distances
+  |> dict.get(2)
+  |> should.equal(Ok(5))
+
+  distances
+  |> dict.get(3)
+  |> should.equal(Ok(8))
+
+  distances
+  |> dict.get(4)
+  |> should.equal(Ok(10))
+}
+
+// Single source with unreachable nodes
+pub fn single_source_distances_unreachable_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edge(from: 1, to: 2, with: 5)
+    |> model.add_edge(from: 3, to: 4, with: 10)
+
+  let distances =
+    pathfinding.single_source_distances(
+      in: graph,
+      from: 1,
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // Can reach 1 and 2
+  distances
+  |> dict.get(1)
+  |> should.equal(Ok(0))
+
+  distances
+  |> dict.get(2)
+  |> should.equal(Ok(5))
+
+  // Cannot reach 3 and 4
+  distances
+  |> dict.get(3)
+  |> should.equal(Error(Nil))
+
+  distances
+  |> dict.get(4)
+  |> should.equal(Error(Nil))
+}
+
+// Single source on complete graph
+pub fn single_source_distances_complete_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 1, to: 3, with: 4)
+    |> model.add_edge(from: 2, to: 3, with: 2)
+
+  let distances =
+    pathfinding.single_source_distances(
+      in: graph,
+      from: 1,
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  distances
+  |> dict.get(1)
+  |> should.equal(Ok(0))
+
+  distances
+  |> dict.get(2)
+  |> should.equal(Ok(1))
+
+  // Should use path 1->2->3 (cost 3) not 1->3 (cost 4)
+  distances
+  |> dict.get(3)
+  |> should.equal(Ok(3))
+}
+
+// Single source from isolated node
+pub fn single_source_distances_isolated_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 2, to: 3, with: 5)
+
+  let distances =
+    pathfinding.single_source_distances(
+      in: graph,
+      from: 1,
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // Only distance to self
+  distances
+  |> dict.size
+  |> should.equal(1)
+
+  distances
+  |> dict.get(1)
+  |> should.equal(Ok(0))
+}
+
+// Single source with cycles
+pub fn single_source_distances_with_cycles_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edge(from: 3, to: 1, with: 1)
+
+  let distances =
+    pathfinding.single_source_distances(
+      in: graph,
+      from: 1,
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // Should find shortest paths despite cycle
+  distances
+  |> dict.get(1)
+  |> should.equal(Ok(0))
+
+  distances
+  |> dict.get(2)
+  |> should.equal(Ok(1))
+
+  distances
+  |> dict.get(3)
+  |> should.equal(Ok(2))
+}
+
+// Single source on undirected graph
+pub fn single_source_distances_undirected_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 5)
+    |> model.add_edge(from: 2, to: 3, with: 3)
+
+  let distances =
+    pathfinding.single_source_distances(
+      in: graph,
+      from: 1,
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // All nodes reachable in undirected graph
+  distances
+  |> dict.get(1)
+  |> should.equal(Ok(0))
+
+  distances
+  |> dict.get(2)
+  |> should.equal(Ok(5))
+
+  distances
+  |> dict.get(3)
+  |> should.equal(Ok(8))
+}
+
+// Single source with float weights
+pub fn single_source_distances_float_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 1.5)
+    |> model.add_edge(from: 2, to: 3, with: 2.5)
+
+  let distances =
+    pathfinding.single_source_distances(
+      in: graph,
+      from: 1,
+      with_zero: 0.0,
+      with_add: float.add,
+      with_compare: float.compare,
+    )
+
+  case dict.get(distances, 1) {
+    Ok(d) -> {
+      { d >. -0.01 && d <. 0.01 }
+      |> should.be_true()
+    }
+    Error(_) -> should.fail()
+  }
+
+  case dict.get(distances, 3) {
+    Ok(d) -> {
+      { d >. 3.99 && d <. 4.01 }
+      |> should.be_true()
+    }
+    Error(_) -> should.fail()
+  }
+}
+
+// Single source empty graph
+pub fn single_source_distances_empty_test() {
+  let graph = model.new(Directed)
+
+  let distances =
+    pathfinding.single_source_distances(
+      in: graph,
+      from: 1,
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // Source doesn't exist in graph, but distance to itself is 0
+  distances
+  |> dict.size
+  |> should.equal(1)
+
+  distances
+  |> dict.get(1)
+  |> should.equal(Ok(0))
+}
+
+// Finding closest target among multiple options
+pub fn single_source_distances_find_closest_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "Source")
+    |> model.add_node(2, "A")
+    |> model.add_node(3, "B")
+    |> model.add_node(4, "C")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 1, to: 3, with: 5)
+    |> model.add_edge(from: 1, to: 4, with: 20)
+
+  let distances =
+    pathfinding.single_source_distances(
+      in: graph,
+      from: 1,
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // Find closest target among 2, 3, 4
+  let targets = [2, 3, 4]
+  let closest =
+    targets
+    |> list.filter_map(fn(t) { dict.get(distances, t) })
+    |> list.sort(int.compare)
+    |> list.first
+
+  closest
+  |> should.equal(Ok(5))
+}
+
+// Large star graph (one center, many spokes)
+pub fn single_source_distances_star_test() {
+  let graph =
+    list.range(1, 10)
+    |> list.fold(model.new(Directed), fn(g, i) {
+      g
+      |> model.add_node(0, "Center")
+      |> model.add_node(i, "Node")
+      |> model.add_edge(from: 0, to: i, with: i)
+    })
+
+  let distances =
+    pathfinding.single_source_distances(
+      in: graph,
+      from: 0,
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // All spokes directly reachable
+  distances
+  |> dict.size
+  |> should.equal(11)
+
+  // Distance to each spoke equals its ID
+  distances
+  |> dict.get(5)
+  |> should.equal(Ok(5))
+}
+
+// Comparison with individual shortest_path calls
+pub fn single_source_distances_vs_shortest_path_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edge(from: 1, to: 2, with: 5)
+    |> model.add_edge(from: 2, to: 3, with: 3)
+    |> model.add_edge(from: 1, to: 4, with: 10)
+
+  let distances =
+    pathfinding.single_source_distances(
+      in: graph,
+      from: 1,
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // Verify against individual shortest_path calls
+  let targets = [2, 3, 4]
+  targets
+  |> list.each(fn(target) {
+    let expected =
+      pathfinding.shortest_path(
+        in: graph,
+        from: 1,
+        to: target,
+        with_zero: 0,
+        with_add: int.add,
+        with_compare: int.compare,
+      )
+
+    case expected {
+      Some(path) -> {
+        dict.get(distances, target)
+        |> should.equal(Ok(path.total_weight))
+      }
+      None -> {
+        dict.get(distances, target)
+        |> should.equal(Error(Nil))
+      }
+    }
+  })
 }

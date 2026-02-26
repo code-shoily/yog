@@ -127,6 +127,117 @@ fn should_explore_node(
   }
 }
 
+/// Computes shortest distances from a source node to all reachable nodes.
+///
+/// Returns a dictionary mapping each reachable node to its shortest distance
+/// from the source. Unreachable nodes are not included in the result.
+///
+/// This is useful when you need distances to multiple destinations, or want
+/// to find the closest target among many options. More efficient than running
+/// `shortest_path` multiple times.
+///
+/// **Time Complexity:** O((V + E) log V) with heap
+///
+/// ## Parameters
+///
+/// - `zero`: The identity element for addition (e.g., 0 for integers)
+/// - `add`: Function to add two weights
+/// - `compare`: Function to compare two weights
+///
+/// ## Example
+///
+/// ```gleam
+/// // Find distances from node 1 to all reachable nodes
+/// let distances = pathfinding.single_source_distances(
+///   in: graph,
+///   from: 1,
+///   with_zero: 0,
+///   with_add: int.add,
+///   with_compare: int.compare
+/// )
+/// // => dict.from_list([#(1, 0), #(2, 5), #(3, 8), #(4, 15)])
+///
+/// // Find closest target among many options
+/// let targets = [10, 20, 30]
+/// let closest = targets
+///   |> list.filter_map(fn(t) { dict.get(distances, t) })
+///   |> list.sort(int.compare)
+///   |> list.first
+/// ```
+///
+/// ## Use Cases
+///
+/// - Finding nearest target among multiple options
+/// - Computing distance maps for game AI
+/// - Network routing table generation
+/// - Graph analysis (centrality measures)
+/// - Reverse pathfinding (with `transform.transpose`)
+pub fn single_source_distances(
+  in graph: Graph(n, e),
+  from source: NodeId,
+  with_zero zero: e,
+  with_add add: fn(e, e) -> e,
+  with_compare compare: fn(e, e) -> Order,
+) -> Dict(NodeId, e) {
+  let frontier =
+    heap.new()
+    |> heap.insert(#(zero, source), fn(a, b) { compare(a.0, b.0) })
+
+  do_single_source_dijkstra(graph, frontier, dict.new(), add, compare)
+}
+
+fn do_single_source_dijkstra(
+  graph: Graph(n, e),
+  frontier: heap.Heap(#(e, NodeId)),
+  distances: Dict(NodeId, e),
+  add: fn(e, e) -> e,
+  compare: fn(e, e) -> Order,
+) -> Dict(NodeId, e) {
+  case heap.find_min(frontier) {
+    Error(Nil) -> distances
+    Ok(#(dist, current)) -> {
+      let rest_frontier =
+        heap.delete_min(frontier, fn(a, b) { compare(a.0, b.0) })
+        |> result.unwrap(heap.new())
+
+      // Check if we've already found a better path to this node
+      let should_explore =
+        should_explore_node(distances, current, dist, compare)
+
+      case should_explore {
+        False ->
+          do_single_source_dijkstra(
+            graph,
+            rest_frontier,
+            distances,
+            add,
+            compare,
+          )
+        True -> {
+          let new_distances = dict.insert(distances, current, dist)
+
+          let next_frontier =
+            model.successors(graph, current)
+            |> list.fold(rest_frontier, fn(h, neighbor) {
+              let #(next_id, weight) = neighbor
+              heap.insert(h, #(add(dist, weight), next_id), fn(a, b) {
+                compare(a.0, b.0)
+              })
+            })
+
+          do_single_source_dijkstra(
+            graph,
+            next_frontier,
+            new_distances,
+            add,
+            compare,
+          )
+        }
+      }
+    }
+  }
+}
+
 // ======================== A* SEARCH ========================
 
 /// Finds the shortest path using A* search with a heuristic function.
