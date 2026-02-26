@@ -991,6 +991,20 @@ pub fn main() {
 }
 ```
 
+## Projects Using Yog
+
+Yog has been used to solve challenging problems from Advent of Code and other domains:
+
+### Advent of Code Solutions
+
+- **[2019 Day 6: Universal Orbit Map](https://github.com/code-shoily/aocgl/blob/main/src/year_2019/day_06.gleam)** - Orbital relationship analysis using labeled graphs, traversal, and shortest path algorithms to count orbits and find minimum orbital transfers
+
+- **[2020 Day 7: Handy Haversacks](https://github.com/code-shoily/aocgl/blob/main/src/year_2020/day_07.gleam)** - Bag containment puzzle solved with labeled graphs, BFS traversal, and graph transposition (`transform.transpose`) to reverse containment relationships
+
+- **[2022 Day 12: Hill Climbing Algorithm](https://github.com/code-shoily/aocgl/blob/main/src/year_2022/day_12.gleam)** - Heightmap pathfinding using the grid builder (`yog/builder/grid`), A* search, single-source distances, and graph transposition for reverse pathfinding
+
+*Have you used Yog in your project? [Open a PR](https://github.com/code-shoily/yog) to add it here!*
+
 ## Testing
 
 Run the test suite:
