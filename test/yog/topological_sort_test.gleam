@@ -2,7 +2,7 @@ import gleam/int
 import gleam/list
 import gleeunit/should
 import yog/model.{Directed}
-import yog/topologocal_sort as topo
+import yog/topological_sort as topo
 
 // ============= Basic Topological Sort Tests =============
 
