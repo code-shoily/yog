@@ -1,10 +1,10 @@
-import gleeunit/should
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
+import gleeunit/should
 import yog/model.{Directed, Undirected}
-import yog/render
 import yog/pathfinding
+import yog/render
 
 // ============= Basic Mermaid Generation Tests =============
 
