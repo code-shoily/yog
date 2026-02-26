@@ -970,6 +970,10 @@ Contributions are welcome! Please ensure:
 3. Public functions have documentation
 4. Code follows the existing style
 
+## About the Name
+
+**Yog** (योग in Sanskrit, যোগ in Bangla) means "connection" or "union" in Sanskrit, and "addition" or "sum" in Bangla. Both meanings perfectly capture the essence of this library: graphs are fundamentally about **connections** between nodes, and building them involves continuously **adding** nodes and edges together. The name reflects the mathematical and philosophical concept of bringing elements together to form a connected whole.
+
 ## Acknowledgments
 
 Yog implements classic algorithms from graph theory and computer science literature. I tried to keep the implementations optimized for Gleam's functional programming paradigm while maintaining algorithmic efficiency.
