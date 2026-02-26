@@ -1,8 +1,14 @@
 name = "yog"
 version = "0.1.0"
-description = "A graph algorithm library"
-licences = ["Apache-2.0"] # Or your preferred license
+description = "Comprehensive graph algorithm library with Dijkstra, A*, Bellman-Ford, BFS/DFS, MST, topological sort, SCC, and O(1) transpose"
+licences = ["Apache-2.0"]
 repository = { type = "github", user = "code-shoily", repo = "yog" }
+
+# Package metadata for better discoverability
+links = [
+  { title = "Repository", href = "https://github.com/code-shoily/yog" },
+  { title = "Documentation", href = "https://hexdocs.pm/yog" },
+]
 
 [dependencies]
 gleam_stdlib = ">= 0.44.0 and < 2.0.0"
