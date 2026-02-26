@@ -74,12 +74,18 @@
 ////   - Filter nodes with auto-pruning
 ////   - Merge graphs
 ////
+//// ### Visualization
+//// - **`yog/render`** - Graph visualization
+////   - Mermaid diagram generation (GitHub/GitLab compatible)
+////   - Path highlighting for algorithm results
+////   - Customizable node and edge labels
+////
 //// ## Features
 ////
 //// - **Functional and Immutable**: All operations return new graphs
 //// - **Generic**: Works with any node/edge data types
 //// - **Type-Safe**: Leverages Gleam's type system
-//// - **Well-Tested**: 256+ tests covering all algorithms
+//// - **Well-Tested**: 275+ tests covering all algorithms
 //// - **Efficient**: Optimal data structures (pairing heaps, union-find)
 //// - **Documented**: Every function has examples
 

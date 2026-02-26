@@ -14,6 +14,7 @@ A graph algorithm library for Gleam, providing implementations of classic graph 
   - Bellman-Ford (supports negative weights, detects cycles)
 - **Graph Traversal**: BFS and DFS with early termination support
 - **Graph Transformations**: Transpose (O(1)!), map nodes/edges, filter, merge
+- **Graph Visualization**: Mermaid diagram generation with path highlighting
 - **Minimum Spanning Tree**: Kruskal's algorithm with Union-Find
 - **Topological Sorting**: Kahn's algorithm with lexicographical variant
 - **Strongly Connected Components**: Tarjan's algorithm
@@ -298,6 +299,224 @@ let combined = transform.merge(graph1, graph2)
 
 **Use for:** Building graphs incrementally, applying patches/updates
 
+### Graph Visualization (`yog/render`)
+
+Generate Mermaid diagrams for documentation, debugging, and presentations.
+
+#### Basic Mermaid Generation
+
+```gleam
+import gleam/io
+import yog/model
+import yog/render
+
+pub fn main() {
+  let graph =
+    model.new(model.Undirected)
+    |> model.add_node(1, "Start")
+    |> model.add_node(2, "Process")
+    |> model.add_node(3, "End")
+    |> model.add_node(4, "ForeverAlone")
+    |> model.add_edge(from: 1, to: 2, with: "5")
+    |> model.add_edge(from: 2, to: 3, with: "3")
+    |> model.add_edge(from: 1, to: 3, with: "1")
+
+  let diagram = render.to_mermaid(graph, render.default_options())
+  io.println(diagram)
+}
+```
+
+This outputs:
+
+```mermaid
+graph LR
+  1["1"]
+  2["2"]
+  3["3"]
+  4["4"]
+  1 ---|5| 2
+  1 ---|1| 3
+  2 ---|3| 3
+```
+
+**Renders on GitHub/GitLab** - No external tools needed!
+
+#### Highlight Paths
+
+Perfect for visualizing algorithm results:
+
+```gleam
+import gleam/int
+import gleam/io
+import gleam/option
+import gleam/string
+import yog/model
+import yog/pathfinding
+import yog/render
+import yog/transform
+
+pub fn main() {
+  // Build a city road network (10 locations)
+  let graph =
+    model.new(model.Undirected)
+    |> model.add_node(1, "Home")
+    |> model.add_node(2, "Coffee Shop")
+    |> model.add_node(3, "Park")
+    |> model.add_node(4, "Office")
+    |> model.add_node(5, "Gym")
+    |> model.add_node(6, "Restaurant")
+    |> model.add_node(7, "Mall")
+    |> model.add_node(8, "Library")
+    |> model.add_node(9, "Hospital")
+    |> model.add_node(10, "Airport")
+    // Add roads with distances (in minutes)
+    |> model.add_edge(from: 1, to: 2, with: 5)
+    |> model.add_edge(from: 1, to: 3, with: 10)
+    |> model.add_edge(from: 2, to: 4, with: 7)
+    |> model.add_edge(from: 2, to: 5, with: 8)
+    |> model.add_edge(from: 3, to: 6, with: 6)
+    |> model.add_edge(from: 4, to: 7, with: 5)
+    |> model.add_edge(from: 4, to: 8, with: 9)
+    |> model.add_edge(from: 5, to: 7, with: 4)
+    |> model.add_edge(from: 5, to: 9, with: 12)
+    |> model.add_edge(from: 6, to: 8, with: 7)
+    |> model.add_edge(from: 7, to: 10, with: 15)
+    |> model.add_edge(from: 8, to: 9, with: 6)
+    |> model.add_edge(from: 9, to: 10, with: 8)
+
+  io.println("=== City Navigation System ===\n")
+
+  // Find shortest path from Home (1) to Airport (10)
+  let result =
+    pathfinding.shortest_path(
+      in: graph,
+      from: 1,
+      to: 10,
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  case result {
+    option.Some(path) -> {
+      io.println(
+        "Shortest route from Home to Airport: "
+        <> int.to_string(path.total_weight)
+        <> " minutes",
+      )
+      io.println("Route: " <> string.inspect(path.nodes))
+      io.println("\n=== Map Visualization ===\n")
+
+      // Convert graph to string weights for rendering
+      let graph_for_render =
+        graph
+        |> transform.map_edges(int.to_string)
+
+      // Show full map without highlighting
+      let full_map =
+        render.to_mermaid(graph_for_render, render.default_options())
+      io.println("Full city map:")
+      io.println("```mermaid")
+      io.println(full_map)
+      io.println("```\n")
+
+      // Show map with shortest path highlighted
+      let highlighted_options =
+        render.path_to_options(path, render.default_options())
+      let highlighted_map =
+        render.to_mermaid(graph_for_render, highlighted_options)
+
+      io.println("Shortest path highlighted:")
+      io.println("```mermaid")
+      io.println(highlighted_map)
+      io.println("```")
+    }
+    option.None -> io.println("No route found!")
+  }
+}
+```
+
+This outputs:
+
+```mermaid
+graph LR
+  classDef highlight fill:#ffeb3b,stroke:#f57c00,stroke-width:3px
+  classDef highlightEdge stroke:#f57c00,stroke-width:3px
+  1["1"]:::highlight
+  2["2"]:::highlight
+  3["3"]
+  4["4"]
+  5["5"]:::highlight
+  6["6"]
+  7["7"]:::highlight
+  8["8"]
+  9["9"]
+  10["10"]:::highlight
+  1 ---|5| 2:::highlightEdge
+  1 ---|10| 3
+  2 ---|7| 4
+  2 ---|8| 5:::highlightEdge
+  3 ---|6| 6
+  4 ---|5| 7
+  4 ---|9| 8
+  5 ---|4| 7:::highlightEdge
+  5 ---|12| 9
+  6 ---|7| 8
+  7 ---|15| 10:::highlightEdge
+  8 ---|6| 9
+  9 ---|8| 10
+```
+
+#### Custom Labels
+
+If we added the following `options` to the graph in the previous example like the following:
+
+```gleam
+let options = render.MermaidOptions(
+  node_label: fn(id, data) { data <> " (" <> int.to_string(id) <> ")" },
+  edge_label: fn(weight) { weight <> " km" },
+  highlighted_nodes: None,
+  highlighted_edges: None,
+)
+
+let diagram = render.to_mermaid(graph, options)
+```
+
+Then we will see the following mermaid generated:
+
+```mermaid
+graph LR
+  classDef highlight fill:#ffeb3b,stroke:#f57c00,stroke-width:3px
+  classDef highlightEdge stroke:#f57c00,stroke-width:3px
+  1["Home (1)"]:::highlight
+  2["Coffee Shop (2)"]:::highlight
+  3["Park (3)"]
+  4["Office (4)"]
+  5["Gym (5)"]:::highlight
+  6["Restaurant (6)"]
+  7["Mall (7)"]:::highlight
+  8["Library (8)"]
+  9["Hospital (9)"]
+  10["Airport (10)"]:::highlight
+  1 ---|5 km| 2:::highlightEdge
+  1 ---|10 km| 3
+  2 ---|7 km| 4
+  2 ---|8 km| 5:::highlightEdge
+  3 ---|6 km| 6
+  4 ---|5 km| 7
+  4 ---|9 km| 8
+  5 ---|4 km| 7:::highlightEdge
+  5 ---|12 km| 9
+  6 ---|7 km| 8
+  7 ---|15 km| 10:::highlightEdge
+  8 ---|6 km| 9
+  9 ---|8 km| 10
+```
+
+**Time Complexity:** O(V + E)
+
+**Use for:** Documentation, debugging, presentations, teaching algorithms
+
 ## Working with Different Weight Types
 
 Yog is generic over edge weights. You can use any type that supports addition and comparison:
@@ -518,12 +737,13 @@ Run the test suite:
 gleam test
 ```
 
-Alltests pass, covering:
+All 275 tests pass, covering:
 
 - Graph construction and operations
 - All pathfinding algorithms
 - Traversal patterns
 - Graph transformations
+- Graph visualization
 - MST and topological sort
 - Internal data structures (heap, union-find)
 
@@ -534,7 +754,7 @@ Yog is designed with these principles:
 1. **Functional and Immutable**: All operations return new graphs, no mutation
 2. **Generic and Flexible**: Works with any weight type that supports addition and comparison
 3. **Type-Safe**: Leverages Gleam's type system to prevent errors at compile time
-4. **Well-Tested**: Comprehensive test suite with 256 tests
+4. **Well-Tested**: Comprehensive test suite with 275 tests
 5. **Documented**: Every public function has documentation with examples
 6. **Efficient**: Uses optimal algorithms and data structures (pairing heaps, union-find with path compression, O(1) transpose)
 
