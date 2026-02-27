@@ -1,5 +1,8 @@
 import gleam/dict.{type Dict}
+import gleam/list
+import gleam/option.{None, Some}
 import gleam/result
+import gleam/set
 
 /// Disjoint Set Union (Union-Find) data structure.
 ///
@@ -87,5 +90,96 @@ pub fn union(disjoint_set: DisjointSet(a), x: a, y: a) -> DisjointSet(a) {
         }
       }
     }
+  }
+}
+
+/// Creates a disjoint set from a list of pairs to union.
+///
+/// This is a convenience function for building a disjoint set from edge lists
+/// or connection pairs. Perfect for graph problems, AoC, and competitive programming.
+///
+/// ## Example
+/// ```gleam
+/// let dsu = disjoint_set.from_pairs([#(1, 2), #(3, 4), #(2, 3)])
+/// // Results in: {1,2,3,4} as one set
+/// ```
+pub fn from_pairs(pairs: List(#(a, a))) -> DisjointSet(a) {
+  list.fold(pairs, new(), fn(dsu, pair) { union(dsu, pair.0, pair.1) })
+}
+
+/// Checks if two elements are in the same set (connected).
+///
+/// Returns the updated disjoint set (due to path compression) and a boolean result.
+///
+/// ## Example
+/// ```gleam
+/// let dsu = from_pairs([#(1, 2), #(3, 4)])
+/// let #(dsu2, result) = connected(dsu, 1, 2)  // => True
+/// let #(dsu3, result) = connected(dsu2, 1, 3) // => False
+/// ```
+pub fn connected(
+  dsu: DisjointSet(a),
+  x: a,
+  y: a,
+) -> #(DisjointSet(a), Bool) {
+  let #(dsu1, root_x) = find(dsu, x)
+  let #(dsu2, root_y) = find(dsu1, y)
+  #(dsu2, root_x == root_y)
+}
+
+/// Returns the total number of elements in the structure.
+pub fn size(dsu: DisjointSet(a)) -> Int {
+  dict.size(dsu.parents)
+}
+
+/// Returns the number of disjoint sets.
+///
+/// Counts the distinct sets by finding the unique roots.
+///
+/// ## Example
+/// ```gleam
+/// let dsu = from_pairs([#(1, 2), #(3, 4)])
+/// count_sets(dsu)  // => 2 (sets: {1,2} and {3,4})
+/// ```
+pub fn count_sets(dsu: DisjointSet(a)) -> Int {
+  dict.keys(dsu.parents)
+  |> list.map(fn(element) { find_root_readonly(dsu, element) })
+  |> set.from_list()
+  |> set.size()
+}
+
+/// Returns all disjoint sets as a list of lists.
+///
+/// Each inner list contains all members of one set. The order of sets and
+/// elements within sets is unspecified.
+///
+/// Note: This operation doesn't perform path compression, so the structure
+/// is not modified.
+///
+/// ## Example
+/// ```gleam
+/// let dsu = from_pairs([#(1, 2), #(3, 4), #(5, 6)])
+/// to_lists(dsu)  // => [[1, 2], [3, 4], [5, 6]] (order may vary)
+/// ```
+pub fn to_lists(dsu: DisjointSet(a)) -> List(List(a)) {
+  dict.keys(dsu.parents)
+  |> list.fold(dict.new(), fn(acc, element) {
+    let root = find_root_readonly(dsu, element)
+    dict.upsert(acc, root, fn(existing) {
+      case existing {
+        Some(members) -> [element, ..members]
+        None -> [element]
+      }
+    })
+  })
+  |> dict.values()
+}
+
+// Private helper that finds root without path compression (read-only operation)
+fn find_root_readonly(dsu: DisjointSet(a), element: a) -> a {
+  case dict.get(dsu.parents, element) {
+    Error(_) -> element
+    Ok(parent) if parent == element -> element
+    Ok(parent) -> find_root_readonly(dsu, parent)
   }
 }

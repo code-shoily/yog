@@ -102,7 +102,7 @@
 //// - **Functional and Immutable**: All operations return new graphs
 //// - **Generic**: Works with any node/edge data types
 //// - **Type-Safe**: Leverages Gleam's type system
-//// - **Well-Tested**: 435+ tests covering all algorithms and data structures
+//// - **Well-Tested**: 454+ tests covering all algorithms and data structures
 //// - **Efficient**: Optimal data structures (pairing heaps, union-find)
 //// - **Documented**: Every function has examples
 

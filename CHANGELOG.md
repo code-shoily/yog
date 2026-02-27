@@ -10,16 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Disjoint Set / Union-Find (`yog/disjoint_set`)** - Public API for dynamic connectivity with optimal performance
   - Moved from internal implementation to public-facing API (following Loom's approach)
-  - `new()` - Create a new empty disjoint set
-  - `add()` - Add an element to its own singleton set
-  - `find()` - Find the representative (root) of a set with path compression
-  - `union()` - Merge two sets with union by rank
+  - **Core operations:**
+    - `new()` - Create a new empty disjoint set
+    - `add()` - Add an element to its own singleton set
+    - `find()` - Find the representative (root) of a set with path compression
+    - `union()` - Merge two sets with union by rank
+  - **Convenience functions:**
+    - `from_pairs()` - Build from list of pairs (perfect for edge lists)
+    - `connected()` - Check if two elements are in the same set
+    - `size()` - Total number of elements in the structure
+    - `count_sets()` - Number of distinct disjoint sets
+    - `to_lists()` - Extract all sets as list of lists
   - **Time Complexity:** O(α(n)) amortized per operation (practically constant)
   - Path compression flattens tree structure for future queries
   - Union by rank keeps trees balanced
   - Generic over any type (integers, strings, custom types)
   - Auto-adds elements on first find (convenience feature)
-  - 20 comprehensive tests covering creation, find, union, path compression, union by rank, components, stress tests, generic types
+  - 39 comprehensive tests covering creation, find, union, path compression, union by rank, components, stress tests, generic types, and all convenience functions
   - Complete documentation with examples and use cases
   - **Use cases:** Dynamic connectivity, MST (Kruskal's), image segmentation, network connectivity, percolation, maze generation, game dev
 
@@ -95,7 +102,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All references updated (`yog/mst` now imports from public module)
   - Test suite moved from `test/yog/internal/dsu_test.gleam` to `test/yog/disjoint_set_test.gleam`
   - Breaking change if you were using the internal module (but you shouldn't have been!)
-- Test suite expanded to 435 tests (from 374)
+- Test suite expanded to 454 tests (from 374)
+  - Added 19 new tests for disjoint set convenience functions
 - Internal state representation optimized: `visited` changed from `Dict(NodeId, Bool)` to `Set(NodeId)`
 - Parent tracking improved: Changed from sentinel value `-1` to type-safe `Option(NodeId)`
 

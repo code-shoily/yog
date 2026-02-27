@@ -1,4 +1,5 @@
 import gleam/dict
+import gleam/int
 import gleam/list
 import gleeunit/should
 import yog/disjoint_set
@@ -432,4 +433,255 @@ pub fn disjoint_set_with_strings_test() {
 
   root_alice
   |> should.not_equal(root_charlie)
+}
+
+// ============= Convenience Function Tests =============
+
+pub fn from_pairs_empty_test() {
+  let d = disjoint_set.from_pairs([])
+
+  disjoint_set.size(d)
+  |> should.equal(0)
+}
+
+pub fn from_pairs_single_pair_test() {
+  let d = disjoint_set.from_pairs([#(1, 2)])
+
+  let #(d1, root1) = disjoint_set.find(d, 1)
+  let #(_d2, root2) = disjoint_set.find(d1, 2)
+
+  root1
+  |> should.equal(root2)
+}
+
+pub fn from_pairs_multiple_pairs_test() {
+  let d = disjoint_set.from_pairs([#(1, 2), #(3, 4), #(2, 3)])
+
+  // All should be in one set
+  let #(d1, root1) = disjoint_set.find(d, 1)
+  let #(d2, root2) = disjoint_set.find(d1, 2)
+  let #(d3, root3) = disjoint_set.find(d2, 3)
+  let #(_d4, root4) = disjoint_set.find(d3, 4)
+
+  root1
+  |> should.equal(root2)
+
+  root2
+  |> should.equal(root3)
+
+  root3
+  |> should.equal(root4)
+}
+
+pub fn from_pairs_separate_components_test() {
+  let d = disjoint_set.from_pairs([#(1, 2), #(3, 4), #(5, 6)])
+
+  let #(d1, root1) = disjoint_set.find(d, 1)
+  let #(d2, root2) = disjoint_set.find(d1, 2)
+  let #(d3, root3) = disjoint_set.find(d2, 3)
+  let #(_d4, root5) = disjoint_set.find(d3, 5)
+
+  // 1 and 2 connected
+  root1
+  |> should.equal(root2)
+
+  // 1 and 3 not connected
+  root1
+  |> should.not_equal(root3)
+
+  // 1 and 5 not connected
+  root1
+  |> should.not_equal(root5)
+}
+
+pub fn connected_same_set_test() {
+  let d =
+    disjoint_set.new()
+    |> disjoint_set.add(1)
+    |> disjoint_set.add(2)
+    |> disjoint_set.union(1, 2)
+
+  let #(_d1, result) = disjoint_set.connected(d, 1, 2)
+
+  result
+  |> should.be_true()
+}
+
+pub fn connected_different_sets_test() {
+  let d =
+    disjoint_set.new()
+    |> disjoint_set.add(1)
+    |> disjoint_set.add(2)
+    |> disjoint_set.add(3)
+    |> disjoint_set.union(1, 2)
+
+  let #(_d1, result) = disjoint_set.connected(d, 1, 3)
+
+  result
+  |> should.be_false()
+}
+
+pub fn connected_auto_adds_test() {
+  let d = disjoint_set.new()
+
+  // Should auto-add both elements
+  let #(d1, result) = disjoint_set.connected(d, 1, 2)
+
+  result
+  |> should.be_false()
+
+  // Both should now exist
+  disjoint_set.size(d1)
+  |> should.equal(2)
+}
+
+pub fn size_empty_test() {
+  let d = disjoint_set.new()
+
+  disjoint_set.size(d)
+  |> should.equal(0)
+}
+
+pub fn size_after_adds_test() {
+  let d =
+    disjoint_set.new()
+    |> disjoint_set.add(1)
+    |> disjoint_set.add(2)
+    |> disjoint_set.add(3)
+
+  disjoint_set.size(d)
+  |> should.equal(3)
+}
+
+pub fn size_after_union_test() {
+  let d =
+    disjoint_set.new()
+    |> disjoint_set.add(1)
+    |> disjoint_set.add(2)
+    |> disjoint_set.union(1, 2)
+
+  // Union doesn't change size, just connectivity
+  disjoint_set.size(d)
+  |> should.equal(2)
+}
+
+pub fn count_sets_empty_test() {
+  let d = disjoint_set.new()
+
+  disjoint_set.count_sets(d)
+  |> should.equal(0)
+}
+
+pub fn count_sets_all_separate_test() {
+  let d =
+    disjoint_set.new()
+    |> disjoint_set.add(1)
+    |> disjoint_set.add(2)
+    |> disjoint_set.add(3)
+
+  disjoint_set.count_sets(d)
+  |> should.equal(3)
+}
+
+pub fn count_sets_after_unions_test() {
+  let d =
+    disjoint_set.new()
+    |> disjoint_set.add(1)
+    |> disjoint_set.add(2)
+    |> disjoint_set.add(3)
+    |> disjoint_set.add(4)
+    |> disjoint_set.union(1, 2)
+    |> disjoint_set.union(3, 4)
+
+  // Should have 2 sets: {1,2} and {3,4}
+  disjoint_set.count_sets(d)
+  |> should.equal(2)
+}
+
+pub fn count_sets_all_connected_test() {
+  let d =
+    disjoint_set.new()
+    |> disjoint_set.add(1)
+    |> disjoint_set.add(2)
+    |> disjoint_set.add(3)
+    |> disjoint_set.union(1, 2)
+    |> disjoint_set.union(2, 3)
+
+  disjoint_set.count_sets(d)
+  |> should.equal(1)
+}
+
+pub fn to_lists_empty_test() {
+  let d = disjoint_set.new()
+
+  disjoint_set.to_lists(d)
+  |> should.equal([])
+}
+
+pub fn to_lists_single_elements_test() {
+  let d =
+    disjoint_set.new()
+    |> disjoint_set.add(1)
+    |> disjoint_set.add(2)
+    |> disjoint_set.add(3)
+
+  let result = disjoint_set.to_lists(d)
+
+  // Should have 3 singleton sets
+  list.length(result)
+  |> should.equal(3)
+
+  // Each set should have 1 element
+  list.all(result, fn(set) { list.length(set) == 1 })
+  |> should.be_true()
+}
+
+pub fn to_lists_multiple_sets_test() {
+  let d = disjoint_set.from_pairs([#(1, 2), #(3, 4), #(5, 6)])
+
+  let result = disjoint_set.to_lists(d)
+
+  // Should have 3 sets
+  list.length(result)
+  |> should.equal(3)
+
+  // Each set should have 2 elements
+  list.all(result, fn(set) { list.length(set) == 2 })
+  |> should.be_true()
+}
+
+pub fn to_lists_one_large_set_test() {
+  let d = disjoint_set.from_pairs([#(1, 2), #(2, 3), #(3, 4)])
+
+  let result = disjoint_set.to_lists(d)
+
+  // Should have 1 set
+  list.length(result)
+  |> should.equal(1)
+
+  // That set should have 4 elements
+  case result {
+    [set] -> {
+      list.length(set)
+      |> should.equal(4)
+    }
+    _ -> {
+      should.fail()
+    }
+  }
+}
+
+pub fn to_lists_preserves_elements_test() {
+  let d = disjoint_set.from_pairs([#(1, 2), #(3, 4)])
+
+  let result = disjoint_set.to_lists(d)
+
+  // Flatten to get all elements
+  let all_elements =
+    result
+    |> list.flatten()
+    |> list.sort(int.compare)
+
+  all_elements
+  |> should.equal([1, 2, 3, 4])
 }

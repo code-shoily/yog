@@ -353,28 +353,37 @@ A fundamental data structure for tracking disjoint sets with near-constant time 
 ```gleam
 import yog/disjoint_set
 
-let ds =
-  disjoint_set.new()
-  |> disjoint_set.add(1)
-  |> disjoint_set.add(2)
-  |> disjoint_set.add(3)
-  |> disjoint_set.add(4)
-  // Connect 1-2 and 3-4
-  |> disjoint_set.union(1, 2)
-  |> disjoint_set.union(3, 4)
+// Build from pairs (common for edge lists, AoC problems)
+let ds = disjoint_set.from_pairs([
+  #(1, 2), #(3, 4), #(5, 6),  // Three separate components
+])
 
-// Check if elements are in the same set
-let #(ds1, root1) = disjoint_set.find(ds, 1)
-let #(ds2, root2) = disjoint_set.find(ds1, 2)
-root1 == root2  // => True (same set)
+// Check connectivity
+let #(ds1, is_connected) = disjoint_set.connected(ds, 1, 2)  // => True
+let #(ds2, is_connected) = disjoint_set.connected(ds1, 1, 3) // => False
 
-let #(ds3, root3) = disjoint_set.find(ds2, 3)
-root1 == root3  // => False (different sets)
+// Query structure
+disjoint_set.size(ds2)        // => 6 elements
+disjoint_set.count_sets(ds2)  // => 3 sets
 
-// Merge the two components
-let ds4 = disjoint_set.union(ds3, 2, 3)
-// Now all elements are in one set
+// Merge components
+let ds3 = disjoint_set.union(ds2, 2, 3)
+disjoint_set.count_sets(ds3)  // => 2 sets
+
+// Extract final groupings
+disjoint_set.to_lists(ds3)
+// => [[1, 2, 3, 4], [5, 6]] (order may vary)
 ```
+
+**Core Operations:**
+- `new()`, `add()`, `find()`, `union()` - Basic operations
+
+**Convenience Functions:**
+- `from_pairs()` - Build from list of pairs (perfect for edge lists)
+- `connected()` - Check if two elements are in the same set
+- `size()` - Total number of elements
+- `count_sets()` - Number of distinct sets
+- `to_lists()` - Extract all sets as list of lists
 
 **Time Complexity:** O(α(n)) amortized per operation, where α is the inverse Ackermann function (practically constant)
 
