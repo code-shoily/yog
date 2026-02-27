@@ -77,6 +77,11 @@
 //// - **`yog/min_cut`** - Minimum cut algorithms
 ////   - Stoer-Wagner algorithm for global minimum cut
 ////
+//// - **`yog/eulerian`** - Eulerian paths and circuits
+////   - Detection of Eulerian paths and circuits
+////   - Hierholzer's algorithm for finding paths
+////   - Works on both directed and undirected graphs
+////
 //// ### Data Structures
 //// - **`yog/disjoint_set`** - Union-Find / Disjoint Set
 ////   - Path compression and union by rank
@@ -102,7 +107,7 @@
 //// - **Functional and Immutable**: All operations return new graphs
 //// - **Generic**: Works with any node/edge data types
 //// - **Type-Safe**: Leverages Gleam's type system
-//// - **Well-Tested**: 454+ tests covering all algorithms and data structures
+//// - **Well-Tested**: 476+ tests covering all algorithms and data structures
 //// - **Efficient**: Optimal data structures (pairing heaps, union-find)
 //// - **Documented**: Every function has examples
 

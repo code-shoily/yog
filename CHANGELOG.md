@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Eulerian Paths & Circuits (`yog/eulerian`)** - Detection and finding using Hierholzer's algorithm
+  - `has_eulerian_circuit()` - Check if graph has an Eulerian circuit (visits every edge exactly once, returns to start)
+  - `has_eulerian_path()` - Check if graph has an Eulerian path (visits every edge exactly once)
+  - `find_eulerian_circuit()` - Find an Eulerian circuit using Hierholzer's algorithm
+  - `find_eulerian_path()` - Find an Eulerian path using Hierholzer's algorithm
+  - **Circuit conditions (undirected):** All vertices have even degree, graph is connected
+  - **Circuit conditions (directed):** All vertices have equal in/out-degree, graph is connected
+  - **Path conditions (undirected):** Exactly 0 or 2 vertices with odd degree, graph is connected
+  - **Path conditions (directed):** At most one vertex with out-degree > in-degree, one with in-degree > out-degree
+  - **Time Complexity:** O(V + E) for detection, O(E) for finding paths
+  - Works on both directed and undirected graphs
+  - Returns paths as ordered list of node IDs
+  - 26 comprehensive tests covering circuits, paths, directed/undirected graphs, edge cases
+  - Complete documentation with examples and mathematical conditions
+  - **Use cases:** Route planning (mail delivery, snow plowing), DNA sequence reconstruction, circuit design, puzzle solving, network traversal
+
 ## [1.2.2] - 2026-02-27
 
 ### Added

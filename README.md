@@ -21,6 +21,7 @@ A graph algorithm library for Gleam, providing implementations of classic graph 
 - **Topological Sorting**: Kahn's algorithm with lexicographical variant
 - **Strongly Connected Components**: Tarjan's algorithm
 - **Graph Connectivity**: Bridge and articulation point detection (Tarjan's algorithm)
+- **Eulerian Paths & Circuits**: Detection and finding using Hierholzer's algorithm (perfect for route planning and traversal problems)
 - **Disjoint Set (Union-Find)**: Public API with path compression and union by rank for dynamic connectivity
 - **Efficient Data Structures**: Pairing heap for priority queues
 
@@ -345,6 +346,49 @@ let mst_edges = mst.kruskal(
 ```
 
 **Time Complexity:** O(E log E)
+
+### Eulerian Paths & Circuits (`yog/eulerian`)
+
+Detect and find Eulerian paths (visiting every edge exactly once) and circuits using Hierholzer's algorithm.
+
+```gleam
+import yog/eulerian
+
+// Check if a path exists
+let has_path = eulerian.has_eulerian_path(graph)  // => True/False
+let has_circuit = eulerian.has_eulerian_circuit(graph)  // => True/False
+
+// Find the actual path
+case eulerian.find_eulerian_path(graph) {
+  Some(path) -> io.println("Eulerian path: " <> string.inspect(path))
+  None -> io.println("No Eulerian path exists")
+}
+// => Some([1, 2, 3, 4, 1, 5])
+
+// Find a circuit (starts and ends at same vertex)
+case eulerian.find_eulerian_circuit(graph) {
+  Some(circuit) -> io.println("Eulerian circuit: " <> string.inspect(circuit))
+  None -> io.println("No Eulerian circuit exists")
+}
+// => Some([1, 2, 3, 1])
+```
+
+**Conditions:**
+- **Circuit (undirected):** All vertices have even degree, graph is connected
+- **Circuit (directed):** All vertices have equal in/out-degree, graph is connected
+- **Path (undirected):** Exactly 0 or 2 vertices with odd degree, graph is connected
+- **Path (directed):** At most one vertex with (out-degree > in-degree), one with (in-degree > out-degree)
+
+**Time Complexity:**
+- Detection: O(V + E)
+- Finding: O(E)
+
+**Use Cases:**
+- Route planning (mail delivery, snow plowing)
+- DNA sequence reconstruction
+- Circuit design
+- Puzzle solving (Seven Bridges of Königsberg)
+- Network traversal problems
 
 ### Disjoint Set / Union-Find (`yog/disjoint_set`)
 
