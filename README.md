@@ -14,11 +14,13 @@ A graph algorithm library for Gleam, providing implementations of classic graph 
   - Bellman-Ford (supports negative weights, detects cycles)
   - Floyd-Warshall (all-pairs shortest paths)
 - **Graph Traversal**: BFS and DFS with early termination support
-- **Graph Transformations**: Transpose (O(1)!), map nodes/edges, filter, merge
+- **Graph Transformations**: Transpose (O(1)!), map nodes/edges, filter, merge, subgraph extraction, edge contraction
 - **Graph Visualization**: Mermaid, DOT (Graphviz), and JSON rendering with path highlighting
 - **Minimum Spanning Tree**: Kruskal's algorithm with Union-Find
+- **Minimum Cut**: Stoer-Wagner algorithm for global minimum cut (perfect for AoC 2023 Day 25)
 - **Topological Sorting**: Kahn's algorithm with lexicographical variant
 - **Strongly Connected Components**: Tarjan's algorithm
+- **Graph Connectivity**: Bridge and articulation point detection (Tarjan's algorithm)
 - **Efficient Data Structures**: Pairing heap for priority queues, Union-Find with path compression
 
 ## Installation
@@ -343,6 +345,31 @@ let mst_edges = mst.kruskal(
 
 **Time Complexity:** O(E log E)
 
+### Minimum Cut (`yog/min_cut`)
+
+Finds the global minimum cut in an undirected weighted graph using the Stoer-Wagner algorithm. Returns the minimum cut weight and partition sizes—perfect for AoC 2023 Day 25!
+
+```gleam
+import yog/min_cut
+
+let graph =
+  yog.undirected()
+  |> yog.add_node(1, Nil)
+  |> yog.add_node(2, Nil)
+  |> yog.add_node(3, Nil)
+  |> yog.add_node(4, Nil)
+  |> yog.add_edge(from: 1, to: 2, with: 1)
+  |> yog.add_edge(from: 2, to: 3, with: 1)
+  |> yog.add_edge(from: 3, to: 4, with: 10)
+  |> yog.add_edge(from: 4, to: 1, with: 10)
+
+let result = min_cut.global_min_cut(in: graph)
+// Result: MinCut(weight: _, group_a_size: 1, group_b_size: 3)
+// For AoC 2023 Day 25: group_a_size * group_b_size = answer
+```
+
+**Time Complexity:** O(V³) or O(VE + V² log V) with priority queue optimization
+
 ### Topological Sort (`yog/topological_sort`)
 
 Orders nodes such that for every edge (u, v), u comes before v.
@@ -378,6 +405,34 @@ import yog/components
 let sccs = components.strongly_connected_components(graph)
 // => [[1, 2, 3], [4], [5, 6]]
 ```
+
+**Time Complexity:** O(V + E)
+
+### Graph Connectivity (`yog/connectivity`)
+
+Finds bridges (critical edges) and articulation points (cut vertices) in undirected graphs.
+
+```gleam
+import yog/connectivity
+
+let results = connectivity.analyze(in: graph)
+
+// Bridges: edges whose removal disconnects the graph
+results.bridges
+// => [#(1, 2), #(3, 4)]
+
+// Articulation points: nodes whose removal disconnects the graph
+results.articulation_points
+// => [2, 3]
+```
+
+**Bridges** are edges whose removal increases the number of connected components. **Articulation points** (cut vertices) are nodes whose removal increases the number of connected components.
+
+**Use Cases:**
+- Network vulnerability analysis (identifying critical connections)
+- Finding weaknesses in road/communication networks
+- Circuit design (detecting single points of failure)
+- Social network analysis (identifying key connectors)
 
 **Time Complexity:** O(V + E)
 
@@ -439,6 +494,33 @@ let combined = transform.merge(graph1, graph2)
 **Time Complexity:** O(V + E)
 
 **Use for:** Building graphs incrementally, applying patches/updates
+
+#### Extract Subgraphs
+
+```gleam
+// Extract only specific nodes and their connecting edges
+let sub = transform.subgraph(graph, keeping: [2, 3, 5, 7])
+```
+
+**Time Complexity:** O(V + E)
+
+**Use for:** Extracting connected components, analyzing neighborhoods, working with algorithm results (SCCs, cliques)
+
+#### Edge Contraction
+
+```gleam
+// Contract edge by merging node b into node a
+let contracted = transform.contract(
+  in: graph,
+  merge: a,
+  with: b,
+  combine_weights: int.add
+)
+```
+
+**Time Complexity:** O(deg(a) + deg(b))
+
+**Use for:** Stoer-Wagner min-cut, Karger's algorithm, graph simplification, community detection
 
 ### Graph Visualization (`yog/render`)
 
@@ -891,6 +973,7 @@ pathfinding.shortest_path(
 | **BFS/DFS** | Unweighted graphs, exploring reachability | O(V+E) |
 | **Kruskal's MST** | Finding minimum spanning tree | O(E log E) |
 | **Tarjan's SCC** | Finding strongly connected components | O(V+E) |
+| **Tarjan's Connectivity** | Finding bridges and articulation points | O(V+E) |
 | **Topological Sort** | Ordering tasks with dependencies | O(V+E) |
 
 \* Often faster than Dijkstra in practice with good heuristics
@@ -1217,14 +1300,14 @@ Run the test suite:
 gleam test
 ```
 
-All 302 tests pass, covering:
+All 423 tests pass, covering:
 
 - Graph construction and operations
 - All pathfinding algorithms
 - Traversal patterns
 - Graph transformations
 - Graph visualization
-- MST and topological sort
+- MST, topological sort, and connectivity analysis
 - Internal data structures (heap, union-find)
 
 ## Design Philosophy
@@ -1234,7 +1317,7 @@ Yog is designed with these principles:
 1. **Functional and Immutable**: All operations return new graphs, no mutation
 2. **Generic and Flexible**: Works with any weight type that supports addition and comparison
 3. **Type-Safe**: Leverages Gleam's type system to prevent errors at compile time
-4. **Well-Tested**: Comprehensive test suite with 302 tests
+4. **Well-Tested**: Comprehensive test suite with 423 tests
 5. **Documented**: Every public function has documentation with examples
 6. **Efficient**: Uses optimal algorithms and data structures (pairing heaps, union-find with path compression, O(1) transpose)
 

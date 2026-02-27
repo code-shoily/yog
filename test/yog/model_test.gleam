@@ -1,4 +1,5 @@
 import gleam/dict
+import gleam/int
 import gleam/list
 import gleeunit/should
 import yog/model.{Directed, Undirected}
@@ -748,4 +749,230 @@ pub fn successor_ids_consistency_test() {
   // successor_ids should match successors with weights stripped
   successor_ids
   |> should.equal(successors)
+}
+
+// ============= Remove Node Tests =============
+
+pub fn remove_node_basic_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+
+  let graph = model.remove_node(graph, 2)
+
+  dict.size(graph.nodes)
+  |> should.equal(2)
+
+  dict.get(graph.nodes, 2)
+  |> should.equal(Error(Nil))
+
+  dict.get(graph.nodes, 1)
+  |> should.equal(Ok("A"))
+}
+
+pub fn remove_node_with_outgoing_edges_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 2, to: 3, with: 20)
+
+  let graph = model.remove_node(graph, 2)
+
+  // Edge 1->2 should be removed
+  model.successors(graph, 1)
+  |> should.equal([])
+
+  // Edge 2->3 should be removed
+  model.predecessors(graph, 3)
+  |> should.equal([])
+}
+
+pub fn remove_node_with_incoming_edges_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 3, to: 2, with: 30)
+
+  let graph = model.remove_node(graph, 2)
+
+  // Both edges to 2 should be removed
+  model.successors(graph, 1)
+  |> should.equal([])
+
+  model.successors(graph, 3)
+  |> should.equal([])
+}
+
+pub fn remove_node_with_both_edges_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 2, to: 3, with: 20)
+
+  let graph = model.remove_node(graph, 2)
+
+  // Both incoming and outgoing edges removed
+  dict.size(graph.nodes)
+  |> should.equal(2)
+
+  model.successors(graph, 1)
+  |> should.equal([])
+
+  model.predecessors(graph, 3)
+  |> should.equal([])
+}
+
+pub fn remove_node_undirected_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 2, to: 3, with: 20)
+
+  let graph = model.remove_node(graph, 2)
+
+  // Both undirected edges removed
+  model.neighbors(graph, 1)
+  |> should.equal([])
+
+  model.neighbors(graph, 3)
+  |> should.equal([])
+}
+
+pub fn remove_node_isolated_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 3, with: 10)
+
+  let graph = model.remove_node(graph, 2)
+
+  dict.size(graph.nodes)
+  |> should.equal(2)
+
+  // Edge 1->3 should still exist
+  model.successors(graph, 1)
+  |> should.equal([#(3, 10)])
+}
+
+pub fn remove_node_self_loop_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 2, to: 2, with: 10)
+
+  let graph = model.remove_node(graph, 2)
+
+  dict.size(graph.nodes)
+  |> should.equal(1)
+
+  dict.get(graph.nodes, 2)
+  |> should.equal(Error(Nil))
+}
+
+// ============= Add Edge With Combine Tests =============
+
+pub fn add_edge_with_combine_new_edge_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge_with_combine(from: 1, to: 2, with: 10, using: int.add)
+
+  model.successors(graph, 1)
+  |> should.equal([#(2, 10)])
+}
+
+pub fn add_edge_with_combine_existing_edge_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge_with_combine(from: 1, to: 2, with: 5, using: int.add)
+
+  model.successors(graph, 1)
+  |> should.equal([#(2, 15)])
+}
+
+pub fn add_edge_with_combine_multiple_times_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge_with_combine(from: 1, to: 2, with: 5, using: int.add)
+    |> model.add_edge_with_combine(from: 1, to: 2, with: 3, using: int.add)
+
+  model.successors(graph, 1)
+  |> should.equal([#(2, 18)])
+}
+
+pub fn add_edge_with_combine_undirected_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge_with_combine(from: 1, to: 2, with: 5, using: int.add)
+
+  // Both directions should be updated
+  model.successors(graph, 1)
+  |> list.contains(#(2, 15))
+  |> should.be_true()
+
+  model.successors(graph, 2)
+  |> list.contains(#(1, 15))
+  |> should.be_true()
+}
+
+pub fn add_edge_with_combine_different_edges_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge_with_combine(from: 1, to: 3, with: 20, using: int.add)
+    |> model.add_edge_with_combine(from: 1, to: 2, with: 5, using: int.add)
+
+  let edges = model.successors(graph, 1)
+  list.length(edges)
+  |> should.equal(2)
+
+  edges
+  |> list.contains(#(2, 15))
+  |> should.be_true()
+
+  edges
+  |> list.contains(#(3, 20))
+  |> should.be_true()
+}
+
+pub fn add_edge_with_combine_max_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge_with_combine(from: 1, to: 2, with: 15, using: int.max)
+
+  model.successors(graph, 1)
+  |> should.equal([#(2, 15)])
 }

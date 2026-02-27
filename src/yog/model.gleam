@@ -2,6 +2,7 @@ import gleam/dict.{type Dict}
 import gleam/list
 import gleam/option
 import gleam/result
+import yog/internal/utils
 
 /// Unique identifier for a node in the graph.
 pub type NodeId =
@@ -127,6 +128,13 @@ pub fn all_nodes(graph: Graph(n, e)) -> List(NodeId) {
   dict.keys(graph.nodes)
 }
 
+/// Returns the number of nodes in the graph (graph order).
+///
+/// **Time Complexity:** O(1)
+pub fn order(graph: Graph(n, e)) -> Int {
+  dict.size(graph.nodes)
+}
+
 /// Returns just the NodeIds of successors (without edge weights).
 /// Convenient for traversal algorithms that only need the IDs.
 pub fn successor_ids(graph: Graph(n, e), id: NodeId) -> List(NodeId) {
@@ -156,6 +164,126 @@ fn do_add_directed_edge(
 
   let new_out = dict.upsert(graph.out_edges, src, out_update_fn)
   let new_in = dict.upsert(graph.in_edges, dst, in_update_fn)
+
+  Graph(..graph, out_edges: new_out, in_edges: new_in)
+}
+
+/// Removes a node and all its connected edges (incoming and outgoing).
+///
+/// **Time Complexity:** O(deg(v)) - proportional to the number of edges
+/// connected to the node, not the whole graph.
+///
+/// ## Example
+///
+/// ```gleam
+/// let graph =
+///   model.new(Directed)
+///   |> model.add_node(1, "A")
+///   |> model.add_node(2, "B")
+///   |> model.add_node(3, "C")
+///   |> model.add_edge(from: 1, to: 2, with: 10)
+///   |> model.add_edge(from: 2, to: 3, with: 20)
+///
+/// let graph = model.remove_node(graph, 2)
+/// // Node 2 is removed, along with edges 1->2 and 2->3
+/// ```
+pub fn remove_node(graph: Graph(n, e), id: NodeId) -> Graph(n, e) {
+  let targets = successors(graph, id)
+  let sources = predecessors(graph, id)
+
+  let new_nodes = dict.delete(graph.nodes, id)
+
+  let new_out = dict.delete(graph.out_edges, id)
+  let new_in_cleaned =
+    list.fold(targets, graph.in_edges, fn(acc_in, target) {
+      let #(target_id, _) = target
+      utils.dict_update_inner(acc_in, target_id, id, dict.delete)
+    })
+
+  let new_in = dict.delete(new_in_cleaned, id)
+  let new_out_cleaned =
+    list.fold(sources, new_out, fn(acc_out, source) {
+      let #(source_id, _) = source
+      utils.dict_update_inner(acc_out, source_id, id, dict.delete)
+    })
+
+  Graph(..graph, nodes: new_nodes, out_edges: new_out_cleaned, in_edges: new_in)
+}
+
+/// Adds an edge, but if an edge already exists between `src` and `dst`,
+/// it combines the new weight with the existing one using `with_combine`.
+///
+/// The combine function receives `(existing_weight, new_weight)` and should
+/// return the combined weight.
+///
+/// **Time Complexity:** O(1)
+///
+/// ## Example
+///
+/// ```gleam
+/// let graph =
+///   model.new(Directed)
+///   |> model.add_node(1, "A")
+///   |> model.add_node(2, "B")
+///   |> model.add_edge(from: 1, to: 2, with: 10)
+///   |> model.add_edge_with_combine(from: 1, to: 2, with: 5, using: int.add)
+/// // Edge 1->2 now has weight 15 (10 + 5)
+/// ```
+///
+/// ## Use Cases
+///
+/// - **Edge contraction** in graph algorithms (Stoer-Wagner min-cut)
+/// - **Multi-graph support** (adding parallel edges with combined weights)
+/// - **Incremental graph building** (accumulating weights from multiple sources)
+pub fn add_edge_with_combine(
+  graph: Graph(n, e),
+  from src: NodeId,
+  to dst: NodeId,
+  with weight: e,
+  using with_combine: fn(e, e) -> e,
+) -> Graph(n, e) {
+  let graph = do_add_directed_combine(graph, src, dst, weight, with_combine)
+
+  case graph.kind {
+    Directed -> graph
+    Undirected -> do_add_directed_combine(graph, dst, src, weight, with_combine)
+  }
+}
+
+fn do_add_directed_combine(
+  graph: Graph(n, e),
+  src: NodeId,
+  dst: NodeId,
+  weight: e,
+  with_combine: fn(e, e) -> e,
+) -> Graph(n, e) {
+  let update_fn = fn(maybe_inner_map) {
+    case maybe_inner_map {
+      option.Some(m) -> {
+        let new_weight = case dict.get(m, dst) {
+          Ok(existing) -> with_combine(existing, weight)
+          Error(_) -> weight
+        }
+        dict.insert(m, dst, new_weight)
+      }
+      option.None -> dict.from_list([#(dst, weight)])
+    }
+  }
+
+  let new_out = dict.upsert(graph.out_edges, src, update_fn)
+  let new_in =
+    dict.upsert(graph.in_edges, dst, fn(maybe_m) {
+      case maybe_m {
+        option.Some(m) -> {
+          let new_weight = case dict.get(m, src) {
+            Ok(existing) -> with_combine(existing, weight)
+            Error(_) -> weight
+          }
+          dict.insert(m, src, new_weight)
+        }
+        option.None -> dict.from_list([#(src, weight)])
+      }
+    })
 
   Graph(..graph, out_edges: new_out, in_edges: new_in)
 }

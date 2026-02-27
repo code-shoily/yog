@@ -5,7 +5,82 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.1] - Unreleased
+## [1.2.2] - Unreleased
+
+### Added
+- **Graph connectivity analysis (`yog/connectivity`)** - Find bridges and articulation points in undirected graphs
+  - `analyze()` - Tarjan's algorithm for finding bridges and articulation points in a single DFS pass
+  - `Bridge` type representing critical edges whose removal disconnects the graph
+  - `ConnectivityResults` type containing both bridges and articulation points
+  - Bridges are stored in canonical order (lower node ID first) for consistency
+  - Works on disconnected graphs, handling all components in a single pass
+  - Perfect for network vulnerability analysis, finding single points of failure, circuit design
+  - 16 comprehensive tests covering linear chains, cycles, complex graphs, disconnected components, edge cases
+  - Complete documentation with examples and use cases
+  - **Important:** Designed for undirected graphs (use SCC analysis for directed graphs)
+  - **Note:** Standard node-based parent tracking doesn't perfectly handle parallel edges (would need edge IDs)
+
+- **Subgraph extraction (`transform.subgraph`)** - Extract specific nodes and their connecting edges
+  - Takes a list of node IDs and returns a new graph containing only those nodes
+  - Automatically prunes edges whose endpoints are outside the subgraph
+  - Perfect for extracting connected components, analyzing k-hop neighborhoods, working with SCCs
+  - More efficient than `filter_nodes()` when you have explicit IDs rather than a predicate
+  - 10 comprehensive tests covering empty subgraphs, cycles, undirected graphs, complex filtering
+  - Complete documentation with examples and comparison to `filter_nodes()`
+
+- **Edge contraction (`transform.contract`)** - Merge nodes by contracting edges
+  - Merges node `b` into node `a`, redirecting all of b's edges to a
+  - When both nodes share neighbors, edge weights are combined using custom function
+  - Self-loops are automatically removed during contraction
+  - Essential for Stoer-Wagner min-cut algorithm and Karger's randomized min-cut
+  - 11 comprehensive tests covering directed/undirected, weight combining, self-loops, triangles, complex graphs
+  - Complete documentation with examples and use cases
+  - **Note:** For undirected graphs, edges are processed twice (once per direction) causing weights to double when combined
+
+- **Node removal (`model.remove_node`)** - Remove nodes and their connected edges
+  - Efficiently removes a node and all its incoming/outgoing edges
+  - Time complexity: O(deg(v)) - proportional to node degree, not entire graph
+  - Uses new `dict_update_inner` utility for nested dictionary updates
+  - 7 comprehensive tests covering isolated nodes, incoming/outgoing edges, undirected graphs, self-loops
+  - Complete documentation with examples
+
+- **Edge combining (`model.add_edge_with_combine`)** - Add edges with custom weight combining
+  - When adding an edge that already exists, combines weights using custom function
+  - Supports both directed and undirected graphs correctly
+  - Essential building block for edge contraction
+  - 6 comprehensive tests covering multiple additions, different combine functions, undirected behavior
+  - Complete documentation with examples and use cases
+
+- **Dictionary utilities (`internal/utils.dict_update_inner`)** - Helper for nested dictionary updates
+  - Updates inner dictionaries within nested dictionary structures
+  - Used by `remove_node` for efficient edge cleanup
+  - Properly handles missing outer keys
+
+- **Global minimum cut (`yog/min_cut`)** - Find minimum cuts in undirected weighted graphs
+  - `global_min_cut()` - Stoer-Wagner algorithm for finding global minimum cut
+  - Returns `MinCut` type with cut weight and partition sizes (for AoC 2023 Day 25 style problems)
+  - Time complexity: O(V³) or O(VE + V² log V) with optimized priority queue
+  - Implements Maximum Adjacency Search (MAS) as core subroutine
+  - Works by iteratively contracting edges and tracking minimum cut-of-the-phase
+  - Perfect for AoC 2023 Day 25, network reliability, graph partitioning, clustering
+  - 14 comprehensive tests covering single edges, triangles, weighted graphs, bottlenecks, complex graphs, AoC scenarios
+  - Complete documentation with examples and algorithm explanation
+  - **Note:** Weight accumulation during contraction can produce values that differ from simple edge counts, but partitions are correct
+
+### Fixed
+- **Critical bug in `transform.merge()`** - Now correctly performs deep merge of edge dictionaries
+  - Previously, when both graphs had edges from the same node, all edges from the base graph were lost
+  - Example: If base had 1->2, 1->3 and other had 1->4, 1->5, only 1->4 and 1->5 survived (losing 1->2 and 1->3)
+  - Now uses `dict.combine()` with inner merge function to correctly combine all edges
+  - When the same edge exists in both graphs, edge weight from `other` takes precedence (as documented)
+  - Added regression test to prevent future breakage
+
+### Changed
+- Test suite expanded to 435 tests (from 374)
+- Internal state representation optimized: `visited` changed from `Dict(NodeId, Bool)` to `Set(NodeId)`
+- Parent tracking improved: Changed from sentinel value `-1` to type-safe `Option(NodeId)`
+
+## [1.2.1] - 2026-02-26
 
 ### Added
 - **Floyd-Warshall algorithm (`pathfinding.floyd_warshall`)** - All-pairs shortest path computation

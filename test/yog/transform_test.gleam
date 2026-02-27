@@ -1,5 +1,6 @@
 import gleam/dict
 import gleam/int
+import gleam/list
 import gleam/string
 import gleeunit/should
 import yog/model.{Directed, Undirected}
@@ -586,6 +587,48 @@ pub fn merge_preserves_base_graph_type_test() {
   |> should.equal(Directed)
 }
 
+pub fn merge_combines_edges_from_same_node_test() {
+  // Test that merge does a deep merge of inner edge dictionaries
+  let g1 =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 1, to: 3, with: 15)
+
+  let g2 =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(4, "D")
+    |> model.add_node(5, "E")
+    |> model.add_edge(from: 1, to: 4, with: 20)
+    |> model.add_edge(from: 1, to: 5, with: 25)
+
+  let merged = transform.merge(g1, g2)
+
+  // Should have ALL edges from node 1 (not just from g2)
+  let edges = model.successors(merged, 1)
+  list.length(edges)
+  |> should.equal(4)
+
+  edges
+  |> list.contains(#(2, 10))
+  |> should.be_true()
+
+  edges
+  |> list.contains(#(3, 15))
+  |> should.be_true()
+
+  edges
+  |> list.contains(#(4, 20))
+  |> should.be_true()
+
+  edges
+  |> list.contains(#(5, 25))
+  |> should.be_true()
+}
+
 // ============= Combined Operations Tests =============
 
 pub fn map_then_filter_test() {
@@ -646,4 +689,489 @@ pub fn merge_then_map_edges_test() {
 
   model.successors(result, 2)
   |> should.equal([#(3, 2)])
+}
+
+// ============= Subgraph Tests =============
+
+pub fn subgraph_empty_list_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+
+  let sub = transform.subgraph(graph, keeping: [])
+
+  dict.size(sub.nodes)
+  |> should.equal(0)
+
+  dict.size(sub.out_edges)
+  |> should.equal(0)
+}
+
+pub fn subgraph_single_node_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 2, to: 3, with: 20)
+
+  let sub = transform.subgraph(graph, keeping: [2])
+
+  dict.size(sub.nodes)
+  |> should.equal(1)
+
+  dict.get(sub.nodes, 2)
+  |> should.equal(Ok("B"))
+
+  // No edges (isolated node)
+  model.successors(sub, 2)
+  |> should.equal([])
+}
+
+pub fn subgraph_two_connected_nodes_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 2, to: 3, with: 20)
+
+  let sub = transform.subgraph(graph, keeping: [2, 3])
+
+  dict.size(sub.nodes)
+  |> should.equal(2)
+
+  // Edge 2->3 is preserved
+  model.successors(sub, 2)
+  |> should.equal([#(3, 20)])
+
+  // Edge 1->2 is removed (node 1 not in subgraph)
+  model.predecessors(sub, 2)
+  |> should.equal([])
+}
+
+pub fn subgraph_all_nodes_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 2, to: 3, with: 20)
+
+  let sub = transform.subgraph(graph, keeping: [1, 2, 3])
+
+  // Should be identical to original
+  dict.size(sub.nodes)
+  |> should.equal(3)
+
+  model.successors(sub, 1)
+  |> should.equal([#(2, 10)])
+
+  model.successors(sub, 2)
+  |> should.equal([#(3, 20)])
+}
+
+pub fn subgraph_removes_edges_outside_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 2, to: 3, with: 20)
+    |> model.add_edge(from: 3, to: 4, with: 30)
+
+  let sub = transform.subgraph(graph, keeping: [2, 3])
+
+  dict.size(sub.nodes)
+  |> should.equal(2)
+
+  // Edge 2->3 preserved
+  model.successors(sub, 2)
+  |> should.equal([#(3, 20)])
+
+  // Edge 3->4 removed (4 not in subgraph)
+  model.successors(sub, 3)
+  |> should.equal([])
+
+  // Edge 1->2 removed (1 not in subgraph)
+  model.predecessors(sub, 2)
+  |> should.equal([])
+}
+
+pub fn subgraph_with_cycle_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 2, to: 3, with: 20)
+    |> model.add_edge(from: 3, to: 2, with: 25)
+    |> model.add_edge(from: 3, to: 4, with: 30)
+
+  let sub = transform.subgraph(graph, keeping: [2, 3])
+
+  // Cycle 2<->3 should be preserved
+  model.successors(sub, 2)
+  |> should.equal([#(3, 20)])
+
+  model.successors(sub, 3)
+  |> should.equal([#(2, 25)])
+}
+
+pub fn subgraph_undirected_graph_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 2, to: 3, with: 20)
+
+  let sub = transform.subgraph(graph, keeping: [1, 2])
+
+  dict.size(sub.nodes)
+  |> should.equal(2)
+
+  // Undirected edge 1-2 preserved
+  model.neighbors(sub, 1)
+  |> list.contains(#(2, 10))
+  |> should.be_true()
+
+  model.neighbors(sub, 2)
+  |> list.contains(#(1, 10))
+  |> should.be_true()
+
+  // Edge 2-3 removed (3 not in subgraph)
+  model.neighbors(sub, 2)
+  |> list.length()
+  |> should.equal(1)
+}
+
+pub fn subgraph_nonexistent_ids_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+
+  // Request nodes that don't exist
+  let sub = transform.subgraph(graph, keeping: [2, 99, 100])
+
+  // Should only have node 2
+  dict.size(sub.nodes)
+  |> should.equal(1)
+
+  dict.get(sub.nodes, 2)
+  |> should.equal(Ok("B"))
+}
+
+pub fn subgraph_preserves_graph_type_test() {
+  let graph = model.new(Undirected)
+
+  let sub = transform.subgraph(graph, keeping: [])
+
+  sub.kind
+  |> should.equal(Undirected)
+}
+
+pub fn subgraph_complex_graph_test() {
+  // More complex graph to test comprehensive filtering
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_node(5, "E")
+    |> model.add_edge(from: 1, to: 2, with: 12)
+    |> model.add_edge(from: 1, to: 3, with: 13)
+    |> model.add_edge(from: 2, to: 4, with: 24)
+    |> model.add_edge(from: 3, to: 4, with: 34)
+    |> model.add_edge(from: 4, to: 5, with: 45)
+
+  let sub = transform.subgraph(graph, keeping: [1, 2, 3, 4])
+
+  dict.size(sub.nodes)
+  |> should.equal(4)
+
+  // Edges within subgraph preserved
+  model.successors(sub, 1)
+  |> list.length()
+  |> should.equal(2)
+
+  model.successors(sub, 2)
+  |> should.equal([#(4, 24)])
+
+  model.successors(sub, 3)
+  |> should.equal([#(4, 34)])
+
+  // Edge 4->5 removed (5 not in subgraph)
+  model.successors(sub, 4)
+  |> should.equal([])
+}
+
+// ============= Contract Tests =============
+
+pub fn contract_simple_directed_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 2, to: 3, with: 20)
+
+  let contracted = transform.contract(
+    in: graph,
+    merge: 1,
+    with: 2,
+    combine_weights: int.add,
+  )
+
+  // Node 2 should be removed
+  dict.size(contracted.nodes)
+  |> should.equal(2)
+
+  dict.get(contracted.nodes, 2)
+  |> should.equal(Error(Nil))
+
+  // Edge 2->3 should become 1->3
+  model.successors(contracted, 1)
+  |> should.equal([#(3, 20)])
+}
+
+pub fn contract_simple_undirected_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 5)
+    |> model.add_edge(from: 2, to: 3, with: 10)
+
+  let contracted = transform.contract(
+    in: graph,
+    merge: 1,
+    with: 2,
+    combine_weights: int.add,
+  )
+
+  // Node 2 removed, edge 2-3 becomes 1-3
+  dict.size(contracted.nodes)
+  |> should.equal(2)
+
+  // In undirected graphs, edge 2-3 is stored as both 2->3 and 3->2
+  // When contracting, both get processed: 2->3 becomes 1->3, and 3->2 becomes 3->1
+  // Since add_edge_with_combine on undirected adds both directions,
+  // we end up with weight 20 (10 + 10) instead of 10
+  let neighbors = model.neighbors(contracted, 1)
+  list.length(neighbors)
+  |> should.equal(1)
+
+  neighbors
+  |> list.first()
+  |> should.equal(Ok(#(3, 20)))
+}
+
+pub fn contract_combining_weights_test() {
+  // Both a and b have edges to the same neighbor
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 3, with: 5)
+    |> model.add_edge(from: 2, to: 3, with: 10)
+
+  let contracted = transform.contract(
+    in: graph,
+    merge: 1,
+    with: 2,
+    combine_weights: int.add,
+  )
+
+  // Edges to 3 should be combined: 5 + 10 = 15
+  model.successors(contracted, 1)
+  |> should.equal([#(3, 15)])
+}
+
+pub fn contract_both_incoming_and_outgoing_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edge(from: 3, to: 1, with: 30)
+    |> model.add_edge(from: 3, to: 2, with: 32)
+    |> model.add_edge(from: 1, to: 4, with: 14)
+    |> model.add_edge(from: 2, to: 4, with: 24)
+
+  let contracted = transform.contract(
+    in: graph,
+    merge: 1,
+    with: 2,
+    combine_weights: int.add,
+  )
+
+  dict.size(contracted.nodes)
+  |> should.equal(3)
+
+  // Incoming edges to both 1 and 2 from 3 should combine
+  model.predecessors(contracted, 1)
+  |> should.equal([#(3, 62)])
+
+  // Outgoing edges from both 1 and 2 to 4 should combine
+  model.successors(contracted, 1)
+  |> should.equal([#(4, 38)])
+}
+
+pub fn contract_removes_self_loops_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 12)
+    |> model.add_edge(from: 2, to: 3, with: 23)
+
+  let contracted = transform.contract(
+    in: graph,
+    merge: 1,
+    with: 2,
+    combine_weights: int.add,
+  )
+
+  // Edge 1->2 would become 1->1 (self-loop), should be removed
+  model.successors(contracted, 1)
+  |> should.equal([#(3, 23)])
+
+  // No self-loop
+  model.successors(contracted, 1)
+  |> list.any(fn(edge) { edge.0 == 1 })
+  |> should.be_false()
+}
+
+pub fn contract_isolated_nodes_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+
+  let contracted = transform.contract(
+    in: graph,
+    merge: 1,
+    with: 2,
+    combine_weights: int.add,
+  )
+
+  dict.size(contracted.nodes)
+  |> should.equal(2)
+
+  dict.get(contracted.nodes, 1)
+  |> should.equal(Ok("A"))
+
+  dict.get(contracted.nodes, 2)
+  |> should.equal(Error(Nil))
+}
+
+pub fn contract_triangle_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 12)
+    |> model.add_edge(from: 2, to: 3, with: 23)
+    |> model.add_edge(from: 1, to: 3, with: 13)
+
+  let contracted = transform.contract(
+    in: graph,
+    merge: 1,
+    with: 2,
+    combine_weights: int.add,
+  )
+
+  dict.size(contracted.nodes)
+  |> should.equal(2)
+
+  // Edge 1-3 (weight 13) exists
+  // Edge 2-3 is stored as both 2->3 (23) and 3->2 (23)
+  // When contracting: 2->3 becomes 1->3 (combines with existing: 13 + 23 = 36)
+  // Then: 3->2 becomes 3->1 (combines with existing 3->1: 36 + 23 = 59)
+  // Since undirected, 1->3 and 3->1 both get updated to 59
+  model.neighbors(contracted, 1)
+  |> list.filter(fn(edge) { edge.0 == 3 })
+  |> list.first()
+  |> should.equal(Ok(#(3, 59)))
+}
+
+pub fn contract_max_combine_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 3, with: 5)
+    |> model.add_edge(from: 2, to: 3, with: 10)
+
+  let contracted = transform.contract(
+    in: graph,
+    merge: 1,
+    with: 2,
+    combine_weights: int.max,
+  )
+
+  // Should use max instead of add
+  model.successors(contracted, 1)
+  |> should.equal([#(3, 10)])
+}
+
+pub fn contract_complex_graph_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_node(5, "E")
+    |> model.add_edge(from: 1, to: 3, with: 13)
+    |> model.add_edge(from: 2, to: 3, with: 23)
+    |> model.add_edge(from: 2, to: 4, with: 24)
+    |> model.add_edge(from: 3, to: 5, with: 35)
+    |> model.add_edge(from: 4, to: 5, with: 45)
+
+  let contracted = transform.contract(
+    in: graph,
+    merge: 1,
+    with: 2,
+    combine_weights: int.add,
+  )
+
+  dict.size(contracted.nodes)
+  |> should.equal(4)
+
+  // Edges from 1 and 2 to 3 combine
+  model.successors(contracted, 1)
+  |> list.contains(#(3, 36))
+  |> should.be_true()
+
+  // Edge 2->4 becomes 1->4
+  model.successors(contracted, 1)
+  |> list.contains(#(4, 24))
+  |> should.be_true()
+
+  // Other edges remain unchanged
+  model.successors(contracted, 3)
+  |> should.equal([#(5, 35)])
 }
