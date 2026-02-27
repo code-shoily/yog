@@ -82,6 +82,11 @@
 ////   - Hierholzer's algorithm for finding paths
 ////   - Works on both directed and undirected graphs
 ////
+//// - **`yog/bipartite`** - Bipartite graph detection and matching
+////   - Bipartite detection (2-coloring)
+////   - Partition extraction (independent sets)
+////   - Maximum matching (augmenting path algorithm)
+////
 //// ### Data Structures
 //// - **`yog/disjoint_set`** - Union-Find / Disjoint Set
 ////   - Path compression and union by rank
@@ -107,7 +112,7 @@
 //// - **Functional and Immutable**: All operations return new graphs
 //// - **Generic**: Works with any node/edge data types
 //// - **Type-Safe**: Leverages Gleam's type system
-//// - **Well-Tested**: 476+ tests covering all algorithms and data structures
+//// - **Well-Tested**: 494+ tests covering all algorithms and data structures
 //// - **Efficient**: Optimal data structures (pairing heaps, union-find)
 //// - **Documented**: Every function has examples
 

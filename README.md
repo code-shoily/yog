@@ -22,6 +22,7 @@ A graph algorithm library for Gleam, providing implementations of classic graph 
 - **Strongly Connected Components**: Tarjan's algorithm
 - **Graph Connectivity**: Bridge and articulation point detection (Tarjan's algorithm)
 - **Eulerian Paths & Circuits**: Detection and finding using Hierholzer's algorithm (perfect for route planning and traversal problems)
+- **Bipartite Graphs**: Detection (2-coloring) and maximum matching (augmenting path algorithm)
 - **Disjoint Set (Union-Find)**: Public API with path compression and union by rank for dynamic connectivity
 - **Efficient Data Structures**: Pairing heap for priority queues
 
@@ -389,6 +390,54 @@ case eulerian.find_eulerian_circuit(graph) {
 - Circuit design
 - Puzzle solving (Seven Bridges of Königsberg)
 - Network traversal problems
+
+### Bipartite Graphs (`yog/bipartite`)
+
+Detect bipartite graphs (2-colorable) and find maximum matchings using augmenting path algorithm.
+
+```gleam
+import yog/bipartite
+
+// Check if graph is bipartite
+let is_bipartite = bipartite.is_bipartite(graph)  // => True/False
+
+// Get the two partitions (independent sets)
+case bipartite.partition(graph) {
+  Some(bipartite.Partition(left, right)) -> {
+    // left and right are Sets of NodeIds
+    io.println("Graph is bipartite!")
+  }
+  None -> io.println("Not bipartite")
+}
+
+// Find maximum matching
+case bipartite.partition(graph) {
+  Some(p) -> {
+    let matching = bipartite.maximum_matching(graph, p)
+    // => [#(1, 3), #(2, 4)] - list of matched pairs
+    io.println("Matching size: " <> int.to_string(list.length(matching)))
+  }
+  None -> io.println("Not bipartite")
+}
+```
+
+**Bipartite Graph:**
+A graph is bipartite if its vertices can be divided into two disjoint sets such that every edge connects a vertex from one set to a vertex in the other. Equivalently, it's 2-colorable (no odd cycles).
+
+**Maximum Matching:**
+A matching is a set of edges with no common vertices. Maximum matching finds the largest possible matching.
+
+**Time Complexity:**
+- Detection & Partitioning: O(V + E)
+- Maximum Matching: O(V * E)
+
+**Use Cases:**
+- Job assignment problems (workers to tasks)
+- Stable matching (hospitals to residents)
+- Timetable scheduling
+- Resource allocation
+- Network flow problems
+- Hall's marriage theorem applications
 
 ### Disjoint Set / Union-Find (`yog/disjoint_set`)
 

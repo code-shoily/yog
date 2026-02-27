@@ -24,6 +24,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Complete documentation with examples and mathematical conditions
   - **Use cases:** Route planning (mail delivery, snow plowing), DNA sequence reconstruction, circuit design, puzzle solving, network traversal
 
+- **Bipartite Graphs (`yog/bipartite`)** - Detection and maximum matching with augmenting path algorithm
+  - `is_bipartite()` - Check if graph is bipartite (2-colorable)
+  - `partition()` - Get the two independent sets (partitions) of a bipartite graph
+  - `maximum_matching()` - Find maximum matching using augmenting path algorithm
+  - **Partition type:** `Partition(left: Set(NodeId), right: Set(NodeId))` for the two independent sets
+  - **Time Complexity:** O(V + E) for detection/partitioning, O(V * E) for maximum matching
+  - Uses BFS with 2-coloring for bipartite detection
+  - Handles disconnected graphs by checking all components
+  - Augmenting path algorithm for unweighted bipartite matching
+  - Works on both directed and undirected graphs (treats directed as undirected for bipartiteness)
+  - 18 comprehensive tests covering detection, partitioning, perfect matchings, unbalanced graphs, edge cases
+  - Complete documentation with examples and use cases
+  - **Use cases:** Job assignment, stable matching, timetable scheduling, resource allocation, Hall's marriage theorem
+
 ## [1.2.2] - 2026-02-27
 
 ### Added
