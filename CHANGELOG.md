@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 1.2.5
+
+### Added
+- **Maximum Flow (`yog/max_flow`)** - Network flow optimization with highly optimized Edmonds-Karp algorithm
+  - `edmonds_karp()` - Find maximum flow from source to sink using Ford-Fulkerson with BFS
+  - `min_cut()` - Extract minimum cut from max flow result (max-flow min-cut theorem)
+  - **Time Complexity:** O(VE²) - proven theoretical bound with optimized implementation
+  - **Optimizations:**
+    - Flat dictionary for residual capacities instead of Graph structure (5x faster)
+    - Two-list queue (Banker's Queue) for O(1) amortized BFS operations
+    - Tail-recursive flow accumulator prevents stack overflow
+    - Adjacency list built once and reused (structure doesn't change, only capacities)
+    - Fast O(log n) dictionary updates instead of O(E) graph rebuilding
+  - Generic over any numeric type (integers, floats, custom types)
+  - Works on directed graphs (converts undirected to directed with bidirectional edges)
+  - Returns `MaxFlowResult` with max flow value, residual graph, source, and sink
+  - Min-cut extraction via reachability analysis in residual graph
+  - 20 comprehensive tests covering simple flows, parallel paths, complex networks, textbook examples, bipartite matching, min-cut extraction, edge cases
+  - Complete documentation with examples and algorithm explanation
+  - **Use cases:** Network bandwidth allocation, job matching, image segmentation, project selection, bipartite matching, traffic routing, supply chain optimization
+  - **Examples:**
+    - `network_bandwidth.gleam` - Router bandwidth optimization with bottleneck analysis
+    - `job_matching.gleam` - Assignment problem using max flow as bipartite matching
+
+- **Graph Generators (`yog/generators`)** - Create classic graph patterns for testing and prototyping
+  - **Classic patterns module (`yog/generators/classic`)** with 9 generators:
+    - `complete()` / `complete_with_type()` - Complete graph K_n (every node connects to every other)
+    - `cycle()` / `cycle_with_type()` - Cycle graph C_n (nodes form a ring)
+    - `path()` / `path_with_type()` - Path graph P_n (linear chain)
+    - `star()` / `star_with_type()` - Star graph (central hub with spokes)
+    - `wheel()` / `wheel_with_type()` - Wheel graph (cycle with central hub)
+    - `complete_bipartite()` / `complete_bipartite_with_type()` - Complete bipartite K_{m,n}
+    - `binary_tree()` / `binary_tree_with_type()` - Complete binary tree of given depth
+    - `grid_2d()` / `grid_2d_with_type()` - 2D lattice/grid graph
+    - `petersen()` / `petersen_with_type()` - Famous Petersen graph (non-planar, 3-regular)
+  - **Convenience re-exports** in `yog/generators` for common patterns
+  - All generators support both directed and undirected variants
+  - Edges have unit weight (1) by default
+  - Node IDs are sequential integers starting from 0
+  - **Time Complexity:** O(V²) for complete graphs, O(V) or O(VE) for others
+  - 41 comprehensive tests covering all generators, node counts, edge counts, connectivity, degree properties
+  - Complete documentation with examples and mathematical definitions
+  - **Use cases:** Algorithm testing with known properties, benchmarking, education, prototyping, generating test fixtures
+  - **Example:** `graph_generation_showcase.gleam` - Demonstrates all 9 classic patterns with statistics and use cases
+
+### Performance
+- **Max flow performance:** All 568 tests pass in ~2 seconds (down from 28+ seconds before optimization)
+  - Eliminated O(V²) BFS by using two-list queue
+  - Eliminated O(E) adjacency list rebuilds per iteration
+  - Eliminated expensive Graph structure rebuilds with flat dictionary
+- **Generator performance:** Tail-recursive `power()` function prevents stack overflow in binary tree generator
+
+### Changed
+- Test suite expanded to 568 tests (from 511 tests in 1.2.4)
+  - Added 20 tests for maximum flow algorithm
+  - Added 41 tests for graph generators
+  - All tests continue to pass
+
 ## [1.2.4] - 2026-02-27
 
 ### Added

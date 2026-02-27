@@ -9,18 +9,20 @@ A graph algorithm library for Gleam, providing implementations of classic graph 
 
 - **Graph Data Structures**: Directed and undirected graphs with generic node and edge data
 - **Pathfinding Algorithms**: Dijkstra, A*, Bellman-Ford, Floyd-Warshall
+- **Maximum Flow**: Highly optimized Edmonds-Karp algorithm with flat dictionary residuals
+- **Graph Generators**: Create classic patterns (complete, cycle, path, star, wheel, bipartite, trees, grids, Petersen)
 - **Graph Traversal**: BFS and DFS with early termination support
 - **Graph Transformations**: Transpose (O(1)!), map, filter, merge, subgraph extraction, edge contraction
 - **Graph Visualization**: Mermaid, DOT (Graphviz), and JSON rendering
 - **Minimum Spanning Tree**: Kruskal's algorithm with Union-Find
-- **Minimum Cut**: Stoer-Wagner algorithm
+- **Minimum Cut**: Stoer-Wagner algorithm for global min-cut
 - **Topological Sorting**: Kahn's algorithm with lexicographical variant
 - **Strongly Connected Components**: Tarjan's algorithm
 - **Connectivity**: Bridge and articulation point detection
 - **Eulerian Paths & Circuits**: Detection and finding using Hierholzer's algorithm
-- **Bipartite Graphs**: Detection and maximum matching (O(1) lookup!)
+- **Bipartite Graphs**: Detection and maximum matching
 - **Disjoint Set (Union-Find)**: With path compression and union by rank
-- **Efficient Data Structures**: Pairing heap for priority queues
+- **Efficient Data Structures**: Pairing heap for priority queues, two-list queue for BFS
 
 ## Installation
 
@@ -75,12 +77,15 @@ Detailed examples are located in the [examples/](https://github.com/code-shoily/
 - [Task Scheduling](examples/task_scheduling.gleam) - Basic topological sorting.
 - [GPS Navigation](examples/gps_navigation.gleam) - Shortest path using A* and heuristics.
 - [Network Cable Layout](examples/network_cable_layout.gleam) - Minimum Spanning Tree using Kruskal's.
+- [Network Bandwidth](examples/network_bandwidth.gleam) - ⭐ Max flow for bandwidth optimization with bottleneck analysis.
+- [Job Matching](examples/job_matching.gleam) - ⭐ Max flow for bipartite matching and assignment problems.
 - [Cave Path Counting](examples/cave_path_counting.gleam) - Custom DFS with backtracking.
 - [Task Ordering](examples/task_ordering.gleam) - Lexicographical topological sort.
 - [Bridges of Königsberg](examples/bridges_of_konigsberg.gleam) - Eulerian circuit and path detection.
 - [Global Minimum Cut](examples/global_min_cut.gleam) - Stoer-Wagner algorithm.
 - [Job Assignment](examples/job_assignment.gleam) - Bipartite maximum matching.
 - [City Distance Matrix](examples/city_distance_matrix.gleam) - Floyd-Warshall for all-pairs shortest paths.
+- [Graph Generation Showcase](examples/graph_generation_showcase.gleam) - ⭐ All 9 classic graph patterns with statistics.
 - [DOT rendering](examples/render_dot.gleam) - Exporting graphs to Graphviz format.
 - [Mermaid rendering](examples/render_mermaid.gleam) - Generating Mermaid diagrams.
 - [JSON rendering](examples/render_json.gleam) - Exporting graphs to JSON for web use.
@@ -96,18 +101,23 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 | **A*** | Non-negative weights + good heuristic | O((V+E) log V) |
 | **Bellman-Ford** | Negative weights OR cycle detection needed | O(VE) |
 | **Floyd-Warshall** | All-pairs shortest paths, distance matrices | O(V³) |
+| **Edmonds-Karp** | Maximum flow, bipartite matching, network optimization | O(VE²) |
 | **BFS/DFS** | Unweighted graphs, exploring reachability | O(V+E) |
 | **Kruskal's MST** | Finding minimum spanning tree | O(E log E) |
+| **Stoer-Wagner** | Global minimum cut, graph partitioning | O(V³) |
 | **Tarjan's SCC** | Finding strongly connected components | O(V+E) |
 | **Tarjan's Connectivity** | Finding bridges and articulation points | O(V+E) |
+| **Hierholzer** | Eulerian paths/circuits, route planning | O(V+E) |
 | **Topological Sort** | Ordering tasks with dependencies | O(V+E) |
 
 ## Performance Characteristics
 
 - **Graph storage**: O(V + E)
-- **Transpose**: O(1) - dramatically faster than typical O(E) implementations.
-- **Dijkstra/A***: O(V) for visited set and pairing heap.
-- **Maximum Matching**: O(V * E) with O(1) matching lookups.
+- **Transpose**: O(1) - dramatically faster than typical O(E) implementations
+- **Dijkstra/A***: O(V) for visited set and pairing heap
+- **Maximum Flow**: Flat dictionary residuals with O(1) amortized BFS queue operations
+- **Graph Generators**: O(V²) for complete graphs, O(V) or O(VE) for others
+- **Test Suite**: 568 tests pass in ~2 seconds
 
 ---
 
