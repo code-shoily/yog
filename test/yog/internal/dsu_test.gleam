@@ -2,6 +2,7 @@ import gleam/dict
 import gleam/list
 import gleeunit/should
 import yog/internal/dsu
+import yog/internal/utils
 
 // ============= Creation Tests =============
 
@@ -354,15 +355,15 @@ pub fn merge_components_test() {
 
 pub fn large_dsu_test() {
   // Create a DSU with 100 elements
-  let numbers = list.range(1, 100)
+  let numbers = utils.range(1, 100)
 
   let d = list.fold(numbers, dsu.new(), fn(acc, n) { dsu.add(acc, n) })
 
   // Union them into 10 components of 10 elements each
   let d2 =
-    list.range(0, 9)
+    utils.range(0, 9)
     |> list.fold(d, fn(acc, group) {
-      list.range(1, 9)
+      utils.range(1, 9)
       |> list.fold(acc, fn(acc2, i) {
         dsu.union(acc2, group * 10 + 1, group * 10 + i + 1)
       })
@@ -385,13 +386,13 @@ pub fn large_dsu_test() {
 
 pub fn union_all_test() {
   // Create DSU and union all elements into one set
-  let numbers = list.range(1, 50)
+  let numbers = utils.range(1, 50)
 
   let d = list.fold(numbers, dsu.new(), fn(acc, n) { dsu.add(acc, n) })
 
   // Union all to element 1
   let d2 =
-    list.range(2, 50)
+    utils.range(2, 50)
     |> list.fold(d, fn(acc, n) { dsu.union(acc, 1, n) })
 
   // All should have same root

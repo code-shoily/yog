@@ -44,6 +44,7 @@
 import gleam/dict
 import gleam/list
 import gleam/result
+import yog/internal/utils
 import yog/model.{type Graph, type GraphType, type NodeId}
 
 /// A grid builder that wraps a graph and maintains grid dimensions.
@@ -279,7 +280,7 @@ pub fn find_node(
 ) -> Result(NodeId, Nil) {
   // Generate list of all node IDs
   let max_id = grid.rows * grid.cols - 1
-  list.range(0, max_id)
+  utils.range(0, max_id)
   |> list.find_map(fn(id) {
     case dict.get(grid.graph.nodes, id) {
       Ok(data) ->

@@ -4,6 +4,7 @@ import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleeunit/should
+import yog/internal/utils
 import yog/model.{Directed, Undirected}
 import yog/pathfinding
 
@@ -1773,7 +1774,7 @@ pub fn single_source_distances_find_closest_test() {
 // Large star graph (one center, many spokes)
 pub fn single_source_distances_star_test() {
   let graph =
-    list.range(1, 10)
+    utils.range(1, 10)
     |> list.fold(model.new(Directed), fn(g, i) {
       g
       |> model.add_node(0, "Center")

@@ -3,6 +3,7 @@ import gleam/list
 import gleam/order
 import gleeunit/should
 import yog/internal/heap
+import yog/internal/utils
 
 // ============= Creation Tests =============
 
@@ -388,7 +389,7 @@ pub fn two_pass_pairing_even_children_test() {
 
 pub fn large_heap_operations_test() {
   // Build a heap with 100 elements
-  let numbers = list.range(1, 100)
+  let numbers = utils.range(1, 100)
 
   let h =
     list.fold(numbers, heap.new(), fn(h, v) { heap.insert(h, v, int.compare) })
@@ -408,7 +409,7 @@ pub fn large_heap_operations_test() {
 
 pub fn shuffled_large_heap_test() {
   // Create a shuffled list (simulated with reverse and interleaving)
-  let numbers = list.range(1, 50)
+  let numbers = utils.range(1, 50)
   let shuffled = list.reverse(numbers)
 
   let h =

@@ -32,7 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated tests to reflect correct behavior
 
 ### Changed
-- Test suite expanded to 367 tests (from 355)
+- Test suite expanded to 374 tests (from 355)
+- Eliminated all deprecation warnings by replacing `list.range` with internal `utils.range` helper
 
 ## [1.2.0] - 2026-02-26
 
