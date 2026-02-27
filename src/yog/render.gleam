@@ -95,14 +95,12 @@ pub fn to_mermaid(
 
   // Generate node declarations
   let nodes =
-    dict.to_list(graph.nodes)
-    |> list.map(fn(pair) {
-      let #(id, data) = pair
+    dict.fold(graph.nodes, [], fn(acc, id, data) {
       let label = options.node_label(id, data)
       let node_def = "  " <> int.to_string(id) <> "[\"" <> label <> "\"]"
 
       // Add highlight class if this node is in the highlighted list
-      case options.highlighted_nodes {
+      let node_with_highlight = case options.highlighted_nodes {
         Some(highlighted) ->
           case list.contains(highlighted, id) {
             True -> node_def <> ":::highlight"
@@ -110,54 +108,53 @@ pub fn to_mermaid(
           }
         None -> node_def
       }
+      [node_with_highlight, ..acc]
     })
     |> string.join("\n")
 
   // Generate edge declarations
   let edges =
-    dict.to_list(graph.out_edges)
-    |> list.flat_map(fn(pair) {
-      let #(from_id, targets) = pair
-      dict.to_list(targets)
-      |> list.filter_map(fn(target) {
-        let #(to_id, weight) = target
+    dict.fold(graph.out_edges, [], fn(acc, from_id, targets) {
+      let inner_edges =
+        dict.fold(targets, [], fn(inner_acc, to_id, weight) {
+          // For undirected graphs, only render each edge once (when from_id <= to_id)
+          // This prevents showing the same edge twice (once from each direction)
+          case graph.kind {
+            Undirected if from_id > to_id -> inner_acc
+            _ -> {
+              // Choose arrow style based on graph type
+              let arrow = case graph.kind {
+                Directed -> "-->"
+                Undirected -> "---"
+              }
 
-        // For undirected graphs, only render each edge once (when from_id <= to_id)
-        // This prevents showing the same edge twice (once from each direction)
-        case graph.kind {
-          Undirected if from_id > to_id -> Error(Nil)
-          _ -> {
-            // Choose arrow style based on graph type
-            let arrow = case graph.kind {
-              Directed -> "-->"
-              Undirected -> "---"
-            }
+              // Check if this edge should be highlighted
+              let is_highlighted = case options.highlighted_edges {
+                Some(edges) ->
+                  list.contains(edges, #(from_id, to_id))
+                  || list.contains(edges, #(to_id, from_id))
+                None -> False
+              }
 
-            // Check if this edge should be highlighted
-            let is_highlighted = case options.highlighted_edges {
-              Some(edges) ->
-                list.contains(edges, #(from_id, to_id))
-                || list.contains(edges, #(to_id, from_id))
-              None -> False
-            }
+              let edge_def =
+                "  "
+                <> int.to_string(from_id)
+                <> " "
+                <> arrow
+                <> "|"
+                <> options.edge_label(weight)
+                <> "| "
+                <> int.to_string(to_id)
 
-            let edge_def =
-              "  "
-              <> int.to_string(from_id)
-              <> " "
-              <> arrow
-              <> "|"
-              <> options.edge_label(weight)
-              <> "| "
-              <> int.to_string(to_id)
-
-            case is_highlighted {
-              True -> Ok(edge_def <> ":::highlightEdge")
-              False -> Ok(edge_def)
+              let edge_with_highlight = case is_highlighted {
+                True -> edge_def <> ":::highlightEdge"
+                False -> edge_def
+              }
+              [edge_with_highlight, ..inner_acc]
             }
           }
-        }
-      })
+        })
+      list.flatten([inner_edges, acc])
     })
     |> string.join("\n")
 
@@ -288,13 +285,10 @@ pub fn to_dot(graph: Graph(String, String), options: DotOptions) -> String {
   let base_edge_style = "  edge [fontname=\"Helvetica\", fontsize=10];\n"
 
   let nodes =
-    dict.to_list(graph.nodes)
-    |> list.map(fn(pair) {
-      let #(id, data) = pair
+    dict.fold(graph.nodes, [], fn(acc, id, data) {
       let label = options.node_label(id, data)
       let id_str = int.to_string(id)
 
-      // REPLACED GUARD WITH NESTED CASE
       let mut_attrs = case options.highlighted_nodes {
         Some(highlighted) -> {
           case list.contains(highlighted, id) {
@@ -305,58 +299,59 @@ pub fn to_dot(graph: Graph(String, String), options: DotOptions) -> String {
         }
         None -> ""
       }
-      "  " <> id_str <> " [label=\"" <> label <> "\"" <> mut_attrs <> "];"
+      [
+        "  " <> id_str <> " [label=\"" <> label <> "\"" <> mut_attrs <> "];",
+        ..acc
+      ]
     })
     |> string.join("\n")
 
   let edges =
-    dict.to_list(graph.out_edges)
-    |> list.flat_map(fn(pair) {
-      let #(from_id, targets) = pair
-      dict.to_list(targets)
-      |> list.filter_map(fn(target) {
-        let #(to_id, weight) = target
-
-        // Handle undirected deduplication
-        let is_valid = case graph.kind {
-          Undirected -> from_id <= to_id
-          Directed -> True
-        }
-
-        case is_valid {
-          False -> Error(Nil)
-          True -> {
-            let connector = case graph.kind {
-              Directed -> " -> "
-              Undirected -> " -- "
-            }
-
-            let is_highlighted = case options.highlighted_edges {
-              Some(highlighted) ->
-                list.contains(highlighted, #(from_id, to_id))
-                || list.contains(highlighted, #(to_id, from_id))
-              None -> False
-            }
-
-            let mut_attrs = case is_highlighted {
-              True -> " color=\"" <> options.highlight_color <> "\", penwidth=2"
-              False -> ""
-            }
-
-            Ok(
-              "  "
-              <> int.to_string(from_id)
-              <> connector
-              <> int.to_string(to_id)
-              <> " [label=\""
-              <> options.edge_label(weight)
-              <> "\""
-              <> mut_attrs
-              <> "];",
-            )
+    dict.fold(graph.out_edges, [], fn(acc, from_id, targets) {
+      let inner_edges =
+        dict.fold(targets, [], fn(inner_acc, to_id, weight) {
+          // Handle undirected deduplication
+          let is_valid = case graph.kind {
+            Undirected -> from_id <= to_id
+            Directed -> True
           }
-        }
-      })
+
+          case is_valid {
+            False -> inner_acc
+            True -> {
+              let connector = case graph.kind {
+                Directed -> " -> "
+                Undirected -> " -- "
+              }
+
+              let is_highlighted = case options.highlighted_edges {
+                Some(highlighted) ->
+                  list.contains(highlighted, #(from_id, to_id))
+                  || list.contains(highlighted, #(to_id, from_id))
+                None -> False
+              }
+
+              let mut_attrs = case is_highlighted {
+                True ->
+                  " color=\"" <> options.highlight_color <> "\", penwidth=2"
+                False -> ""
+              }
+
+              let edge_def =
+                "  "
+                <> int.to_string(from_id)
+                <> connector
+                <> int.to_string(to_id)
+                <> " [label=\""
+                <> options.edge_label(weight)
+                <> "\""
+                <> mut_attrs
+                <> "];"
+              [edge_def, ..inner_acc]
+            }
+          }
+        })
+      list.flatten([inner_edges, acc])
     })
     |> string.join("\n")
 
@@ -481,24 +476,20 @@ pub fn default_json_options() -> JsonOptions {
 /// ````
 pub fn to_json(graph: Graph(String, String), options: JsonOptions) -> String {
   let nodes_json =
-    dict.to_list(graph.nodes)
-    |> list.map(fn(pair) {
-      let #(id, data) = pair
-      options.node_mapper(id, data)
+    dict.fold(graph.nodes, [], fn(acc, id, data) {
+      [options.node_mapper(id, data), ..acc]
     })
 
   let edges_json =
-    dict.to_list(graph.out_edges)
-    |> list.flat_map(fn(pair) {
-      let #(from_id, targets) = pair
-      dict.to_list(targets)
-      |> list.filter_map(fn(target) {
-        let #(to_id, weight) = target
-        case graph.kind {
-          Undirected if from_id > to_id -> Error(Nil)
-          _ -> Ok(options.edge_mapper(from_id, to_id, weight))
-        }
-      })
+    dict.fold(graph.out_edges, [], fn(acc, from_id, targets) {
+      let inner_edges =
+        dict.fold(targets, [], fn(inner_acc, to_id, weight) {
+          case graph.kind {
+            Undirected if from_id > to_id -> inner_acc
+            _ -> [options.edge_mapper(from_id, to_id, weight), ..inner_acc]
+          }
+        })
+      list.flatten([inner_edges, acc])
     })
 
   json.to_string(

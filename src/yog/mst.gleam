@@ -28,18 +28,19 @@ pub fn kruskal(
 ) -> List(Edge(e)) {
   let node_ids = dict.keys(graph.nodes)
   let edges =
-    dict.to_list(graph.out_edges)
-    |> list.flat_map(fn(entry) {
-      let #(from_id, targets) = entry
-      dict.to_list(targets)
-      |> list.filter_map(fn(target) {
-        let #(to_id, weight) = target
-        // For Undirected, only keep edges where from < to to avoid duplicates
-        case graph.kind == Undirected && from_id > to_id {
-          True -> Error(Nil)
-          False -> Ok(Edge(from: from_id, to: to_id, weight: weight))
-        }
-      })
+    dict.fold(graph.out_edges, [], fn(acc, from_id, targets) {
+      let inner_edges =
+        dict.fold(targets, [], fn(inner_acc, to_id, weight) {
+          // For Undirected, only keep edges where from < to to avoid duplicates
+          case graph.kind == Undirected && from_id > to_id {
+            True -> inner_acc
+            False -> [
+              Edge(from: from_id, to: to_id, weight: weight),
+              ..inner_acc
+            ]
+          }
+        })
+      list.flatten([inner_edges, acc])
     })
     |> list.sort(fn(a, b) { compare(a.weight, b.weight) })
 

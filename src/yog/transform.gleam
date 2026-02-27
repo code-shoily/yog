@@ -70,10 +70,7 @@ pub fn transpose(graph: Graph(n, e)) -> Graph(n, e) {
 /// })
 /// ```
 pub fn map_nodes(graph: Graph(n, e), with fun: fn(n) -> m) -> Graph(m, e) {
-  let new_nodes =
-    dict.to_list(graph.nodes)
-    |> list.map(fn(pair) { #(pair.0, fun(pair.1)) })
-    |> dict.from_list()
+  let new_nodes = dict.map_values(graph.nodes, fn(_id, data) { fun(data) })
 
   Graph(..graph, nodes: new_nodes)
 }
@@ -118,15 +115,13 @@ pub fn map_nodes(graph: Graph(n, e), with fun: fn(n) -> m) -> Graph(m, e) {
 /// ```
 pub fn map_edges(graph: Graph(n, e), with fun: fn(e) -> f) -> Graph(n, f) {
   let transform_inner = fn(inner_map) {
-    dict.to_list(inner_map)
-    |> list.map(fn(pair) { #(pair.0, fun(pair.1)) })
-    |> dict.from_list()
+    dict.map_values(inner_map, fn(_dst, weight) { fun(weight) })
   }
 
   let transform_outer = fn(outer_map) {
-    dict.to_list(outer_map)
-    |> list.map(fn(pair) { #(pair.0, transform_inner(pair.1)) })
-    |> dict.from_list()
+    dict.map_values(outer_map, fn(_src, inner_map) {
+      transform_inner(inner_map)
+    })
   }
 
   Graph(
