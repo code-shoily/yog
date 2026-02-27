@@ -117,11 +117,7 @@ pub fn from_pairs(pairs: List(#(a, a))) -> DisjointSet(a) {
 /// let #(dsu2, result) = connected(dsu, 1, 2)  // => True
 /// let #(dsu3, result) = connected(dsu2, 1, 3) // => False
 /// ```
-pub fn connected(
-  dsu: DisjointSet(a),
-  x: a,
-  y: a,
-) -> #(DisjointSet(a), Bool) {
+pub fn connected(dsu: DisjointSet(a), x: a, y: a) -> #(DisjointSet(a), Bool) {
   let #(dsu1, root_x) = find(dsu, x)
   let #(dsu2, root_y) = find(dsu1, y)
   #(dsu2, root_x == root_y)

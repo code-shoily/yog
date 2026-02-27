@@ -469,7 +469,7 @@ pub fn connectivity_square_with_diagonal_test() {
     |> yog.add_edge(from: 4, to: 3, with: 1)
     |> yog.add_edge(from: 3, to: 1, with: 1)
     |> yog.add_edge(from: 1, to: 4, with: 1)
-    // Diagonal
+  // Diagonal
 
   let result = connectivity.analyze(in: graph)
 

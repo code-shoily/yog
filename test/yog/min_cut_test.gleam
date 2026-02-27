@@ -305,7 +305,7 @@ pub fn min_cut_self_loop_test() {
     |> yog.add_edge(from: 1, to: 2, with: 1)
     |> yog.add_edge(from: 2, to: 3, with: 1)
     |> yog.add_edge(from: 1, to: 1, with: 100)
-    // Self-loop
+  // Self-loop
 
   let result = min_cut.global_min_cut(in: graph)
 

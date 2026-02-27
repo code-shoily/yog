@@ -930,12 +930,8 @@ pub fn contract_simple_directed_test() {
     |> model.add_edge(from: 1, to: 2, with: 10)
     |> model.add_edge(from: 2, to: 3, with: 20)
 
-  let contracted = transform.contract(
-    in: graph,
-    merge: 1,
-    with: 2,
-    combine_weights: int.add,
-  )
+  let contracted =
+    transform.contract(in: graph, merge: 1, with: 2, combine_weights: int.add)
 
   // Node 2 should be removed
   dict.size(contracted.nodes)
@@ -958,12 +954,8 @@ pub fn contract_simple_undirected_test() {
     |> model.add_edge(from: 1, to: 2, with: 5)
     |> model.add_edge(from: 2, to: 3, with: 10)
 
-  let contracted = transform.contract(
-    in: graph,
-    merge: 1,
-    with: 2,
-    combine_weights: int.add,
-  )
+  let contracted =
+    transform.contract(in: graph, merge: 1, with: 2, combine_weights: int.add)
 
   // Node 2 removed, edge 2-3 becomes 1-3
   dict.size(contracted.nodes)
@@ -992,12 +984,8 @@ pub fn contract_combining_weights_test() {
     |> model.add_edge(from: 1, to: 3, with: 5)
     |> model.add_edge(from: 2, to: 3, with: 10)
 
-  let contracted = transform.contract(
-    in: graph,
-    merge: 1,
-    with: 2,
-    combine_weights: int.add,
-  )
+  let contracted =
+    transform.contract(in: graph, merge: 1, with: 2, combine_weights: int.add)
 
   // Edges to 3 should be combined: 5 + 10 = 15
   model.successors(contracted, 1)
@@ -1016,12 +1004,8 @@ pub fn contract_both_incoming_and_outgoing_test() {
     |> model.add_edge(from: 1, to: 4, with: 14)
     |> model.add_edge(from: 2, to: 4, with: 24)
 
-  let contracted = transform.contract(
-    in: graph,
-    merge: 1,
-    with: 2,
-    combine_weights: int.add,
-  )
+  let contracted =
+    transform.contract(in: graph, merge: 1, with: 2, combine_weights: int.add)
 
   dict.size(contracted.nodes)
   |> should.equal(3)
@@ -1044,12 +1028,8 @@ pub fn contract_removes_self_loops_test() {
     |> model.add_edge(from: 1, to: 2, with: 12)
     |> model.add_edge(from: 2, to: 3, with: 23)
 
-  let contracted = transform.contract(
-    in: graph,
-    merge: 1,
-    with: 2,
-    combine_weights: int.add,
-  )
+  let contracted =
+    transform.contract(in: graph, merge: 1, with: 2, combine_weights: int.add)
 
   // Edge 1->2 would become 1->1 (self-loop), should be removed
   model.successors(contracted, 1)
@@ -1068,12 +1048,8 @@ pub fn contract_isolated_nodes_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
 
-  let contracted = transform.contract(
-    in: graph,
-    merge: 1,
-    with: 2,
-    combine_weights: int.add,
-  )
+  let contracted =
+    transform.contract(in: graph, merge: 1, with: 2, combine_weights: int.add)
 
   dict.size(contracted.nodes)
   |> should.equal(2)
@@ -1095,12 +1071,8 @@ pub fn contract_triangle_test() {
     |> model.add_edge(from: 2, to: 3, with: 23)
     |> model.add_edge(from: 1, to: 3, with: 13)
 
-  let contracted = transform.contract(
-    in: graph,
-    merge: 1,
-    with: 2,
-    combine_weights: int.add,
-  )
+  let contracted =
+    transform.contract(in: graph, merge: 1, with: 2, combine_weights: int.add)
 
   dict.size(contracted.nodes)
   |> should.equal(2)
@@ -1125,12 +1097,8 @@ pub fn contract_max_combine_test() {
     |> model.add_edge(from: 1, to: 3, with: 5)
     |> model.add_edge(from: 2, to: 3, with: 10)
 
-  let contracted = transform.contract(
-    in: graph,
-    merge: 1,
-    with: 2,
-    combine_weights: int.max,
-  )
+  let contracted =
+    transform.contract(in: graph, merge: 1, with: 2, combine_weights: int.max)
 
   // Should use max instead of add
   model.successors(contracted, 1)
@@ -1151,12 +1119,8 @@ pub fn contract_complex_graph_test() {
     |> model.add_edge(from: 3, to: 5, with: 35)
     |> model.add_edge(from: 4, to: 5, with: 45)
 
-  let contracted = transform.contract(
-    in: graph,
-    merge: 1,
-    with: 2,
-    combine_weights: int.add,
-  )
+  let contracted =
+    transform.contract(in: graph, merge: 1, with: 2, combine_weights: int.add)
 
   dict.size(contracted.nodes)
   |> should.equal(4)
