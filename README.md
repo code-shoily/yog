@@ -81,6 +81,9 @@ Detailed examples are located in the [examples/](https://github.com/code-shoily/
 - [Global Minimum Cut](examples/global_min_cut.gleam) - Stoer-Wagner algorithm.
 - [Job Assignment](examples/job_assignment.gleam) - Bipartite maximum matching.
 - [City Distance Matrix](examples/city_distance_matrix.gleam) - Floyd-Warshall for all-pairs shortest paths.
+- [DOT rendering](examples/render_dot.gleam) - Exporting graphs to Graphviz format.
+- [Mermaid rendering](examples/render_mermaid.gleam) - Generating Mermaid diagrams.
+- [JSON rendering](examples/render_json.gleam) - Exporting graphs to JSON for web use.
 
 ## Algorithm Selection Guide
 
