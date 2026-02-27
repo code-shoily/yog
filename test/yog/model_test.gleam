@@ -559,9 +559,12 @@ pub fn all_nodes_no_edges_test() {
     |> model.add_node(2, "Node B")
     |> model.add_node(3, "Node C")
 
-  // Note: all_nodes only returns nodes that have edges, not isolated nodes
-  model.all_nodes(graph)
-  |> should.equal([])
+  // all_nodes returns ALL nodes, including isolated nodes with no edges
+  let result = model.all_nodes(graph)
+  list.length(result) |> should.equal(3)
+  list.contains(result, 1) |> should.be_true()
+  list.contains(result, 2) |> should.be_true()
+  list.contains(result, 3) |> should.be_true()
 }
 
 // Test all_nodes on directed graph with edges
@@ -577,9 +580,9 @@ pub fn all_nodes_directed_test() {
 
   let result = model.all_nodes(graph)
 
-  // Should include nodes 1, 2, and 3 (all have edges)
+  // Should include ALL nodes, including isolated node 4
   list.length(result)
-  |> should.equal(3)
+  |> should.equal(4)
 
   list.contains(result, 1)
   |> should.be_true()
@@ -590,9 +593,9 @@ pub fn all_nodes_directed_test() {
   list.contains(result, 3)
   |> should.be_true()
 
-  // Node 4 has no edges, so should not be included
+  // Node 4 has no edges, but should still be included
   list.contains(result, 4)
-  |> should.be_false()
+  |> should.be_true()
 }
 
 // Test all_nodes on undirected graph
@@ -606,13 +609,17 @@ pub fn all_nodes_undirected_test() {
 
   let result = model.all_nodes(graph)
 
+  // Should include ALL nodes, including isolated node 3
   list.length(result)
-  |> should.equal(2)
+  |> should.equal(3)
 
   list.contains(result, 1)
   |> should.be_true()
 
   list.contains(result, 2)
+  |> should.be_true()
+
+  list.contains(result, 3)
   |> should.be_true()
 }
 

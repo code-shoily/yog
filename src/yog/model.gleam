@@ -121,11 +121,10 @@ pub fn neighbors(graph: Graph(n, e), id: NodeId) -> List(#(NodeId, e)) {
   }
 }
 
-/// Returns all unique node IDs that have edges in the graph.
-/// This includes all nodes that appear in either out_edges or in_edges.
+/// Returns all node IDs in the graph.
+/// This includes all nodes, even isolated nodes with no edges.
 pub fn all_nodes(graph: Graph(n, e)) -> List(NodeId) {
-  list.flatten([dict.keys(graph.out_edges), dict.keys(graph.in_edges)])
-  |> list.unique()
+  dict.keys(graph.nodes)
 }
 
 /// Returns just the NodeIds of successors (without edge weights).
