@@ -10,7 +10,7 @@ A graph algorithm library for Gleam, providing implementations of classic graph 
 - **Graph Data Structures**: Directed and undirected graphs with generic node and edge data
 - **Pathfinding Algorithms**: Dijkstra, A*, Bellman-Ford, Floyd-Warshall
 - **Maximum Flow**: Highly optimized Edmonds-Karp algorithm with flat dictionary residuals
-- **Graph Generators**: Create classic patterns (complete, cycle, path, star, wheel, bipartite, trees, grids, Petersen)
+- **Graph Generators**: Create classic patterns (complete, cycle, path, star, wheel, bipartite, trees, grids) and random graphs (Erdős-Rényi, Barabási-Albert, Watts-Strogatz)
 - **Graph Traversal**: BFS and DFS with early termination support
 - **Graph Transformations**: Transpose (O(1)!), map, filter, merge, subgraph extraction, edge contraction
 - **Graph Visualization**: Mermaid, DOT (Graphviz), and JSON rendering
@@ -120,7 +120,7 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 - **Maximum Flow**: Flat dictionary residuals with O(1) amortized BFS queue operations
 - **Graph Generators**: O(V²) for complete graphs, O(V) or O(VE) for others
 - **Stable Marriage**: O(n²) Gale-Shapley with deterministic proposal ordering
-- **Test Suite**: 580 tests pass in ~2 seconds
+- **Test Suite**: 589 tests pass in ~2 seconds
 
 ---
 

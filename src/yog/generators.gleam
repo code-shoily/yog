@@ -3,7 +3,8 @@
 //// This module provides convenient re-exports of graph generation functions
 //// from specialized sub-modules:
 ////
-//// - **`yog/generators/classic`** - Classic graph patterns (complete, cycle, path, star, etc.)
+//// - **`yog/generators/classic`** - Deterministic graph patterns (complete, cycle, path, star, etc.)
+//// - **`yog/generators/random`** - Stochastic graph models (Erdős-Rényi, Barabási-Albert, Watts-Strogatz, etc.)
 ////
 //// ## Quick Start
 ////
@@ -15,6 +16,11 @@
 ////   let complete = generators.complete(5)
 ////   let cycle = generators.cycle(6)
 ////   let tree = generators.binary_tree(3)
+////
+////   // Generate random graphs
+////   let random = generators.erdos_renyi_gnp(100, 0.05)
+////   let scale_free = generators.barabasi_albert(100, 3)
+////   let small_world = generators.watts_strogatz(100, 4, 0.1)
 //// }
 //// ```
 ////
@@ -22,12 +28,15 @@
 ////
 //// ```gleam
 //// import yog/generators/classic
+//// import yog/generators/random
 ////
 //// let petersen = classic.petersen()
+//// let er_graph = random.erdos_renyi_gnm(50, 100)
 //// ```
 
-// Re-export commonly used classic patterns for convenience
+// Re-export commonly used patterns for convenience
 import yog/generators/classic
+import yog/generators/random
 
 // Complete graphs
 pub const complete = classic.complete
@@ -78,3 +87,24 @@ pub const grid_2d_with_type = classic.grid_2d_with_type
 pub const petersen = classic.petersen
 
 pub const petersen_with_type = classic.petersen_with_type
+
+// Random graphs
+pub const erdos_renyi_gnp = random.erdos_renyi_gnp
+
+pub const erdos_renyi_gnp_with_type = random.erdos_renyi_gnp_with_type
+
+pub const erdos_renyi_gnm = random.erdos_renyi_gnm
+
+pub const erdos_renyi_gnm_with_type = random.erdos_renyi_gnm_with_type
+
+pub const barabasi_albert = random.barabasi_albert
+
+pub const barabasi_albert_with_type = random.barabasi_albert_with_type
+
+pub const watts_strogatz = random.watts_strogatz
+
+pub const watts_strogatz_with_type = random.watts_strogatz_with_type
+
+pub const random_tree = random.random_tree
+
+pub const random_tree_with_type = random.random_tree_with_type
