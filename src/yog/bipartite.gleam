@@ -1,6 +1,8 @@
 import gleam/dict.{type Dict}
+import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/result
 import gleam/set.{type Set}
 import yog/model.{type Graph, type NodeId}
 
@@ -346,6 +348,236 @@ fn try_neighbors(
           }
         }
       }
+    }
+  }
+}
+
+// ============= Stable Marriage Problem =============
+
+/// Result of the stable marriage algorithm.
+///
+/// Contains the matched pairs and allows querying the partner of any person.
+pub type StableMarriage {
+  StableMarriage(matches: Dict(NodeId, NodeId))
+}
+
+/// Finds a stable matching given preference lists for two groups.
+///
+/// Uses the Gale-Shapley algorithm to find a stable matching where no two people
+/// would both prefer each other over their current partners.
+///
+/// The algorithm is "proposer-optimal" - it finds the best stable matching for
+/// the proposing group (left), and the worst stable matching for the receiving
+/// group (right).
+///
+/// ## Parameters
+///
+/// - `left_prefs` - Dict mapping each left person to their preference list (most preferred first)
+/// - `right_prefs` - Dict mapping each right person to their preference list (most preferred first)
+///
+/// ## Returns
+///
+/// A `StableMarriage` containing the matched pairs. Use `get_partner()` to query matches.
+///
+/// ## Example
+///
+/// ```gleam
+/// // Medical residency matching
+/// let residents = dict.from_list([
+///   #(1, [101, 102, 103]),  // Resident 1 prefers hospitals 101, 102, 103
+///   #(2, [102, 101, 103]),
+///   #(3, [101, 103, 102]),
+/// ])
+///
+/// let hospitals = dict.from_list([
+///   #(101, [1, 2, 3]),      // Hospital 101 prefers residents 1, 2, 3
+///   #(102, [2, 1, 3]),
+///   #(103, [1, 2, 3]),
+/// ])
+///
+/// let matching = bipartite.stable_marriage(residents, hospitals)
+/// case get_partner(matching, 1) {
+///   Some(hospital) -> io.println("Resident 1 matched to hospital " <> int.to_string(hospital))
+///   None -> io.println("Resident 1 unmatched")
+/// }
+/// ```
+///
+/// ## Properties
+///
+/// - **Stable:** No two people would both prefer each other over their current partners
+/// - **Complete:** Everyone is matched (if groups are equal size)
+/// - **Optimal for proposers:** Left group gets best stable matching possible
+/// - **Pessimal for receivers:** Right group gets worst stable matching possible
+///
+/// **Time Complexity:** O(n²) where n is the size of each group
+///
+/// ## Use Cases
+///
+/// - Medical residency matching (NRMP)
+/// - College admissions
+/// - Job assignments
+/// - Roommate pairing
+/// - Task allocation
+pub fn stable_marriage(
+  left_prefs: Dict(NodeId, List(NodeId)),
+  right_prefs: Dict(NodeId, List(NodeId)),
+) -> StableMarriage {
+  // Build ranking maps for O(1) preference lookups
+  let right_rankings = build_rankings(right_prefs)
+
+  // Initialize: all left people are free, all right people are unmatched
+  // Sort keys for deterministic proposal order
+  let free_left =
+    dict.to_list(left_prefs)
+    |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
+    |> list.map(fn(pair) { pair.0 })
+  let matches = dict.new()
+  let next_proposal = dict.new()
+
+  let final_matches =
+    gale_shapley(free_left, left_prefs, right_rankings, matches, next_proposal)
+
+  StableMarriage(matches: final_matches)
+}
+
+/// Get the partner of a person in a stable matching.
+///
+/// Returns `Some(partner)` if the person is matched, `None` otherwise.
+pub fn get_partner(marriage: StableMarriage, person: NodeId) -> Option(NodeId) {
+  dict.get(marriage.matches, person)
+  |> option.from_result()
+}
+
+// Build ranking map: for each right person, map their preferences to ranks (0, 1, 2, ...)
+// This allows O(1) comparison of preferences
+fn build_rankings(
+  prefs: Dict(NodeId, List(NodeId)),
+) -> Dict(NodeId, Dict(NodeId, Int)) {
+  dict.fold(prefs, dict.new(), fn(rankings, person, pref_list) {
+    let ranking =
+      list.index_fold(pref_list, dict.new(), fn(rank_map, candidate, index) {
+        dict.insert(rank_map, candidate, index)
+      })
+    dict.insert(rankings, person, ranking)
+  })
+}
+
+// Gale-Shapley algorithm main loop
+fn gale_shapley(
+  free_left: List(NodeId),
+  left_prefs: Dict(NodeId, List(NodeId)),
+  right_rankings: Dict(NodeId, Dict(NodeId, Int)),
+  matches: Dict(NodeId, NodeId),
+  next_proposal: Dict(NodeId, Int),
+) -> Dict(NodeId, NodeId) {
+  case free_left {
+    [] -> matches
+    [proposer, ..rest_free] -> {
+      // Get proposer's preference list
+      let pref_list = dict.get(left_prefs, proposer) |> result.unwrap([])
+
+      // Get index of next person to propose to
+      let proposal_index = dict.get(next_proposal, proposer) |> result.unwrap(0)
+
+      case list.drop(pref_list, proposal_index) {
+        [] ->
+          gale_shapley(
+            rest_free,
+            left_prefs,
+            right_rankings,
+            matches,
+            next_proposal,
+          )
+        [receiver, ..] -> {
+          // Update next proposal index
+          let updated_next =
+            dict.insert(next_proposal, proposer, proposal_index + 1)
+
+          // Check if receiver is currently matched
+          case get_current_match(matches, receiver) {
+            None -> {
+              // Receiver is free, accept proposal
+              let new_matches =
+                matches
+                |> dict.insert(proposer, receiver)
+                |> dict.insert(receiver, proposer)
+
+              gale_shapley(
+                rest_free,
+                left_prefs,
+                right_rankings,
+                new_matches,
+                updated_next,
+              )
+            }
+            Some(current_partner) -> {
+              // Receiver is matched, check if they prefer proposer
+              case
+                prefers(right_rankings, receiver, proposer, current_partner)
+              {
+                True -> {
+                  // Receiver prefers proposer, switch partners
+                  let new_matches =
+                    matches
+                    |> dict.delete(current_partner)
+                    |> dict.insert(proposer, receiver)
+                    |> dict.insert(receiver, proposer)
+
+                  // Current partner becomes free
+                  let new_free = [current_partner, ..rest_free]
+
+                  gale_shapley(
+                    new_free,
+                    left_prefs,
+                    right_rankings,
+                    new_matches,
+                    updated_next,
+                  )
+                }
+                False -> {
+                  // Receiver rejects proposer, proposer stays free
+                  gale_shapley(
+                    [proposer, ..rest_free],
+                    left_prefs,
+                    right_rankings,
+                    matches,
+                    updated_next,
+                  )
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Get the current match for a person (considering bidirectional matching)
+fn get_current_match(
+  matches: Dict(NodeId, NodeId),
+  person: NodeId,
+) -> Option(NodeId) {
+  dict.get(matches, person)
+  |> option.from_result()
+}
+
+// Check if receiver prefers proposer over current_partner using ranking map
+fn prefers(
+  rankings: Dict(NodeId, Dict(NodeId, Int)),
+  receiver: NodeId,
+  proposer: NodeId,
+  current_partner: NodeId,
+) -> Bool {
+  case dict.get(rankings, receiver) {
+    Error(_) -> False
+    Ok(receiver_ranking) -> {
+      let proposer_rank =
+        dict.get(receiver_ranking, proposer) |> result.unwrap(999_999)
+      let current_rank =
+        dict.get(receiver_ranking, current_partner) |> result.unwrap(999_999)
+
+      proposer_rank < current_rank
     }
   }
 }

@@ -50,18 +50,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Use cases:** Algorithm testing with known properties, benchmarking, education, prototyping, generating test fixtures
   - **Example:** `graph_generation_showcase.gleam` - Demonstrates all 9 classic patterns with statistics and use cases
 
+- **Stable Marriage Algorithm (`yog/bipartite`)** - Gale-Shapley algorithm for stable matching
+  - `stable_marriage()` - Find stable matching given preference lists for two groups
+  - `get_partner()` - Query matched partner for any person in the matching
+  - **Time Complexity:** O(n²) where n is the size of each group
+  - **Properties:**
+    - **Stable:** No two people would both prefer each other over their current partners
+    - **Complete:** Everyone is matched when groups are equal size
+    - **Proposer-optimal:** Left group (proposers) gets best stable matching possible
+    - **Receiver-pessimal:** Right group gets worst stable matching possible
+  - Deterministic proposal ordering for consistent results
+  - Generic over any comparable node ID type
+  - Handles unbalanced groups (some may remain unmatched)
+  - Supports incomplete preference lists
+  - 14 comprehensive tests covering classic scenarios, stability checks, medical residency, unbalanced groups, edge cases
+  - Complete documentation with algorithm explanation and examples
+  - **Use cases:** Medical residency matching (NRMP), college admissions, job assignments, roommate pairing, task allocation
+  - **Example:** `medical_residency.gleam` - Realistic NRMP-style matching with 5 residents and 5 hospitals
+
 ### Performance
-- **Max flow performance:** All 568 tests pass in ~2 seconds (down from 28+ seconds before optimization)
+- **Max flow performance:** All tests pass in ~2 seconds (down from 28+ seconds before optimization)
   - Eliminated O(V²) BFS by using two-list queue
   - Eliminated O(E) adjacency list rebuilds per iteration
   - Eliminated expensive Graph structure rebuilds with flat dictionary
 - **Generator performance:** Tail-recursive `power()` function prevents stack overflow in binary tree generator
 
 ### Changed
-- Test suite expanded to 568 tests (from 511 tests in 1.2.4)
+- Test suite expanded to 580 tests (from 511 tests in 1.2.4)
   - Added 20 tests for maximum flow algorithm
   - Added 41 tests for graph generators
-  - All tests continue to pass
+  - Added 14 tests for stable marriage algorithm
+  - All tests continue to pass in ~2 seconds
 
 ## [1.2.4] - 2026-02-27
 

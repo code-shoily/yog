@@ -20,7 +20,7 @@ A graph algorithm library for Gleam, providing implementations of classic graph 
 - **Strongly Connected Components**: Tarjan's algorithm
 - **Connectivity**: Bridge and articulation point detection
 - **Eulerian Paths & Circuits**: Detection and finding using Hierholzer's algorithm
-- **Bipartite Graphs**: Detection and maximum matching
+- **Bipartite Graphs**: Detection, maximum matching, and stable marriage (Gale-Shapley)
 - **Disjoint Set (Union-Find)**: With path compression and union by rank
 - **Efficient Data Structures**: Pairing heap for priority queues, two-list queue for BFS
 
@@ -84,6 +84,7 @@ Detailed examples are located in the [examples/](https://github.com/code-shoily/
 - [Bridges of Königsberg](examples/bridges_of_konigsberg.gleam) - Eulerian circuit and path detection.
 - [Global Minimum Cut](examples/global_min_cut.gleam) - Stoer-Wagner algorithm.
 - [Job Assignment](examples/job_assignment.gleam) - Bipartite maximum matching.
+- [Medical Residency](examples/medical_residency.gleam) - Stable marriage matching (Gale-Shapley algorithm).
 - [City Distance Matrix](examples/city_distance_matrix.gleam) - Floyd-Warshall for all-pairs shortest paths.
 - [Graph Generation Showcase](examples/graph_generation_showcase.gleam) - ⭐ All 9 classic graph patterns with statistics.
 - [DOT rendering](examples/render_dot.gleam) - Exporting graphs to Graphviz format.
@@ -109,6 +110,7 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 | **Tarjan's Connectivity** | Finding bridges and articulation points | O(V+E) |
 | **Hierholzer** | Eulerian paths/circuits, route planning | O(V+E) |
 | **Topological Sort** | Ordering tasks with dependencies | O(V+E) |
+| **Gale-Shapley** | Stable matching, college admissions, medical residency | O(n²) |
 
 ## Performance Characteristics
 
@@ -117,7 +119,8 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 - **Dijkstra/A***: O(V) for visited set and pairing heap
 - **Maximum Flow**: Flat dictionary residuals with O(1) amortized BFS queue operations
 - **Graph Generators**: O(V²) for complete graphs, O(V) or O(VE) for others
-- **Test Suite**: 568 tests pass in ~2 seconds
+- **Stable Marriage**: O(n²) Gale-Shapley with deterministic proposal ordering
+- **Test Suite**: 580 tests pass in ~2 seconds
 
 ---
 
