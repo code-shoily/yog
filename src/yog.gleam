@@ -116,6 +116,7 @@
 //// - **Efficient**: Optimal data structures (pairing heaps, union-find)
 //// - **Documented**: Every function has examples
 
+import gleam/list
 import yog/model
 
 // Re-export commonly used types for convenience
@@ -284,6 +285,68 @@ pub fn neighbors(graph: Graph(n, e), id: NodeId) -> List(#(NodeId, e)) {
 /// Returns all unique node IDs that have edges in the graph.
 pub fn all_nodes(graph: Graph(n, e)) -> List(NodeId) {
   model.all_nodes(graph)
+}
+
+/// Creates a graph from a list of edges #(src, dst, weight).
+///
+/// ## Example
+///
+/// ```gleam
+/// let graph = yog.from_edges(model.Directed, [#(1, 2, 10), #(2, 3, 5)])
+/// ```
+pub fn from_edges(
+  graph_type: GraphType,
+  edges: List(#(NodeId, NodeId, e)),
+) -> Graph(Nil, e) {
+  list.fold(edges, new(graph_type), fn(g, edge) {
+    let #(src, dst, weight) = edge
+    g
+    |> add_node(src, Nil)
+    |> add_node(dst, Nil)
+    |> add_edge(from: src, to: dst, with: weight)
+  })
+}
+
+/// Creates a graph from a list of unweighted edges #(src, dst).
+///
+/// ## Example
+///
+/// ```gleam
+/// let graph = yog.from_unweighted_edges(model.Directed, [#(1, 2), #(2, 3)])
+/// ```
+pub fn from_unweighted_edges(
+  graph_type: GraphType,
+  edges: List(#(NodeId, NodeId)),
+) -> Graph(Nil, Nil) {
+  list.fold(edges, new(graph_type), fn(g, edge) {
+    let #(src, dst) = edge
+    g
+    |> add_node(src, Nil)
+    |> add_node(dst, Nil)
+    |> add_unweighted_edge(from: src, to: dst)
+  })
+}
+
+/// Creates a graph from an adjacency list #(src, List(#(dst, weight))).
+///
+/// ## Example
+///
+/// ```gleam
+/// let graph = yog.from_adjacency_list(model.Directed, [#(1, [#(2, 10), #(3, 5)])])
+/// ```
+pub fn from_adjacency_list(
+  graph_type: GraphType,
+  adj_list: List(#(NodeId, List(#(NodeId, e)))),
+) -> Graph(Nil, e) {
+  list.fold(adj_list, new(graph_type), fn(g, entry) {
+    let #(src, edges) = entry
+    list.fold(edges, add_node(g, src, Nil), fn(acc, edge) {
+      let #(dst, weight) = edge
+      acc
+      |> add_node(dst, Nil)
+      |> add_edge(from: src, to: dst, with: weight)
+    })
+  })
 }
 
 /// Returns just the NodeIds of successors (without edge data).

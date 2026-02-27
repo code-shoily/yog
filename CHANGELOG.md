@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.4] - 2026-02-27
+
+### Added
+- **Graph creation helpers (`yog`)** - Convenient bulk graph construction functions
+  - `from_edges()` - Create graph from list of `#(src, dst, weight)` tuples
+  - `from_unweighted_edges()` - Create graph from list of `#(src, dst)` tuples (edges have `Nil` weight)
+  - `from_adjacency_list()` - Create graph from adjacency list `#(src, List(#(dst, weight)))`
+  - All functions automatically create nodes as needed
+  - Perfect for quick graph construction from parsed data, test fixtures, and bulk initialization
+  - 10 comprehensive tests covering directed/undirected graphs, empty inputs, and edge cases
+
+- **Labeled builder convenience functions (`yog/builder/labeled`)** - Bulk creation with labels
+  - `from_list()` - Create labeled graph from list of `#(src_label, dst_label, weight)` tuples
+  - `from_unweighted_list()` - Create labeled graph from list of `#(src_label, dst_label)` tuples
+  - Matches API of main `yog` module for consistency
+  - Enables rapid graph construction with string or custom-type node identifiers
+  - Perfect for parsing input data, building test graphs, and ergonomic graph construction
+  - 10 comprehensive tests including pathfinding integration test
+
+- **Graph creation example (`examples/graph_creation.gleam`)** - Comprehensive guide showing 10 different ways to create graphs
+  - Demonstrates builder pattern, edge lists, adjacency lists, labeled builders, and all variants
+  - Shows differences between directed/undirected, weighted/unweighted, simple edges
+  - Practical examples for each creation method with clear explanations
+  - Helps users choose the right approach for their use case
+
+### Changed
+- **README refactored** - Improved documentation structure and clarity
+- Test suite expanded to 511 tests (from 494) - Added 17 new tests for graph creation helpers
+
 ## [1.2.3] - 2026-02-27
 
 ### Added

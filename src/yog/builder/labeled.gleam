@@ -279,6 +279,40 @@ pub fn to_graph(builder: Builder(label, e)) -> Graph(label, e) {
   builder.graph
 }
 
+/// Creates a labeled graph builder from a list of edges #(src_label, dst_label, weight).
+///
+/// ## Example
+///
+/// ```gleam
+/// let builder = labeled.from_list(model.Directed, [#("A", "B", 10), #("B", "C", 5)])
+/// ```
+pub fn from_list(
+  graph_type: GraphType,
+  edges: List(#(label, label, e)),
+) -> Builder(label, e) {
+  list.fold(edges, new(graph_type), fn(b, edge) {
+    let #(src, dst, weight) = edge
+    add_edge(b, from: src, to: dst, with: weight)
+  })
+}
+
+/// Creates a labeled graph builder from a list of unweighted edges #(src_label, dst_label).
+///
+/// ## Example
+///
+/// ```gleam
+/// let builder = labeled.from_unweighted_list(model.Directed, [#("A", "B"), #("B", "C")])
+/// ```
+pub fn from_unweighted_list(
+  graph_type: GraphType,
+  edges: List(#(label, label)),
+) -> Builder(label, Nil) {
+  list.fold(edges, new(graph_type), fn(b, edge) {
+    let #(src, dst) = edge
+    add_unweighted_edge(b, from: src, to: dst)
+  })
+}
+
 /// Returns all labels that have been added to the builder.
 ///
 /// ## Example

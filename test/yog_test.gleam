@@ -136,3 +136,121 @@ pub fn add_unweighted_edge_undirected_test() {
   yog.successors(graph, 2)
   |> should.equal([#(1, Nil)])
 }
+
+pub fn from_edges_directed_test() {
+  let graph =
+    yog.from_edges(model.Directed, [#(1, 2, 10), #(2, 3, 5), #(1, 3, 20)])
+
+  // Should have all nodes
+  yog.all_nodes(graph)
+  |> should.equal([1, 2, 3])
+
+  // Should have correct edges
+  yog.successors(graph, 1)
+  |> should.equal([#(2, 10), #(3, 20)])
+
+  yog.successors(graph, 2)
+  |> should.equal([#(3, 5)])
+}
+
+pub fn from_edges_undirected_test() {
+  let graph = yog.from_edges(model.Undirected, [#(1, 2, 5)])
+
+  // Should be bidirectional
+  yog.successors(graph, 1)
+  |> should.equal([#(2, 5)])
+
+  yog.successors(graph, 2)
+  |> should.equal([#(1, 5)])
+}
+
+pub fn from_edges_empty_test() {
+  let graph = yog.from_edges(model.Directed, [])
+
+  yog.all_nodes(graph)
+  |> should.equal([])
+}
+
+pub fn from_unweighted_edges_test() {
+  let graph = yog.from_unweighted_edges(model.Directed, [#(1, 2), #(2, 3)])
+
+  // Should have all nodes
+  yog.all_nodes(graph)
+  |> should.equal([1, 2, 3])
+
+  // Edges should have Nil weight
+  yog.successors(graph, 1)
+  |> should.equal([#(2, Nil)])
+
+  yog.successors(graph, 2)
+  |> should.equal([#(3, Nil)])
+}
+
+pub fn from_unweighted_edges_undirected_test() {
+  let graph = yog.from_unweighted_edges(model.Undirected, [#(1, 2), #(2, 3)])
+
+  // Should be bidirectional
+  yog.successors(graph, 1)
+  |> should.equal([#(2, Nil)])
+
+  yog.successors(graph, 2)
+  |> should.equal([#(1, Nil), #(3, Nil)])
+}
+
+pub fn from_adjacency_list_test() {
+  let graph =
+    yog.from_adjacency_list(model.Directed, [
+      #(1, [#(2, 10), #(3, 5)]),
+      #(2, [#(3, 3)]),
+    ])
+
+  // Should have all nodes
+  yog.all_nodes(graph)
+  |> should.equal([1, 2, 3])
+
+  // Should have correct edges
+  yog.successors(graph, 1)
+  |> should.equal([#(2, 10), #(3, 5)])
+
+  yog.successors(graph, 2)
+  |> should.equal([#(3, 3)])
+
+  yog.successors(graph, 3)
+  |> should.equal([])
+}
+
+pub fn from_adjacency_list_single_node_test() {
+  let graph = yog.from_adjacency_list(model.Directed, [#(1, [])])
+
+  // Should have the node with no edges
+  yog.all_nodes(graph)
+  |> should.equal([1])
+
+  yog.successors(graph, 1)
+  |> should.equal([])
+}
+
+pub fn from_adjacency_list_empty_test() {
+  let graph = yog.from_adjacency_list(model.Directed, [])
+
+  yog.all_nodes(graph)
+  |> should.equal([])
+}
+
+pub fn from_adjacency_list_undirected_test() {
+  let graph =
+    yog.from_adjacency_list(model.Undirected, [
+      #(1, [#(2, 5)]),
+      #(2, [#(3, 3)]),
+    ])
+
+  // Undirected means edges go both ways
+  yog.successors(graph, 1)
+  |> should.equal([#(2, 5)])
+
+  yog.successors(graph, 2)
+  |> should.equal([#(1, 5), #(3, 3)])
+
+  yog.successors(graph, 3)
+  |> should.equal([#(2, 3)])
+}

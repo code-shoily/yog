@@ -346,3 +346,133 @@ pub fn add_simple_edge_aoc_example_test() {
   |> list.length()
   |> should.equal(4)
 }
+
+pub fn from_list_directed_test() {
+  let builder =
+    labeled.from_list(Directed, [
+      #("A", "B", 10),
+      #("B", "C", 5),
+      #("A", "C", 20),
+    ])
+
+  // Should have all labels
+  let labels = labeled.all_labels(builder)
+  list.length(labels)
+  |> should.equal(3)
+
+  list.contains(labels, "A")
+  |> should.be_true()
+  list.contains(labels, "B")
+  |> should.be_true()
+  list.contains(labels, "C")
+  |> should.be_true()
+
+  // Should have correct edges
+  let assert Ok(a_successors) = labeled.successors(builder, "A")
+  list.length(a_successors)
+  |> should.equal(2)
+
+  let assert Ok(b_successors) = labeled.successors(builder, "B")
+  b_successors
+  |> should.equal([#("C", 5)])
+}
+
+pub fn from_list_undirected_test() {
+  let builder = labeled.from_list(Undirected, [#("A", "B", 5)])
+
+  // Should be bidirectional
+  let assert Ok(a_successors) = labeled.successors(builder, "A")
+  a_successors
+  |> should.equal([#("B", 5)])
+
+  let assert Ok(b_successors) = labeled.successors(builder, "B")
+  b_successors
+  |> should.equal([#("A", 5)])
+}
+
+pub fn from_list_empty_test() {
+  let builder = labeled.from_list(Directed, [])
+
+  labeled.all_labels(builder)
+  |> should.equal([])
+}
+
+pub fn from_list_integer_labels_test() {
+  let builder = labeled.from_list(Directed, [#(100, 200, 42), #(200, 300, 99)])
+
+  let assert Ok(successors) = labeled.successors(builder, 100)
+  successors
+  |> should.equal([#(200, 42)])
+}
+
+pub fn from_unweighted_list_test() {
+  let builder =
+    labeled.from_unweighted_list(Directed, [
+      #("A", "B"),
+      #("B", "C"),
+      #("A", "C"),
+    ])
+
+  // Should have all labels
+  let labels = labeled.all_labels(builder)
+  list.length(labels)
+  |> should.equal(3)
+
+  // Should have Nil weight edges
+  let assert Ok(a_successors) = labeled.successors(builder, "A")
+  list.length(a_successors)
+  |> should.equal(2)
+
+  // Check that the edge data is Nil
+  let assert Ok([#(_, edge_data), ..]) = labeled.successors(builder, "A")
+  edge_data
+  |> should.equal(Nil)
+}
+
+pub fn from_unweighted_list_undirected_test() {
+  let builder = labeled.from_unweighted_list(Undirected, [#("X", "Y")])
+
+  // Should be bidirectional
+  let assert Ok(x_successors) = labeled.successors(builder, "X")
+  x_successors
+  |> should.equal([#("Y", Nil)])
+
+  let assert Ok(y_successors) = labeled.successors(builder, "Y")
+  y_successors
+  |> should.equal([#("X", Nil)])
+}
+
+pub fn from_unweighted_list_empty_test() {
+  let builder = labeled.from_unweighted_list(Directed, [])
+
+  labeled.all_labels(builder)
+  |> should.equal([])
+}
+
+pub fn from_list_pathfinding_integration_test() {
+  // Build a graph using from_list and verify pathfinding works
+  let builder =
+    labeled.from_list(Directed, [
+      #("home", "work", 10),
+      #("work", "gym", 5),
+      #("home", "gym", 20),
+    ])
+
+  let graph = labeled.to_graph(builder)
+  let assert Ok(home_id) = labeled.get_id(builder, "home")
+  let assert Ok(gym_id) = labeled.get_id(builder, "gym")
+
+  let assert Some(path) =
+    pathfinding.shortest_path(
+      in: graph,
+      from: home_id,
+      to: gym_id,
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // Should take the shorter path through work
+  path.total_weight
+  |> should.equal(15)
+}
