@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 1.2.5
+## [Unreleased] - 1.3.0
 
 ### Added
 - **Maximum Flow (`yog/max_flow`)**: Edmonds-Karp algorithm with `edmonds_karp()` and `min_cut()` functions. Supports generic numeric types. Examples: `network_bandwidth.gleam`, `job_matching.gleam`.
@@ -83,7 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Connected components: Tarjan's SCC
 - Graph transformations: transpose, map, filter, merge
 
-[1.2.5]: https://github.com/code-shoily/yog/compare/v1.2.4...v1.2.5
+[1.3.0]: https://github.com/code-shoily/yog/compare/v1.2.4...v1.3.0
 [1.2.4]: https://github.com/code-shoily/yog/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/code-shoily/yog/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/code-shoily/yog/compare/v1.2.1...v1.2.2
