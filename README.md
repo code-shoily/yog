@@ -1205,6 +1205,8 @@ Yog has been used to solve challenging problems from Advent of Code and other do
 
 - **[2022 Day 12: Hill Climbing Algorithm](https://github.com/code-shoily/aocgl/blob/main/src/year_2022/day_12.gleam)** - Heightmap pathfinding using the grid builder (`yog/builder/grid`), A* search, single-source distances, and graph transposition for reverse pathfinding
 
+- **[2022 Day 16: Proboscidea Volcanium](https://github.com/code-shoily/aocgl/blob/main/src/year_2022/day_16.gleam)** - Valve network optimization using Floyd-Warshall for all-pairs shortest paths preprocessing, labeled graphs for parsing, and DFS with bitmask state tracking to maximize pressure release (single agent and two-agent variants)
+
 *Have you used Yog in your project? [Open a PR](https://github.com/code-shoily/yog) to add it here!*
 
 ## Testing
