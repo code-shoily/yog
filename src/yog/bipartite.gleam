@@ -116,10 +116,7 @@ pub fn maximum_matching(
   partition: Partition,
 ) -> List(#(NodeId, NodeId)) {
   // Start with empty matching
-  let matching = Matching(
-    left_to_right: dict.new(),
-    right_to_left: dict.new(),
-  )
+  let matching = Matching(left_to_right: dict.new(), right_to_left: dict.new())
 
   // Try to find augmenting path from each left vertex
   let left_list = set.to_list(partition.left)
@@ -146,7 +143,10 @@ pub fn maximum_matching(
 }
 
 type Matching {
-  Matching(left_to_right: Dict(NodeId, NodeId), right_to_left: Dict(NodeId, NodeId))
+  Matching(
+    left_to_right: Dict(NodeId, NodeId),
+    right_to_left: Dict(NodeId, NodeId),
+  )
 }
 
 // ============= Helper Functions =============
@@ -286,20 +286,18 @@ fn try_neighbors(
 
           case dict.get(matching.right_to_left, right_node) {
             Error(_) -> {
-              Some(
-                Matching(
-                  left_to_right: dict.insert(
-                    matching.left_to_right,
-                    left_node,
-                    right_node,
-                  ),
-                  right_to_left: dict.insert(
-                    matching.right_to_left,
-                    right_node,
-                    left_node,
-                  ),
+              Some(Matching(
+                left_to_right: dict.insert(
+                  matching.left_to_right,
+                  left_node,
+                  right_node,
                 ),
-              )
+                right_to_left: dict.insert(
+                  matching.right_to_left,
+                  right_node,
+                  left_node,
+                ),
+              ))
             }
             Ok(matched_left) -> {
               case
@@ -330,20 +328,18 @@ fn try_neighbors(
                     visited,
                   )
                 Some(updated_matching) -> {
-                  Some(
-                    Matching(
-                      left_to_right: dict.insert(
-                        updated_matching.left_to_right,
-                        left_node,
-                        right_node,
-                      ),
-                      right_to_left: dict.insert(
-                        updated_matching.right_to_left,
-                        right_node,
-                        left_node,
-                      ),
+                  Some(Matching(
+                    left_to_right: dict.insert(
+                      updated_matching.left_to_right,
+                      left_node,
+                      right_node,
                     ),
-                  )
+                    right_to_left: dict.insert(
+                      updated_matching.right_to_left,
+                      right_node,
+                      left_node,
+                    ),
+                  ))
                 }
               }
             }
@@ -353,4 +349,3 @@ fn try_neighbors(
     }
   }
 }
-
