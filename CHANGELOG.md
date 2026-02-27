@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - Unreleased
+
+### Added
+- **Floyd-Warshall algorithm (`pathfinding.floyd_warshall`)** - All-pairs shortest path computation
+  - Computes shortest paths between all pairs of nodes in O(V³) time
+  - Returns nested `Dict(NodeId, Dict(NodeId, distance))` for easy querying
+  - Handles negative edge weights and detects negative cycles
+  - Perfect for distance matrices, graph diameter, transitive closure, centrality measures
+  - Ideal for AoC problems requiring all-pairs distances (e.g., 2022 Day 16)
+  - 12 comprehensive tests covering basic cases, negative weights, negative cycles, disconnected graphs, self-loops, and comparison with Dijkstra
+  - Complete documentation with examples and usage guidance
+
+### Fixed
+- **Bug in Floyd-Warshall self-loop handling** - Fixed incorrect initialization that ignored self-loop edges
+  - Initial implementation unconditionally set distance[i][i] = zero, ignoring actual self-loop edges
+  - This caused negative self-loops (which should be detected as negative cycles) to be silently ignored
+  - Fixed to use `min(zero, self_loop_weight)`: negative self-loops now correctly detected as cycles, positive self-loops correctly ignored (staying put is shorter)
+  - Added 2 tests for self-loop edge cases
+
+- **Critical bug in `model.all_nodes()`** - Isolated nodes (nodes with no edges) are now correctly included
+  - Previously, `all_nodes()` only returned nodes that appeared in `out_edges` or `in_edges`, silently excluding isolated nodes
+  - This affected topological sort (isolated nodes weren't in the ordering) and SCC (isolated nodes weren't returned as single-element components)
+  - Now correctly returns ALL nodes from `graph.nodes`, regardless of edge connectivity
+  - This is a breaking behavior change if code relied on the old incorrect behavior
+  - Updated tests to reflect correct behavior
+
+### Changed
+- Test suite expanded to 367 tests (from 355)
+
 ## [1.2.0] - 2026-02-26
 
 ### Added
