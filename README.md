@@ -77,6 +77,10 @@ Detailed examples are located in the [examples/](https://github.com/code-shoily/
 - [Network Cable Layout](examples/network_cable_layout.gleam) - Minimum Spanning Tree using Kruskal's.
 - [Cave Path Counting](examples/cave_path_counting.gleam) - Custom DFS with backtracking.
 - [Task Ordering](examples/task_ordering.gleam) - Lexicographical topological sort.
+- [Bridges of Königsberg](examples/bridges_of_konigsberg.gleam) - Eulerian circuit and path detection.
+- [Global Minimum Cut](examples/global_min_cut.gleam) - Stoer-Wagner algorithm.
+- [Job Assignment](examples/job_assignment.gleam) - Bipartite maximum matching.
+- [City Distance Matrix](examples/city_distance_matrix.gleam) - Floyd-Warshall for all-pairs shortest paths.
 
 ## Algorithm Selection Guide
 
