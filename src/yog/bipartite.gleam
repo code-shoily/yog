@@ -116,7 +116,10 @@ pub fn maximum_matching(
   partition: Partition,
 ) -> List(#(NodeId, NodeId)) {
   // Start with empty matching
-  let matching = dict.new()
+  let matching = Matching(
+    left_to_right: dict.new(),
+    right_to_left: dict.new(),
+  )
 
   // Try to find augmenting path from each left vertex
   let left_list = set.to_list(partition.left)
@@ -137,7 +140,13 @@ pub fn maximum_matching(
       }
     })
 
-  dict.fold(final_matching, [], fn(acc, left, right) { [#(left, right), ..acc] })
+  dict.fold(final_matching.left_to_right, [], fn(acc, left, right) {
+    [#(left, right), ..acc]
+  })
+}
+
+type Matching {
+  Matching(left_to_right: Dict(NodeId, NodeId), right_to_left: Dict(NodeId, NodeId))
 }
 
 // ============= Helper Functions =============
@@ -236,10 +245,10 @@ fn find_augmenting_path(
   graph: Graph(n, e),
   left_node: NodeId,
   partition: Partition,
-  matching: Dict(NodeId, NodeId),
+  matching: Matching,
   visited: Set(NodeId),
-) -> Option(Dict(NodeId, NodeId)) {
-  case dict.has_key(matching, left_node) {
+) -> Option(Matching) {
+  case dict.has_key(matching.left_to_right, left_node) {
     True -> None
     False -> {
       let right_neighbors =
@@ -263,9 +272,9 @@ fn try_neighbors(
   left_node: NodeId,
   right_neighbors: List(NodeId),
   partition: Partition,
-  matching: Dict(NodeId, NodeId),
+  matching: Matching,
   visited: Set(NodeId),
-) -> Option(Dict(NodeId, NodeId)) {
+) -> Option(Matching) {
   case right_neighbors {
     [] -> None
     [right_node, ..rest] -> {
@@ -275,17 +284,39 @@ fn try_neighbors(
         False -> {
           let new_visited = set.insert(visited, right_node)
 
-          case find_match(matching, right_node) {
-            None -> {
-              Some(dict.insert(matching, left_node, right_node))
+          case dict.get(matching.right_to_left, right_node) {
+            Error(_) -> {
+              Some(
+                Matching(
+                  left_to_right: dict.insert(
+                    matching.left_to_right,
+                    left_node,
+                    right_node,
+                  ),
+                  right_to_left: dict.insert(
+                    matching.right_to_left,
+                    right_node,
+                    left_node,
+                  ),
+                ),
+              )
             }
-            Some(matched_left) -> {
+            Ok(matched_left) -> {
               case
                 find_augmenting_path(
                   graph,
                   matched_left,
                   partition,
-                  dict.delete(matching, matched_left),
+                  Matching(
+                    left_to_right: dict.delete(
+                      matching.left_to_right,
+                      matched_left,
+                    ),
+                    right_to_left: dict.delete(
+                      matching.right_to_left,
+                      right_node,
+                    ),
+                  ),
                   new_visited,
                 )
               {
@@ -299,7 +330,20 @@ fn try_neighbors(
                     visited,
                   )
                 Some(updated_matching) -> {
-                  Some(dict.insert(updated_matching, left_node, right_node))
+                  Some(
+                    Matching(
+                      left_to_right: dict.insert(
+                        updated_matching.left_to_right,
+                        left_node,
+                        right_node,
+                      ),
+                      right_to_left: dict.insert(
+                        updated_matching.right_to_left,
+                        right_node,
+                        left_node,
+                      ),
+                    ),
+                  )
                 }
               }
             }
@@ -310,19 +354,3 @@ fn try_neighbors(
   }
 }
 
-// Find which left node is matched to a given right node
-fn find_match(
-  matching: Dict(NodeId, NodeId),
-  right_node: NodeId,
-) -> Option(NodeId) {
-  dict.fold(matching, None, fn(acc, left, right) {
-    case acc {
-      Some(_) -> acc
-      None ->
-        case right == right_node {
-          True -> Some(left)
-          False -> None
-        }
-    }
-  })
-}
