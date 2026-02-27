@@ -12,6 +12,7 @@ A graph algorithm library for Gleam, providing implementations of classic graph 
   - Dijkstra's shortest path (non-negative weights)
   - A* search with heuristics
   - Bellman-Ford (supports negative weights, detects cycles)
+  - Floyd-Warshall (all-pairs shortest paths)
 - **Graph Traversal**: BFS and DFS with early termination support
 - **Graph Transformations**: Transpose (O(1)!), map nodes/edges, filter, merge
 - **Graph Visualization**: Mermaid, DOT (Graphviz), and JSON rendering with path highlighting
@@ -248,6 +249,54 @@ let distances_from_goal = pathfinding.single_source_distances(
 - Computing distance maps for game AI
 - Network routing table generation
 - Reverse pathfinding with `transform.transpose`
+
+#### Floyd-Warshall (All-Pairs Shortest Paths)
+
+Best for: Computing shortest distances between all pairs of nodes, or when you need distance matrices
+
+```gleam
+import gleam/dict
+import yog/pathfinding
+
+// Compute shortest paths between all pairs of nodes
+case pathfinding.floyd_warshall(
+  in: graph,
+  with_zero: 0,
+  with_add: int.add,
+  with_compare: int.compare
+) {
+  Ok(distances) -> {
+    // Query distance from any node to any other node
+    let assert Ok(row) = dict.get(distances, source_node)
+    let assert Ok(dist) = dict.get(row, target_node)
+    // Use dist...
+  }
+  Error(Nil) -> {
+    // Negative cycle detected!
+  }
+}
+```
+
+**Time Complexity:** O(V³)
+**Space Complexity:** O(V²)
+
+**Features:**
+- Computes shortest paths between all pairs of nodes in one operation
+- Can handle negative edge weights
+- Detects negative cycles
+- Returns nested dictionary: `distances[i][j]` = shortest distance from node i to node j
+
+**Use Cases:**
+- Precomputing distance matrices for frequent queries
+- Finding graph diameter (maximum shortest path)
+- Transitive closure computation
+- Network analysis (centrality measures)
+- AoC problems requiring all-pairs distances (e.g., 2022 Day 16)
+
+**When to use:**
+- Use **Floyd-Warshall** when you need distances between many or all pairs of nodes
+- Use **Dijkstra** or **single_source_distances** when you only need paths from one source
+- For sparse graphs with few queries, multiple Dijkstra calls may be faster than one Floyd-Warshall
 
 ### Graph Traversal (`yog/traversal`)
 
@@ -838,6 +887,7 @@ pathfinding.shortest_path(
 | **Dijkstra** | Non-negative weights, single shortest path | O((V+E) log V) |
 | **A*** | Non-negative weights + good heuristic | O((V+E) log V)* |
 | **Bellman-Ford** | Negative weights OR cycle detection needed | O(VE) |
+| **Floyd-Warshall** | All-pairs shortest paths, distance matrices | O(V³) |
 | **BFS/DFS** | Unweighted graphs, exploring reachability | O(V+E) |
 | **Kruskal's MST** | Finding minimum spanning tree | O(E log E) |
 | **Tarjan's SCC** | Finding strongly connected components | O(V+E) |
@@ -1199,9 +1249,10 @@ Yog is designed with these principles:
 
 **Shortest Path:**
 
-- Use **Dijkstra** for most cases with non-negative weights
+- Use **Dijkstra** for most cases with non-negative weights (single source)
 - Use **A*** when you have a good heuristic (can be much faster)
 - Use **Bellman-Ford** only when you have negative weights or need cycle detection
+- Use **Floyd-Warshall** when you need distances between many or all pairs of nodes
 
 **Traversal:**
 

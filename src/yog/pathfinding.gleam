@@ -537,3 +537,235 @@ fn reconstruct_path(
     }
   }
 }
+
+// ======================== FLOYD-WARSHALL ========================
+
+/// Computes shortest paths between all pairs of nodes using the Floyd-Warshall algorithm.
+///
+/// Returns a nested dictionary where `distances[i][j]` gives the shortest distance from node `i` to node `j`.
+/// If no path exists between two nodes, the pair will not be present in the dictionary.
+///
+/// Returns `Error(Nil)` if a negative cycle is detected in the graph.
+///
+/// **Time Complexity:** O(V³)
+/// **Space Complexity:** O(V²)
+///
+/// ## Parameters
+///
+/// - `zero`: The identity element for addition (e.g., `0` for integers, `0.0` for floats)
+/// - `add`: Function to add two weights
+/// - `compare`: Function to compare two weights
+///
+/// ## Example
+///
+/// ```gleam
+/// import gleam/dict
+/// import gleam/int
+/// import gleam/io
+/// import yog
+/// import yog/pathfinding
+///
+/// pub fn main() {
+///   let graph =
+///     yog.directed()
+///     |> yog.add_node(1, "A")
+///     |> yog.add_node(2, "B")
+///     |> yog.add_node(3, "C")
+///     |> yog.add_edge(from: 1, to: 2, with: 4)
+///     |> yog.add_edge(from: 2, to: 3, with: 3)
+///     |> yog.add_edge(from: 1, to: 3, with: 10)
+///
+///   case pathfinding.floyd_warshall(
+///     in: graph,
+///     with_zero: 0,
+///     with_add: int.add,
+///     with_compare: int.compare
+///   ) {
+///     Ok(distances) -> {
+///       // Query distance from node 1 to node 3
+///       let assert Ok(row) = dict.get(distances, 1)
+///       let assert Ok(dist) = dict.get(row, 3)
+///       // dist = 7 (via node 2: 4 + 3)
+///       io.println("Distance from 1 to 3: " <> int.to_string(dist))
+///     }
+///     Error(Nil) -> io.println("Negative cycle detected!")
+///   }
+/// }
+/// ```
+///
+/// ## Handling Negative Weights
+///
+/// Floyd-Warshall can handle negative edge weights and will detect negative cycles:
+///
+/// ```gleam
+/// let graph_with_negative_cycle =
+///   yog.directed()
+///   |> yog.add_node(1, "A")
+///   |> yog.add_node(2, "B")
+///   |> yog.add_edge(from: 1, to: 2, with: 5)
+///   |> yog.add_edge(from: 2, to: 1, with: -10)
+///
+/// case pathfinding.floyd_warshall(
+///   in: graph_with_negative_cycle,
+///   with_zero: 0,
+///   with_add: int.add,
+///   with_compare: int.compare
+/// ) {
+///   Ok(_) -> io.println("No negative cycle")
+///   Error(Nil) -> io.println("Negative cycle detected!")  // This will execute
+/// }
+/// ```
+///
+/// ## Use Cases
+///
+/// - Computing distance matrices for all node pairs
+/// - Finding transitive closure of a graph
+/// - Detecting negative cycles
+/// - Preprocessing for queries about arbitrary node pairs
+/// - Graph metrics (diameter, centrality)
+///
+pub fn floyd_warshall(
+  in graph: Graph(n, e),
+  with_zero zero: e,
+  with_add add: fn(e, e) -> e,
+  with_compare compare: fn(e, e) -> Order,
+) -> Result(Dict(NodeId, Dict(NodeId, e)), Nil) {
+  let nodes = dict.keys(graph.nodes)
+
+  // Initialize distances: direct edges + zero distance to self
+  let initial_distances =
+    nodes
+    |> list.fold(dict.new(), fn(distances, i) {
+      let row =
+        nodes
+        |> list.fold(dict.new(), fn(row, j) {
+          case i == j {
+            True -> {
+              // Self-distance: check for self-loop edge
+              case dict.get(graph.out_edges, i) {
+                Ok(neighbors) ->
+                  case dict.get(neighbors, j) {
+                    Ok(weight) -> {
+                      // Self-loop exists: use min(zero, weight)
+                      // If weight < 0, use it (will be detected as negative cycle)
+                      // If weight > 0, use zero (staying put is shorter)
+                      case compare(weight, zero) {
+                        Lt -> dict.insert(row, j, weight)
+                        _ -> dict.insert(row, j, zero)
+                      }
+                    }
+                    Error(Nil) -> dict.insert(row, j, zero)
+                  }
+                Error(Nil) -> dict.insert(row, j, zero)
+              }
+            }
+            False -> {
+              // Different nodes: check if there's a direct edge from i to j
+              case dict.get(graph.out_edges, i) {
+                Ok(neighbors) ->
+                  case dict.get(neighbors, j) {
+                    Ok(weight) -> dict.insert(row, j, weight)
+                    Error(Nil) -> row
+                  }
+                Error(Nil) -> row
+              }
+            }
+          }
+        })
+      dict.insert(distances, i, row)
+    })
+
+  // Floyd-Warshall: for each intermediate node k, try routing through k
+  let final_distances =
+    nodes
+    |> list.fold(initial_distances, fn(distances, k) {
+      nodes
+      |> list.fold(distances, fn(distances, i) {
+        nodes
+        |> list.fold(distances, fn(distances, j) {
+          // Try path i -> k -> j
+          case get_distance(distances, i, k) {
+            Error(Nil) -> distances
+            Ok(dist_ik) -> {
+              case get_distance(distances, k, j) {
+                Error(Nil) -> distances
+                Ok(dist_kj) -> {
+                  let new_dist = add(dist_ik, dist_kj)
+                  case get_distance(distances, i, j) {
+                    Error(Nil) ->
+                      // No existing path, use new path
+                      update_distance(distances, i, j, new_dist)
+                    Ok(current_dist) -> {
+                      // Compare and keep shorter path
+                      case compare(new_dist, current_dist) {
+                        Lt -> update_distance(distances, i, j, new_dist)
+                        _ -> distances
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        })
+      })
+    })
+
+  // Check for negative cycles: if distance[i][i] < 0 for any i
+  case detect_negative_cycle(final_distances, nodes, zero, compare) {
+    True -> Error(Nil)
+    False -> Ok(final_distances)
+  }
+}
+
+/// Helper to get distance from the nested dictionary structure
+fn get_distance(
+  distances: Dict(NodeId, Dict(NodeId, e)),
+  from i: NodeId,
+  to j: NodeId,
+) -> Result(e, Nil) {
+  case dict.get(distances, i) {
+    Ok(row) -> dict.get(row, j)
+    Error(Nil) -> Error(Nil)
+  }
+}
+
+/// Helper to update distance in the nested dictionary structure
+fn update_distance(
+  distances: Dict(NodeId, Dict(NodeId, e)),
+  from i: NodeId,
+  to j: NodeId,
+  with dist: e,
+) -> Dict(NodeId, Dict(NodeId, e)) {
+  case dict.get(distances, i) {
+    Ok(row) -> {
+      let new_row = dict.insert(row, j, dist)
+      dict.insert(distances, i, new_row)
+    }
+    Error(Nil) -> {
+      // Should not happen if initialized correctly
+      let new_row = dict.new() |> dict.insert(j, dist)
+      dict.insert(distances, i, new_row)
+    }
+  }
+}
+
+/// Detects if there's a negative cycle by checking if any node has negative distance to itself
+fn detect_negative_cycle(
+  distances: Dict(NodeId, Dict(NodeId, e)),
+  nodes: List(NodeId),
+  zero: e,
+  compare: fn(e, e) -> Order,
+) -> Bool {
+  nodes
+  |> list.any(fn(i) {
+    case get_distance(distances, i, i) {
+      Ok(dist) ->
+        case compare(dist, zero) {
+          Lt -> True
+          _ -> False
+        }
+      Error(Nil) -> False
+    }
+  })
+}
