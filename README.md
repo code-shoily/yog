@@ -991,6 +991,154 @@ pub fn main() {
 }
 ```
 
+### Example 5: Cave Path Counting (DFS with Backtracking)
+
+```gleam
+import gleam/dict
+import gleam/int
+import gleam/io
+import gleam/list
+import gleam/set.{type Set}
+import gleam/string
+import yog/model.{type Graph}
+
+pub fn main() {
+  // Model a cave system with small and large caves
+  // Small caves (lowercase) can only be visited once
+  // Large caves (uppercase) can be visited multiple times
+  let graph =
+    model.new(model.Undirected)
+    |> model.add_node(0, "start")
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "b")
+    |> model.add_node(3, "c")
+    |> model.add_node(4, "d")
+    |> model.add_node(5, "end")
+    |> model.add_edge(from: 0, to: 1, with: Nil)
+    |> model.add_edge(from: 0, to: 2, with: Nil)
+    |> model.add_edge(from: 1, to: 3, with: Nil)
+    |> model.add_edge(from: 1, to: 2, with: Nil)
+    |> model.add_edge(from: 2, to: 4, with: Nil)
+    |> model.add_edge(from: 1, to: 5, with: Nil)
+    |> model.add_edge(from: 4, to: 5, with: Nil)
+
+  // Custom DFS with backtracking to count all valid paths
+  let paths = count_paths(graph, 0, set.new(), False)
+  // Prints: Found 10 valid paths through the cave system
+  io.println("Found " <> int.to_string(paths) <> " valid paths through the cave system")
+}
+
+fn count_paths(
+  graph: Graph(String, Nil),
+  current: Int,
+  visited_small: Set(String),
+  can_revisit_one: Bool,
+) -> Int {
+  let assert Ok(cave_name) = dict.get(graph.nodes, current)
+
+  case cave_name {
+    "end" -> 1  // Found a complete path
+    _ -> {
+      model.successors(graph, current)
+      |> list.fold(0, fn(count, neighbor) {
+        let #(neighbor_id, _) = neighbor
+        let assert Ok(neighbor_name) = dict.get(graph.nodes, neighbor_id)
+
+        let is_small = string.lowercase(neighbor_name) == neighbor_name
+        let already_visited = set.contains(visited_small, neighbor_name)
+
+        case neighbor_name, is_small, already_visited {
+          "start", _, _ -> count  // Never revisit start
+          _, False, _ -> {
+            // Large cave - always allowed
+            count + count_paths(graph, neighbor_id, visited_small, can_revisit_one)
+          }
+          _, True, False -> {
+            // Small cave not yet visited
+            let new_visited = set.insert(visited_small, neighbor_name)
+            count + count_paths(graph, neighbor_id, new_visited, can_revisit_one)
+          }
+          _, True, True if can_revisit_one -> {
+            // Small cave already visited, but we have a revisit token
+            count + count_paths(graph, neighbor_id, visited_small, False)
+          }
+          _, True, True -> count  // Small cave already visited, no token
+        }
+      })
+    }
+  }
+}
+```
+
+**Key Concepts:**
+- **DFS with Backtracking**: Custom recursive traversal for path enumeration
+- **Immutable State**: Using `Set` for visited tracking enables automatic backtracking
+- **Revisit Token Pattern**: Elegantly handles complex visiting rules without branching explosion
+
+### Example 6: Task Ordering with Dependencies (Lexicographical Topological Sort)
+
+```gleam
+import gleam/int
+import gleam/io
+import gleam/list
+import gleam/string
+import yog/model
+import yog/topological_sort
+
+pub fn main() {
+  // Model task dependencies where we want alphabetically earliest valid order
+  // Task B requires A to be completed first, etc.
+  let dependencies = [
+    #("C", "A"),  // C must be done before A
+    #("C", "F"),  // C must be done before F
+    #("A", "B"),  // A must be done before B
+    #("A", "D"),  // A must be done before D
+    #("B", "E"),  // B must be done before E
+    #("D", "E"),  // D must be done before E
+    #("F", "E"),  // F must be done before E
+  ]
+
+  // Use ASCII codes as node IDs so int.compare gives alphabetical order
+  let graph =
+    dependencies
+    |> list.fold(model.new(model.Directed), fn(g, dep) {
+      let #(prereq, step) = dep
+      let prereq_id = char_to_ascii(prereq)
+      let step_id = char_to_ascii(step)
+
+      g
+      |> model.add_node(prereq_id, prereq)
+      |> model.add_node(step_id, step)
+      |> model.add_edge(from: prereq_id, to: step_id, with: Nil)
+    })
+
+  case topological_sort.lexicographical_topological_sort(graph, int.compare) {
+    Ok(order) -> {
+      let task_order = order
+        |> list.map(fn(id) {
+          let assert Ok(task) = dict.get(graph.nodes, id)
+          task
+        })
+        |> string.join("")
+
+      // Prints: Task execution order: CABDFE
+      io.println("Task execution order: " <> task_order)
+    }
+    Error(Nil) -> io.println("Circular dependency detected!")
+  }
+}
+
+fn char_to_ascii(s: String) -> Int {
+  let assert Ok(codepoint) = string.to_utf_codepoints(s) |> list.first
+  string.utf_codepoint_to_int(codepoint)
+}
+```
+
+**Key Concepts:**
+- **Lexicographical Topological Sort**: Kahn's algorithm with priority queue for alphabetical ordering
+- **ASCII Code Mapping**: Using character codes as node IDs enables `int.compare` to naturally sort alphabetically
+- **Dependency Resolution**: Perfect for build systems, task schedulers, and prerequisite chains
+
 ## Projects Using Yog
 
 Yog has been used to solve challenging problems from Advent of Code and other domains:
@@ -1000,6 +1148,10 @@ Yog has been used to solve challenging problems from Advent of Code and other do
 - **[2019 Day 6: Universal Orbit Map](https://github.com/code-shoily/aocgl/blob/main/src/year_2019/day_06.gleam)** - Orbital relationship analysis using labeled graphs, traversal, and shortest path algorithms to count orbits and find minimum orbital transfers
 
 - **[2020 Day 7: Handy Haversacks](https://github.com/code-shoily/aocgl/blob/main/src/year_2020/day_07.gleam)** - Bag containment puzzle solved with labeled graphs, BFS traversal, and graph transposition (`transform.transpose`) to reverse containment relationships
+
+- **[2021 Day 12: Passage Pathing](https://github.com/code-shoily/aocgl/blob/main/src/year_2021/day_12.gleam)** - Cave path enumeration using labeled graphs and custom DFS with backtracking to count all valid paths through small and large caves with complex visiting rules
+
+- **[2018 Day 7: The Sum of Its Parts](https://github.com/code-shoily/aocgl/blob/main/src/year_2018/day_07.gleam)** - Task dependency resolution using lexicographical topological sort with ASCII code mapping for alphabetical ordering
 
 - **[2022 Day 12: Hill Climbing Algorithm](https://github.com/code-shoily/aocgl/blob/main/src/year_2022/day_12.gleam)** - Heightmap pathfinding using the grid builder (`yog/builder/grid`), A* search, single-source distances, and graph transposition for reverse pathfinding
 
