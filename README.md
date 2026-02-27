@@ -21,7 +21,8 @@ A graph algorithm library for Gleam, providing implementations of classic graph 
 - **Topological Sorting**: Kahn's algorithm with lexicographical variant
 - **Strongly Connected Components**: Tarjan's algorithm
 - **Graph Connectivity**: Bridge and articulation point detection (Tarjan's algorithm)
-- **Efficient Data Structures**: Pairing heap for priority queues, Union-Find with path compression
+- **Disjoint Set (Union-Find)**: Public API with path compression and union by rank for dynamic connectivity
+- **Efficient Data Structures**: Pairing heap for priority queues
 
 ## Installation
 
@@ -344,6 +345,47 @@ let mst_edges = mst.kruskal(
 ```
 
 **Time Complexity:** O(E log E)
+
+### Disjoint Set / Union-Find (`yog/disjoint_set`)
+
+A fundamental data structure for tracking disjoint sets with near-constant time operations. Uses path compression and union by rank for optimal performance.
+
+```gleam
+import yog/disjoint_set
+
+let ds =
+  disjoint_set.new()
+  |> disjoint_set.add(1)
+  |> disjoint_set.add(2)
+  |> disjoint_set.add(3)
+  |> disjoint_set.add(4)
+  // Connect 1-2 and 3-4
+  |> disjoint_set.union(1, 2)
+  |> disjoint_set.union(3, 4)
+
+// Check if elements are in the same set
+let #(ds1, root1) = disjoint_set.find(ds, 1)
+let #(ds2, root2) = disjoint_set.find(ds1, 2)
+root1 == root2  // => True (same set)
+
+let #(ds3, root3) = disjoint_set.find(ds2, 3)
+root1 == root3  // => False (different sets)
+
+// Merge the two components
+let ds4 = disjoint_set.union(ds3, 2, 3)
+// Now all elements are in one set
+```
+
+**Time Complexity:** O(α(n)) amortized per operation, where α is the inverse Ackermann function (practically constant)
+
+**Use Cases:**
+- Dynamic connectivity queries
+- Kruskal's MST algorithm
+- Image segmentation (connected components)
+- Network connectivity analysis
+- Percolation problems
+- Maze generation
+- Game development (collision groups)
 
 ### Minimum Cut (`yog/min_cut`)
 

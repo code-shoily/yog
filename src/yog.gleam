@@ -71,6 +71,19 @@
 //// - **`yog/components`** - Connected components
 ////   - Tarjan's algorithm for Strongly Connected Components (SCC)
 ////
+//// - **`yog/connectivity`** - Graph connectivity analysis
+////   - Tarjan's algorithm for bridges and articulation points
+////
+//// - **`yog/min_cut`** - Minimum cut algorithms
+////   - Stoer-Wagner algorithm for global minimum cut
+////
+//// ### Data Structures
+//// - **`yog/disjoint_set`** - Union-Find / Disjoint Set
+////   - Path compression and union by rank
+////   - O(α(n)) amortized operations (practically constant)
+////   - Dynamic connectivity queries
+////   - Generic over any type
+////
 //// ### Transformations
 //// - **`yog/transform`** - Graph transformations
 ////   - Transpose (O(1) edge reversal!)
@@ -89,7 +102,7 @@
 //// - **Functional and Immutable**: All operations return new graphs
 //// - **Generic**: Works with any node/edge data types
 //// - **Type-Safe**: Leverages Gleam's type system
-//// - **Well-Tested**: 334+ tests covering all algorithms
+//// - **Well-Tested**: 435+ tests covering all algorithms and data structures
 //// - **Efficient**: Optimal data structures (pairing heaps, union-find)
 //// - **Documented**: Every function has examples
 

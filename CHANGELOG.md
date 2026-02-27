@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.2] - Unreleased
 
 ### Added
+- **Disjoint Set / Union-Find (`yog/disjoint_set`)** - Public API for dynamic connectivity with optimal performance
+  - Moved from internal implementation to public-facing API (following Loom's approach)
+  - `new()` - Create a new empty disjoint set
+  - `add()` - Add an element to its own singleton set
+  - `find()` - Find the representative (root) of a set with path compression
+  - `union()` - Merge two sets with union by rank
+  - **Time Complexity:** O(α(n)) amortized per operation (practically constant)
+  - Path compression flattens tree structure for future queries
+  - Union by rank keeps trees balanced
+  - Generic over any type (integers, strings, custom types)
+  - Auto-adds elements on first find (convenience feature)
+  - 20 comprehensive tests covering creation, find, union, path compression, union by rank, components, stress tests, generic types
+  - Complete documentation with examples and use cases
+  - **Use cases:** Dynamic connectivity, MST (Kruskal's), image segmentation, network connectivity, percolation, maze generation, game dev
+
 - **Graph connectivity analysis (`yog/connectivity`)** - Find bridges and articulation points in undirected graphs
   - `analyze()` - Tarjan's algorithm for finding bridges and articulation points in a single DFS pass
   - `Bridge` type representing critical edges whose removal disconnects the graph
@@ -76,6 +91,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added regression test to prevent future breakage
 
 ### Changed
+- **Disjoint Set module promoted to public API** - `internal/dsu` moved to `yog/disjoint_set`
+  - All references updated (`yog/mst` now imports from public module)
+  - Test suite moved from `test/yog/internal/dsu_test.gleam` to `test/yog/disjoint_set_test.gleam`
+  - Breaking change if you were using the internal module (but you shouldn't have been!)
 - Test suite expanded to 435 tests (from 374)
 - Internal state representation optimized: `visited` changed from `Dict(NodeId, Bool)` to `Set(NodeId)`
 - Parent tracking improved: Changed from sentinel value `-1` to type-safe `Option(NodeId)`
