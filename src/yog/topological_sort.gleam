@@ -49,7 +49,10 @@ pub fn topological_sort(graph: Graph(n, e)) -> Result(List(NodeId), Nil) {
 /// Performs a topological sort that returns the lexicographically smallest sequence.
 ///
 /// Uses a heap-based version of Kahn's algorithm to ensure that when multiple
-/// nodes have in-degree 0, the smallest one (according to `compare_ids`) is chosen first.
+/// nodes have in-degree 0, the smallest one (according to `compare_nodes`) is chosen first.
+///
+/// The comparison function operates on **node data**, not node IDs, allowing intuitive
+/// comparisons like `string.compare` for alphabetical ordering.
 ///
 /// Returns `Error(Nil)` if the graph contains a cycle.
 ///
@@ -58,13 +61,18 @@ pub fn topological_sort(graph: Graph(n, e)) -> Result(List(NodeId), Nil) {
 /// ## Example
 ///
 /// ```gleam
-/// // Get smallest numeric ordering
-/// topological_sort.lexicographical_topological_sort(graph, int.compare)
-/// // => Ok([1, 2, 3, 4])  // Always picks smallest available node
+/// // Get alphabetical ordering by node data
+/// topological_sort.lexicographical_topological_sort(graph, string.compare)
+/// // => Ok([0, 1, 2])  // Node IDs ordered by their string data
+///
+/// // Custom comparison by priority
+/// topological_sort.lexicographical_topological_sort(graph, fn(a, b) {
+///   int.compare(a.priority, b.priority)
+/// })
 /// ```
 pub fn lexicographical_topological_sort(
   graph: Graph(n, e),
-  compare_ids: fn(NodeId, NodeId) -> Order,
+  compare_nodes: fn(n, n) -> Order,
 ) -> Result(List(NodeId), Nil) {
   // 1. Get all nodes from the edge maps
   let all_nodes = model.all_nodes(graph)
@@ -81,12 +89,21 @@ pub fn lexicographical_topological_sort(
     })
     |> dict.from_list()
 
-  // 3. Find initial nodes with 0 in-degree and put them in your HEAP
+  // 3. Create a comparison function that compares node data instead of IDs
+  let compare_by_data = fn(id_a: NodeId, id_b: NodeId) -> Order {
+    case dict.get(graph.nodes, id_a), dict.get(graph.nodes, id_b) {
+      Ok(data_a), Ok(data_b) -> compare_nodes(data_a, data_b)
+      // Fallback to ID comparison if node data not found (shouldn't happen)
+      _, _ -> order.Eq
+    }
+  }
+
+  // 4. Find initial nodes with 0 in-degree and put them in the heap
   let initial_heap =
     dict.to_list(in_degrees)
     |> list.filter(fn(pair) { pair.1 == 0 })
     |> list.map(fn(pair) { pair.0 })
-    |> list.fold(heap.new(), fn(h, id) { heap.insert(h, id, compare_ids) })
+    |> list.fold(heap.new(), fn(h, id) { heap.insert(h, id, compare_by_data) })
 
   do_lexical_kahn(
     graph,
@@ -94,11 +111,11 @@ pub fn lexicographical_topological_sort(
     in_degrees,
     [],
     list.length(all_nodes),
-    compare_ids,
+    compare_by_data,
   )
 }
 
-fn do_lexical_kahn(graph, h, in_degrees, acc, total_count, compare_ids) {
+fn do_lexical_kahn(graph, h, in_degrees, acc, total_count, compare_by_data) {
   case heap.find_min(h) {
     Error(Nil) -> {
       case list.length(acc) == total_count {
@@ -107,7 +124,7 @@ fn do_lexical_kahn(graph, h, in_degrees, acc, total_count, compare_ids) {
       }
     }
     Ok(head) -> {
-      let assert Ok(rest_h) = heap.delete_min(h, compare_ids)
+      let assert Ok(rest_h) = heap.delete_min(h, compare_by_data)
       let neighbors = model.successor_ids(graph, head)
 
       let #(next_h, next_in_degrees) =
@@ -118,7 +135,7 @@ fn do_lexical_kahn(graph, h, in_degrees, acc, total_count, compare_ids) {
 
           let new_degrees = dict.insert(degrees, neighbor, new_degree)
           let updated_h = case new_degree == 0 {
-            True -> heap.insert(current_h, neighbor, compare_ids)
+            True -> heap.insert(current_h, neighbor, compare_by_data)
             False -> current_h
           }
           #(updated_h, new_degrees)
@@ -130,7 +147,7 @@ fn do_lexical_kahn(graph, h, in_degrees, acc, total_count, compare_ids) {
         next_in_degrees,
         [head, ..acc],
         total_count,
-        compare_ids,
+        compare_by_data,
       )
     }
   }

@@ -1,5 +1,5 @@
-import gleam/int
 import gleam/list
+import gleam/string
 import gleeunit/should
 import yog/model.{Directed}
 import yog/topological_sort as topo
@@ -378,9 +378,10 @@ pub fn lexi_topo_sort_basic_test() {
     |> model.add_edge(from: 1, to: 2, with: 1)
     |> model.add_edge(from: 1, to: 3, with: 1)
 
-  let result = topo.lexicographical_topological_sort(graph, int.compare)
+  let result = topo.lexicographical_topological_sort(graph, string.compare)
 
-  // Should return [1, 2, 3] - after 1, both 2 and 3 available, picks 2 first
+  // Should return [1, 2, 3] - after 1, both 2 and 3 available
+  // Picks 2 first because "B" < "C" alphabetically
   result
   |> should.equal(Ok([1, 2, 3]))
 }
@@ -395,10 +396,10 @@ pub fn lexi_topo_sort_fork_test() {
     |> model.add_edge(from: 1, to: 2, with: 1)
     |> model.add_edge(from: 1, to: 3, with: 1)
 
-  let result = topo.lexicographical_topological_sort(graph, int.compare)
+  let result = topo.lexicographical_topological_sort(graph, string.compare)
 
   // Should be [1, 2, 3] because after 1, both 2 and 3 are available
-  // and 2 < 3 lexicographically
+  // "A" < "B" alphabetically
   result
   |> should.equal(Ok([1, 2, 3]))
 }
@@ -413,9 +414,9 @@ pub fn lexi_topo_sort_join_test() {
     |> model.add_edge(from: 2, to: 1, with: 1)
     |> model.add_edge(from: 3, to: 1, with: 1)
 
-  let result = topo.lexicographical_topological_sort(graph, int.compare)
+  let result = topo.lexicographical_topological_sort(graph, string.compare)
 
-  // Should start with 2 (smaller than 3), then 3, then 1
+  // Should start with 2 ("A" < "B" alphabetically), then 3, then 1
   result
   |> should.equal(Ok([2, 3, 1]))
 }
@@ -433,9 +434,9 @@ pub fn lexi_topo_sort_diamond_test() {
     |> model.add_edge(from: 2, to: 4, with: 1)
     |> model.add_edge(from: 3, to: 4, with: 1)
 
-  let result = topo.lexicographical_topological_sort(graph, int.compare)
+  let result = topo.lexicographical_topological_sort(graph, string.compare)
 
-  // After 1, both 2 and 3 are available. Pick 2 (smaller).
+  // After 1, both 2 and 3 are available. Pick 2 ("Left" < "Right" alphabetically).
   // After 2, only 3 is available (4 still has incoming from 3).
   // After 3, 4 is available.
   result
@@ -451,7 +452,7 @@ pub fn lexi_topo_sort_cycle_test() {
     |> model.add_edge(from: 1, to: 2, with: 1)
     |> model.add_edge(from: 2, to: 1, with: 1)
 
-  let result = topo.lexicographical_topological_sort(graph, int.compare)
+  let result = topo.lexicographical_topological_sort(graph, string.compare)
 
   result
   |> should.equal(Error(Nil))
@@ -473,9 +474,9 @@ pub fn lexi_topo_sort_multiple_valid_test() {
     |> model.add_edge(from: 4, to: 5, with: 1)
 
   // All point to 5, so 5 must be last
-  let result = topo.lexicographical_topological_sort(graph, int.compare)
+  let result = topo.lexicographical_topological_sort(graph, string.compare)
 
-  // Should start with smallest and end with 5
+  // Should process in alphabetical order: "A" < "B" < "C" < "D" < "E"
   result
   |> should.equal(Ok([1, 2, 3, 4, 5]))
 }
