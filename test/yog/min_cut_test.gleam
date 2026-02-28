@@ -66,8 +66,8 @@ pub fn min_cut_square_test() {
 }
 
 pub fn min_cut_square_with_diagonal_test() {
-  // Square with diagonal: min cut is along the diagonal (2 edges)
-  // Reported weight is 3 due to edge weight accumulation
+  // Square with diagonal: min cut is 2 edges
+  // (e.g., cutting 1-2 and 3-4 separates into {1,4} and {2,3})
   let graph =
     yog.undirected()
     |> yog.add_node(1, Nil)
@@ -83,7 +83,7 @@ pub fn min_cut_square_with_diagonal_test() {
   let result = min_cut.global_min_cut(in: graph)
 
   result.weight
-  |> should.equal(3)
+  |> should.equal(2)
 }
 
 // ============= Weighted Graph Tests =============
@@ -212,9 +212,9 @@ pub fn min_cut_star_graph_test() {
 
   let result = min_cut.global_min_cut(in: graph)
 
-  // Min cut is any single edge, but weight accumulates to 4
+  // Min cut is any single edge (separating one leaf from the rest)
   result.weight
-  |> should.equal(4)
+  |> should.equal(1)
 
   // One leaf vs the rest
   result.group_a_size
@@ -253,12 +253,9 @@ pub fn min_cut_aoc_style_test() {
 
   let result = min_cut.global_min_cut(in: graph)
 
-  // The algorithm correctly identifies the partition separating the two clusters.
-  // Weight accumulation during contraction causes the reported weight to differ from
-  // the simple edge count, but the partition is correct.
-  // For AoC 2023 Day 25, the key result is the partition sizes, not the exact weight.
+  // The algorithm correctly identifies the three bridge edges
   result.weight
-  |> should.equal(7)
+  |> should.equal(3)
 
   // The key result: correct partition (3 nodes in each cluster)
   // For AoC 2023 Day 25, multiply these to get the answer

@@ -1,7 +1,9 @@
 import gleam/dict
 import gleam/int
 import gleam/list
+import gleam/order
 import gleam/set.{type Set}
+import yog/internal/heap
 import yog/model.{type Graph, type NodeId}
 import yog/transform
 
@@ -99,9 +101,31 @@ fn maximum_adjacency_search(graph: Graph(Int, Int)) -> #(NodeId, NodeId, Int) {
   let initial_order = [start]
   let remaining = set.from_list(all_nodes) |> set.delete(start)
 
-  let final_order = build_mas_order(graph, initial_order, remaining)
+  let #(initial_weights, initial_queue) =
+    model.neighbors(graph, start)
+    |> list.fold(#(dict.new(), heap.new()), fn(acc, edge) {
+      let #(weights_acc, queue_acc) = acc
+      let #(neighbor, weight) = edge
+      case set.contains(remaining, neighbor) {
+        True -> #(
+          dict.insert(weights_acc, neighbor, weight),
+          heap.insert(queue_acc, #(weight, neighbor), compare_max),
+        )
+        False -> acc
+      }
+    })
 
-  let assert [t, s, ..] = list.reverse(final_order)
+  let final_order =
+    build_mas_order(
+      graph,
+      initial_order,
+      remaining,
+      initial_weights,
+      initial_queue,
+    )
+
+  // Fix: Don't reverse! The list is built with newest at head
+  let assert [t, s, ..] = final_order
 
   let cut_weight =
     model.neighbors(graph, t)
@@ -118,40 +142,82 @@ fn build_mas_order(
   graph: Graph(Int, Int),
   current_order: List(NodeId),
   remaining: Set(NodeId),
+  weights: dict.Dict(NodeId, Int),
+  queue: heap.Heap(#(Int, NodeId)),
 ) -> List(NodeId) {
   case set.size(remaining) {
     0 -> current_order
     _ -> {
-      let next_node =
-        remaining
-        |> set.to_list()
-        |> list.map(fn(node) {
-          let weight =
-            model.neighbors(graph, node)
-            |> list.filter(fn(edge) {
-              let #(neighbor, _) = edge
-              list.contains(current_order, neighbor)
-            })
-            |> list.fold(0, fn(sum, edge) {
-              let #(_, w) = edge
-              sum + w
-            })
-          #(node, weight)
-        })
-        |> list.sort(fn(a, b) {
-          let #(_, weight_a) = a
-          let #(_, weight_b) = b
-          int.compare(weight_b, weight_a)
-        })
-        |> list.first()
+      let #(node, new_queue) = get_next_mas_node(queue, remaining, weights)
+      let new_remaining = set.delete(remaining, node)
 
-      let assert Ok(#(node, _)) = next_node
+      let #(new_weights, updated_queue) =
+        model.neighbors(graph, node)
+        |> list.fold(#(weights, new_queue), fn(acc, edge) {
+          let #(weights_acc, queue_acc) = acc
+          let #(neighbor, weight) = edge
+          case set.contains(new_remaining, neighbor) {
+            True -> {
+              let existing_w = case dict.get(weights_acc, neighbor) {
+                Ok(v) -> v
+                Error(_) -> 0
+              }
+              let new_w = existing_w + weight
+              #(
+                dict.insert(weights_acc, neighbor, new_w),
+                heap.insert(queue_acc, #(new_w, neighbor), compare_max),
+              )
+            }
+            False -> acc
+          }
+        })
 
       build_mas_order(
         graph,
         [node, ..current_order],
-        set.delete(remaining, node),
+        new_remaining,
+        new_weights,
+        updated_queue,
       )
     }
+  }
+}
+
+fn get_next_mas_node(
+  queue: heap.Heap(#(Int, NodeId)),
+  remaining: Set(NodeId),
+  weights: dict.Dict(NodeId, Int),
+) -> #(NodeId, heap.Heap(#(Int, NodeId))) {
+  case heap.find_min(queue) {
+    Ok(#(w, node)) -> {
+      let assert Ok(q_rest) = heap.delete_min(queue, compare_max)
+      case set.contains(remaining, node) {
+        True -> {
+          // Verify this is the current weight, not a stale entry
+          let current_weight = case dict.get(weights, node) {
+            Ok(v) -> v
+            Error(_) -> 0
+          }
+          case w == current_weight {
+            True -> #(node, q_rest)
+            False -> get_next_mas_node(q_rest, remaining, weights)
+          }
+        }
+        False -> get_next_mas_node(q_rest, remaining, weights)
+      }
+    }
+    Error(_) -> {
+      // If queue is empty, pick the node with minimum ID from remaining
+      let assert Ok(node) = set.to_list(remaining) |> list.first()
+      #(node, queue)
+    }
+  }
+}
+
+fn compare_max(a: #(Int, NodeId), b: #(Int, NodeId)) -> order.Order {
+  // Compare by weight (descending), then by node ID (ascending) for deterministic tie-breaking
+  case int.compare(b.0, a.0) {
+    order.Eq -> int.compare(a.1, b.1)
+    other -> other
   }
 }
