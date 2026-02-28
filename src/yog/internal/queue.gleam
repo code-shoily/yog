@@ -11,6 +11,8 @@ import gleam/list
 ///
 /// When `front` is empty and we need to dequeue, we reverse `back` to become
 /// the new `front`. This gives O(1) amortized time per operation.
+///
+/// This is a standard functional queue implementation (Okasaki-style).
 pub type Queue(a) {
   Queue(front: List(a), back: List(a))
 }
@@ -28,7 +30,7 @@ pub fn push(queue: Queue(a), item: a) -> Queue(a) {
 /// Adds multiple items to the back of the queue. O(n) where n is the length of items.
 ///
 /// Since the back list is in reverse order (to support O(1) push),
-/// we need to reverse the items before prepending them.
+/// we need to reverse the items before prepending them to maintain correct order.
 pub fn push_list(queue: Queue(a), items: List(a)) -> Queue(a) {
   Queue(front: queue.front, back: list.append(list.reverse(items), queue.back))
 }
@@ -45,13 +47,5 @@ pub fn pop(queue: Queue(a)) -> Result(#(a, Queue(a)), Nil) {
         [] -> Error(Nil)
         [item, ..rest] -> Ok(#(item, Queue(front: rest, back: [])))
       }
-  }
-}
-
-/// Checks if the queue is empty. O(1).
-pub fn is_empty(queue: Queue(a)) -> Bool {
-  case queue.front, queue.back {
-    [], [] -> True
-    _, _ -> False
   }
 }
