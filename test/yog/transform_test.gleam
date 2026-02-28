@@ -961,17 +961,15 @@ pub fn contract_simple_undirected_test() {
   dict.size(contracted.nodes)
   |> should.equal(2)
 
-  // In undirected graphs, edge 2-3 is stored as both 2->3 and 3->2
-  // When contracting, both get processed: 2->3 becomes 1->3, and 3->2 becomes 3->1
-  // Since add_edge_with_combine on undirected adds both directions,
-  // we end up with weight 20 (10 + 10) instead of 10
+  // In undirected graphs, we only process out_edges now (not in_edges too)
+  // so the weight is correctly 10
   let neighbors = model.neighbors(contracted, 1)
   list.length(neighbors)
   |> should.equal(1)
 
   neighbors
   |> list.first()
-  |> should.equal(Ok(#(3, 20)))
+  |> should.equal(Ok(#(3, 10)))
 }
 
 pub fn contract_combining_weights_test() {
@@ -1078,14 +1076,13 @@ pub fn contract_triangle_test() {
   |> should.equal(2)
 
   // Edge 1-3 (weight 13) exists
-  // Edge 2-3 is stored as both 2->3 (23) and 3->2 (23)
-  // When contracting: 2->3 becomes 1->3 (combines with existing: 13 + 23 = 36)
-  // Then: 3->2 becomes 3->1 (combines with existing 3->1: 36 + 23 = 59)
-  // Since undirected, 1->3 and 3->1 both get updated to 59
+  // Edge 2-3 has weight 23
+  // When contracting: we only process out_edges, so 2-3 becomes 1-3
+  // This combines with existing: 13 + 23 = 36
   model.neighbors(contracted, 1)
   |> list.filter(fn(edge) { edge.0 == 3 })
   |> list.first()
-  |> should.equal(Ok(#(3, 59)))
+  |> should.equal(Ok(#(3, 36)))
 }
 
 pub fn contract_max_combine_test() {

@@ -371,6 +371,7 @@ pub fn contract(
   with b: NodeId,
   combine_weights with_combine: fn(e, e) -> e,
 ) -> Graph(n, e) {
+  // 1. Process outgoing edges (this handles both directions for Undirected graphs)
   let b_out = dict.get(graph.out_edges, b) |> result.unwrap(dict.new())
   let graph =
     dict.fold(b_out, graph, fn(acc_g, neighbor, weight) {
@@ -381,15 +382,27 @@ pub fn contract(
       }
     })
 
-  let b_in = dict.get(graph.in_edges, b) |> result.unwrap(dict.new())
-  let graph =
-    dict.fold(b_in, graph, fn(acc_g, neighbor, weight) {
-      case neighbor == a || neighbor == b {
-        True -> acc_g
-        False ->
-          model.add_edge_with_combine(acc_g, neighbor, a, weight, with_combine)
-      }
-    })
+  // 2. Only process incoming edges if the graph is Directed!
+  // For Undirected graphs, out_edges already contains all neighbors in both directions
+  let graph = case graph.kind {
+    model.Undirected -> graph
+    model.Directed -> {
+      let b_in = dict.get(graph.in_edges, b) |> result.unwrap(dict.new())
+      dict.fold(b_in, graph, fn(acc_g, neighbor, weight) {
+        case neighbor == a || neighbor == b {
+          True -> acc_g
+          False ->
+            model.add_edge_with_combine(
+              acc_g,
+              neighbor,
+              a,
+              weight,
+              with_combine,
+            )
+        }
+      })
+    }
+  }
 
   remove_node(graph, b)
 }

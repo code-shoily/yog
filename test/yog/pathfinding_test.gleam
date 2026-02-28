@@ -1874,22 +1874,19 @@ pub fn floyd_warshall_basic_test() {
   case result {
     Ok(distances) -> {
       // Distance from 1 to 1 should be 0
-      let assert Ok(row1) = dict.get(distances, 1)
-      dict.get(row1, 1) |> should.equal(Ok(0))
+      dict.get(distances, #(1, 1)) |> should.equal(Ok(0))
 
       // Distance from 1 to 2 should be 4
-      dict.get(row1, 2) |> should.equal(Ok(4))
+      dict.get(distances, #(1, 2)) |> should.equal(Ok(4))
 
       // Distance from 1 to 3 should be 7 (via 2, not direct 10)
-      dict.get(row1, 3) |> should.equal(Ok(7))
+      dict.get(distances, #(1, 3)) |> should.equal(Ok(7))
 
       // Distance from 2 to 3 should be 3
-      let assert Ok(row2) = dict.get(distances, 2)
-      dict.get(row2, 3) |> should.equal(Ok(3))
+      dict.get(distances, #(2, 3)) |> should.equal(Ok(3))
 
       // No path from 3 to 1 (directed graph)
-      let assert Ok(row3) = dict.get(distances, 3)
-      dict.get(row3, 1) |> should.equal(Error(Nil))
+      dict.get(distances, #(3, 1)) |> should.equal(Error(Nil))
     }
     Error(Nil) -> should.fail()
   }
@@ -1929,9 +1926,8 @@ pub fn floyd_warshall_single_node_test() {
 
   case result {
     Ok(distances) -> {
-      let assert Ok(row) = dict.get(distances, 1)
       // Distance from node 1 to itself should be 0
-      dict.get(row, 1) |> should.equal(Ok(0))
+      dict.get(distances, #(1, 1)) |> should.equal(Ok(0))
     }
     Error(Nil) -> should.fail()
   }
@@ -1958,9 +1954,8 @@ pub fn floyd_warshall_negative_weights_test() {
 
   case result {
     Ok(distances) -> {
-      let assert Ok(row1) = dict.get(distances, 1)
       // Distance from 1 to 3 should be 3 (via 2: 5 + (-2))
-      dict.get(row1, 3) |> should.equal(Ok(3))
+      dict.get(distances, #(1, 3)) |> should.equal(Ok(3))
     }
     Error(Nil) -> should.fail()
   }
@@ -2008,18 +2003,16 @@ pub fn floyd_warshall_disconnected_test() {
   case result {
     Ok(distances) -> {
       // Path exists from 1 to 2
-      let assert Ok(row1) = dict.get(distances, 1)
-      dict.get(row1, 2) |> should.equal(Ok(5))
+      dict.get(distances, #(1, 2)) |> should.equal(Ok(5))
 
       // No path from 1 to 3 (disconnected)
-      dict.get(row1, 3) |> should.equal(Error(Nil))
+      dict.get(distances, #(1, 3)) |> should.equal(Error(Nil))
 
       // Path exists from 3 to 4
-      let assert Ok(row3) = dict.get(distances, 3)
-      dict.get(row3, 4) |> should.equal(Ok(3))
+      dict.get(distances, #(3, 4)) |> should.equal(Ok(3))
 
       // No path from 3 to 1 (disconnected)
-      dict.get(row3, 1) |> should.equal(Error(Nil))
+      dict.get(distances, #(3, 1)) |> should.equal(Error(Nil))
     }
     Error(Nil) -> should.fail()
   }
@@ -2047,11 +2040,10 @@ pub fn floyd_warshall_transitive_test() {
 
   case result {
     Ok(distances) -> {
-      let assert Ok(row1) = dict.get(distances, 1)
       // All paths from 1 should be found
-      dict.get(row1, 2) |> should.equal(Ok(1))
-      dict.get(row1, 3) |> should.equal(Ok(3))
-      dict.get(row1, 4) |> should.equal(Ok(6))
+      dict.get(distances, #(1, 2)) |> should.equal(Ok(1))
+      dict.get(distances, #(1, 3)) |> should.equal(Ok(3))
+      dict.get(distances, #(1, 4)) |> should.equal(Ok(6))
     }
     Error(Nil) -> should.fail()
   }
@@ -2086,10 +2078,7 @@ pub fn floyd_warshall_vs_shortest_path_test() {
       |> list.each(fn(source) {
         nodes
         |> list.each(fn(target) {
-          let floyd_dist = case dict.get(distances, source) {
-            Ok(row) -> dict.get(row, target)
-            Error(Nil) -> Error(Nil)
-          }
+          let floyd_dist = dict.get(distances, #(source, target))
 
           let shortest_path_result =
             pathfinding.shortest_path(
@@ -2137,16 +2126,12 @@ pub fn floyd_warshall_undirected_test() {
   case result {
     Ok(distances) -> {
       // Distance should be symmetric in undirected graph
-      let assert Ok(row1) = dict.get(distances, 1)
-      let assert Ok(row2) = dict.get(distances, 2)
-      let assert Ok(row3) = dict.get(distances, 3)
-
-      let dist_1_2 = dict.get(row1, 2)
-      let dist_2_1 = dict.get(row2, 1)
+      let dist_1_2 = dict.get(distances, #(1, 2))
+      let dist_2_1 = dict.get(distances, #(2, 1))
       dist_1_2 |> should.equal(dist_2_1)
 
-      let dist_1_3 = dict.get(row1, 3)
-      let dist_3_1 = dict.get(row3, 1)
+      let dist_1_3 = dict.get(distances, #(1, 3))
+      let dist_3_1 = dict.get(distances, #(3, 1))
       dist_1_3 |> should.equal(dist_3_1)
 
       // Distance from 1 to 3 should be 7
@@ -2177,9 +2162,8 @@ pub fn floyd_warshall_float_weights_test() {
 
   case result {
     Ok(distances) -> {
-      let assert Ok(row1) = dict.get(distances, 1)
       // Distance from 1 to 3 should be 4.0 (via 2: 2.5 + 1.5)
-      dict.get(row1, 3) |> should.equal(Ok(4.0))
+      dict.get(distances, #(1, 3)) |> should.equal(Ok(4.0))
     }
     Error(Nil) -> should.fail()
   }
@@ -2227,11 +2211,10 @@ pub fn floyd_warshall_positive_self_loop_test() {
 
   case result {
     Ok(distances) -> {
-      let assert Ok(row1) = dict.get(distances, 1)
       // Distance from 1 to itself should still be 0 (not 5)
-      dict.get(row1, 1) |> should.equal(Ok(0))
+      dict.get(distances, #(1, 1)) |> should.equal(Ok(0))
       // Distance from 1 to 2 should be 10
-      dict.get(row1, 2) |> should.equal(Ok(10))
+      dict.get(distances, #(1, 2)) |> should.equal(Ok(10))
     }
     Error(Nil) -> should.fail()
   }
