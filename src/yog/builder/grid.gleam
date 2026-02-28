@@ -43,7 +43,6 @@
 
 import gleam/dict
 import gleam/list
-import gleam/result
 import yog/internal/utils
 import yog/model.{type Graph, type GraphType, type NodeId}
 
@@ -142,8 +141,8 @@ pub fn from_2d_list(
           True -> {
             let to_id = coord_to_id(n_row, n_col, cols)
 
-            // Get neighbor's cell data
-            case get_cell_from_list(grid_data, n_row, n_col) {
+            // Get neighbor's cell data from already-built graph nodes (O(1) dict lookup)
+            case dict.get(graph_with_nodes.nodes, to_id) {
               Ok(to_data) -> {
                 // Check if move is valid
                 case can_move(from_data, to_data) {
@@ -291,21 +290,4 @@ pub fn find_node(
       Error(_) -> Error(Nil)
     }
   })
-}
-
-// Helper function to get cell from 2D list
-fn get_cell_from_list(
-  grid_data: List(List(a)),
-  row: Int,
-  col: Int,
-) -> Result(a, Nil) {
-  use row_data <- result.try(
-    grid_data
-    |> list.drop(row)
-    |> list.first,
-  )
-
-  row_data
-  |> list.drop(col)
-  |> list.first
 }
