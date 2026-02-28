@@ -60,6 +60,7 @@ import gleam/option.{None, Some}
 import gleam/order.{type Order, Gt}
 import gleam/result
 import gleam/set.{type Set}
+import yog/internal/queue
 import yog/model.{type Graph, type NodeId}
 
 // Flat map of residual capacities for efficient updates
@@ -69,34 +70,6 @@ type Residuals(e) =
 // Adjacency list for efficient neighbor lookups during BFS/DFS
 type AdjacencyList =
   Dict(NodeId, List(NodeId))
-
-// Two-list queue for O(1) amortized enqueue/dequeue
-type Queue(a) {
-  Queue(front: List(a), back: List(a))
-}
-
-fn queue_new() -> Queue(a) {
-  Queue(front: [], back: [])
-}
-
-fn queue_push(queue: Queue(a), item: a) -> Queue(a) {
-  Queue(front: queue.front, back: [item, ..queue.back])
-}
-
-fn queue_push_list(queue: Queue(a), items: List(a)) -> Queue(a) {
-  Queue(front: queue.front, back: list.append(items, queue.back))
-}
-
-fn queue_pop(queue: Queue(a)) -> Result(#(a, Queue(a)), Nil) {
-  case queue.front {
-    [item, ..rest] -> Ok(#(item, Queue(front: rest, back: queue.back)))
-    [] ->
-      case list.reverse(queue.back) {
-        [] -> Error(Nil)
-        [item, ..rest] -> Ok(#(item, Queue(front: rest, back: [])))
-      }
-  }
-}
 
 /// Result of a max flow computation.
 ///
@@ -385,7 +358,7 @@ fn find_augmenting_path_bfs(
   min: fn(e, e) -> e,
 ) -> Result(#(List(NodeId), e), Nil) {
   // BFS with parent tracking using two-list queue for O(1) operations
-  let initial_queue = queue_new() |> queue_push(source)
+  let initial_queue = queue.new() |> queue.push(source)
   do_bfs(
     residuals,
     adj_list,
@@ -401,14 +374,14 @@ fn find_augmenting_path_bfs(
 fn do_bfs(
   residuals: Residuals(e),
   adj_list: AdjacencyList,
-  queue: Queue(NodeId),
+  q: queue.Queue(NodeId),
   parents: Dict(NodeId, #(NodeId, e)),
   sink: NodeId,
   zero: e,
   compare: fn(e, e) -> Order,
   min: fn(e, e) -> e,
 ) -> Result(#(List(NodeId), e), Nil) {
-  case queue_pop(queue) {
+  case queue.pop(q) {
     Error(Nil) -> Error(Nil)
     Ok(#(current, rest)) -> {
       case current == sink {
@@ -446,7 +419,7 @@ fn do_bfs(
             })
 
           // O(1) amortized enqueue - no more O(n) list.append!
-          let new_queue = queue_push_list(rest, new_neighbors)
+          let new_queue = queue.push_list(rest, new_neighbors)
           do_bfs(
             residuals,
             adj_list,
