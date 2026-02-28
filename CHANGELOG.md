@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BFS traversal**: Optimized with O(1) amortized queue operations instead of O(n) `list.append`, improving BFS from O(V²) to O(V + E)
 - **Floyd-Warshall**: Flat dictionary structure eliminates nested lookups
 - **Maximum Adjacency Search**: Heap-based priority queue with lazy deletion, improving time complexity from O(V³) to O(V² log V)
+- **Priority queue migration**: Replaced custom heap implementation with `gleamy_structures` priority queue for better maintainability and performance in pathfinding, topological sort, and minimum cut algorithms
 - New shared `yog/internal/queue` module (Okasaki-style two-list queue) used by both `max_flow` and `traversal`
 
 ## [1.3.0] - 2026-02-27

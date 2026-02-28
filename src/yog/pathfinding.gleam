@@ -2,8 +2,7 @@ import gleam/dict.{type Dict}
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/order.{type Order, Lt}
-import gleam/result
-import yog/internal/heap
+import gleamy/priority_queue
 import yog/model.{type Graph, type NodeId}
 
 /// Represents a path through the graph with its total weight.
@@ -45,10 +44,8 @@ pub fn shortest_path(
   with_compare compare: fn(e, e) -> Order,
 ) -> Option(Path(e)) {
   let frontier =
-    heap.new()
-    |> heap.insert(#(zero, [start]), fn(a, b) {
-      compare_frontier(a, b, compare)
-    })
+    priority_queue.new(fn(a, b) { compare_frontier(a, b, compare) })
+    |> priority_queue.push(#(zero, [start]))
 
   do_dijkstra(graph, goal, frontier, dict.new(), add, compare)
 }
@@ -56,18 +53,14 @@ pub fn shortest_path(
 fn do_dijkstra(
   graph: Graph(n, e),
   goal: NodeId,
-  frontier: heap.Heap(#(e, List(NodeId))),
+  frontier: priority_queue.Queue(#(e, List(NodeId))),
   visited: Dict(NodeId, e),
   add: fn(e, e) -> e,
   compare: fn(e, e) -> Order,
 ) -> Option(Path(e)) {
-  case heap.find_min(frontier) {
+  case priority_queue.pop(frontier) {
     Error(Nil) -> None
-    Ok(#(dist, [current, ..] as path)) -> {
-      let rest_frontier =
-        heap.delete_min(frontier, fn(a, b) { compare_frontier(a, b, compare) })
-        |> result.unwrap(heap.new())
-
+    Ok(#(#(dist, [current, ..] as path), rest_frontier)) -> {
       case current == goal {
         True -> Some(Path(nodes: list.reverse(path), total_weight: dist))
         False -> {
@@ -84,10 +77,9 @@ fn do_dijkstra(
                 model.successors(graph, current)
                 |> list.fold(rest_frontier, fn(h, neighbor) {
                   let #(next_id, weight) = neighbor
-                  heap.insert(
+                  priority_queue.push(
                     h,
                     #(add(dist, weight), [next_id, ..path]),
-                    fn(a, b) { compare_frontier(a, b, compare) },
                   )
                 })
 
@@ -104,6 +96,22 @@ fn do_dijkstra(
 fn compare_frontier(
   a: #(e, List(NodeId)),
   b: #(e, List(NodeId)),
+  cmp: fn(e, e) -> Order,
+) -> Order {
+  cmp(a.0, b.0)
+}
+
+fn compare_distance_frontier(
+  a: #(e, NodeId),
+  b: #(e, NodeId),
+  cmp: fn(e, e) -> Order,
+) -> Order {
+  cmp(a.0, b.0)
+}
+
+fn compare_a_star_frontier(
+  a: #(e, e, List(NodeId)),
+  b: #(e, e, List(NodeId)),
   cmp: fn(e, e) -> Order,
 ) -> Order {
   cmp(a.0, b.0)
@@ -180,26 +188,22 @@ pub fn single_source_distances(
   with_compare compare: fn(e, e) -> Order,
 ) -> Dict(NodeId, e) {
   let frontier =
-    heap.new()
-    |> heap.insert(#(zero, source), fn(a, b) { compare(a.0, b.0) })
+    priority_queue.new(fn(a, b) { compare_distance_frontier(a, b, compare) })
+    |> priority_queue.push(#(zero, source))
 
   do_single_source_dijkstra(graph, frontier, dict.new(), add, compare)
 }
 
 fn do_single_source_dijkstra(
   graph: Graph(n, e),
-  frontier: heap.Heap(#(e, NodeId)),
+  frontier: priority_queue.Queue(#(e, NodeId)),
   distances: Dict(NodeId, e),
   add: fn(e, e) -> e,
   compare: fn(e, e) -> Order,
 ) -> Dict(NodeId, e) {
-  case heap.find_min(frontier) {
+  case priority_queue.pop(frontier) {
     Error(Nil) -> distances
-    Ok(#(dist, current)) -> {
-      let rest_frontier =
-        heap.delete_min(frontier, fn(a, b) { compare(a.0, b.0) })
-        |> result.unwrap(heap.new())
-
+    Ok(#(#(dist, current), rest_frontier)) -> {
       // Check if we've already found a better path to this node
       let should_explore =
         should_explore_node(distances, current, dist, compare)
@@ -220,9 +224,7 @@ fn do_single_source_dijkstra(
             model.successors(graph, current)
             |> list.fold(rest_frontier, fn(h, neighbor) {
               let #(next_id, weight) = neighbor
-              heap.insert(h, #(add(dist, weight), next_id), fn(a, b) {
-                compare(a.0, b.0)
-              })
+              priority_queue.push(h, #(add(dist, weight), next_id))
             })
 
           do_single_source_dijkstra(
@@ -281,22 +283,18 @@ pub fn a_star(
   heuristic h: fn(NodeId, NodeId) -> e,
 ) -> Option(Path(e)) {
   let initial_f = h(start, goal)
-  // Heap stores #(F_Score, Actual_Dist, Path)
+  // Queue stores #(F_Score, Actual_Dist, Path)
   let frontier =
-    heap.new()
-    |> heap.insert(#(initial_f, zero, [start]), fn(a, b) { compare(a.0, b.0) })
+    priority_queue.new(fn(a, b) { compare_a_star_frontier(a, b, compare) })
+    |> priority_queue.push(#(initial_f, zero, [start]))
 
   do_a_star(graph, goal, frontier, dict.new(), add, compare, h)
 }
 
 fn do_a_star(graph, goal, frontier, visited, add, compare, h) {
-  case heap.find_min(frontier) {
+  case priority_queue.pop(frontier) {
     Error(Nil) -> None
-    Ok(#(_, dist, [current, ..] as path)) -> {
-      let rest_frontier =
-        heap.delete_min(frontier, fn(a, b) { compare(a.0, b.0) })
-        |> result.unwrap(heap.new())
-
+    Ok(#(#(_, dist, [current, ..] as path), rest_frontier)) -> {
       case current == goal {
         True -> Some(Path(nodes: list.reverse(path), total_weight: dist))
         False -> {
@@ -315,10 +313,9 @@ fn do_a_star(graph, goal, frontier, visited, add, compare, h) {
                   let #(next_id, weight) = neighbor
                   let next_dist = add(dist, weight)
                   let f_score = add(next_dist, h(next_id, goal))
-                  heap.insert(
+                  priority_queue.push(
                     acc_h,
                     #(f_score, next_dist, [next_id, ..path]),
-                    fn(a, b) { compare(a.0, b.0) },
                   )
                 })
               do_a_star(

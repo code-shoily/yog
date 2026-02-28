@@ -2,7 +2,7 @@ import gleam/dict
 import gleam/list
 import gleam/order.{type Order}
 import gleam/result
-import yog/internal/heap
+import gleamy/priority_queue
 import yog/model.{type Graph, type NodeId}
 
 /// Performs a topological sort on a directed graph using Kahn's algorithm.
@@ -98,56 +98,49 @@ pub fn lexicographical_topological_sort(
     }
   }
 
-  // 4. Find initial nodes with 0 in-degree and put them in the heap
-  let initial_heap =
+  // 4. Find initial nodes with 0 in-degree and put them in the priority queue
+  let initial_queue =
     dict.to_list(in_degrees)
     |> list.filter(fn(pair) { pair.1 == 0 })
     |> list.map(fn(pair) { pair.0 })
-    |> list.fold(heap.new(), fn(h, id) { heap.insert(h, id, compare_by_data) })
+    |> list.fold(priority_queue.new(compare_by_data), fn(q, id) {
+      priority_queue.push(q, id)
+    })
 
-  do_lexical_kahn(
-    graph,
-    initial_heap,
-    in_degrees,
-    [],
-    list.length(all_nodes),
-    compare_by_data,
-  )
+  do_lexical_kahn(graph, initial_queue, in_degrees, [], list.length(all_nodes))
 }
 
-fn do_lexical_kahn(graph, h, in_degrees, acc, total_count, compare_by_data) {
-  case heap.find_min(h) {
+fn do_lexical_kahn(graph, q, in_degrees, acc, total_count) {
+  case priority_queue.pop(q) {
     Error(Nil) -> {
       case list.length(acc) == total_count {
         True -> Ok(list.reverse(acc))
         False -> Error(Nil)
       }
     }
-    Ok(head) -> {
-      let assert Ok(rest_h) = heap.delete_min(h, compare_by_data)
+    Ok(#(head, rest_q)) -> {
       let neighbors = model.successor_ids(graph, head)
 
-      let #(next_h, next_in_degrees) =
-        list.fold(neighbors, #(rest_h, in_degrees), fn(state, neighbor) {
-          let #(current_h, degrees) = state
+      let #(next_q, next_in_degrees) =
+        list.fold(neighbors, #(rest_q, in_degrees), fn(state, neighbor) {
+          let #(current_q, degrees) = state
           let current_degree = dict.get(degrees, neighbor) |> result.unwrap(0)
           let new_degree = current_degree - 1
 
           let new_degrees = dict.insert(degrees, neighbor, new_degree)
-          let updated_h = case new_degree == 0 {
-            True -> heap.insert(current_h, neighbor, compare_by_data)
-            False -> current_h
+          let updated_q = case new_degree == 0 {
+            True -> priority_queue.push(current_q, neighbor)
+            False -> current_q
           }
-          #(updated_h, new_degrees)
+          #(updated_q, new_degrees)
         })
 
       do_lexical_kahn(
         graph,
-        next_h,
+        next_q,
         next_in_degrees,
         [head, ..acc],
         total_count,
-        compare_by_data,
       )
     }
   }

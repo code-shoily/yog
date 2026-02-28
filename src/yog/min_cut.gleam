@@ -3,7 +3,7 @@ import gleam/int
 import gleam/list
 import gleam/order
 import gleam/set.{type Set}
-import yog/internal/heap
+import gleamy/priority_queue
 import yog/model.{type Graph, type NodeId}
 import yog/transform
 
@@ -103,13 +103,13 @@ fn maximum_adjacency_search(graph: Graph(Int, Int)) -> #(NodeId, NodeId, Int) {
 
   let #(initial_weights, initial_queue) =
     model.neighbors(graph, start)
-    |> list.fold(#(dict.new(), heap.new()), fn(acc, edge) {
+    |> list.fold(#(dict.new(), priority_queue.new(compare_max)), fn(acc, edge) {
       let #(weights_acc, queue_acc) = acc
       let #(neighbor, weight) = edge
       case set.contains(remaining, neighbor) {
         True -> #(
           dict.insert(weights_acc, neighbor, weight),
-          heap.insert(queue_acc, #(weight, neighbor), compare_max),
+          priority_queue.push(queue_acc, #(weight, neighbor)),
         )
         False -> acc
       }
@@ -143,7 +143,7 @@ fn build_mas_order(
   current_order: List(NodeId),
   remaining: Set(NodeId),
   weights: dict.Dict(NodeId, Int),
-  queue: heap.Heap(#(Int, NodeId)),
+  queue: priority_queue.Queue(#(Int, NodeId)),
 ) -> List(NodeId) {
   case set.size(remaining) {
     0 -> current_order
@@ -165,7 +165,7 @@ fn build_mas_order(
               let new_w = existing_w + weight
               #(
                 dict.insert(weights_acc, neighbor, new_w),
-                heap.insert(queue_acc, #(new_w, neighbor), compare_max),
+                priority_queue.push(queue_acc, #(new_w, neighbor)),
               )
             }
             False -> acc
@@ -184,13 +184,12 @@ fn build_mas_order(
 }
 
 fn get_next_mas_node(
-  queue: heap.Heap(#(Int, NodeId)),
+  queue: priority_queue.Queue(#(Int, NodeId)),
   remaining: Set(NodeId),
   weights: dict.Dict(NodeId, Int),
-) -> #(NodeId, heap.Heap(#(Int, NodeId))) {
-  case heap.find_min(queue) {
-    Ok(#(w, node)) -> {
-      let assert Ok(q_rest) = heap.delete_min(queue, compare_max)
+) -> #(NodeId, priority_queue.Queue(#(Int, NodeId))) {
+  case priority_queue.pop(queue) {
+    Ok(#(#(w, node), q_rest)) -> {
       case set.contains(remaining, node) {
         True -> {
           // Verify this is the current weight, not a stale entry
