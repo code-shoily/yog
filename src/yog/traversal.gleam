@@ -1,5 +1,6 @@
 import gleam/list
 import gleam/set.{type Set}
+import yog/internal/queue
 import yog/model.{type Graph, type NodeId}
 
 /// Traversal order for graph walking algorithms.
@@ -31,7 +32,11 @@ pub fn walk(
   in graph: Graph(n, e),
   using order: Order,
 ) -> List(NodeId) {
-  do_walk(graph, [start_id], set.new(), [], order)
+  case order {
+    BreadthFirst ->
+      do_walk_bfs(graph, queue.new() |> queue.push(start_id), set.new(), [])
+    DepthFirst -> do_walk_dfs(graph, [start_id], set.new(), [])
+  }
 }
 
 /// Walks the graph but stops early when a condition is met.
@@ -56,77 +61,136 @@ pub fn walk_until(
   using order: Order,
   until should_stop: fn(NodeId) -> Bool,
 ) -> List(NodeId) {
-  do_walk_until(graph, [start_id], set.new(), [], order, should_stop)
+  case order {
+    BreadthFirst ->
+      do_walk_until_bfs(
+        graph,
+        queue.new() |> queue.push(start_id),
+        set.new(),
+        [],
+        should_stop,
+      )
+    DepthFirst ->
+      do_walk_until_dfs(graph, [start_id], set.new(), [], should_stop)
+  }
 }
 
-fn do_walk(
+// BFS with efficient O(1) amortized queue operations
+fn do_walk_bfs(
   graph: Graph(n, e),
-  queue: List(NodeId),
+  q: queue.Queue(NodeId),
   visited: Set(NodeId),
   acc: List(NodeId),
-  order: Order,
 ) -> List(NodeId) {
-  case queue {
-    [] -> list.reverse(acc)
-    [head, ..tail] -> {
+  case queue.pop(q) {
+    Error(Nil) -> list.reverse(acc)
+    Ok(#(head, rest)) -> {
       case set.contains(visited, head) {
-        True -> do_walk(graph, tail, visited, acc, order)
+        True -> do_walk_bfs(graph, rest, visited, acc)
         False -> {
-          // We use successors here because walking a graph 
-          // usually implies following the direction of the edges.
           let next_nodes = model.successor_ids(graph, head)
+          let next_queue = queue.push_list(rest, next_nodes)
 
-          let next_queue = case order {
-            BreadthFirst -> list.append(tail, next_nodes)
-            DepthFirst -> list.append(next_nodes, tail)
-          }
-
-          do_walk(
-            graph,
-            next_queue,
-            set.insert(visited, head),
-            [head, ..acc],
-            order,
-          )
+          do_walk_bfs(graph, next_queue, set.insert(visited, head), [
+            head,
+            ..acc
+          ])
         }
       }
     }
   }
 }
 
-fn do_walk_until(
+// DFS with list-based stack (prepend is O(1))
+fn do_walk_dfs(
   graph: Graph(n, e),
-  queue: List(NodeId),
+  stack: List(NodeId),
   visited: Set(NodeId),
   acc: List(NodeId),
-  order: Order,
-  should_stop: fn(NodeId) -> Bool,
 ) -> List(NodeId) {
-  case queue {
+  case stack {
     [] -> list.reverse(acc)
     [head, ..tail] -> {
       case set.contains(visited, head) {
-        True -> do_walk_until(graph, tail, visited, acc, order, should_stop)
+        True -> do_walk_dfs(graph, tail, visited, acc)
+        False -> {
+          let next_nodes = model.successor_ids(graph, head)
+          let next_stack = list.append(next_nodes, tail)
+
+          do_walk_dfs(graph, next_stack, set.insert(visited, head), [
+            head,
+            ..acc
+          ])
+        }
+      }
+    }
+  }
+}
+
+// BFS with early termination
+fn do_walk_until_bfs(
+  graph: Graph(n, e),
+  q: queue.Queue(NodeId),
+  visited: Set(NodeId),
+  acc: List(NodeId),
+  should_stop: fn(NodeId) -> Bool,
+) -> List(NodeId) {
+  case queue.pop(q) {
+    Error(Nil) -> list.reverse(acc)
+    Ok(#(head, rest)) -> {
+      case set.contains(visited, head) {
+        True -> do_walk_until_bfs(graph, rest, visited, acc, should_stop)
         False -> {
           let current_acc = [head, ..acc]
 
-          // --- THE BREAKOUT CASE ---
           case should_stop(head) {
             True -> list.reverse(current_acc)
             False -> {
               let next_nodes = model.successor_ids(graph, head)
+              let next_queue = queue.push_list(rest, next_nodes)
 
-              let next_queue = case order {
-                BreadthFirst -> list.append(tail, next_nodes)
-                DepthFirst -> list.append(next_nodes, tail)
-              }
-
-              do_walk_until(
+              do_walk_until_bfs(
                 graph,
                 next_queue,
                 set.insert(visited, head),
                 current_acc,
-                order,
+                should_stop,
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// DFS with early termination
+fn do_walk_until_dfs(
+  graph: Graph(n, e),
+  stack: List(NodeId),
+  visited: Set(NodeId),
+  acc: List(NodeId),
+  should_stop: fn(NodeId) -> Bool,
+) -> List(NodeId) {
+  case stack {
+    [] -> list.reverse(acc)
+    [head, ..tail] -> {
+      case set.contains(visited, head) {
+        True -> do_walk_until_dfs(graph, tail, visited, acc, should_stop)
+        False -> {
+          let current_acc = [head, ..acc]
+
+          case should_stop(head) {
+            True -> list.reverse(current_acc)
+            False -> {
+              let next_nodes = model.successor_ids(graph, head)
+              let next_stack = list.append(next_nodes, tail)
+
+              do_walk_until_dfs(
+                graph,
+                next_stack,
+                set.insert(visited, head),
+                current_acc,
                 should_stop,
               )
             }
