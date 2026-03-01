@@ -1,8 +1,8 @@
 import gleam/list
 import gleam/option.{None, Some}
 import gleeunit/should
-import yog/multi
 import yog/multi/eulerian
+import yog/multi/model as multi
 
 // ---------------------------------------------------------------------------
 // has_eulerian_circuit
