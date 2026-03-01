@@ -277,3 +277,257 @@ pub fn all_maximal_contains_max_test() {
   |> list.contains(max)
   |> should.be_true
 }
+
+// ============= k_cliques Tests =============
+
+// Test finding all 2-cliques (edges) in a triangle
+pub fn k_cliques_size_2_triangle_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edge(from: 1, to: 3, with: 1)
+
+  let result = clique.k_cliques(graph, 2)
+
+  // Should find 3 edges (2-cliques)
+  result
+  |> list.length
+  |> should.equal(3)
+
+  result
+  |> list.contains(set.from_list([1, 2]))
+  |> should.be_true
+
+  result
+  |> list.contains(set.from_list([2, 3]))
+  |> should.be_true
+
+  result
+  |> list.contains(set.from_list([1, 3]))
+  |> should.be_true
+}
+
+// Test finding all 3-cliques (triangles) in a graph
+pub fn k_cliques_size_3_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edge(from: 1, to: 3, with: 1)
+    |> model.add_edge(from: 3, to: 4, with: 1)
+
+  let result = clique.k_cliques(graph, 3)
+
+  // Should find exactly 1 triangle
+  result
+  |> list.length
+  |> should.equal(1)
+
+  result
+  |> list.first
+  |> should.equal(Ok(set.from_list([1, 2, 3])))
+}
+
+// Test finding all 4-cliques in a complete graph K4
+pub fn k_cliques_size_4_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 1, to: 3, with: 1)
+    |> model.add_edge(from: 1, to: 4, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edge(from: 2, to: 4, with: 1)
+    |> model.add_edge(from: 3, to: 4, with: 1)
+
+  let result = clique.k_cliques(graph, 4)
+
+  // Should find exactly 1 4-clique (the whole graph)
+  result
+  |> list.length
+  |> should.equal(1)
+
+  result
+  |> list.first
+  |> should.equal(Ok(set.from_list([1, 2, 3, 4])))
+}
+
+// Test k_cliques with k larger than any clique
+pub fn k_cliques_too_large_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edge(from: 1, to: 3, with: 1)
+
+  let result = clique.k_cliques(graph, 5)
+
+  // No 5-cliques exist in a triangle
+  result
+  |> list.length
+  |> should.equal(0)
+}
+
+// Test k_cliques with k=1 (all individual nodes)
+pub fn k_cliques_size_1_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+
+  let result = clique.k_cliques(graph, 1)
+
+  // Should find 3 1-cliques (each node)
+  result
+  |> list.length
+  |> should.equal(3)
+
+  result
+  |> list.contains(set.from_list([1]))
+  |> should.be_true
+
+  result
+  |> list.contains(set.from_list([2]))
+  |> should.be_true
+
+  result
+  |> list.contains(set.from_list([3]))
+  |> should.be_true
+}
+
+// Test k_cliques on empty graph
+pub fn k_cliques_empty_graph_test() {
+  let graph = model.new(Undirected)
+
+  let result = clique.k_cliques(graph, 3)
+
+  result
+  |> list.length
+  |> should.equal(0)
+}
+
+// Test k_cliques with k=0 (edge case)
+pub fn k_cliques_zero_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+
+  let result = clique.k_cliques(graph, 0)
+
+  // k=0 should return empty list
+  result
+  |> list.length
+  |> should.equal(0)
+}
+
+// Test k_cliques with negative k
+pub fn k_cliques_negative_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+
+  let result = clique.k_cliques(graph, -1)
+
+  result
+  |> list.length
+  |> should.equal(0)
+}
+
+// Test finding triangles in a graph with multiple triangles
+pub fn k_cliques_multiple_triangles_test() {
+  let graph =
+    model.new(Undirected)
+    // First triangle
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edge(from: 1, to: 3, with: 1)
+    // Second triangle (shares edge with first)
+    |> model.add_node(4, "D")
+    |> model.add_edge(from: 2, to: 4, with: 1)
+    |> model.add_edge(from: 3, to: 4, with: 1)
+
+  let result = clique.k_cliques(graph, 3)
+
+  // Should find 2 triangles
+  result
+  |> list.length
+  |> should.equal(2)
+
+  result
+  |> list.contains(set.from_list([1, 2, 3]))
+  |> should.be_true
+
+  result
+  |> list.contains(set.from_list([2, 3, 4]))
+  |> should.be_true
+}
+
+// Test k_cliques on a path (no triangles)
+pub fn k_cliques_path_no_triangles_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edge(from: 3, to: 4, with: 1)
+
+  let result = clique.k_cliques(graph, 3)
+
+  // No triangles in a path
+  result
+  |> list.length
+  |> should.equal(0)
+}
+
+// Test k_cliques finds all 3-cliques in K5
+pub fn k_cliques_k5_triangles_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_node(5, "E")
+    // Complete graph K5 - all pairs connected
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 1, to: 3, with: 1)
+    |> model.add_edge(from: 1, to: 4, with: 1)
+    |> model.add_edge(from: 1, to: 5, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edge(from: 2, to: 4, with: 1)
+    |> model.add_edge(from: 2, to: 5, with: 1)
+    |> model.add_edge(from: 3, to: 4, with: 1)
+    |> model.add_edge(from: 3, to: 5, with: 1)
+    |> model.add_edge(from: 4, to: 5, with: 1)
+
+  let result = clique.k_cliques(graph, 3)
+
+  // K5 has C(5,3) = 10 triangles
+  result
+  |> list.length
+  |> should.equal(10)
+}

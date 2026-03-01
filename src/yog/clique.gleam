@@ -95,6 +95,59 @@ pub fn all_maximal_cliques(graph: Graph(n, e)) -> List(Set(NodeId)) {
   bron_kerbosch_all(graph, r, p, x, [])
 }
 
+/// Finds all cliques of exactly size k in an undirected graph.
+///
+/// Returns all subsets of k nodes where every pair of nodes is connected.
+/// Uses a modified Bron-Kerbosch algorithm with early pruning for efficiency.
+///
+/// **Time Complexity:** Generally faster than finding all maximal cliques when k is small,
+/// as branches are pruned when they cannot reach size k.
+///
+/// ## Example
+///
+/// ```gleam
+/// import yog
+/// import yog/clique
+///
+/// // Create a graph with triangles (3-cliques)
+/// let graph =
+///   yog.undirected()
+///   |> yog.add_node(1, "A")
+///   |> yog.add_node(2, "B")
+///   |> yog.add_node(3, "C")
+///   |> yog.add_node(4, "D")
+///   |> yog.add_edge(from: 1, to: 2, with: 1)
+///   |> yog.add_edge(from: 2, to: 3, with: 1)
+///   |> yog.add_edge(from: 1, to: 3, with: 1)
+///   |> yog.add_edge(from: 3, to: 4, with: 1)
+///
+/// clique.k_cliques(graph, 3)
+/// // => [set.from_list([1, 2, 3])]  // The single triangle
+///
+/// clique.k_cliques(graph, 2)
+/// // => [set.from_list([1, 2]), set.from_list([1, 3]),
+/// //     set.from_list([2, 3]), set.from_list([3, 4])]  // All edges
+/// ```
+///
+/// ## Use Cases
+///
+/// - Finding triangles (k=3) in social networks
+/// - Detecting specific-sized communities
+/// - Pattern matching in biological networks
+/// - Computational chemistry (finding molecular motifs)
+pub fn k_cliques(graph: Graph(n, e), k: Int) -> List(Set(NodeId)) {
+  case k <= 0 {
+    True -> []
+    False -> {
+      let all_nodes = model.all_nodes(graph)
+      let p = set.from_list(all_nodes)
+      let r = set.new()
+
+      bron_kerbosch_k(graph, r, p, k, [])
+    }
+  }
+}
+
 // Bron-Kerbosch algorithm with pivoting (finds maximum clique)
 fn bron_kerbosch_pivot(
   graph: Graph(n, e),
@@ -181,4 +234,46 @@ fn choose_pivot(p: Set(NodeId), x: Set(NodeId)) -> NodeId {
   |> set.to_list
   |> list.first
   |> result.unwrap(-1)
+}
+
+// Modified Bron-Kerbosch for finding cliques of exact size k
+fn bron_kerbosch_k(
+  graph: Graph(n, e),
+  r: Set(NodeId),
+  p: Set(NodeId),
+  k: Int,
+  acc: List(Set(NodeId)),
+) -> List(Set(NodeId)) {
+  let r_size = set.size(r)
+
+  case r_size == k {
+    // Found a k-clique!
+    True -> [r, ..acc]
+    False -> {
+      // Prune: can't reach size k even if we add all remaining candidates
+      case r_size + set.size(p) < k {
+        True -> acc
+        False -> {
+          // Continue exploring
+          set.to_list(p)
+          |> list.fold(#(p, acc), fn(state, v) {
+            let #(curr_p, curr_acc) = state
+            let v_neighbors = get_neighbor_ids_set(graph, v)
+
+            let new_acc =
+              bron_kerbosch_k(
+                graph,
+                set.insert(r, v),
+                set.intersection(curr_p, v_neighbors),
+                k,
+                curr_acc,
+              )
+
+            #(set.delete(curr_p, v), new_acc)
+          })
+          |> fn(res) { res.1 }
+        }
+      }
+    }
+  }
 }
