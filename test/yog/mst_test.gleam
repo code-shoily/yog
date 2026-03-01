@@ -475,3 +475,304 @@ pub fn mst_with_self_loop_test() {
     _ -> should.fail()
   }
 }
+
+// ============= Prim's Algorithm Tests =============
+
+pub fn prim_simple_triangle_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 2)
+    |> model.add_edge(from: 1, to: 3, with: 3)
+
+  let result = mst.prim(in: graph, with_compare: int.compare)
+
+  // MST should have 2 edges (n-1 for n nodes)
+  list.length(result)
+  |> should.equal(2)
+
+  // Total weight should be 1+2=3 (edges 1-2 and 2-3)
+  let total_weight = list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
+
+  total_weight
+  |> should.equal(3)
+}
+
+pub fn prim_linear_chain_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 5)
+    |> model.add_edge(from: 2, to: 3, with: 10)
+
+  let result = mst.prim(in: graph, with_compare: int.compare)
+
+  // Should have 2 edges
+  list.length(result)
+  |> should.equal(2)
+
+  // Total weight should be 15
+  let total_weight = list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
+
+  total_weight
+  |> should.equal(15)
+}
+
+pub fn prim_single_edge_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+
+  let result = mst.prim(in: graph, with_compare: int.compare)
+
+  list.length(result)
+  |> should.equal(1)
+
+  case result {
+    [edge] -> {
+      edge.weight
+      |> should.equal(10)
+    }
+    _ -> should.fail()
+  }
+}
+
+pub fn prim_single_node_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+
+  let result = mst.prim(in: graph, with_compare: int.compare)
+
+  list.length(result)
+  |> should.equal(0)
+}
+
+pub fn prim_empty_graph_test() {
+  let graph = model.new(Undirected)
+
+  let result = mst.prim(in: graph, with_compare: int.compare)
+
+  list.length(result)
+  |> should.equal(0)
+}
+
+pub fn prim_square_with_diagonal_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 4, with: 1)
+    |> model.add_edge(from: 4, to: 3, with: 1)
+    |> model.add_edge(from: 3, to: 1, with: 1)
+    |> model.add_edge(from: 1, to: 4, with: 5)
+    |> model.add_edge(from: 2, to: 3, with: 5)
+
+  let result = mst.prim(in: graph, with_compare: int.compare)
+
+  // Should have 3 edges (4 nodes)
+  list.length(result)
+  |> should.equal(3)
+
+  // Total weight should be 3 (three edges of weight 1)
+  let total_weight = list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
+
+  total_weight
+  |> should.equal(3)
+}
+
+pub fn prim_classic_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 2)
+    |> model.add_edge(from: 3, to: 4, with: 3)
+    |> model.add_edge(from: 1, to: 4, with: 4)
+    |> model.add_edge(from: 2, to: 4, with: 5)
+
+  let result = mst.prim(in: graph, with_compare: int.compare)
+
+  list.length(result)
+  |> should.equal(3)
+
+  // Should have total weight 6
+  let total_weight = list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
+
+  total_weight
+  |> should.equal(6)
+}
+
+pub fn prim_pentagon_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_node(5, "E")
+    // Pentagon edges
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 2)
+    |> model.add_edge(from: 3, to: 4, with: 3)
+    |> model.add_edge(from: 4, to: 5, with: 4)
+    |> model.add_edge(from: 5, to: 1, with: 5)
+
+  let result = mst.prim(in: graph, with_compare: int.compare)
+
+  // Should have 4 edges (5 nodes)
+  list.length(result)
+  |> should.equal(4)
+
+  // Should select edges 1,2,3,4 (not 5) for total weight 10
+  let total_weight = list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
+
+  total_weight
+  |> should.equal(10)
+}
+
+pub fn prim_complete_graph_k4_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    // All possible edges with increasing weights
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 1, to: 3, with: 2)
+    |> model.add_edge(from: 1, to: 4, with: 3)
+    |> model.add_edge(from: 2, to: 3, with: 4)
+    |> model.add_edge(from: 2, to: 4, with: 5)
+    |> model.add_edge(from: 3, to: 4, with: 6)
+
+  let result = mst.prim(in: graph, with_compare: int.compare)
+
+  // MST of K4 has 3 edges
+  list.length(result)
+  |> should.equal(3)
+
+  // Should select edges with weights 1, 2, 3
+  let total_weight = list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
+
+  total_weight
+  |> should.equal(6)
+}
+
+pub fn prim_complete_graph_k5_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_node(5, "E")
+    // K5 has 10 edges
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 1, to: 3, with: 2)
+    |> model.add_edge(from: 1, to: 4, with: 3)
+    |> model.add_edge(from: 1, to: 5, with: 4)
+    |> model.add_edge(from: 2, to: 3, with: 5)
+    |> model.add_edge(from: 2, to: 4, with: 6)
+    |> model.add_edge(from: 2, to: 5, with: 7)
+    |> model.add_edge(from: 3, to: 4, with: 8)
+    |> model.add_edge(from: 3, to: 5, with: 9)
+    |> model.add_edge(from: 4, to: 5, with: 10)
+
+  let result = mst.prim(in: graph, with_compare: int.compare)
+
+  // MST of K5 has 4 edges
+  list.length(result)
+  |> should.equal(4)
+
+  // Should select edges with weights 1, 2, 3, 4
+  let total_weight = list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
+
+  total_weight
+  |> should.equal(10)
+}
+
+pub fn prim_larger_graph_test() {
+  // Create a graph with 10 nodes and various edges
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "1")
+    |> model.add_node(2, "2")
+    |> model.add_node(3, "3")
+    |> model.add_node(4, "4")
+    |> model.add_node(5, "5")
+    |> model.add_node(6, "6")
+    |> model.add_node(7, "7")
+    |> model.add_node(8, "8")
+    |> model.add_node(9, "9")
+    |> model.add_node(10, "10")
+    // Add edges to form a spanning tree with some extras
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 2)
+    |> model.add_edge(from: 3, to: 4, with: 3)
+    |> model.add_edge(from: 4, to: 5, with: 4)
+    |> model.add_edge(from: 5, to: 6, with: 5)
+    |> model.add_edge(from: 6, to: 7, with: 6)
+    |> model.add_edge(from: 7, to: 8, with: 7)
+    |> model.add_edge(from: 8, to: 9, with: 8)
+    |> model.add_edge(from: 9, to: 10, with: 9)
+    // Add some cycle-creating edges with higher weights
+    |> model.add_edge(from: 1, to: 10, with: 100)
+    |> model.add_edge(from: 5, to: 10, with: 50)
+
+  let result = mst.prim(in: graph, with_compare: int.compare)
+
+  // Should have exactly 9 edges (n-1 for n=10)
+  list.length(result)
+  |> should.equal(9)
+
+  // Should have total weight 1+2+3+4+5+6+7+8+9 = 45
+  let total_weight = list.fold(result, 0, fn(acc, edge) { acc + edge.weight })
+
+  total_weight
+  |> should.equal(45)
+}
+
+// Compare Kruskal vs Prim on the same graph
+pub fn prim_vs_kruskal_same_weight_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 2)
+    |> model.add_edge(from: 3, to: 4, with: 3)
+    |> model.add_edge(from: 1, to: 4, with: 4)
+    |> model.add_edge(from: 2, to: 4, with: 5)
+
+  let kruskal_result = mst.kruskal(in: graph, with_compare: int.compare)
+  let prim_result = mst.prim(in: graph, with_compare: int.compare)
+
+  // Both should have same number of edges
+  list.length(kruskal_result)
+  |> should.equal(list.length(prim_result))
+
+  // Both should have same total weight
+  let kruskal_weight =
+    list.fold(kruskal_result, 0, fn(acc, edge) { acc + edge.weight })
+  let prim_weight =
+    list.fold(prim_result, 0, fn(acc, edge) { acc + edge.weight })
+
+  kruskal_weight
+  |> should.equal(prim_weight)
+}

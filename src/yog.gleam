@@ -63,6 +63,7 @@
 ////
 //// - **`yog/mst`** - Minimum Spanning Tree
 ////   - Kruskal's algorithm with Union-Find
+////   - Prim's algorithm with priority queue
 ////
 //// - **`yog/topological_sort`** - Topological ordering
 ////   - Kahn's algorithm
