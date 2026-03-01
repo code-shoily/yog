@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 2026-02-27 - 2.0.0
+## [Unreleased] - 2.0.1
 
 ### Added
 - **`traversal.fold_walk()`**: Fold over nodes during traversal with metadata (depth, parent). Enables state accumulation during BFS/DFS with fine-grained control via `Continue`/`Stop`/`Halt`. Perfect for building parent maps, collecting nodes within distance limits, or computing statistics during traversal.
@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Crossover heuristic: Uses Floyd-Warshall when POIs > 1/3 of total nodes
   - Returns only POI-to-POI distances, not all node pairs
   - Use cases: AoC 2016 Day 24, TSP-like problems, network analysis with specific landmarks
+
+## 2026-02-27 - 2.0.0
 
 ### Breaking Changes
 - **`pathfinding.floyd_warshall()`**: Return type changed from `Result(Dict(NodeId, Dict(NodeId, e)), Nil)` to `Result(Dict(#(NodeId, NodeId), e), Nil)`
