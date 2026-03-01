@@ -3,7 +3,7 @@ import gleam/int
 import gleam/list
 import gleeunit/should
 import yog/model
-import yog/multi
+import yog/multi/model as multi
 
 // ---------------------------------------------------------------------------
 // Construction

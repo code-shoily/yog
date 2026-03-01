@@ -4,7 +4,7 @@ import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/set.{type Set}
 import yog/model.{Directed, Undirected}
-import yog/multi.{type MultiGraph} as m
+import yog/multi/model.{type MultiGraph} as m
 
 // EdgeId and NodeId are both Int; defined locally to keep signatures readable
 type EdgeId =
