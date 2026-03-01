@@ -2912,3 +2912,570 @@ pub fn implicit_dijkstra_by_diamond_test() {
   // Should take cheaper path through node 2 (cost 2) not 3 (cost 11)
   result |> should.equal(Some(2))
 }
+
+// ===== implicit_a_star tests =====
+
+pub fn implicit_a_star_grid_manhattan_test() {
+  // 3x3 grid, find shortest path from (0,0) to (2,2)
+  // Each move costs 1
+  let successors_with_cost = fn(pos: #(Int, Int)) {
+    let #(x, y) = pos
+    [#(0, 1), #(1, 0), #(0, -1), #(-1, 0)]
+    |> list.filter_map(fn(delta) {
+      let #(dx, dy) = delta
+      let new_pos = #(x + dx, y + dy)
+      let #(nx, ny) = new_pos
+      case nx >= 0 && nx < 3 && ny >= 0 && ny < 3 {
+        True -> Ok(#(new_pos, 1))
+        False -> Error(Nil)
+      }
+    })
+  }
+
+  let manhattan_heuristic = fn(pos: #(Int, Int)) {
+    let #(x, y) = pos
+    int.absolute_value(2 - x) + int.absolute_value(2 - y)
+  }
+
+  let result =
+    pathfinding.implicit_a_star(
+      from: #(0, 0),
+      successors_with_cost: successors_with_cost,
+      heuristic: manhattan_heuristic,
+      is_goal: fn(pos) { pos == #(2, 2) },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // Shortest path is 4 moves (right, right, down, down or variations)
+  result |> should.equal(Some(4))
+}
+
+pub fn implicit_a_star_linear_path_test() {
+  // Linear: 1 -> 2 -> 3 -> 4
+  let successors_with_cost = fn(n: Int) {
+    case n < 4 {
+      True -> [#(n + 1, 1)]
+      False -> []
+    }
+  }
+
+  let heuristic = fn(n: Int) { 4 - n }
+
+  let result =
+    pathfinding.implicit_a_star(
+      from: 1,
+      successors_with_cost: successors_with_cost,
+      heuristic: heuristic,
+      is_goal: fn(n) { n == 4 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(Some(3))
+}
+
+pub fn implicit_a_star_no_path_test() {
+  // 1 -> 2, 3 -> 4, no path from 1 to 4
+  let successors_with_cost = fn(n: Int) {
+    case n {
+      1 -> [#(2, 1)]
+      3 -> [#(4, 1)]
+      _ -> []
+    }
+  }
+
+  let heuristic = fn(_n: Int) { 0 }
+
+  let result =
+    pathfinding.implicit_a_star(
+      from: 1,
+      successors_with_cost: successors_with_cost,
+      heuristic: heuristic,
+      is_goal: fn(n) { n == 4 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(None)
+}
+
+pub fn implicit_a_star_start_is_goal_test() {
+  let successors_with_cost = fn(_n: Int) { [] }
+  let heuristic = fn(_n: Int) { 0 }
+
+  let result =
+    pathfinding.implicit_a_star(
+      from: 42,
+      successors_with_cost: successors_with_cost,
+      heuristic: heuristic,
+      is_goal: fn(n) { n == 42 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(Some(0))
+}
+
+pub fn implicit_a_star_multiple_paths_test() {
+  // Diamond: 1 -> 2 -> 4 (cost 2)
+  //          1 -> 3 -> 4 (cost 11)
+  let successors_with_cost = fn(n: Int) {
+    case n {
+      1 -> [#(2, 1), #(3, 10)]
+      2 -> [#(4, 1)]
+      3 -> [#(4, 1)]
+      _ -> []
+    }
+  }
+
+  let heuristic = fn(n: Int) {
+    case n {
+      4 -> 0
+      _ -> 1
+    }
+  }
+
+  let result =
+    pathfinding.implicit_a_star(
+      from: 1,
+      successors_with_cost: successors_with_cost,
+      heuristic: heuristic,
+      is_goal: fn(n) { n == 4 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(Some(2))
+}
+
+pub fn implicit_a_star_admissible_heuristic_test() {
+  // Test that A* works correctly with admissible heuristic
+  // Grid with obstacles: need to go around
+  let successors_with_cost = fn(pos: #(Int, Int)) {
+    let #(x, y) = pos
+    [#(0, 1), #(1, 0), #(0, -1), #(-1, 0)]
+    |> list.filter_map(fn(delta) {
+      let #(dx, dy) = delta
+      let new_pos = #(x + dx, y + dy)
+      let #(nx, ny) = new_pos
+      // Block position (1, 1) - force going around
+      case nx >= 0 && nx < 3 && ny >= 0 && ny < 3 && new_pos != #(1, 1) {
+        True -> Ok(#(new_pos, 1))
+        False -> Error(Nil)
+      }
+    })
+  }
+
+  let manhattan_heuristic = fn(pos: #(Int, Int)) {
+    let #(x, y) = pos
+    int.absolute_value(2 - x) + int.absolute_value(2 - y)
+  }
+
+  let result =
+    pathfinding.implicit_a_star(
+      from: #(0, 0),
+      successors_with_cost: successors_with_cost,
+      heuristic: manhattan_heuristic,
+      is_goal: fn(pos) { pos == #(2, 2) },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // Path must go around the obstacle
+  result |> should.equal(Some(4))
+}
+
+// ===== implicit_a_star_by tests =====
+
+pub fn implicit_a_star_by_position_mask_test() {
+  // State is #(position, keys_collected), dedupe by both
+  // @ -> a -> b (costs 1 each)
+  // Can only reach b after collecting a
+  let successors = fn(state: #(String, Int)) {
+    let #(pos, collected) = state
+    case pos {
+      "@" -> [#(#("a", int.bitwise_or(collected, 1)), 1)]
+      "a" ->
+        case int.bitwise_and(collected, 1) == 1 {
+          True -> [#(#("b", int.bitwise_or(collected, 2)), 1)]
+          False -> []
+        }
+      _ -> []
+    }
+  }
+
+  let heuristic = fn(state: #(String, Int)) {
+    let #(pos, _collected) = state
+    case pos {
+      "b" -> 0
+      "a" -> 1
+      _ -> 2
+    }
+  }
+
+  let result =
+    pathfinding.implicit_a_star_by(
+      from: #("@", 0),
+      successors_with_cost: successors,
+      visited_by: fn(state) { state },
+      heuristic: heuristic,
+      is_goal: fn(state) { state.0 == "b" },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(Some(2))
+}
+
+pub fn implicit_a_star_by_best_cost_wins_test() {
+  // Multiple ways to reach same position with different costs
+  // State is #(position, history)
+  // Dedupe by position only, best cost should win
+  let successors = fn(state: #(Int, String)) {
+    let #(pos, history) = state
+    case pos {
+      1 -> [
+        #(#(2, history <> "->2"), 1),
+        #(#(3, history <> "->3"), 10),
+      ]
+      2 -> [#(#(4, history <> "->4"), 1)]
+      3 -> [#(#(4, history <> "->4"), 1)]
+      _ -> []
+    }
+  }
+
+  let heuristic = fn(state: #(Int, String)) {
+    let #(pos, _history) = state
+    case pos {
+      4 -> 0
+      _ -> 1
+    }
+  }
+
+  let result =
+    pathfinding.implicit_a_star_by(
+      from: #(1, "start"),
+      successors_with_cost: successors,
+      visited_by: fn(state) { state.0 },
+      heuristic: heuristic,
+      is_goal: fn(state) { state.0 == 4 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // Should take cheaper path through position 2 (total cost 2)
+  result |> should.equal(Some(2))
+}
+
+pub fn implicit_a_star_by_identity_equivalence_test() {
+  // Using identity function for visited_by should behave like base version
+  let successors_with_cost = fn(n: Int) {
+    case n < 4 {
+      True -> [#(n + 1, 1)]
+      False -> []
+    }
+  }
+
+  let heuristic = fn(n: Int) { 4 - n }
+
+  let result_by =
+    pathfinding.implicit_a_star_by(
+      from: 1,
+      successors_with_cost: successors_with_cost,
+      visited_by: fn(n) { n },
+      heuristic: heuristic,
+      is_goal: fn(n) { n == 4 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  let result_base =
+    pathfinding.implicit_a_star(
+      from: 1,
+      successors_with_cost: successors_with_cost,
+      heuristic: heuristic,
+      is_goal: fn(n) { n == 4 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result_by |> should.equal(result_base)
+  result_by |> should.equal(Some(3))
+}
+
+// ===== implicit_bellman_ford tests =====
+
+pub fn implicit_bellman_ford_linear_path_test() {
+  // Linear: 1 -> 2 -> 3 -> 4
+  let successors_with_cost = fn(n: Int) {
+    case n < 4 {
+      True -> [#(n + 1, 1)]
+      False -> []
+    }
+  }
+
+  let result =
+    pathfinding.implicit_bellman_ford(
+      from: 1,
+      successors_with_cost: successors_with_cost,
+      is_goal: fn(n) { n == 4 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(pathfinding.FoundGoal(3))
+}
+
+pub fn implicit_bellman_ford_negative_weights_test() {
+  // Path with negative weights
+  // 1 -> 2 (cost 5) -> 3 (cost -2) -> 4 (cost 1)
+  // Total: 5 + (-2) + 1 = 4
+  let successors_with_cost = fn(n: Int) {
+    case n {
+      1 -> [#(2, 5)]
+      2 -> [#(3, -2)]
+      3 -> [#(4, 1)]
+      _ -> []
+    }
+  }
+
+  let result =
+    pathfinding.implicit_bellman_ford(
+      from: 1,
+      successors_with_cost: successors_with_cost,
+      is_goal: fn(n) { n == 4 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(pathfinding.FoundGoal(4))
+}
+
+pub fn implicit_bellman_ford_negative_cycle_test() {
+  // Negative cycle: 1 -> 2 -> 3 -> 2 (total cost -1)
+  let successors_with_cost = fn(n: Int) {
+    case n {
+      1 -> [#(2, 1)]
+      2 -> [#(3, -1)]
+      3 -> [#(2, -2), #(4, 10)]
+      _ -> []
+    }
+  }
+
+  let result =
+    pathfinding.implicit_bellman_ford(
+      from: 1,
+      successors_with_cost: successors_with_cost,
+      is_goal: fn(n) { n == 4 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(pathfinding.DetectedNegativeCycle)
+}
+
+pub fn implicit_bellman_ford_no_path_test() {
+  // 1 -> 2, 3 -> 4, no path from 1 to 4
+  let successors_with_cost = fn(n: Int) {
+    case n {
+      1 -> [#(2, 1)]
+      3 -> [#(4, 1)]
+      _ -> []
+    }
+  }
+
+  let result =
+    pathfinding.implicit_bellman_ford(
+      from: 1,
+      successors_with_cost: successors_with_cost,
+      is_goal: fn(n) { n == 4 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(pathfinding.NoGoal)
+}
+
+pub fn implicit_bellman_ford_start_is_goal_test() {
+  let successors_with_cost = fn(_n: Int) { [] }
+
+  let result =
+    pathfinding.implicit_bellman_ford(
+      from: 42,
+      successors_with_cost: successors_with_cost,
+      is_goal: fn(n) { n == 42 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(pathfinding.FoundGoal(0))
+}
+
+pub fn implicit_bellman_ford_chooses_cheaper_path_test() {
+  // Diamond with negative edge
+  // 1 -> 2 (cost 1) -> 4 (cost 1) = total 2
+  // 1 -> 3 (cost 10) -> 4 (cost -8) = total 2
+  // Both equal cost, should find at least one
+  let successors_with_cost = fn(n: Int) {
+    case n {
+      1 -> [#(2, 1), #(3, 10)]
+      2 -> [#(4, 1)]
+      3 -> [#(4, -8)]
+      _ -> []
+    }
+  }
+
+  let result =
+    pathfinding.implicit_bellman_ford(
+      from: 1,
+      successors_with_cost: successors_with_cost,
+      is_goal: fn(n) { n == 4 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(pathfinding.FoundGoal(2))
+}
+
+// ===== implicit_bellman_ford_by tests =====
+
+pub fn implicit_bellman_ford_by_position_mask_test() {
+  // State is #(position, keys_collected), dedupe by both
+  // @ -> a -> b (costs 1 each, negative edge at end)
+  let successors = fn(state: #(String, Int)) {
+    let #(pos, collected) = state
+    case pos {
+      "@" -> [#(#("a", int.bitwise_or(collected, 1)), 1)]
+      "a" ->
+        case int.bitwise_and(collected, 1) == 1 {
+          True -> [#(#("b", int.bitwise_or(collected, 2)), -1)]
+          False -> []
+        }
+      _ -> []
+    }
+  }
+
+  let result =
+    pathfinding.implicit_bellman_ford_by(
+      from: #("@", 0),
+      successors_with_cost: successors,
+      visited_by: fn(state) { state },
+      is_goal: fn(state) { state.0 == "b" },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(pathfinding.FoundGoal(0))
+}
+
+pub fn implicit_bellman_ford_by_negative_cycle_test() {
+  // State with cycle, dedupe by position only
+  let successors = fn(state: #(Int, Int)) {
+    let #(pos, count) = state
+    case pos {
+      1 -> [#(#(2, count + 1), 1)]
+      2 -> [#(#(3, count + 1), -1)]
+      3 -> [#(#(2, count + 1), -2), #(#(4, count + 1), 10)]
+      _ -> []
+    }
+  }
+
+  let result =
+    pathfinding.implicit_bellman_ford_by(
+      from: #(1, 0),
+      successors_with_cost: successors,
+      visited_by: fn(state) { state.0 },
+      is_goal: fn(state) { state.0 == 4 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(pathfinding.DetectedNegativeCycle)
+}
+
+pub fn implicit_bellman_ford_by_best_cost_wins_test() {
+  // Multiple ways to reach same position with different costs
+  // State is #(position, history)
+  // Dedupe by position only, best cost should win
+  let successors = fn(state: #(Int, String)) {
+    let #(pos, history) = state
+    case pos {
+      1 -> [
+        #(#(2, history <> "->2"), 1),
+        #(#(3, history <> "->3"), 10),
+      ]
+      2 -> [#(#(4, history <> "->4"), 1)]
+      3 -> [#(#(4, history <> "->4"), -8)]
+      _ -> []
+    }
+  }
+
+  let result =
+    pathfinding.implicit_bellman_ford_by(
+      from: #(1, "start"),
+      successors_with_cost: successors,
+      visited_by: fn(state) { state.0 },
+      is_goal: fn(state) { state.0 == 4 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // Should find cost 2 (either path works)
+  result |> should.equal(pathfinding.FoundGoal(2))
+}
+
+pub fn implicit_bellman_ford_by_identity_equivalence_test() {
+  // Using identity function for visited_by should behave like base version
+  let successors_with_cost = fn(n: Int) {
+    case n {
+      1 -> [#(2, 5)]
+      2 -> [#(3, -2)]
+      3 -> [#(4, 1)]
+      _ -> []
+    }
+  }
+
+  let result_by =
+    pathfinding.implicit_bellman_ford_by(
+      from: 1,
+      successors_with_cost: successors_with_cost,
+      visited_by: fn(n) { n },
+      is_goal: fn(n) { n == 4 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  let result_base =
+    pathfinding.implicit_bellman_ford(
+      from: 1,
+      successors_with_cost: successors_with_cost,
+      is_goal: fn(n) { n == 4 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result_by |> should.equal(result_base)
+  result_by |> should.equal(pathfinding.FoundGoal(4))
+}

@@ -2,8 +2,10 @@ import gleam/dict.{type Dict}
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/order.{type Order, Lt}
+import gleam/result
 import gleam/set
 import gleamy/priority_queue
+import yog/internal/queue
 import yog/model.{type Graph, type NodeId}
 
 /// Represents a path through the graph with its total weight.
@@ -1140,6 +1142,595 @@ fn do_implicit_dijkstra_by(
             }
           }
         }
+      }
+    }
+  }
+}
+
+// ======================== IMPLICIT A* ========================
+
+/// Finds the shortest path in an implicit graph using A* search with a heuristic.
+///
+/// Like `implicit_dijkstra`, but uses a heuristic to guide the search toward the goal.
+/// The heuristic must be admissible (never overestimate the actual distance) to guarantee
+/// finding the shortest path.
+///
+/// **Time Complexity:** O((V + E) log V), but often faster than Dijkstra in practice
+///
+/// ## Parameters
+///
+/// - `heuristic`: Function that estimates remaining cost from any state to goal.
+///   Must be admissible (h(state) ≤ actual cost) to guarantee shortest path.
+///
+/// ## Example
+///
+/// ```gleam
+/// // Grid pathfinding with Manhattan distance heuristic
+/// type Pos { Pos(x: Int, y: Int) }
+///
+/// pathfinding.implicit_a_star(
+///   from: Pos(0, 0),
+///   successors_with_cost: fn(pos) {
+///     [
+///       #(Pos(pos.x + 1, pos.y), 1),
+///       #(Pos(pos.x, pos.y + 1), 1),
+///     ]
+///   },
+///   is_goal: fn(pos) { pos.x == 10 && pos.y == 10 },
+///   heuristic: fn(pos) {
+///     // Manhattan distance to goal
+///     int.absolute_value(10 - pos.x) + int.absolute_value(10 - pos.y)
+///   },
+///   with_zero: 0,
+///   with_add: int.add,
+///   with_compare: int.compare,
+/// )
+/// ```
+///
+/// ## Use Cases
+///
+/// - Grid pathfinding with spatial heuristics (Manhattan, Euclidean)
+/// - Puzzle solving where you can estimate "distance to solution"
+/// - Game AI pathfinding on maps
+/// - Any scenario where Dijkstra works but you have a good heuristic
+pub fn implicit_a_star(
+  from start: state,
+  successors_with_cost successors: fn(state) -> List(#(state, cost)),
+  is_goal is_goal: fn(state) -> Bool,
+  heuristic h: fn(state) -> cost,
+  with_zero zero: cost,
+  with_add add: fn(cost, cost) -> cost,
+  with_compare compare: fn(cost, cost) -> Order,
+) -> Option(cost) {
+  let initial_f = h(start)
+  let frontier =
+    priority_queue.new(fn(a: #(cost, cost, state), b: #(cost, cost, state)) {
+      compare(a.0, b.0)
+    })
+    |> priority_queue.push(#(initial_f, zero, start))
+
+  do_implicit_a_star(frontier, dict.new(), successors, is_goal, h, add, compare)
+}
+
+fn do_implicit_a_star(
+  frontier: priority_queue.Queue(#(cost, cost, state)),
+  distances: Dict(state, cost),
+  successors: fn(state) -> List(#(state, cost)),
+  is_goal: fn(state) -> Bool,
+  h: fn(state) -> cost,
+  add: fn(cost, cost) -> cost,
+  compare: fn(cost, cost) -> Order,
+) -> Option(cost) {
+  case priority_queue.pop(frontier) {
+    Error(Nil) -> None
+    Ok(#(#(_, dist, current), rest_frontier)) -> {
+      case is_goal(current) {
+        True -> Some(dist)
+        False -> {
+          // Check if we've already found a better path to this state
+          let should_explore = case dict.get(distances, current) {
+            Ok(prev_dist) ->
+              case compare(dist, prev_dist) {
+                Lt -> True
+                _ -> False
+              }
+            Error(Nil) -> True
+          }
+
+          case should_explore {
+            False ->
+              do_implicit_a_star(
+                rest_frontier,
+                distances,
+                successors,
+                is_goal,
+                h,
+                add,
+                compare,
+              )
+            True -> {
+              let new_distances = dict.insert(distances, current, dist)
+
+              let next_frontier =
+                successors(current)
+                |> list.fold(rest_frontier, fn(frontier_acc, neighbor) {
+                  let #(next_state, edge_cost) = neighbor
+                  let next_dist = add(dist, edge_cost)
+                  let f_score = add(next_dist, h(next_state))
+                  priority_queue.push(frontier_acc, #(
+                    f_score,
+                    next_dist,
+                    next_state,
+                  ))
+                })
+
+              do_implicit_a_star(
+                next_frontier,
+                new_distances,
+                successors,
+                is_goal,
+                h,
+                add,
+                compare,
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/// Like `implicit_a_star`, but deduplicates visited states by a custom key.
+///
+/// Essential when your state carries extra data beyond what defines identity.
+/// The heuristic still operates on the full state, but deduplication uses only the key.
+///
+/// **Time Complexity:** O((V + E) log V) where V and E are measured in unique *keys*
+///
+/// ## Example
+///
+/// ```gleam
+/// // Grid with carried items, but dedupe by position only
+/// // Heuristic considers only position, not items
+/// pathfinding.implicit_a_star_by(
+///   from: #(Pos(0, 0), []),
+///   successors_with_cost: fn(state) {
+///     let #(pos, items) = state
+///     neighbors(pos)
+///     |> list.map(fn(next_pos) { #(#(next_pos, items), 1) })
+///   },
+///   visited_by: fn(state) { state.0 },  // Dedupe by position
+///   is_goal: fn(state) { state.0 == goal_pos },
+///   heuristic: fn(state) { manhattan_distance(state.0, goal_pos) },
+///   with_zero: 0,
+///   with_add: int.add,
+///   with_compare: int.compare,
+/// )
+/// ```
+pub fn implicit_a_star_by(
+  from start: state,
+  successors_with_cost successors: fn(state) -> List(#(state, cost)),
+  visited_by key_fn: fn(state) -> key,
+  is_goal is_goal: fn(state) -> Bool,
+  heuristic h: fn(state) -> cost,
+  with_zero zero: cost,
+  with_add add: fn(cost, cost) -> cost,
+  with_compare compare: fn(cost, cost) -> Order,
+) -> Option(cost) {
+  let initial_f = h(start)
+  let frontier =
+    priority_queue.new(fn(a: #(cost, cost, state), b: #(cost, cost, state)) {
+      compare(a.0, b.0)
+    })
+    |> priority_queue.push(#(initial_f, zero, start))
+
+  do_implicit_a_star_by(
+    frontier,
+    dict.new(),
+    successors,
+    key_fn,
+    is_goal,
+    h,
+    add,
+    compare,
+  )
+}
+
+fn do_implicit_a_star_by(
+  frontier: priority_queue.Queue(#(cost, cost, state)),
+  distances: Dict(key, cost),
+  successors: fn(state) -> List(#(state, cost)),
+  key_fn: fn(state) -> key,
+  is_goal: fn(state) -> Bool,
+  h: fn(state) -> cost,
+  add: fn(cost, cost) -> cost,
+  compare: fn(cost, cost) -> Order,
+) -> Option(cost) {
+  case priority_queue.pop(frontier) {
+    Error(Nil) -> None
+    Ok(#(#(_, dist, current), rest_frontier)) -> {
+      case is_goal(current) {
+        True -> Some(dist)
+        False -> {
+          let current_key = key_fn(current)
+          // Check if we've already found a better path to this key
+          let should_explore = case dict.get(distances, current_key) {
+            Ok(prev_dist) ->
+              case compare(dist, prev_dist) {
+                Lt -> True
+                _ -> False
+              }
+            Error(Nil) -> True
+          }
+
+          case should_explore {
+            False ->
+              do_implicit_a_star_by(
+                rest_frontier,
+                distances,
+                successors,
+                key_fn,
+                is_goal,
+                h,
+                add,
+                compare,
+              )
+            True -> {
+              let new_distances = dict.insert(distances, current_key, dist)
+
+              let next_frontier =
+                successors(current)
+                |> list.fold(rest_frontier, fn(frontier_acc, neighbor) {
+                  let #(next_state, edge_cost) = neighbor
+                  let next_dist = add(dist, edge_cost)
+                  let f_score = add(next_dist, h(next_state))
+                  priority_queue.push(frontier_acc, #(
+                    f_score,
+                    next_dist,
+                    next_state,
+                  ))
+                })
+
+              do_implicit_a_star_by(
+                next_frontier,
+                new_distances,
+                successors,
+                key_fn,
+                is_goal,
+                h,
+                add,
+                compare,
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// ======================== IMPLICIT BELLMAN-FORD (SPFA-style) ========================
+
+/// Result type for implicit Bellman-Ford algorithm.
+pub type ImplicitBellmanFordResult(cost) {
+  /// A shortest distance to goal was found
+  FoundGoal(cost)
+  /// A negative cycle was detected (reachable from start)
+  DetectedNegativeCycle
+  /// No goal state was reached
+  NoGoal
+}
+
+/// Finds shortest path in implicit graphs with support for negative edge weights.
+///
+/// Uses SPFA (Shortest Path Faster Algorithm), a queue-based variant of Bellman-Ford
+/// that works naturally with implicit graphs. Detects negative cycles by counting
+/// relaxations per state.
+///
+/// **Time Complexity:** O(VE) average case where V and E are discovered dynamically
+///
+/// ## Returns
+///
+/// - `FoundGoal(cost)`: If a valid shortest path to goal exists
+/// - `DetectedNegativeCycle`: If a negative cycle is reachable from start
+/// - `NoGoal`: If no goal state is reached before exhausting reachable states
+///
+/// ## Example
+///
+/// ```gleam
+/// pathfinding.implicit_bellman_ford(
+///   from: start_state,
+///   successors_with_cost: fn(state) {
+///     // Can include negative costs
+///     [#(next_state1, -5), #(next_state2, 10)]
+///   },
+///   is_goal: fn(state) { state == goal },
+///   with_zero: 0,
+///   with_add: int.add,
+///   with_compare: int.compare,
+/// )
+/// ```
+pub fn implicit_bellman_ford(
+  from start: state,
+  successors_with_cost successors: fn(state) -> List(#(state, cost)),
+  is_goal is_goal: fn(state) -> Bool,
+  with_zero zero: cost,
+  with_add add: fn(cost, cost) -> cost,
+  with_compare compare: fn(cost, cost) -> Order,
+) -> ImplicitBellmanFordResult(cost) {
+  do_implicit_bellman_ford(
+    queue.new() |> queue.push(start),
+    dict.from_list([#(start, zero)]),
+    dict.from_list([#(start, 0)]),
+    set.new(),
+    successors,
+    is_goal,
+    zero,
+    add,
+    compare,
+  )
+}
+
+fn do_implicit_bellman_ford(
+  q: queue.Queue(state),
+  distances: Dict(state, cost),
+  relax_counts: Dict(state, Int),
+  in_queue: set.Set(state),
+  successors: fn(state) -> List(#(state, cost)),
+  is_goal: fn(state) -> Bool,
+  zero: cost,
+  add: fn(cost, cost) -> cost,
+  compare: fn(cost, cost) -> Order,
+) -> ImplicitBellmanFordResult(cost) {
+  case queue.pop(q) {
+    Error(Nil) -> {
+      // Queue exhausted, check if we found any goal
+      distances
+      |> dict.to_list()
+      |> list.filter(fn(entry) { is_goal(entry.0) })
+      |> list.sort(fn(a, b) { compare(a.1, b.1) })
+      |> list.first()
+      |> result.map(fn(entry) { FoundGoal(entry.1) })
+      |> result.unwrap(NoGoal)
+    }
+    Ok(#(current, rest_queue)) -> {
+      let new_in_queue = set.delete(in_queue, current)
+      let current_dist = dict.get(distances, current) |> result.unwrap(zero)
+
+      // Try to relax all neighbors
+      let #(new_distances, new_counts, new_queue, new_in_q) =
+        successors(current)
+        |> list.fold(
+          #(distances, relax_counts, rest_queue, new_in_queue),
+          fn(acc, neighbor) {
+            let #(dists, counts, q_acc, in_q_acc) = acc
+            let #(next_state, edge_cost) = neighbor
+            let new_dist = add(current_dist, edge_cost)
+
+            case dict.get(dists, next_state) {
+              Ok(prev_dist) ->
+                case compare(new_dist, prev_dist) {
+                  Lt -> {
+                    // Found shorter path
+                    let updated_dists = dict.insert(dists, next_state, new_dist)
+                    let relax_count =
+                      dict.get(counts, next_state) |> result.unwrap(0)
+                    let new_count = relax_count + 1
+
+                    // Update relax count
+                    let updated_counts =
+                      dict.insert(counts, next_state, new_count)
+
+                    // Negative cycle detection: if relaxed too many times, don't add to queue
+                    case new_count > dict.size(dists) {
+                      True -> #(updated_dists, updated_counts, q_acc, in_q_acc)
+                      False -> {
+                        // Add to queue if not already there
+                        case set.contains(in_q_acc, next_state) {
+                          True -> #(
+                            updated_dists,
+                            updated_counts,
+                            q_acc,
+                            in_q_acc,
+                          )
+                          False -> #(
+                            updated_dists,
+                            updated_counts,
+                            queue.push(q_acc, next_state),
+                            set.insert(in_q_acc, next_state),
+                          )
+                        }
+                      }
+                    }
+                  }
+                  _ -> acc
+                }
+              Error(Nil) -> {
+                // First time seeing this state
+                let updated_dists = dict.insert(dists, next_state, new_dist)
+                let updated_counts = dict.insert(counts, next_state, 1)
+                #(
+                  updated_dists,
+                  updated_counts,
+                  queue.push(q_acc, next_state),
+                  set.insert(in_q_acc, next_state),
+                )
+              }
+            }
+          },
+        )
+
+      // Check for negative cycle
+      let has_negative_cycle =
+        new_counts
+        |> dict.to_list()
+        |> list.any(fn(entry) { entry.1 > dict.size(new_distances) })
+
+      case has_negative_cycle {
+        True -> DetectedNegativeCycle
+        False ->
+          do_implicit_bellman_ford(
+            new_queue,
+            new_distances,
+            new_counts,
+            new_in_q,
+            successors,
+            is_goal,
+            zero,
+            add,
+            compare,
+          )
+      }
+    }
+  }
+}
+
+/// Like `implicit_bellman_ford`, but deduplicates visited states by a custom key.
+///
+/// **Time Complexity:** O(VE) where V and E are measured in unique *keys*
+pub fn implicit_bellman_ford_by(
+  from start: state,
+  successors_with_cost successors: fn(state) -> List(#(state, cost)),
+  visited_by key_fn: fn(state) -> key,
+  is_goal is_goal: fn(state) -> Bool,
+  with_zero zero: cost,
+  with_add add: fn(cost, cost) -> cost,
+  with_compare compare: fn(cost, cost) -> Order,
+) -> ImplicitBellmanFordResult(cost) {
+  let start_key = key_fn(start)
+  do_implicit_bellman_ford_by(
+    queue.new() |> queue.push(start),
+    dict.from_list([#(start_key, #(zero, start))]),
+    dict.from_list([#(start_key, 0)]),
+    set.new(),
+    successors,
+    key_fn,
+    is_goal,
+    zero,
+    add,
+    compare,
+  )
+}
+
+fn do_implicit_bellman_ford_by(
+  q: queue.Queue(state),
+  distances: Dict(key, #(cost, state)),
+  relax_counts: Dict(key, Int),
+  in_queue: set.Set(state),
+  successors: fn(state) -> List(#(state, cost)),
+  key_fn: fn(state) -> key,
+  is_goal: fn(state) -> Bool,
+  zero: cost,
+  add: fn(cost, cost) -> cost,
+  compare: fn(cost, cost) -> Order,
+) -> ImplicitBellmanFordResult(cost) {
+  case queue.pop(q) {
+    Error(Nil) -> {
+      // Queue exhausted, check if we found any goal
+      distances
+      |> dict.to_list()
+      |> list.filter(fn(entry) { is_goal(entry.1.1) })
+      |> list.sort(fn(a, b) { compare(a.1.0, b.1.0) })
+      |> list.first()
+      |> result.map(fn(entry) { FoundGoal(entry.1.0) })
+      |> result.unwrap(NoGoal)
+    }
+    Ok(#(current, rest_queue)) -> {
+      let current_key = key_fn(current)
+      let new_in_queue = set.delete(in_queue, current)
+      let current_dist =
+        dict.get(distances, current_key)
+        |> result.map(fn(pair) { pair.0 })
+        |> result.unwrap(zero)
+
+      // Try to relax all neighbors
+      let #(new_distances, new_counts, new_queue, new_in_q) =
+        successors(current)
+        |> list.fold(
+          #(distances, relax_counts, rest_queue, new_in_queue),
+          fn(acc, neighbor) {
+            let #(dists, counts, q_acc, in_q_acc) = acc
+            let #(next_state, edge_cost) = neighbor
+            let next_key = key_fn(next_state)
+            let new_dist = add(current_dist, edge_cost)
+
+            case dict.get(dists, next_key) {
+              Ok(#(prev_dist, _)) ->
+                case compare(new_dist, prev_dist) {
+                  Lt -> {
+                    // Found shorter path
+                    let updated_dists =
+                      dict.insert(dists, next_key, #(new_dist, next_state))
+                    let relax_count =
+                      dict.get(counts, next_key) |> result.unwrap(0)
+                    let new_count = relax_count + 1
+
+                    // Update relax count
+                    let updated_counts =
+                      dict.insert(counts, next_key, new_count)
+
+                    // Negative cycle detection: if relaxed too many times, don't add to queue
+                    case new_count > dict.size(dists) {
+                      True -> #(updated_dists, updated_counts, q_acc, in_q_acc)
+                      False -> {
+                        // Add to queue if not already there
+                        case set.contains(in_q_acc, next_state) {
+                          True -> #(
+                            updated_dists,
+                            updated_counts,
+                            q_acc,
+                            in_q_acc,
+                          )
+                          False -> #(
+                            updated_dists,
+                            updated_counts,
+                            queue.push(q_acc, next_state),
+                            set.insert(in_q_acc, next_state),
+                          )
+                        }
+                      }
+                    }
+                  }
+                  _ -> acc
+                }
+              Error(Nil) -> {
+                // First time seeing this key
+                let updated_dists =
+                  dict.insert(dists, next_key, #(new_dist, next_state))
+                let updated_counts = dict.insert(counts, next_key, 1)
+                #(
+                  updated_dists,
+                  updated_counts,
+                  queue.push(q_acc, next_state),
+                  set.insert(in_q_acc, next_state),
+                )
+              }
+            }
+          },
+        )
+
+      // Check for negative cycle
+      let has_negative_cycle =
+        new_counts
+        |> dict.to_list()
+        |> list.any(fn(entry) { entry.1 > dict.size(new_distances) })
+
+      case has_negative_cycle {
+        True -> DetectedNegativeCycle
+        False ->
+          do_implicit_bellman_ford_by(
+            new_queue,
+            new_distances,
+            new_counts,
+            new_in_q,
+            successors,
+            key_fn,
+            is_goal,
+            zero,
+            add,
+            compare,
+          )
       }
     }
   }

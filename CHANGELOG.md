@@ -24,6 +24,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Use cases: AoC 2019 Day 18 (`#(at_key, collected_mask)` → dedupe by both); puzzle solving (`#(board, moves)` → dedupe by `board`); pathfinding with metadata (`#(pos, history)` → dedupe by `pos`)
   - Similar to SQL's `DISTINCT ON(key)` or Python's `key=` parameter in built-in functions
   - Example: Key collection maze where states are `#(position, collected_keys)` — dedupe by full state for correctness
+- **`pathfinding.implicit_a_star()`**: A* search for implicit graphs with heuristic guidance. Like `implicit_dijkstra` but uses heuristics to guide search toward goal.
+  - Provide `heuristic` function that estimates remaining cost to goal (must be admissible: never overestimate)
+  - Returns shortest distance to goal state, or `None` if unreachable
+  - More efficient than Dijkstra when good heuristics available (e.g., Manhattan/Euclidean distance for grids)
+  - Time complexity: O((V + E) log V) in worst case, but typically much faster with good heuristics
+  - Use cases: Grid pathfinding (Manhattan distance), game AI (goal-directed search), puzzle solving with domain knowledge
+  - Example: Navigate grid from start to goal using Manhattan distance heuristic
+- **`pathfinding.implicit_a_star_by()`**: Like `implicit_a_star`, but deduplicates visited states by a custom key function.
+  - Combines A* heuristic search with custom state deduplication
+  - Use `visited_by` parameter to extract deduplication key while preserving full state for heuristic and successor functions
+  - Enables "best-cost wins" semantics with heuristic guidance
+  - Time complexity: O((V + E) log V) where V and E measured in unique keys
+  - Use cases: Grid search with metadata (`#(pos, history)` → dedupe by `pos`); state-space search with heuristics
+  - Example: Pathfinding where state includes position + collected items, dedupe by position only, use Manhattan distance heuristic
+- **`pathfinding.implicit_bellman_ford()`**: Bellman-Ford algorithm for implicit graphs with negative weight support. Uses SPFA (Shortest Path Faster Algorithm) variant.
+  - Handles graphs with negative edge weights (unlike Dijkstra/A*)
+  - Detects negative cycles reachable from start
+  - Returns `FoundGoal(cost)`, `DetectedNegativeCycle`, or `NoGoal`
+  - Time complexity: O(V × E) worst case, often much faster in practice
+  - Use cases: Graphs with negative weights, arbitrage detection, time-dependent costs, constraint satisfaction
+  - Example: Find shortest path in graph where some edges reduce total cost (discounts, shortcuts)
+- **`pathfinding.implicit_bellman_ford_by()`**: Like `implicit_bellman_ford`, but deduplicates visited states by a custom key function.
+  - Combines negative weight support with custom state deduplication
+  - Use `visited_by` parameter for flexible state management
+  - Detects negative cycles considering deduplication keys
+  - Time complexity: O(V × E) where V and E measured in unique keys
+  - Use cases: State-space search with negative costs, complex state with negative weights
+  - Example: Graph where states carry metadata but deduplication by logical position, with negative edge weights
 - **`traversal.implicit_fold()`**: Traverse implicit graphs using BFS or DFS without materializing a `Graph` structure. Instead of requiring a pre-built graph, you provide a `successors_of` function that computes neighbors on demand.
   - Ideal for infinite grids, state-space search, or graphs too large/expensive to build upfront
   - Works with any node ID type (integers, strings, tuples, custom types)
