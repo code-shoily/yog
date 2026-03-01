@@ -4,6 +4,7 @@ import gleam/option.{None, Some}
 import yog/model
 import yog/pathfinding
 import yog/render
+import yog/transform
 
 pub fn main() {
   // Create a sample graph
@@ -20,7 +21,7 @@ pub fn main() {
   io.println("--- Basic DOT Output ---")
   let dot_basic =
     render.to_dot(
-      graph |> model.map_edges(int.to_string),
+      graph |> transform.map_edges(int.to_string),
       render.default_dot_options(),
     )
   io.println(dot_basic)
@@ -32,7 +33,7 @@ pub fn main() {
       let options =
         render.path_to_dot_options(path, render.default_dot_options())
       let dot_highlighted =
-        render.to_dot(graph |> model.map_edges(int.to_string), options)
+        render.to_dot(graph |> transform.map_edges(int.to_string), options)
       io.println(dot_highlighted)
     }
     None -> io.println("No path found")

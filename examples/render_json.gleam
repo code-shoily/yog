@@ -1,4 +1,3 @@
-import gleam/int
 import gleam/io
 import gleam/json
 import yog/model

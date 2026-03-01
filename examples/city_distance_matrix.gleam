@@ -31,18 +31,17 @@ pub fn main() {
     )
   {
     Ok(matrix) -> {
-      // Matrix is Dict(NodeId, Dict(NodeId, Weight))
-      dict.each(matrix, fn(from, rows) {
-        dict.each(rows, fn(to, weight) {
-          io.println(
-            "From "
-            <> int.to_string(from)
-            <> " to "
-            <> int.to_string(to)
-            <> ": "
-            <> int.to_string(weight),
-          )
-        })
+      // Matrix is Dict(#(NodeId, NodeId), Weight)
+      dict.each(matrix, fn(key, weight) {
+        let #(from, to) = key
+        io.println(
+          "From "
+          <> int.to_string(from)
+          <> " to "
+          <> int.to_string(to)
+          <> ": "
+          <> int.to_string(weight),
+        )
       })
     }
     Error(_) -> io.println("Negative cycle detected!")

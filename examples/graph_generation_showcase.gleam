@@ -88,7 +88,7 @@ pub fn main() {
   io.println("(Directed has edges in both directions)")
 }
 
-fn print_graph_stats(name: String, graph: model.Graph(Nil, Int)) -> Nil {
+fn print_graph_stats(_name: String, graph: model.Graph(Nil, Int)) -> Nil {
   let node_count = model.all_nodes(graph) |> list_length()
   let edge_count = count_edges(graph)
 

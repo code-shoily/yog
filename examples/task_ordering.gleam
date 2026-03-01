@@ -1,5 +1,4 @@
 import gleam/dict
-import gleam/int
 import gleam/io
 import gleam/list
 import gleam/string
@@ -40,7 +39,9 @@ pub fn main() {
       |> model.add_edge(from: prereq_id, to: step_id, with: Nil)
     })
 
-  case topological_sort.lexicographical_topological_sort(graph, int.compare) {
+  case
+    topological_sort.lexicographical_topological_sort(graph, string.compare)
+  {
     Ok(order) -> {
       let task_order =
         order

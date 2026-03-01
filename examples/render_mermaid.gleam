@@ -4,6 +4,7 @@ import gleam/option.{None, Some}
 import yog/model
 import yog/pathfinding
 import yog/render
+import yog/transform
 
 pub fn main() {
   // Create a sample graph
@@ -20,7 +21,7 @@ pub fn main() {
   io.println("--- Basic Mermaid Output ---")
   let mermaid_basic =
     render.to_mermaid(
-      graph |> model.map_edges(int.to_string),
+      graph |> transform.map_edges(int.to_string),
       render.default_options(),
     )
   io.println("```mermaid")
@@ -31,17 +32,18 @@ pub fn main() {
   io.println("\n--- Mermaid with Custom Labels & Highlighting ---")
   case pathfinding.shortest_path(graph, 1, 3, 0, int.add, int.compare) {
     Some(path) -> {
-      let options =
+      let base_options =
         render.MermaidOptions(
           node_label: fn(id, data) {
             data <> " (ID: " <> int.to_string(id) <> ")"
           },
           edge_label: fn(weight) { weight <> " km" },
-          highlighted_nodes: Some(path.nodes),
-          highlighted_edges: Some(render.path_to_edges(path)),
+          highlighted_nodes: None,
+          highlighted_edges: None,
         )
+      let options = render.path_to_options(path, base_options)
       let mermaid_custom =
-        render.to_mermaid(graph |> model.map_edges(int.to_string), options)
+        render.to_mermaid(graph |> transform.map_edges(int.to_string), options)
       io.println("```mermaid")
       io.println(mermaid_custom)
       io.println("```")
