@@ -1,6 +1,9 @@
+import gleam/dict.{type Dict}
+import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/set.{type Set}
+import gleamy/priority_queue
 import yog/internal/queue
 import yog/model.{type Graph, type NodeId}
 
@@ -264,6 +267,93 @@ pub fn implicit_fold(
   }
 }
 
+/// Like `implicit_fold`, but deduplicates visited nodes by a custom key.
+///
+/// This is essential when your node type carries extra state beyond what
+/// defines "identity". For example, in state-space search you might have
+/// `#(Position, Mask)` nodes, but only want to visit each `Position` once —
+/// the `Mask` is just carried state, not part of the identity.
+///
+/// The `visited_by` function extracts the deduplication key from each node.
+/// Internally, a `Set(key)` tracks which keys have been visited, but the
+/// full `nid` value (with all its state) is still passed to your folder.
+///
+/// **Time Complexity:** O(V + E) for both BFS and DFS, where V and E are
+/// measured in terms of unique *keys* (not unique nodes).
+///
+/// ## Example
+///
+/// ```gleam
+/// // Search a maze where nodes carry both position and step count
+/// // but we only want to visit each position once (first-visit wins)
+/// type State {
+///   State(pos: #(Int, Int), steps: Int)
+/// }
+///
+/// traversal.implicit_fold_by(
+///   from: State(#(0, 0), 0),
+///   using: BreadthFirst,
+///   initial: None,
+///   successors_of: fn(state) {
+///     neighbors(state.pos)
+///     |> list.map(fn(next_pos) {
+///       State(next_pos, state.steps + 1)
+///     })
+///   },
+///   visited_by: fn(state) { state.pos },  // Dedupe by position only
+///   with: fn(acc, state, _meta) {
+///     case state.pos == target {
+///       True -> #(Halt, Some(state.steps))
+///       False -> #(Continue, acc)
+///     }
+///   },
+/// )
+/// ```
+///
+/// ## Use Cases
+///
+/// - **Puzzle solving**: `#(board_state, moves)` → dedupe by `board_state`
+/// - **Path finding with budget**: `#(pos, fuel_left)` → dedupe by `pos`
+/// - **Game state search**: `#(position, inventory)` → dedupe by `position`
+/// - **Graph search with metadata**: `#(node_id, path_history)` → dedupe by `node_id`
+///
+/// ## Comparison to `implicit_fold`
+///
+/// - `implicit_fold`: Deduplicates by the entire node value `nid`
+/// - `implicit_fold_by`: Deduplicates by `visited_by(nid)` but keeps full `nid`
+///
+/// Similar to SQL's `DISTINCT ON(key)` or Python's `key=` parameter.
+pub fn implicit_fold_by(
+  from start: nid,
+  using order: Order,
+  initial acc: a,
+  successors_of successors: fn(nid) -> List(nid),
+  visited_by key_fn: fn(nid) -> key,
+  with folder: fn(a, nid, WalkMetadata(nid)) -> #(WalkControl, a),
+) -> a {
+  let start_meta = WalkMetadata(depth: 0, parent: None)
+  case order {
+    BreadthFirst ->
+      do_virtual_bfs_by(
+        queue.new() |> queue.push(#(start, start_meta)),
+        set.new(),
+        acc,
+        successors,
+        key_fn,
+        folder,
+      )
+    DepthFirst ->
+      do_virtual_dfs_by(
+        [#(start, start_meta)],
+        set.new(),
+        acc,
+        successors,
+        key_fn,
+        folder,
+      )
+  }
+}
+
 // BFS with fold and metadata
 fn do_fold_walk_bfs(
   graph: Graph(n, e),
@@ -437,6 +527,224 @@ fn do_virtual_dfs(
               do_virtual_dfs(
                 next_stack,
                 new_visited,
+                new_acc,
+                successors,
+                folder,
+              )
+            }
+          }
+        }
+      }
+  }
+}
+
+// Virtual BFS with custom key function for deduplication.
+// Same as do_virtual_bfs but checks visited by key_fn(node_id).
+fn do_virtual_bfs_by(
+  q: queue.Queue(#(nid, WalkMetadata(nid))),
+  visited: Set(key),
+  acc: a,
+  successors: fn(nid) -> List(nid),
+  key_fn: fn(nid) -> key,
+  folder: fn(a, nid, WalkMetadata(nid)) -> #(WalkControl, a),
+) -> a {
+  case queue.pop(q) {
+    Error(Nil) -> acc
+    Ok(#(#(node_id, metadata), rest)) -> {
+      let node_key = key_fn(node_id)
+      case set.contains(visited, node_key) {
+        True ->
+          do_virtual_bfs_by(rest, visited, acc, successors, key_fn, folder)
+        False -> {
+          let #(control, new_acc) = folder(acc, node_id, metadata)
+          let new_visited = set.insert(visited, node_key)
+          case control {
+            Halt -> new_acc
+            Stop ->
+              do_virtual_bfs_by(
+                rest,
+                new_visited,
+                new_acc,
+                successors,
+                key_fn,
+                folder,
+              )
+            Continue -> {
+              let next_queue =
+                list.fold(successors(node_id), rest, fn(q2, next_id) {
+                  queue.push(q2, #(
+                    next_id,
+                    WalkMetadata(
+                      depth: metadata.depth + 1,
+                      parent: Some(node_id),
+                    ),
+                  ))
+                })
+              do_virtual_bfs_by(
+                next_queue,
+                new_visited,
+                new_acc,
+                successors,
+                key_fn,
+                folder,
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Virtual DFS with custom key function for deduplication.
+// Same as do_virtual_dfs but checks visited by key_fn(node_id).
+fn do_virtual_dfs_by(
+  stack: List(#(nid, WalkMetadata(nid))),
+  visited: Set(key),
+  acc: a,
+  successors: fn(nid) -> List(nid),
+  key_fn: fn(nid) -> key,
+  folder: fn(a, nid, WalkMetadata(nid)) -> #(WalkControl, a),
+) -> a {
+  case stack {
+    [] -> acc
+    [#(node_id, metadata), ..tail] -> {
+      let node_key = key_fn(node_id)
+      case set.contains(visited, node_key) {
+        True ->
+          do_virtual_dfs_by(tail, visited, acc, successors, key_fn, folder)
+        False -> {
+          let #(control, new_acc) = folder(acc, node_id, metadata)
+          let new_visited = set.insert(visited, node_key)
+          case control {
+            Halt -> new_acc
+            Stop ->
+              do_virtual_dfs_by(
+                tail,
+                new_visited,
+                new_acc,
+                successors,
+                key_fn,
+                folder,
+              )
+            Continue -> {
+              let next_stack =
+                list.fold(
+                  list.reverse(successors(node_id)),
+                  tail,
+                  fn(stk, next_id) {
+                    [
+                      #(
+                        next_id,
+                        WalkMetadata(
+                          depth: metadata.depth + 1,
+                          parent: Some(node_id),
+                        ),
+                      ),
+                      ..stk
+                    ]
+                  },
+                )
+              do_virtual_dfs_by(
+                next_stack,
+                new_visited,
+                new_acc,
+                successors,
+                key_fn,
+                folder,
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/// Traverses an *implicit* weighted graph using Dijkstra's algorithm,
+/// folding over visited nodes in order of increasing cost.
+///
+/// Like `implicit_fold` but uses a priority queue so nodes are visited
+/// cheapest-first. Ideal for shortest-path problems on implicit state spaces
+/// where edge costs vary — e.g., state-space search with Manhattan moves, or
+/// multi-robot coordination where multiple robots share a key-bitmask state.
+///
+/// - `successors_of`: Given a node, return `List(#(neighbor, edge_cost))`.
+///   Include only valid transitions (filtering here avoids dead states).
+/// - `folder`: Called once per node, with `(acc, node, cost_so_far)`.
+///   Return `#(Halt, result)` to stop immediately, `#(Stop, acc)` to skip
+///   expanding this node's successors, or `#(Continue, acc)` to continue.
+///
+/// Internally maintains a `Dict(nid, Int)` of best-known costs;
+/// stale priority-queue entries are automatically skipped.
+///
+/// ## Example
+///
+/// ```gleam
+/// // Shortest path in an implicit maze with uniform cost
+/// traversal.implicit_dijkstra(
+///   from: start,
+///   initial: -1,
+///   successors_of: fn(pos) {
+///     neighbours(pos)
+///     |> list.map(fn(nb) { #(nb, 1) })  // uniform cost
+///   },
+///   with: fn(acc, pos, cost) {
+///     case pos == target {
+///       True -> #(Halt, cost)
+///       False -> #(Continue, acc)
+///     }
+///   },
+/// )
+/// ```
+pub fn implicit_dijkstra(
+  from start: nid,
+  initial acc: a,
+  successors_of successors: fn(nid) -> List(#(nid, Int)),
+  with folder: fn(a, nid, Int) -> #(WalkControl, a),
+) -> a {
+  let frontier =
+    priority_queue.new(fn(a: #(Int, nid), b: #(Int, nid)) {
+      int.compare(a.0, b.0)
+    })
+    |> priority_queue.push(#(0, start))
+  do_implicit_dijkstra(frontier, dict.new(), acc, successors, folder)
+}
+
+fn do_implicit_dijkstra(
+  frontier: priority_queue.Queue(#(Int, nid)),
+  best: Dict(nid, Int),
+  acc: a,
+  successors: fn(nid) -> List(#(nid, Int)),
+  folder: fn(a, nid, Int) -> #(WalkControl, a),
+) -> a {
+  case priority_queue.pop(frontier) {
+    Error(Nil) -> acc
+    Ok(#(#(cost, node), rest)) ->
+      case dict.get(best, node) {
+        Ok(prev) if prev < cost ->
+          // Stale priority-queue entry — a cheaper path already processed
+          do_implicit_dijkstra(rest, best, acc, successors, folder)
+        _ -> {
+          let new_best = dict.insert(best, node, cost)
+          let #(control, new_acc) = folder(acc, node, cost)
+          case control {
+            Halt -> new_acc
+            Stop ->
+              do_implicit_dijkstra(rest, new_best, new_acc, successors, folder)
+            Continue -> {
+              let next_frontier =
+                list.fold(successors(node), rest, fn(q, neighbor) {
+                  let #(nb_node, edge_cost) = neighbor
+                  let new_cost = cost + edge_cost
+                  case dict.get(new_best, nb_node) {
+                    Ok(prev_cost) if prev_cost <= new_cost -> q
+                    _ -> priority_queue.push(q, #(new_cost, nb_node))
+                  }
+                })
+              do_implicit_dijkstra(
+                next_frontier,
+                new_best,
                 new_acc,
                 successors,
                 folder,

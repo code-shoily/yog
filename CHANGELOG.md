@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - 2.0.1
 
 ### Added
+- **`pathfinding.implicit_dijkstra()`**: Find shortest paths in implicit graphs using Dijkstra's algorithm without materializing a `Graph` structure. Like `implicit_fold` but for weighted graphs.
+  - Provide `successors_with_cost` function that generates weighted successors on demand
+  - Returns shortest distance to any goal state, or `None` if unreachable
+  - Ideal for state-space search, puzzles, planning problems, or graphs too large to build upfront
+  - Time complexity: O((V + E) log V) where V is visited states and E is explored transitions
+  - Works with any cost type (Int, Float, custom) that supports addition and comparison
+  - Use cases: Puzzle solving (optimal solutions), game AI (pathfinding with complex state), automated planning, AoC problems (2019 Day 18, 2021 Day 23, 2022 Day 16)
+  - Example: Find shortest path in state-space where each state is `#(x, y, collected_keys)` with weighted transitions
+- **`pathfinding.implicit_dijkstra_by()`**: Like `implicit_dijkstra`, but deduplicates visited states by a custom key function. Essential when state carries extra data beyond identity.
+  - Use `visited_by` parameter to extract deduplication key: states with same key are considered visited, but full state is passed to successor function
+  - Internally maintains `Dict(key, cost)` instead of `Dict(state, cost)` for visited tracking
+  - Enables "best-cost wins" semantics: when multiple paths reach same logical position with different state, cheapest one is kept
+  - Time complexity: O((V + E) log V) where V and E measured in unique keys (not unique states)
+  - Use cases: AoC 2019 Day 18 (`#(at_key, collected_mask)` → dedupe by both); puzzle solving (`#(board, moves)` → dedupe by `board`); pathfinding with metadata (`#(pos, history)` → dedupe by `pos`)
+  - Similar to SQL's `DISTINCT ON(key)` or Python's `key=` parameter in built-in functions
+  - Example: Key collection maze where states are `#(position, collected_keys)` — dedupe by full state for correctness
 - **`traversal.implicit_fold()`**: Traverse implicit graphs using BFS or DFS without materializing a `Graph` structure. Instead of requiring a pre-built graph, you provide a `successors_of` function that computes neighbors on demand.
   - Ideal for infinite grids, state-space search, or graphs too large/expensive to build upfront
   - Works with any node ID type (integers, strings, tuples, custom types)
@@ -15,6 +31,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Time complexity: O(V + E) for both BFS and DFS where V is visited nodes and E is explored edges
   - Use cases: Maze pathfinding on implicit grids, state-space exploration, puzzle solving (e.g., AoC 2016 Day 13), shortest path in procedurally-generated graphs
   - Example: BFS shortest path in an implicit maze by providing a function that computes open neighbors
+- **`traversal.implicit_fold_by()`**: Like `implicit_fold`, but deduplicates visited nodes by a custom key function. Essential when node type carries extra state beyond what defines identity.
+  - Use `visited_by` parameter to extract deduplication key: nodes with same key are considered identical, but full node (with all state) is passed to folder
+  - Internally maintains `Set(key)` instead of `Set(node)` for visited tracking
+  - Enables "first-visit wins" semantics: when multiple paths reach same logical position with different state, first one is kept
+  - Time complexity: O(V + E) where V and E measured in unique keys (not unique nodes)
+  - Use cases: State-space search with `#(position, mask)` → dedupe by `position`; puzzle solving with `#(board, moves)` → dedupe by `board`; pathfinding with `#(pos, fuel)` → dedupe by `pos`
+  - Similar to SQL's `DISTINCT ON(key)` or Python's `key=` parameter in built-in functions
+  - Example: Maze with nodes carrying position + step count, but only visit each position once
 - **`traversal.fold_walk()`**: Fold over nodes during traversal with metadata (depth, parent). Enables state accumulation during BFS/DFS with fine-grained control via `Continue`/`Stop`/`Halt`. Perfect for building parent maps, collecting nodes within distance limits, or computing statistics during traversal.
   - New types: `WalkControl` (`Continue`, `Stop`, `Halt`), `WalkMetadata` (depth, parent)
   - `Halt` control: Stop the entire traversal immediately and return the accumulator (makes `walk_until` a special case of `fold_walk`)

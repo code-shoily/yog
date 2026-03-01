@@ -1,6 +1,10 @@
 import gleam/dict
+import gleam/int
+import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
+import gleam/set
+import gleam/string
 import gleeunit/should
 import yog/model.{Directed, Undirected}
 import yog/traversal.{BreadthFirst, Continue, DepthFirst, Halt, Stop}
@@ -1349,4 +1353,323 @@ pub fn implicit_fold_bfs_vs_dfs_difference_test() {
   // DFS: goes deep first
   dfs_result
   |> should.equal([3, 4, 2, 1])
+}
+
+// ============= implicit_fold_by Tests =============
+
+// Test implicit_fold_by with position + mask (canonical use case)
+// Nodes carry extra state (mask) but dedupe by position only
+pub fn implicit_fold_by_position_mask_test() {
+  // Each node is #(position, bitmask) but we only want to visit each position once
+  let successors = fn(node: #(Int, Int)) {
+    let #(pos, mask) = node
+    case pos {
+      1 -> [#(2, mask + 1), #(3, mask + 10)]
+      2 -> [#(4, mask + 1)]
+      3 -> [#(4, mask + 10)]
+      _ -> []
+    }
+  }
+
+  let result =
+    traversal.implicit_fold_by(
+      from: #(1, 0),
+      using: BreadthFirst,
+      initial: [],
+      successors_of: successors,
+      visited_by: fn(node) { node.0 },
+      // Dedupe by position only
+      with: fn(acc, node, _meta) { #(Continue, [node, ..acc]) },
+    )
+
+  // Should visit positions 1,2,3,4 exactly once
+  // Even though successors return different masks
+  result
+  |> list.length()
+  |> should.equal(4)
+
+  // Check all positions were visited
+  result
+  |> list.map(fn(node) { node.0 })
+  |> list.sort(by: int.compare)
+  |> should.equal([1, 2, 3, 4])
+}
+
+// Test that first-visit wins: earlier mask value is kept
+pub fn implicit_fold_by_first_visit_wins_test() {
+  // Node 2 can be reached from 1 with mask=100 or mask=999
+  // BFS should visit it with mask=100 first, ignoring the second path
+  let successors = fn(node: #(Int, Int)) {
+    let #(pos, _mask) = node
+    case pos {
+      1 -> [#(2, 100), #(2, 999)]
+      // Both paths to same position!
+      _ -> []
+    }
+  }
+
+  let result =
+    traversal.implicit_fold_by(
+      from: #(1, 0),
+      using: BreadthFirst,
+      initial: [],
+      successors_of: successors,
+      visited_by: fn(node) { node.0 },
+      with: fn(acc, node, _meta) { #(Continue, [node, ..acc]) },
+    )
+
+  // Should visit node 1 and node 2 (with mask=100, first visit)
+  result
+  |> list.length()
+  |> should.equal(2)
+
+  // Find the node with position 2
+  let node2 =
+    result
+    |> list.find(fn(node) { node.0 == 2 })
+
+  node2
+  |> should.equal(Ok(#(2, 100)))
+  // First visit wins!
+}
+
+// Test implicit_fold_by with string keys on complex nodes
+// Node is #(room, health, gold) but we dedupe by room name only
+pub fn implicit_fold_by_string_key_test() {
+  let successors = fn(state: #(String, Int, Int)) {
+    let #(room, health, gold) = state
+    case room {
+      "start" -> [
+        #("armory", health, gold + 10),
+        #("dungeon", health - 5, gold + 50),
+      ]
+      "armory" -> [#("boss", health + 20, gold)]
+      "dungeon" -> [#("boss", health, gold + 20)]
+      _ -> []
+    }
+  }
+
+  let result =
+    traversal.implicit_fold_by(
+      from: #("start", 100, 0),
+      using: BreadthFirst,
+      initial: [],
+      successors_of: successors,
+      visited_by: fn(state) { state.0 },
+      // Dedupe by room name
+      with: fn(acc, state, _meta) { #(Continue, [state, ..acc]) },
+    )
+
+  // Should visit 4 unique rooms
+  result
+  |> list.length()
+  |> should.equal(4)
+
+  // All rooms visited
+  result
+  |> list.map(fn(s) { s.0 })
+  |> list.sort(by: string.compare)
+  |> should.equal(["armory", "boss", "dungeon", "start"])
+}
+
+// Test implicit_fold_by with DFS (not just BFS)
+pub fn implicit_fold_by_dfs_test() {
+  let successors = fn(node: #(Int, String)) {
+    let #(pos, _extra) = node
+    case pos {
+      1 -> [#(2, "a"), #(3, "b")]
+      2 -> [#(4, "c")]
+      _ -> []
+    }
+  }
+
+  let result =
+    traversal.implicit_fold_by(
+      from: #(1, "start"),
+      using: DepthFirst,
+      initial: [],
+      successors_of: successors,
+      visited_by: fn(node) { node.0 },
+      with: fn(acc, node, _meta) { #(Continue, [node.0, ..acc]) },
+    )
+
+  // DFS order: 1 -> 2 -> 4 -> 3
+  result
+  |> should.equal([3, 4, 2, 1])
+}
+
+// Test implicit_fold_by with Stop control
+pub fn implicit_fold_by_stop_control_test() {
+  let successors = fn(node: #(Int, Int)) {
+    let #(pos, mask) = node
+    case pos {
+      1 -> [#(2, mask), #(3, mask)]
+      2 -> [#(4, mask)]
+      3 -> [#(5, mask)]
+      _ -> []
+    }
+  }
+
+  let result =
+    traversal.implicit_fold_by(
+      from: #(1, 0),
+      using: BreadthFirst,
+      initial: [],
+      successors_of: successors,
+      visited_by: fn(node) { node.0 },
+      with: fn(acc, node, _meta) {
+        let #(pos, _) = node
+        case pos == 2 {
+          True -> #(Stop, [pos, ..acc])
+          // Don't explore from 2
+          False -> #(Continue, [pos, ..acc])
+        }
+      },
+    )
+
+  // Should visit 1, 2, 3, 5 but NOT 4 (stopped at 2)
+  result
+  |> list.sort(by: int.compare)
+  |> should.equal([1, 2, 3, 5])
+}
+
+// Test implicit_fold_by with Halt control
+pub fn implicit_fold_by_halt_control_test() {
+  let successors = fn(node: #(Int, Bool)) {
+    let #(pos, flag) = node
+    case pos < 5 {
+      True -> [#(pos + 1, flag)]
+      False -> []
+    }
+  }
+
+  let result =
+    traversal.implicit_fold_by(
+      from: #(1, False),
+      using: BreadthFirst,
+      initial: [],
+      successors_of: successors,
+      visited_by: fn(node) { node.0 },
+      with: fn(acc, node, _meta) {
+        let #(pos, _) = node
+        case pos == 3 {
+          True -> #(Halt, [pos, ..acc])
+          // Halt entire traversal
+          False -> #(Continue, [pos, ..acc])
+        }
+      },
+    )
+
+  // Should only visit 1, 2, 3 (halted at 3)
+  result
+  |> list.sort(by: int.compare)
+  |> should.equal([1, 2, 3])
+}
+
+// Test implicit_fold_by preserves metadata (depth, parent)
+pub fn implicit_fold_by_metadata_test() {
+  let successors = fn(node: #(Int, String)) {
+    let #(pos, _) = node
+    case pos {
+      1 -> [#(2, "x"), #(3, "y")]
+      2 -> [#(4, "z")]
+      _ -> []
+    }
+  }
+
+  let depths =
+    traversal.implicit_fold_by(
+      from: #(1, "root"),
+      using: BreadthFirst,
+      initial: dict.new(),
+      successors_of: successors,
+      visited_by: fn(node) { node.0 },
+      with: fn(acc, node, meta) {
+        #(Continue, dict.insert(acc, node.0, meta.depth))
+      },
+    )
+
+  depths
+  |> dict.get(1)
+  |> should.equal(Ok(0))
+
+  depths
+  |> dict.get(2)
+  |> should.equal(Ok(1))
+
+  depths
+  |> dict.get(4)
+  |> should.equal(Ok(2))
+}
+
+// Test implicit_fold_by with tuple as key
+// Node is #(x, y, steps, gold) but we dedupe by #(x, y) only
+pub fn implicit_fold_by_tuple_key_test() {
+  let successors = fn(node: #(Int, Int, Int, Int)) {
+    let #(x, y, steps, gold) = node
+    [#(x + 1, y, steps + 1, gold), #(x, y + 1, steps + 1, gold + 5)]
+    |> list.filter(fn(n) { n.0 <= 2 && n.1 <= 2 })
+  }
+
+  let result =
+    traversal.implicit_fold_by(
+      from: #(0, 0, 0, 0),
+      using: BreadthFirst,
+      initial: [],
+      successors_of: successors,
+      visited_by: fn(node) { #(node.0, node.1) },
+      // Dedupe by position tuple
+      with: fn(acc, node, _meta) { #(Continue, [node, ..acc]) },
+    )
+
+  // Should visit all 9 positions in 3x3 grid exactly once
+  result
+  |> list.length()
+  |> should.equal(9)
+
+  // Verify all positions covered
+  let positions =
+    result
+    |> list.map(fn(n) { #(n.0, n.1) })
+    |> set.from_list()
+
+  set.contains(positions, #(0, 0))
+  |> should.be_true()
+
+  set.contains(positions, #(2, 2))
+  |> should.be_true()
+}
+
+// Test that implicit_fold_by behaves like implicit_fold when key is identity
+pub fn implicit_fold_by_identity_key_test() {
+  let successors = fn(n: Int) {
+    case n < 4 {
+      True -> [n + 1]
+      False -> []
+    }
+  }
+
+  let result_by =
+    traversal.implicit_fold_by(
+      from: 1,
+      using: BreadthFirst,
+      initial: [],
+      successors_of: successors,
+      visited_by: fn(n) { n },
+      // Identity function
+      with: fn(acc, n, _meta) { #(Continue, [n, ..acc]) },
+    )
+
+  let result_regular =
+    traversal.implicit_fold(
+      from: 1,
+      using: BreadthFirst,
+      initial: [],
+      successors_of: successors,
+      with: fn(acc, n, _meta) { #(Continue, [n, ..acc]) },
+    )
+
+  // Should produce identical results
+  result_by
+  |> should.equal(result_regular)
 }

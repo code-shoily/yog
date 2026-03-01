@@ -866,3 +866,281 @@ pub fn distance_matrix(
     }
   }
 }
+
+// ======================== IMPLICIT DIJKSTRA ========================
+
+/// Finds the shortest path in an implicit graph using Dijkstra's algorithm.
+///
+/// Unlike `shortest_path`, this does not require a materialized `Graph` value.
+/// Instead, you provide a `successors_with_cost` function that computes weighted
+/// neighbors on demand — ideal for state-space search, puzzles, or graphs too
+/// large to build upfront.
+///
+/// Returns the shortest distance to any state satisfying `is_goal`, or `None`
+/// if no goal state is reachable.
+///
+/// **Time Complexity:** O((V + E) log V) where V is visited states and E is explored transitions
+///
+/// ## Parameters
+///
+/// - `successors_with_cost`: Function that generates weighted successors for a state
+/// - `is_goal`: Predicate that identifies goal states
+/// - `zero`: The identity element for addition (e.g., 0 for integers)
+/// - `add`: Function to add two costs
+/// - `compare`: Function to compare two costs
+///
+/// ## Example
+///
+/// ```gleam
+/// // Find shortest path in a state-space where each state is (x, y, collected_keys)
+/// type State { State(x: Int, y: Int, keys: Int) }
+///
+/// pathfinding.implicit_dijkstra(
+///   from: State(0, 0, 0),
+///   successors_with_cost: fn(state) {
+///     // Generate neighbor states with their costs
+///     [
+///       #(State(state.x + 1, state.y, state.keys), 1),
+///       #(State(state.x, state.y + 1, state.keys), 1),
+///       // ... more neighbors
+///     ]
+///   },
+///   is_goal: fn(state) { state.keys == all_keys_mask },
+///   with_zero: 0,
+///   with_add: int.add,
+///   with_compare: int.compare,
+/// )
+/// // => Some(42)  // Shortest distance to goal
+/// ```
+///
+/// ## Use Cases
+///
+/// - Puzzle solving: State-space search for optimal solutions
+/// - Game AI: Pathfinding with complex state (position + inventory)
+/// - Planning problems: Finding cheapest action sequences
+/// - AoC problems: 2019 Day 18, 2021 Day 23, 2022 Day 16, etc.
+///
+/// ## Notes
+///
+/// - States are deduplicated by their full value (using `Dict(state, cost)`)
+/// - If your state carries extra data beyond identity, use `implicit_dijkstra_by`
+/// - First path to reach a state with minimal cost wins
+/// - Works with any cost type that supports addition and comparison
+pub fn implicit_dijkstra(
+  from start: state,
+  successors_with_cost successors: fn(state) -> List(#(state, cost)),
+  is_goal is_goal: fn(state) -> Bool,
+  with_zero zero: cost,
+  with_add add: fn(cost, cost) -> cost,
+  with_compare compare: fn(cost, cost) -> Order,
+) -> Option(cost) {
+  let frontier =
+    priority_queue.new(fn(a: #(cost, state), b: #(cost, state)) {
+      compare(a.0, b.0)
+    })
+    |> priority_queue.push(#(zero, start))
+
+  do_implicit_dijkstra(frontier, dict.new(), successors, is_goal, add, compare)
+}
+
+fn do_implicit_dijkstra(
+  frontier: priority_queue.Queue(#(cost, state)),
+  distances: Dict(state, cost),
+  successors: fn(state) -> List(#(state, cost)),
+  is_goal: fn(state) -> Bool,
+  add: fn(cost, cost) -> cost,
+  compare: fn(cost, cost) -> Order,
+) -> Option(cost) {
+  case priority_queue.pop(frontier) {
+    Error(Nil) -> None
+    Ok(#(#(dist, current), rest_frontier)) -> {
+      case is_goal(current) {
+        True -> Some(dist)
+        False -> {
+          // Check if we've already found a better path to this state
+          let should_explore = case dict.get(distances, current) {
+            Ok(prev_dist) ->
+              case compare(dist, prev_dist) {
+                Lt -> True
+                _ -> False
+              }
+            Error(Nil) -> True
+          }
+
+          case should_explore {
+            False ->
+              do_implicit_dijkstra(
+                rest_frontier,
+                distances,
+                successors,
+                is_goal,
+                add,
+                compare,
+              )
+            True -> {
+              let new_distances = dict.insert(distances, current, dist)
+
+              let next_frontier =
+                successors(current)
+                |> list.fold(rest_frontier, fn(h, neighbor) {
+                  let #(next_state, cost) = neighbor
+                  priority_queue.push(h, #(add(dist, cost), next_state))
+                })
+
+              do_implicit_dijkstra(
+                next_frontier,
+                new_distances,
+                successors,
+                is_goal,
+                add,
+                compare,
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/// Like `implicit_dijkstra`, but deduplicates visited states by a custom key.
+///
+/// Essential when your state carries extra data beyond what defines identity.
+/// For example, in state-space search you might have `#(Position, ExtraData)` states,
+/// but only want to visit each `Position` once — the `ExtraData` is carried state,
+/// not part of the identity.
+///
+/// The `visited_by` function extracts the deduplication key from each state.
+/// Internally, a `Dict(key, cost)` tracks the best cost to each key, but the
+/// full state value is still passed to your successor function and goal predicate.
+///
+/// **Time Complexity:** O((V + E) log V) where V and E are measured in unique *keys*
+///
+/// ## Parameters
+///
+/// - `visited_by`: Function that extracts the deduplication key from a state
+///
+/// ## Example
+///
+/// ```gleam
+/// // State-space search where states carry metadata
+/// // Node is #(position, path_history) but we dedupe by position only
+/// pathfinding.implicit_dijkstra_by(
+///   from: #(start_pos, []),
+///   successors_with_cost: fn(state) {
+///     let #(pos, history) = state
+///     neighbors(pos)
+///     |> list.map(fn(next_pos) {
+///       #(#(next_pos, [pos, ..history]), move_cost(pos, next_pos))
+///     })
+///   },
+///   visited_by: fn(state) { state.0 },  // Dedupe by position only
+///   is_goal: fn(state) { state.0 == goal_pos },
+///   with_zero: 0,
+///   with_add: int.add,
+///   with_compare: int.compare,
+/// )
+/// ```
+///
+/// ## Use Cases
+///
+/// - AoC 2019 Day 18: `#(at_key, collected_mask)` → dedupe by both
+/// - Puzzle solving: `#(board_state, move_count)` → dedupe by `board_state`
+/// - Pathfinding with budget: `#(position, fuel_left)` → dedupe by `position`
+/// - A* with metadata: `#(node_id, came_from)` → dedupe by `node_id`
+///
+/// ## Comparison to `implicit_dijkstra`
+///
+/// - `implicit_dijkstra`: Deduplicates by the entire state value
+/// - `implicit_dijkstra_by`: Deduplicates by `visited_by(state)` but keeps full state
+///
+/// Similar to SQL's `DISTINCT ON(key)` or Python's `key=` parameter.
+pub fn implicit_dijkstra_by(
+  from start: state,
+  successors_with_cost successors: fn(state) -> List(#(state, cost)),
+  visited_by key_fn: fn(state) -> key,
+  is_goal is_goal: fn(state) -> Bool,
+  with_zero zero: cost,
+  with_add add: fn(cost, cost) -> cost,
+  with_compare compare: fn(cost, cost) -> Order,
+) -> Option(cost) {
+  let frontier =
+    priority_queue.new(fn(a: #(cost, state), b: #(cost, state)) {
+      compare(a.0, b.0)
+    })
+    |> priority_queue.push(#(zero, start))
+
+  do_implicit_dijkstra_by(
+    frontier,
+    dict.new(),
+    successors,
+    key_fn,
+    is_goal,
+    add,
+    compare,
+  )
+}
+
+fn do_implicit_dijkstra_by(
+  frontier: priority_queue.Queue(#(cost, state)),
+  distances: Dict(key, cost),
+  successors: fn(state) -> List(#(state, cost)),
+  key_fn: fn(state) -> key,
+  is_goal: fn(state) -> Bool,
+  add: fn(cost, cost) -> cost,
+  compare: fn(cost, cost) -> Order,
+) -> Option(cost) {
+  case priority_queue.pop(frontier) {
+    Error(Nil) -> None
+    Ok(#(#(dist, current), rest_frontier)) -> {
+      case is_goal(current) {
+        True -> Some(dist)
+        False -> {
+          let current_key = key_fn(current)
+          // Check if we've already found a better path to this key
+          let should_explore = case dict.get(distances, current_key) {
+            Ok(prev_dist) ->
+              case compare(dist, prev_dist) {
+                Lt -> True
+                _ -> False
+              }
+            Error(Nil) -> True
+          }
+
+          case should_explore {
+            False ->
+              do_implicit_dijkstra_by(
+                rest_frontier,
+                distances,
+                successors,
+                key_fn,
+                is_goal,
+                add,
+                compare,
+              )
+            True -> {
+              let new_distances = dict.insert(distances, current_key, dist)
+
+              let next_frontier =
+                successors(current)
+                |> list.fold(rest_frontier, fn(h, neighbor) {
+                  let #(next_state, cost) = neighbor
+                  priority_queue.push(h, #(add(dist, cost), next_state))
+                })
+
+              do_implicit_dijkstra_by(
+                next_frontier,
+                new_distances,
+                successors,
+                key_fn,
+                is_goal,
+                add,
+                compare,
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+}

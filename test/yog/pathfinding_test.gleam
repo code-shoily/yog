@@ -2473,3 +2473,442 @@ pub fn distance_matrix_disconnected_test() {
     Error(Nil) -> should.fail()
   }
 }
+
+// ============= Implicit Dijkstra Tests =============
+
+// Simple linear implicit graph: states 1->2->3->4->5
+pub fn implicit_dijkstra_linear_test() {
+  let successors = fn(n: Int) {
+    case n < 5 {
+      True -> [#(n + 1, 10)]
+      False -> []
+    }
+  }
+
+  let result =
+    pathfinding.implicit_dijkstra(
+      from: 1,
+      successors_with_cost: successors,
+      is_goal: fn(n) { n == 5 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(Some(40))
+}
+
+// Test with multiple paths - should find shortest
+pub fn implicit_dijkstra_multiple_paths_test() {
+  // State is position, edges have different costs
+  let successors = fn(pos: Int) {
+    case pos {
+      1 -> [#(2, 100), #(3, 10)]
+      // Two paths: expensive direct, cheap via 3
+      2 -> [#(4, 1)]
+      3 -> [#(2, 5)]
+      _ -> []
+    }
+  }
+
+  let result =
+    pathfinding.implicit_dijkstra(
+      from: 1,
+      successors_with_cost: successors,
+      is_goal: fn(n) { n == 2 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // Should take path 1->3->2 (cost 15) not 1->2 (cost 100)
+  result |> should.equal(Some(15))
+}
+
+// Test with grid-like state space (using tuples for position)
+pub fn implicit_dijkstra_grid_test() {
+  let successors = fn(pos: #(Int, Int)) {
+    let #(x, y) = pos
+    [
+      #(#(x + 1, y), 1),
+      #(#(x - 1, y), 1),
+      #(#(x, y + 1), 1),
+      #(#(x, y - 1), 1),
+    ]
+    |> list.filter(fn(next) { next.0.0 >= 0 && next.0.1 >= 0 })
+    |> list.filter(fn(next) { next.0.0 <= 3 && next.0.1 <= 3 })
+  }
+
+  let result =
+    pathfinding.implicit_dijkstra(
+      from: #(0, 0),
+      successors_with_cost: successors,
+      is_goal: fn(pos) { pos.0 == 3 && pos.1 == 3 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // Manhattan distance from (0,0) to (3,3) is 6
+  result |> should.equal(Some(6))
+}
+
+// Test with no path to goal
+pub fn implicit_dijkstra_no_path_test() {
+  let successors = fn(n: Int) {
+    case n < 3 {
+      True -> [#(n + 1, 1)]
+      False -> []
+    }
+  }
+
+  let result =
+    pathfinding.implicit_dijkstra(
+      from: 1,
+      successors_with_cost: successors,
+      is_goal: fn(n) { n == 10 },
+      // Goal unreachable
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(None)
+}
+
+// Test with start == goal
+pub fn implicit_dijkstra_start_is_goal_test() {
+  let successors = fn(n: Int) { [#(n + 1, 10)] }
+
+  let result =
+    pathfinding.implicit_dijkstra(
+      from: 42,
+      successors_with_cost: successors,
+      is_goal: fn(n) { n == 42 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(Some(0))
+}
+
+// Test with weighted edges (non-uniform)
+pub fn implicit_dijkstra_weighted_test() {
+  let successors = fn(n: Int) {
+    case n {
+      1 -> [#(2, 5), #(3, 100)]
+      2 -> [#(3, 10)]
+      _ -> []
+    }
+  }
+
+  let result =
+    pathfinding.implicit_dijkstra(
+      from: 1,
+      successors_with_cost: successors,
+      is_goal: fn(n) { n == 3 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // Should take path 1->2->3 (cost 15) not 1->3 (cost 100)
+  result |> should.equal(Some(15))
+}
+
+// Test with cycle (should handle correctly)
+pub fn implicit_dijkstra_with_cycle_test() {
+  let successors = fn(n: Int) {
+    case n {
+      1 -> [#(2, 10)]
+      2 -> [#(3, 5), #(1, 1)]
+      // Cycle back to 1
+      3 -> [#(4, 1)]
+      _ -> []
+    }
+  }
+
+  let result =
+    pathfinding.implicit_dijkstra(
+      from: 1,
+      successors_with_cost: successors,
+      is_goal: fn(n) { n == 4 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(Some(16))
+}
+
+// Test with float costs
+pub fn implicit_dijkstra_float_costs_test() {
+  let successors = fn(n: Int) {
+    case n {
+      1 -> [#(2, 1.5), #(3, 10.0)]
+      2 -> [#(3, 2.5)]
+      _ -> []
+    }
+  }
+
+  let result =
+    pathfinding.implicit_dijkstra(
+      from: 1,
+      successors_with_cost: successors,
+      is_goal: fn(n) { n == 3 },
+      with_zero: 0.0,
+      with_add: float.add,
+      with_compare: float.compare,
+    )
+
+  result |> should.equal(Some(4.0))
+}
+
+// ============= Implicit Dijkstra By Tests =============
+
+// Test deduplication by position while carrying extra state
+pub fn implicit_dijkstra_by_position_mask_test() {
+  // State is #(position, mask) but dedupe by position only
+  let successors = fn(state: #(Int, Int)) {
+    let #(pos, mask) = state
+    case pos {
+      1 -> [#(#(2, mask + 1), 10), #(#(3, mask + 100), 5)]
+      2 -> [#(#(4, mask + 1), 1)]
+      3 -> [#(#(4, mask + 100), 2)]
+      _ -> []
+    }
+  }
+
+  let result =
+    pathfinding.implicit_dijkstra_by(
+      from: #(1, 0),
+      successors_with_cost: successors,
+      visited_by: fn(state) { state.0 },
+      // Dedupe by position only
+      is_goal: fn(state) { state.0 == 4 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // Should find path 1->3->4 (cost 7) even though masks differ
+  result |> should.equal(Some(7))
+}
+
+// Test that first visit wins when deduping by key
+pub fn implicit_dijkstra_by_first_visit_wins_test() {
+  // Two paths to position 2 with different masks
+  let successors = fn(state: #(Int, String)) {
+    let #(pos, _metadata) = state
+    case pos {
+      1 -> [#(#(2, "fast"), 5), #(#(2, "slow"), 100)]
+      _ -> []
+    }
+  }
+
+  let result =
+    pathfinding.implicit_dijkstra_by(
+      from: #(1, "start"),
+      successors_with_cost: successors,
+      visited_by: fn(state) { state.0 },
+      is_goal: fn(state) { state.0 == 2 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // Should take cheaper path (cost 5)
+  result |> should.equal(Some(5))
+}
+
+// Test with complex state carrying path history
+pub fn implicit_dijkstra_by_with_history_test() {
+  // State is #(pos, history)
+  let successors = fn(state: #(Int, List(Int))) {
+    let #(pos, history) = state
+    case pos {
+      1 -> [#(2, [1, ..history]), #(3, [1, ..history])]
+      2 -> [#(4, [2, ..history])]
+      3 -> [#(4, [3, ..history])]
+      _ -> []
+    }
+    |> list.map(fn(s) { #(s, 1) })
+  }
+
+  let result =
+    pathfinding.implicit_dijkstra_by(
+      from: #(1, []),
+      successors_with_cost: successors,
+      visited_by: fn(state) { state.0 },
+      // Dedupe by position
+      is_goal: fn(state) { state.0 == 4 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(Some(2))
+}
+
+// Test with tuple as deduplication key
+pub fn implicit_dijkstra_by_tuple_key_test() {
+  // State is #(x, y, collected_items) but dedupe by #(x, y)
+  let successors = fn(state: #(Int, Int, Int)) {
+    let #(x, y, items) = state
+    [#(x + 1, y, items), #(x, y + 1, items + 1)]
+    |> list.filter(fn(s) { s.0 <= 2 && s.1 <= 2 })
+    |> list.map(fn(s) { #(s, 1) })
+  }
+
+  let result =
+    pathfinding.implicit_dijkstra_by(
+      from: #(0, 0, 0),
+      successors_with_cost: successors,
+      visited_by: fn(state) { #(state.0, state.1) },
+      is_goal: fn(state) { state.0 == 2 && state.1 == 2 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(Some(4))
+}
+
+// Test that _by version behaves like regular when key is identity
+pub fn implicit_dijkstra_by_identity_key_test() {
+  let successors = fn(n: Int) {
+    case n < 5 {
+      True -> [#(n + 1, 3)]
+      False -> []
+    }
+  }
+
+  let result_by =
+    pathfinding.implicit_dijkstra_by(
+      from: 1,
+      successors_with_cost: successors,
+      visited_by: fn(n) { n },
+      // Identity
+      is_goal: fn(n) { n == 5 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  let result_regular =
+    pathfinding.implicit_dijkstra(
+      from: 1,
+      successors_with_cost: successors,
+      is_goal: fn(n) { n == 5 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result_by |> should.equal(result_regular)
+  result_by |> should.equal(Some(12))
+}
+
+// Test with no path using _by
+pub fn implicit_dijkstra_by_no_path_test() {
+  let successors = fn(state: #(Int, String)) {
+    let #(pos, tag) = state
+    case pos < 3 {
+      True -> [#(#(pos + 1, tag), 1)]
+      False -> []
+    }
+  }
+
+  let result =
+    pathfinding.implicit_dijkstra_by(
+      from: #(1, "start"),
+      successors_with_cost: successors,
+      visited_by: fn(state) { state.0 },
+      is_goal: fn(state) { state.0 == 10 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(None)
+}
+
+// Test with start == goal using _by
+pub fn implicit_dijkstra_by_start_is_goal_test() {
+  let successors = fn(state: #(Int, Int)) { [#(#(state.0 + 1, state.1), 1)] }
+
+  let result =
+    pathfinding.implicit_dijkstra_by(
+      from: #(5, 0),
+      successors_with_cost: successors,
+      visited_by: fn(state) { state.0 },
+      is_goal: fn(state) { state.0 == 5 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(Some(0))
+}
+
+// AoC-style test: simplified key collection
+pub fn implicit_dijkstra_by_key_collection_test() {
+  // Simplified version of key collection problem
+  // State is #(at_key, collected_mask)
+  // Keys: "a"=bit 0, "b"=bit 1
+  let successors = fn(state: #(String, Int)) {
+    let #(at, collected) = state
+    case at {
+      "@" -> [#("a", collected), #("b", collected)]
+      "a" -> [#("@", int.bitwise_or(collected, 1))]
+      // Collect key a (bit 0)
+      "b" -> [#("@", int.bitwise_or(collected, 2))]
+      // Collect key b (bit 1)
+      _ -> []
+    }
+    |> list.map(fn(s) { #(s, 1) })
+  }
+
+  let result =
+    pathfinding.implicit_dijkstra_by(
+      from: #("@", 0),
+      successors_with_cost: successors,
+      visited_by: fn(state) { #(state.0, state.1) },
+      // Dedupe by both
+      is_goal: fn(state) { state.1 == 3 },
+      // Both keys collected
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  result |> should.equal(Some(4))
+}
+
+// Test diamond pattern with different costs
+pub fn implicit_dijkstra_by_diamond_test() {
+  let successors = fn(state: #(Int, String)) {
+    let #(pos, label) = state
+    case pos {
+      1 -> [#(#(2, label <> "->2"), 1), #(#(3, label <> "->3"), 10)]
+      2 -> [#(#(4, label <> "->4"), 1)]
+      3 -> [#(#(4, label <> "->4"), 1)]
+      _ -> []
+    }
+  }
+
+  let result =
+    pathfinding.implicit_dijkstra_by(
+      from: #(1, "start"),
+      successors_with_cost: successors,
+      visited_by: fn(state) { state.0 },
+      is_goal: fn(state) { state.0 == 4 },
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
+
+  // Should take cheaper path through node 2 (cost 2) not 3 (cost 11)
+  result |> should.equal(Some(2))
+}
