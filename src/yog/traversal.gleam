@@ -53,11 +53,14 @@ pub fn walk(
   in graph: Graph(n, e),
   using order: Order,
 ) -> List(NodeId) {
-  case order {
-    BreadthFirst ->
-      do_walk_bfs(graph, queue.new() |> queue.push(start_id), set.new(), [])
-    DepthFirst -> do_walk_dfs(graph, [start_id], set.new(), [])
-  }
+  fold_walk(
+    over: graph,
+    from: start_id,
+    using: order,
+    initial: [],
+    with: fn(acc, node_id, _meta) { #(Continue, [node_id, ..acc]) },
+  )
+  |> list.reverse()
 }
 
 /// Walks the graph but stops early when a condition is met.
@@ -82,18 +85,20 @@ pub fn walk_until(
   using order: Order,
   until should_stop: fn(NodeId) -> Bool,
 ) -> List(NodeId) {
-  case order {
-    BreadthFirst ->
-      do_walk_until_bfs(
-        graph,
-        queue.new() |> queue.push(start_id),
-        set.new(),
-        [],
-        should_stop,
-      )
-    DepthFirst ->
-      do_walk_until_dfs(graph, [start_id], set.new(), [], should_stop)
-  }
+  fold_walk(
+    over: graph,
+    from: start_id,
+    using: order,
+    initial: [],
+    with: fn(acc, node_id, _meta) {
+      let new_acc = [node_id, ..acc]
+      case should_stop(node_id) {
+        True -> #(Halt, new_acc)
+        False -> #(Continue, new_acc)
+      }
+    },
+  )
+  |> list.reverse()
 }
 
 /// Folds over nodes during graph traversal, accumulating state with metadata.
@@ -212,132 +217,6 @@ pub fn fold_walk(
   }
 }
 
-// BFS with efficient O(1) amortized queue operations
-fn do_walk_bfs(
-  graph: Graph(n, e),
-  q: queue.Queue(NodeId),
-  visited: Set(NodeId),
-  acc: List(NodeId),
-) -> List(NodeId) {
-  case queue.pop(q) {
-    Error(Nil) -> list.reverse(acc)
-    Ok(#(head, rest)) -> {
-      case set.contains(visited, head) {
-        True -> do_walk_bfs(graph, rest, visited, acc)
-        False -> {
-          let next_nodes = model.successor_ids(graph, head)
-          let next_queue = queue.push_list(rest, next_nodes)
-
-          do_walk_bfs(graph, next_queue, set.insert(visited, head), [
-            head,
-            ..acc
-          ])
-        }
-      }
-    }
-  }
-}
-
-// DFS with list-based stack (prepend is O(1))
-fn do_walk_dfs(
-  graph: Graph(n, e),
-  stack: List(NodeId),
-  visited: Set(NodeId),
-  acc: List(NodeId),
-) -> List(NodeId) {
-  case stack {
-    [] -> list.reverse(acc)
-    [head, ..tail] -> {
-      case set.contains(visited, head) {
-        True -> do_walk_dfs(graph, tail, visited, acc)
-        False -> {
-          let next_nodes = model.successor_ids(graph, head)
-          let next_stack = list.append(next_nodes, tail)
-
-          do_walk_dfs(graph, next_stack, set.insert(visited, head), [
-            head,
-            ..acc
-          ])
-        }
-      }
-    }
-  }
-}
-
-// BFS with early termination
-fn do_walk_until_bfs(
-  graph: Graph(n, e),
-  q: queue.Queue(NodeId),
-  visited: Set(NodeId),
-  acc: List(NodeId),
-  should_stop: fn(NodeId) -> Bool,
-) -> List(NodeId) {
-  case queue.pop(q) {
-    Error(Nil) -> list.reverse(acc)
-    Ok(#(head, rest)) -> {
-      case set.contains(visited, head) {
-        True -> do_walk_until_bfs(graph, rest, visited, acc, should_stop)
-        False -> {
-          let current_acc = [head, ..acc]
-
-          case should_stop(head) {
-            True -> list.reverse(current_acc)
-            False -> {
-              let next_nodes = model.successor_ids(graph, head)
-              let next_queue = queue.push_list(rest, next_nodes)
-
-              do_walk_until_bfs(
-                graph,
-                next_queue,
-                set.insert(visited, head),
-                current_acc,
-                should_stop,
-              )
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-// DFS with early termination
-fn do_walk_until_dfs(
-  graph: Graph(n, e),
-  stack: List(NodeId),
-  visited: Set(NodeId),
-  acc: List(NodeId),
-  should_stop: fn(NodeId) -> Bool,
-) -> List(NodeId) {
-  case stack {
-    [] -> list.reverse(acc)
-    [head, ..tail] -> {
-      case set.contains(visited, head) {
-        True -> do_walk_until_dfs(graph, tail, visited, acc, should_stop)
-        False -> {
-          let current_acc = [head, ..acc]
-
-          case should_stop(head) {
-            True -> list.reverse(current_acc)
-            False -> {
-              let next_nodes = model.successor_ids(graph, head)
-              let next_stack = list.append(next_nodes, tail)
-
-              do_walk_until_dfs(
-                graph,
-                next_stack,
-                set.insert(visited, head),
-                current_acc,
-                should_stop,
-              )
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
 // BFS with fold and metadata
 fn do_fold_walk_bfs(
   graph: Graph(n, e),
@@ -405,15 +284,20 @@ fn do_fold_walk_dfs(
             Continue -> {
               // Add successors to stack with updated metadata
               let next_nodes = model.successor_ids(graph, node_id)
+              // Reverse to maintain correct DFS order (since we prepend during fold)
               let next_stack =
-                list.fold(next_nodes, tail, fn(current_stack, next_id) {
-                  let next_meta =
-                    WalkMetadata(
-                      depth: metadata.depth + 1,
-                      parent: Some(node_id),
-                    )
-                  [#(next_id, next_meta), ..current_stack]
-                })
+                list.fold(
+                  list.reverse(next_nodes),
+                  tail,
+                  fn(current_stack, next_id) {
+                    let next_meta =
+                      WalkMetadata(
+                        depth: metadata.depth + 1,
+                        parent: Some(node_id),
+                      )
+                    [#(next_id, next_meta), ..current_stack]
+                  },
+                )
 
               do_fold_walk_dfs(graph, next_stack, new_visited, new_acc, folder)
             }
