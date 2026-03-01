@@ -16,13 +16,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Maximum Clique (`yog/clique`)**: Bron-Kerbosch algorithm with pivoting for finding maximum and all maximal cliques
   - `max_clique()`: Find the largest clique (complete subgraph) in O(3^(n/3)) worst case, efficient in practice
   - `all_maximal_cliques()`: Find all maximal cliques (cliques that cannot be extended)
-  - Use cases: Social network analysis, protein complex identification, graph coloring bounds
+  - `k_cliques()`: Find all cliques of exactly size k with early pruning for efficiency. Particularly useful for finding triangles (k=3) in social networks
+  - Use cases: Social network analysis, protein complex identification, graph coloring bounds, pattern matching in biological networks
   - Works on undirected graphs
 - **`pathfinding.distance_matrix()`**: Compute shortest distances between points of interest with automatic algorithm selection
   - Automatically chooses Floyd-Warshall (O(V³)) for dense POIs or multiple Dijkstra (O(P×(V+E) log V)) for sparse POIs
   - Crossover heuristic: Uses Floyd-Warshall when POIs > 1/3 of total nodes
   - Returns only POI-to-POI distances, not all node pairs
   - Use cases: AoC 2016 Day 24, TSP-like problems, network analysis with specific landmarks
+- **`mst.prim()`**: Prim's algorithm for Minimum Spanning Tree. Grows MST from a starting node by repeatedly adding minimum-weight edges connecting visited to unvisited nodes
+  - Time complexity: O(E log V) where E is edges and V is vertices
+  - Alternative to Kruskal's algorithm with different performance characteristics
+  - Works on both directed and undirected graphs (treats directed as undirected)
+- **`components.kosaraju()`**: Kosaraju's algorithm for finding Strongly Connected Components
+  - Two-pass DFS approach: computes finishing times, transposes graph, processes in reverse order
+  - Time complexity: O(V + E) where V is vertices and E is edges
+  - Alternative to Tarjan's algorithm, simpler to understand with clear separation of concerns
+  - Use cases: Analyzing directed graph connectivity, finding cycles, dependency analysis
 
 ## 2026-02-27 - 2.0.0
 
