@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 2026-02-27 - 2.0.0
 
+### Added
+- **`traversal.fold_walk()`**: Fold over nodes during traversal with metadata (depth, parent). Enables state accumulation during BFS/DFS with fine-grained control via `Continue`/`Stop`/`Halt`. Perfect for building parent maps, collecting nodes within distance limits, or computing statistics during traversal.
+  - New types: `WalkControl` (`Continue`, `Stop`, `Halt`), `WalkMetadata` (depth, parent)
+  - `Halt` control: Stop the entire traversal immediately and return the accumulator (makes `walk_until` a special case of `fold_walk`)
+  - Works with both `BreadthFirst` and `DepthFirst` traversal orders
+  - Examples: Distance-limited search, shortest path tree construction, depth distribution analysis, early termination with accumulated state
+- **Maximum Clique (`yog/clique`)**: Bron-Kerbosch algorithm with pivoting for finding maximum and all maximal cliques
+  - `max_clique()`: Find the largest clique (complete subgraph) in O(3^(n/3)) worst case, efficient in practice
+  - `all_maximal_cliques()`: Find all maximal cliques (cliques that cannot be extended)
+  - Use cases: Social network analysis, protein complex identification, graph coloring bounds
+  - Works on undirected graphs
+- **`pathfinding.distance_matrix()`**: Compute shortest distances between points of interest with automatic algorithm selection
+  - Automatically chooses Floyd-Warshall (O(V³)) for dense POIs or multiple Dijkstra (O(P×(V+E) log V)) for sparse POIs
+  - Crossover heuristic: Uses Floyd-Warshall when POIs > 1/3 of total nodes
+  - Returns only POI-to-POI distances, not all node pairs
+  - Use cases: AoC 2016 Day 24, TSP-like problems, network analysis with specific landmarks
+
 ### Breaking Changes
 - **`pathfinding.floyd_warshall()`**: Return type changed from `Result(Dict(NodeId, Dict(NodeId, e)), Nil)` to `Result(Dict(#(NodeId, NodeId), e), Nil)`
   - **Before**: `let assert Ok(row) = dict.get(distances, 1); dict.get(row, 2)`
