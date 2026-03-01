@@ -1,6 +1,9 @@
+import gleam/dict
+import gleam/option.{None, Some}
+import gleam/result
 import gleeunit/should
 import yog/model.{Directed, Undirected}
-import yog/traversal.{BreadthFirst, DepthFirst}
+import yog/traversal.{BreadthFirst, Continue, DepthFirst, Halt, Stop}
 
 // ============= BFS Tests =============
 
@@ -364,4 +367,418 @@ pub fn bfs_vs_dfs_difference_test() {
   // DFS: goes deep first
   dfs_result
   |> should.equal([1, 2, 4, 3])
+}
+
+// ============= fold_walk Tests =============
+
+// Test fold_walk with BFS collecting nodes within distance
+pub fn fold_walk_bfs_distance_limit_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edge(from: 3, to: 4, with: 1)
+
+  // Collect only nodes within distance 2
+  let result =
+    traversal.fold_walk(
+      over: graph,
+      from: 1,
+      using: BreadthFirst,
+      initial: dict.new(),
+      with: fn(acc, node_id, meta) {
+        case meta.depth <= 2 {
+          True -> #(Continue, dict.insert(acc, node_id, meta.depth))
+          False -> #(Stop, acc)
+        }
+      },
+    )
+
+  result
+  |> dict.get(1)
+  |> should.equal(Ok(0))
+
+  result
+  |> dict.get(2)
+  |> should.equal(Ok(1))
+
+  result
+  |> dict.get(3)
+  |> should.equal(Ok(2))
+
+  // Node 4 should not be in result (distance 3)
+  result
+  |> dict.get(4)
+  |> should.equal(Error(Nil))
+}
+
+// Test fold_walk building parent map
+pub fn fold_walk_parent_map_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "Root")
+    |> model.add_node(2, "Left")
+    |> model.add_node(3, "Right")
+    |> model.add_node(4, "LL")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 1, to: 3, with: 1)
+    |> model.add_edge(from: 2, to: 4, with: 1)
+
+  let parents =
+    traversal.fold_walk(
+      over: graph,
+      from: 1,
+      using: BreadthFirst,
+      initial: dict.new(),
+      with: fn(acc, node_id, meta) {
+        let new_acc = case meta.parent {
+          Some(p) -> dict.insert(acc, node_id, p)
+          None -> acc
+        }
+        #(Continue, new_acc)
+      },
+    )
+
+  // Node 1 has no parent (it's the root)
+  parents
+  |> dict.get(1)
+  |> should.equal(Error(Nil))
+
+  // Node 2's parent is 1
+  parents
+  |> dict.get(2)
+  |> should.equal(Ok(1))
+
+  // Node 3's parent is 1
+  parents
+  |> dict.get(3)
+  |> should.equal(Ok(1))
+
+  // Node 4's parent is 2
+  parents
+  |> dict.get(4)
+  |> should.equal(Ok(2))
+}
+
+// Test fold_walk counting nodes at each depth
+pub fn fold_walk_depth_count_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "Root")
+    |> model.add_node(2, "Left")
+    |> model.add_node(3, "Right")
+    |> model.add_node(4, "LL")
+    |> model.add_node(5, "LR")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 1, to: 3, with: 1)
+    |> model.add_edge(from: 2, to: 4, with: 1)
+    |> model.add_edge(from: 2, to: 5, with: 1)
+
+  let depth_counts =
+    traversal.fold_walk(
+      over: graph,
+      from: 1,
+      using: BreadthFirst,
+      initial: dict.new(),
+      with: fn(acc, _node_id, meta) {
+        let count = dict.get(acc, meta.depth) |> result.unwrap(0)
+        #(Continue, dict.insert(acc, meta.depth, count + 1))
+      },
+    )
+
+  // Depth 0: 1 node (root)
+  depth_counts
+  |> dict.get(0)
+  |> should.equal(Ok(1))
+
+  // Depth 1: 2 nodes (2 and 3)
+  depth_counts
+  |> dict.get(1)
+  |> should.equal(Ok(2))
+
+  // Depth 2: 2 nodes (4 and 5)
+  depth_counts
+  |> dict.get(2)
+  |> should.equal(Ok(2))
+}
+
+// Test fold_walk with DFS
+pub fn fold_walk_dfs_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+
+  // Collect nodes in order visited
+  let result =
+    traversal.fold_walk(
+      over: graph,
+      from: 1,
+      using: DepthFirst,
+      initial: [],
+      with: fn(acc, node_id, _meta) { #(Continue, [node_id, ..acc]) },
+    )
+
+  // DFS visits in order: 1, 2, 3
+  result
+  |> should.equal([3, 2, 1])
+}
+
+// Test fold_walk with Stop control
+pub fn fold_walk_stop_control_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "Root")
+    |> model.add_node(2, "Left")
+    |> model.add_node(3, "Right")
+    |> model.add_node(4, "LL")
+    |> model.add_node(5, "LR")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 1, to: 3, with: 1)
+    |> model.add_edge(from: 2, to: 4, with: 1)
+    |> model.add_edge(from: 2, to: 5, with: 1)
+
+  // Stop exploring from node 2 (so nodes 4 and 5 shouldn't be visited)
+  let result =
+    traversal.fold_walk(
+      over: graph,
+      from: 1,
+      using: BreadthFirst,
+      initial: [],
+      with: fn(acc, node_id, _meta) {
+        case node_id == 2 {
+          True -> #(Stop, [node_id, ..acc])
+          False -> #(Continue, [node_id, ..acc])
+        }
+      },
+    )
+
+  // Should visit 1, 2, and 3, but not 4 or 5
+  result
+  |> should.equal([3, 2, 1])
+}
+
+// Test fold_walk on empty start
+pub fn fold_walk_isolated_node_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "Isolated")
+    |> model.add_node(2, "Other")
+
+  let result =
+    traversal.fold_walk(
+      over: graph,
+      from: 1,
+      using: BreadthFirst,
+      initial: 0,
+      with: fn(acc, _node_id, _meta) { #(Continue, acc + 1) },
+    )
+
+  // Should only visit node 1
+  result
+  |> should.equal(1)
+}
+
+// Test fold_walk with cycle (should not infinite loop)
+pub fn fold_walk_with_cycle_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edge(from: 3, to: 1, with: 1)
+
+  let result =
+    traversal.fold_walk(
+      over: graph,
+      from: 1,
+      using: BreadthFirst,
+      initial: [],
+      with: fn(acc, node_id, _meta) { #(Continue, [node_id, ..acc]) },
+    )
+
+  // Should visit each node exactly once
+  result
+  |> should.equal([3, 2, 1])
+}
+
+// Test fold_walk start node metadata
+pub fn fold_walk_start_metadata_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "Start")
+    |> model.add_node(2, "Next")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+
+  let result =
+    traversal.fold_walk(
+      over: graph,
+      from: 1,
+      using: BreadthFirst,
+      initial: dict.new(),
+      with: fn(acc, node_id, meta) {
+        #(Continue, dict.insert(acc, node_id, #(meta.depth, meta.parent)))
+      },
+    )
+
+  // Start node should have depth 0 and no parent
+  result
+  |> dict.get(1)
+  |> should.equal(Ok(#(0, None)))
+
+  // Next node should have depth 1 and parent 1
+  result
+  |> dict.get(2)
+  |> should.equal(Ok(#(1, Some(1))))
+}
+
+// Test fold_walk with Halt control (BFS)
+pub fn fold_walk_halt_bfs_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 1, to: 3, with: 1)
+    |> model.add_edge(from: 2, to: 4, with: 1)
+
+  // Halt when we find node 2
+  let result =
+    traversal.fold_walk(
+      over: graph,
+      from: 1,
+      using: BreadthFirst,
+      initial: [],
+      with: fn(acc, node_id, _meta) {
+        let new_acc = [node_id, ..acc]
+        case node_id == 2 {
+          True -> #(Halt, new_acc)
+          False -> #(Continue, new_acc)
+        }
+      },
+    )
+
+  // Should only visit 1 and 2, not 3 or 4
+  result
+  |> should.equal([2, 1])
+}
+
+// Test fold_walk with Halt control (DFS)
+pub fn fold_walk_halt_dfs_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edge(from: 3, to: 4, with: 1)
+
+  // Halt when we find node 3
+  let result =
+    traversal.fold_walk(
+      over: graph,
+      from: 1,
+      using: DepthFirst,
+      initial: [],
+      with: fn(acc, node_id, _meta) {
+        let new_acc = [node_id, ..acc]
+        case node_id == 3 {
+          True -> #(Halt, new_acc)
+          False -> #(Continue, new_acc)
+        }
+      },
+    )
+
+  // Should visit 1, 2, 3 but not 4 (halted at 3)
+  result
+  |> should.equal([3, 2, 1])
+}
+
+// Test fold_walk Halt vs Stop difference
+pub fn fold_walk_halt_vs_stop_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "Root")
+    |> model.add_node(2, "Left")
+    |> model.add_node(3, "Right")
+    |> model.add_node(4, "LL")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 1, to: 3, with: 1)
+    |> model.add_edge(from: 2, to: 4, with: 1)
+
+  // With Stop: visits 1, 2, 3 (skips 4 because we stopped at 2)
+  let stop_result =
+    traversal.fold_walk(
+      over: graph,
+      from: 1,
+      using: BreadthFirst,
+      initial: [],
+      with: fn(acc, node_id, _meta) {
+        let new_acc = [node_id, ..acc]
+        case node_id == 2 {
+          True -> #(Stop, new_acc)
+          False -> #(Continue, new_acc)
+        }
+      },
+    )
+
+  stop_result
+  |> should.equal([3, 2, 1])
+
+  // With Halt: visits 1, 2 only (halts entire traversal)
+  let halt_result =
+    traversal.fold_walk(
+      over: graph,
+      from: 1,
+      using: BreadthFirst,
+      initial: [],
+      with: fn(acc, node_id, _meta) {
+        let new_acc = [node_id, ..acc]
+        case node_id == 2 {
+          True -> #(Halt, new_acc)
+          False -> #(Continue, new_acc)
+        }
+      },
+    )
+
+  halt_result
+  |> should.equal([2, 1])
+}
+
+// Test that Halt at start node returns immediately
+pub fn fold_walk_halt_at_start_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+
+  let result =
+    traversal.fold_walk(
+      over: graph,
+      from: 1,
+      using: BreadthFirst,
+      initial: [],
+      with: fn(acc, node_id, _meta) {
+        let new_acc = [node_id, ..acc]
+        #(Halt, new_acc)
+      },
+    )
+
+  // Should only visit start node
+  result
+  |> should.equal([1])
 }

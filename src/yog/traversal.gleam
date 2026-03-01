@@ -1,4 +1,5 @@
 import gleam/list
+import gleam/option.{type Option, None, Some}
 import gleam/set.{type Set}
 import yog/internal/queue
 import yog/model.{type Graph, type NodeId}
@@ -9,6 +10,26 @@ pub type Order {
   BreadthFirst
   /// Depth-First Search: visit as deep as possible before backtracking.
   DepthFirst
+}
+
+/// Control flow for fold_walk traversal.
+pub type WalkControl {
+  /// Continue exploring from this node's successors.
+  Continue
+  /// Stop exploring from this node (but continue with other queued nodes).
+  Stop
+  /// Halt the entire traversal immediately and return the accumulator.
+  Halt
+}
+
+/// Metadata provided during fold_walk traversal.
+pub type WalkMetadata {
+  WalkMetadata(
+    /// Distance from the start node (number of edges traversed).
+    depth: Int,
+    /// The parent node that led to this node (None for the start node).
+    parent: Option(NodeId),
+  )
 }
 
 /// Walks the graph starting from the given node, visiting all reachable nodes.
@@ -72,6 +93,122 @@ pub fn walk_until(
       )
     DepthFirst ->
       do_walk_until_dfs(graph, [start_id], set.new(), [], should_stop)
+  }
+}
+
+/// Folds over nodes during graph traversal, accumulating state with metadata.
+///
+/// This function combines traversal with state accumulation, providing metadata
+/// about each visited node (depth and parent). The folder function controls the
+/// traversal flow:
+///
+/// - `Continue`: Explore successors of the current node normally
+/// - `Stop`: Skip successors of this node, but continue processing other queued nodes
+/// - `Halt`: Stop the entire traversal immediately and return the accumulator
+///
+/// **Time Complexity:** O(V + E) for both BFS and DFS
+///
+/// ## Parameters
+///
+/// - `folder`: Called for each visited node with (accumulator, node_id, metadata).
+///   Returns `#(WalkControl, new_accumulator)`.
+///
+/// ## Examples
+///
+/// ```gleam
+/// import gleam/dict
+/// import yog/traversal.{BreadthFirst, Continue, Halt, Stop, WalkMetadata}
+///
+/// // Find all nodes within distance 3 from start
+/// let nearby = traversal.fold_walk(
+///   over: graph,
+///   from: 1,
+///   using: BreadthFirst,
+///   initial: dict.new(),
+///   with: fn(acc, node_id, meta) {
+///     case meta.depth <= 3 {
+///       True -> #(Continue, dict.insert(acc, node_id, meta.depth))
+///       False -> #(Stop, acc)  // Don't explore beyond depth 3
+///     }
+///   }
+/// )
+///
+/// // Stop immediately when target is found (like walk_until)
+/// let path_to_target = traversal.fold_walk(
+///   over: graph,
+///   from: start,
+///   using: BreadthFirst,
+///   initial: [],
+///   with: fn(acc, node_id, _meta) {
+///     let new_acc = [node_id, ..acc]
+///     case node_id == target {
+///       True -> #(Halt, new_acc)   // Stop entire traversal
+///       False -> #(Continue, new_acc)
+///     }
+///   }
+/// )
+///
+/// // Build a parent map for path reconstruction
+/// let parents = traversal.fold_walk(
+///   over: graph,
+///   from: start,
+///   using: BreadthFirst,
+///   initial: dict.new(),
+///   with: fn(acc, node_id, meta) {
+///     let new_acc = case meta.parent {
+///       Some(p) -> dict.insert(acc, node_id, p)
+///       None -> acc
+///     }
+///     #(Continue, new_acc)
+///   }
+/// )
+///
+/// // Count nodes at each depth level
+/// let depth_counts = traversal.fold_walk(
+///   over: graph,
+///   from: root,
+///   using: BreadthFirst,
+///   initial: dict.new(),
+///   with: fn(acc, _node_id, meta) {
+///     let count = dict.get(acc, meta.depth) |> result.unwrap(0)
+///     #(Continue, dict.insert(acc, meta.depth, count + 1))
+///   }
+/// )
+/// ```
+///
+/// ## Use Cases
+///
+/// - Finding nodes within a certain distance
+/// - Building shortest path trees (parent pointers)
+/// - Collecting nodes with custom filtering logic
+/// - Computing statistics during traversal (depth distribution, etc.)
+/// - BFS/DFS with early termination based on accumulated state
+pub fn fold_walk(
+  over graph: Graph(n, e),
+  from start: NodeId,
+  using order: Order,
+  initial acc: a,
+  with folder: fn(a, NodeId, WalkMetadata) -> #(WalkControl, a),
+) -> a {
+  let start_metadata = WalkMetadata(depth: 0, parent: None)
+
+  case order {
+    BreadthFirst ->
+      do_fold_walk_bfs(
+        graph,
+        queue.new() |> queue.push(#(start, start_metadata)),
+        set.new(),
+        acc,
+        folder,
+      )
+    DepthFirst ->
+      do_fold_walk_dfs(
+        graph,
+        [#(start, start_metadata)],
+        set.new(),
+        acc,
+        folder,
+      )
   }
 }
 
@@ -193,6 +330,92 @@ fn do_walk_until_dfs(
                 current_acc,
                 should_stop,
               )
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// BFS with fold and metadata
+fn do_fold_walk_bfs(
+  graph: Graph(n, e),
+  q: queue.Queue(#(NodeId, WalkMetadata)),
+  visited: Set(NodeId),
+  acc: a,
+  folder: fn(a, NodeId, WalkMetadata) -> #(WalkControl, a),
+) -> a {
+  case queue.pop(q) {
+    Error(Nil) -> acc
+    Ok(#(#(node_id, metadata), rest)) -> {
+      case set.contains(visited, node_id) {
+        True -> do_fold_walk_bfs(graph, rest, visited, acc, folder)
+        False -> {
+          // Call folder with current node
+          let #(control, new_acc) = folder(acc, node_id, metadata)
+          let new_visited = set.insert(visited, node_id)
+
+          case control {
+            Halt -> new_acc
+            Stop -> do_fold_walk_bfs(graph, rest, new_visited, new_acc, folder)
+            Continue -> {
+              // Add successors to queue with updated metadata
+              let next_nodes = model.successor_ids(graph, node_id)
+              let next_queue =
+                list.fold(next_nodes, rest, fn(current_queue, next_id) {
+                  let next_meta =
+                    WalkMetadata(
+                      depth: metadata.depth + 1,
+                      parent: Some(node_id),
+                    )
+                  queue.push(current_queue, #(next_id, next_meta))
+                })
+
+              do_fold_walk_bfs(graph, next_queue, new_visited, new_acc, folder)
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// DFS with fold and metadata
+fn do_fold_walk_dfs(
+  graph: Graph(n, e),
+  stack: List(#(NodeId, WalkMetadata)),
+  visited: Set(NodeId),
+  acc: a,
+  folder: fn(a, NodeId, WalkMetadata) -> #(WalkControl, a),
+) -> a {
+  case stack {
+    [] -> acc
+    [#(node_id, metadata), ..tail] -> {
+      case set.contains(visited, node_id) {
+        True -> do_fold_walk_dfs(graph, tail, visited, acc, folder)
+        False -> {
+          // Call folder with current node
+          let #(control, new_acc) = folder(acc, node_id, metadata)
+          let new_visited = set.insert(visited, node_id)
+
+          case control {
+            Halt -> new_acc
+            Stop -> do_fold_walk_dfs(graph, tail, new_visited, new_acc, folder)
+            Continue -> {
+              // Add successors to stack with updated metadata
+              let next_nodes = model.successor_ids(graph, node_id)
+              let next_stack =
+                list.fold(next_nodes, tail, fn(current_stack, next_id) {
+                  let next_meta =
+                    WalkMetadata(
+                      depth: metadata.depth + 1,
+                      parent: Some(node_id),
+                    )
+                  [#(next_id, next_meta), ..current_stack]
+                })
+
+              do_fold_walk_dfs(graph, next_stack, new_visited, new_acc, folder)
             }
           }
         }
