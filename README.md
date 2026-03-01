@@ -92,6 +92,24 @@ Detailed examples are located in the [examples/](https://github.com/code-shoily/
 - [JSON rendering](examples/render_json.gleam) - Exporting graphs to JSON for web use.
 - [Graph creation](examples/graph_creation.gleam) - Comprehensive guide to 10+ ways of creating graphs.
 
+### Running Examples Locally
+
+The examples live in the `examples/` directory. To run them with `gleam run`, create a one-time symlink that makes Gleam's module system aware of them:
+
+```sh
+ln -sf "$(pwd)/examples" src/yog/internal/examples
+```
+
+Then run any example by its module name:
+
+```sh
+gleam run -m yog/internal/examples/gps_navigation
+gleam run -m yog/internal/examples/network_bandwidth
+# etc.
+```
+
+> The symlink is listed in `.gitignore` and is not committed to the repository, so it won't affect CI or other contributors' environments.
+
 ## Algorithm Selection Guide
 
 Detailed documentation for each algorithm can be found on [HexDocs](https://hexdocs.pm/yog/).
