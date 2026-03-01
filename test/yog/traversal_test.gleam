@@ -782,3 +782,571 @@ pub fn fold_walk_halt_at_start_test() {
   result
   |> should.equal([1])
 }
+
+// ============= implicit_fold Tests =============
+
+// Test implicit_fold BFS on simple chain: 1 -> 2 -> 3 -> 4
+pub fn implicit_fold_bfs_chain_test() {
+  // Simple successor function: each node points to next
+  let successors = fn(n) {
+    case n < 4 {
+      True -> [n + 1]
+      False -> []
+    }
+  }
+
+  let result =
+    traversal.implicit_fold(
+      from: 1,
+      using: BreadthFirst,
+      initial: [],
+      successors_of: successors,
+      with: fn(acc, node_id, _meta) { #(Continue, [node_id, ..acc]) },
+    )
+
+  result
+  |> should.equal([4, 3, 2, 1])
+}
+
+// Test implicit_fold DFS on simple chain
+pub fn implicit_fold_dfs_chain_test() {
+  let successors = fn(n) {
+    case n < 4 {
+      True -> [n + 1]
+      False -> []
+    }
+  }
+
+  let result =
+    traversal.implicit_fold(
+      from: 1,
+      using: DepthFirst,
+      initial: [],
+      successors_of: successors,
+      with: fn(acc, node_id, _meta) { #(Continue, [node_id, ..acc]) },
+    )
+
+  result
+  |> should.equal([4, 3, 2, 1])
+}
+
+// Test implicit_fold BFS on tree structure
+//     1
+//    / \
+//   2   3
+//  / \
+// 4   5
+pub fn implicit_fold_bfs_tree_test() {
+  let successors = fn(n) {
+    case n {
+      1 -> [2, 3]
+      2 -> [4, 5]
+      _ -> []
+    }
+  }
+
+  let result =
+    traversal.implicit_fold(
+      from: 1,
+      using: BreadthFirst,
+      initial: [],
+      successors_of: successors,
+      with: fn(acc, node_id, _meta) { #(Continue, [node_id, ..acc]) },
+    )
+
+  // BFS visits level by level: 1, then {2,3}, then {4,5}
+  result
+  |> should.equal([5, 4, 3, 2, 1])
+}
+
+// Test implicit_foldDFS on tree structure
+pub fn implicit_fold_dfs_tree_test() {
+  let successors = fn(n) {
+    case n {
+      1 -> [2, 3]
+      2 -> [4, 5]
+      _ -> []
+    }
+  }
+
+  let result =
+    traversal.implicit_fold(
+      from: 1,
+      using: DepthFirst,
+      initial: [],
+      successors_of: successors,
+      with: fn(acc, node_id, _meta) { #(Continue, [node_id, ..acc]) },
+    )
+
+  // DFS goes deep first: 1 -> 2 -> 4 -> 5 -> 3
+  result
+  |> should.equal([3, 5, 4, 2, 1])
+}
+
+// Test implicit_foldwith cycle detection
+pub fn implicit_fold_with_cycle_test() {
+  // Create a cycle: 1 -> 2 -> 3 -> 1
+  let successors = fn(n) {
+    case n {
+      1 -> [2]
+      2 -> [3]
+      3 -> [1]
+      _ -> []
+    }
+  }
+
+  let result =
+    traversal.implicit_fold(
+      from: 1,
+      using: BreadthFirst,
+      initial: [],
+      successors_of: successors,
+      with: fn(acc, node_id, _meta) { #(Continue, [node_id, ..acc]) },
+    )
+
+  // Should visit each node exactly once despite the cycle
+  result
+  |> should.equal([3, 2, 1])
+}
+
+// Test implicit_foldwith isolated node (no successors)
+pub fn implicit_fold_isolated_node_test() {
+  let successors = fn(_n) { [] }
+
+  let result =
+    traversal.implicit_fold(
+      from: 42,
+      using: BreadthFirst,
+      initial: 0,
+      successors_of: successors,
+      with: fn(acc, _node_id, _meta) { #(Continue, acc + 1) },
+    )
+
+  // Should only visit the start node
+  result
+  |> should.equal(1)
+}
+
+// Test implicit_foldcollecting depth metadata
+pub fn implicit_fold_depth_metadata_test() {
+  let successors = fn(n) {
+    case n {
+      1 -> [2, 3]
+      2 -> [4, 5]
+      _ -> []
+    }
+  }
+
+  let result =
+    traversal.implicit_fold(
+      from: 1,
+      using: BreadthFirst,
+      initial: dict.new(),
+      successors_of: successors,
+      with: fn(acc, node_id, meta) {
+        #(Continue, dict.insert(acc, node_id, meta.depth))
+      },
+    )
+
+  // Verify depths
+  result
+  |> dict.get(1)
+  |> should.equal(Ok(0))
+
+  result
+  |> dict.get(2)
+  |> should.equal(Ok(1))
+
+  result
+  |> dict.get(3)
+  |> should.equal(Ok(1))
+
+  result
+  |> dict.get(4)
+  |> should.equal(Ok(2))
+
+  result
+  |> dict.get(5)
+  |> should.equal(Ok(2))
+}
+
+// Test implicit_foldbuilding parent map
+pub fn implicit_fold_parent_map_test() {
+  let successors = fn(n) {
+    case n {
+      1 -> [2, 3]
+      2 -> [4]
+      _ -> []
+    }
+  }
+
+  let parents =
+    traversal.implicit_fold(
+      from: 1,
+      using: BreadthFirst,
+      initial: dict.new(),
+      successors_of: successors,
+      with: fn(acc, node_id, meta) {
+        let new_acc = case meta.parent {
+          Some(p) -> dict.insert(acc, node_id, p)
+          None -> acc
+        }
+        #(Continue, new_acc)
+      },
+    )
+
+  // Node 1 has no parent (it's the root)
+  parents
+  |> dict.get(1)
+  |> should.equal(Error(Nil))
+
+  // Node 2's parent is 1
+  parents
+  |> dict.get(2)
+  |> should.equal(Ok(1))
+
+  // Node 3's parent is 1
+  parents
+  |> dict.get(3)
+  |> should.equal(Ok(1))
+
+  // Node 4's parent is 2
+  parents
+  |> dict.get(4)
+  |> should.equal(Ok(2))
+}
+
+// Test implicit_foldwith Stop control
+pub fn implicit_fold_stop_control_test() {
+  let successors = fn(n) {
+    case n {
+      1 -> [2, 3]
+      2 -> [4, 5]
+      _ -> []
+    }
+  }
+
+  // Stop exploring from node 2 (so nodes 4 and 5 shouldn't be visited)
+  let result =
+    traversal.implicit_fold(
+      from: 1,
+      using: BreadthFirst,
+      initial: [],
+      successors_of: successors,
+      with: fn(acc, node_id, _meta) {
+        case node_id == 2 {
+          True -> #(Stop, [node_id, ..acc])
+          False -> #(Continue, [node_id, ..acc])
+        }
+      },
+    )
+
+  // Should visit 1, 2, and 3, but not 4 or 5
+  result
+  |> should.equal([3, 2, 1])
+}
+
+// Test implicit_foldwith Halt control (BFS)
+pub fn implicit_fold_halt_bfs_test() {
+  let successors = fn(n) {
+    case n {
+      1 -> [2, 3]
+      2 -> [4]
+      _ -> []
+    }
+  }
+
+  // Halt when we find node 2
+  let result =
+    traversal.implicit_fold(
+      from: 1,
+      using: BreadthFirst,
+      initial: [],
+      successors_of: successors,
+      with: fn(acc, node_id, _meta) {
+        let new_acc = [node_id, ..acc]
+        case node_id == 2 {
+          True -> #(Halt, new_acc)
+          False -> #(Continue, new_acc)
+        }
+      },
+    )
+
+  // Should only visit 1 and 2, not 3 or 4
+  result
+  |> should.equal([2, 1])
+}
+
+// Test implicit_foldwith Halt control (DFS)
+pub fn implicit_fold_halt_dfs_test() {
+  let successors = fn(n) {
+    case n < 5 {
+      True -> [n + 1]
+      False -> []
+    }
+  }
+
+  // Halt when we find node 3
+  let result =
+    traversal.implicit_fold(
+      from: 1,
+      using: DepthFirst,
+      initial: [],
+      successors_of: successors,
+      with: fn(acc, node_id, _meta) {
+        let new_acc = [node_id, ..acc]
+        case node_id == 3 {
+          True -> #(Halt, new_acc)
+          False -> #(Continue, new_acc)
+        }
+      },
+    )
+
+  // Should visit 1, 2, 3 but not 4 or 5 (halted at 3)
+  result
+  |> should.equal([3, 2, 1])
+}
+
+// Test implicit_foldHalt vs Stop difference
+pub fn implicit_fold_halt_vs_stop_test() {
+  let successors = fn(n) {
+    case n {
+      1 -> [2, 3]
+      2 -> [4]
+      _ -> []
+    }
+  }
+
+  // With Stop: visits 1, 2, 3 (skips 4 because we stopped at 2)
+  let stop_result =
+    traversal.implicit_fold(
+      from: 1,
+      using: BreadthFirst,
+      initial: [],
+      successors_of: successors,
+      with: fn(acc, node_id, _meta) {
+        let new_acc = [node_id, ..acc]
+        case node_id == 2 {
+          True -> #(Stop, new_acc)
+          False -> #(Continue, new_acc)
+        }
+      },
+    )
+
+  stop_result
+  |> should.equal([3, 2, 1])
+
+  // With Halt: visits 1, 2 only (halts entire traversal)
+  let halt_result =
+    traversal.implicit_fold(
+      from: 1,
+      using: BreadthFirst,
+      initial: [],
+      successors_of: successors,
+      with: fn(acc, node_id, _meta) {
+        let new_acc = [node_id, ..acc]
+        case node_id == 2 {
+          True -> #(Halt, new_acc)
+          False -> #(Continue, new_acc)
+        }
+      },
+    )
+
+  halt_result
+  |> should.equal([2, 1])
+}
+
+// Test implicit_foldwith 2D grid coordinates (tuples as node IDs)
+pub fn implicit_fold_2d_grid_test() {
+  // 3x3 grid, only move right and down
+  let successors = fn(pos: #(Int, Int)) {
+    let #(x, y) = pos
+    let right = #(x + 1, y)
+    let down = #(x, y + 1)
+
+    case x < 2, y < 2 {
+      True, True -> [right, down]
+      True, False -> [right]
+      False, True -> [down]
+      False, False -> []
+    }
+  }
+
+  // Find shortest path to bottom-right corner
+  let result =
+    traversal.implicit_fold(
+      from: #(0, 0),
+      using: BreadthFirst,
+      initial: -1,
+      successors_of: successors,
+      with: fn(acc, pos, meta) {
+        case pos == #(2, 2) {
+          True -> #(Halt, meta.depth)
+          False -> #(Continue, acc)
+        }
+      },
+    )
+
+  // Distance from (0,0) to (2,2) is 4 (2 right + 2 down)
+  result
+  |> should.equal(4)
+}
+
+// Test implicit_foldwith string node IDs
+pub fn implicit_fold_string_ids_test() {
+  let successors = fn(node: String) {
+    case node {
+      "start" -> ["a", "b"]
+      "a" -> ["c"]
+      "b" -> ["c"]
+      "c" -> ["end"]
+      _ -> []
+    }
+  }
+
+  let result =
+    traversal.implicit_fold(
+      from: "start",
+      using: BreadthFirst,
+      initial: [],
+      successors_of: successors,
+      with: fn(acc, node_id, _meta) { #(Continue, [node_id, ..acc]) },
+    )
+
+  // Should visit all nodes
+  result
+  |> should.equal(["end", "c", "b", "a", "start"])
+}
+
+// Test implicit_foldwith distance limit (like fold_walk example)
+pub fn implicit_fold_distance_limit_test() {
+  let successors = fn(n) {
+    case n < 5 {
+      True -> [n + 1]
+      False -> []
+    }
+  }
+
+  // Collect only nodes within distance 2
+  let result =
+    traversal.implicit_fold(
+      from: 1,
+      using: BreadthFirst,
+      initial: dict.new(),
+      successors_of: successors,
+      with: fn(acc, node_id, meta) {
+        case meta.depth <= 2 {
+          True -> #(Continue, dict.insert(acc, node_id, meta.depth))
+          False -> #(Stop, acc)
+        }
+      },
+    )
+
+  result
+  |> dict.get(1)
+  |> should.equal(Ok(0))
+
+  result
+  |> dict.get(2)
+  |> should.equal(Ok(1))
+
+  result
+  |> dict.get(3)
+  |> should.equal(Ok(2))
+
+  // Node 4 should not be in result (distance 3)
+  result
+  |> dict.get(4)
+  |> should.equal(Error(Nil))
+}
+
+// Test implicit_foldwith self-loop
+pub fn implicit_fold_self_loop_test() {
+  let successors = fn(n) {
+    case n {
+      1 -> [1, 2]
+      // Self-loop at 1
+      _ -> []
+    }
+  }
+
+  let result =
+    traversal.implicit_fold(
+      from: 1,
+      using: BreadthFirst,
+      initial: [],
+      successors_of: successors,
+      with: fn(acc, node_id, _meta) { #(Continue, [node_id, ..acc]) },
+    )
+
+  // Self-loop should not cause infinite recursion
+  result
+  |> should.equal([2, 1])
+}
+
+// Test implicit_folddiamond pattern
+//   1
+//  / \
+// 2   3
+//  \ /
+//   4
+pub fn implicit_fold_diamond_test() {
+  let successors = fn(n) {
+    case n {
+      1 -> [2, 3]
+      2 -> [4]
+      3 -> [4]
+      _ -> []
+    }
+  }
+
+  let result =
+    traversal.implicit_fold(
+      from: 1,
+      using: BreadthFirst,
+      initial: [],
+      successors_of: successors,
+      with: fn(acc, node_id, _meta) { #(Continue, [node_id, ..acc]) },
+    )
+
+  // Should visit node 4 only once, even though it has two paths to it
+  result
+  |> should.equal([4, 3, 2, 1])
+}
+
+// Test implicit_foldBFS vs DFS difference
+pub fn implicit_fold_bfs_vs_dfs_difference_test() {
+  let successors = fn(n) {
+    case n {
+      1 -> [2, 3]
+      2 -> [4]
+      _ -> []
+    }
+  }
+
+  let bfs_result =
+    traversal.implicit_fold(
+      from: 1,
+      using: BreadthFirst,
+      initial: [],
+      successors_of: successors,
+      with: fn(acc, node_id, _meta) { #(Continue, [node_id, ..acc]) },
+    )
+
+  let dfs_result =
+    traversal.implicit_fold(
+      from: 1,
+      using: DepthFirst,
+      initial: [],
+      successors_of: successors,
+      with: fn(acc, node_id, _meta) { #(Continue, [node_id, ..acc]) },
+    )
+
+  // BFS: level by level
+  bfs_result
+  |> should.equal([4, 3, 2, 1])
+
+  // DFS: goes deep first
+  dfs_result
+  |> should.equal([3, 4, 2, 1])
+}

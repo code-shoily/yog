@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - 2.0.1
 
 ### Added
+- **`traversal.implicit_fold()`**: Traverse implicit graphs using BFS or DFS without materializing a `Graph` structure. Instead of requiring a pre-built graph, you provide a `successors_of` function that computes neighbors on demand.
+  - Ideal for infinite grids, state-space search, or graphs too large/expensive to build upfront
+  - Works with any node ID type (integers, strings, tuples, custom types)
+  - Provides same metadata (depth, parent) and control flow (`Continue`/`Stop`/`Halt`) as `fold_walk`
+  - Time complexity: O(V + E) for both BFS and DFS where V is visited nodes and E is explored edges
+  - Use cases: Maze pathfinding on implicit grids, state-space exploration, puzzle solving (e.g., AoC 2016 Day 13), shortest path in procedurally-generated graphs
+  - Example: BFS shortest path in an implicit maze by providing a function that computes open neighbors
 - **`traversal.fold_walk()`**: Fold over nodes during traversal with metadata (depth, parent). Enables state accumulation during BFS/DFS with fine-grained control via `Continue`/`Stop`/`Halt`. Perfect for building parent maps, collecting nodes within distance limits, or computing statistics during traversal.
   - New types: `WalkControl` (`Continue`, `Stop`, `Halt`), `WalkMetadata` (depth, parent)
   - `Halt` control: Stop the entire traversal immediately and return the accumulator (makes `walk_until` a special case of `fold_walk`)

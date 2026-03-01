@@ -22,13 +22,13 @@ pub type WalkControl {
   Halt
 }
 
-/// Metadata provided during fold_walk traversal.
-pub type WalkMetadata {
+/// Metadata provided during fold_walk / implicit_fold traversal.
+pub type WalkMetadata(nid) {
   WalkMetadata(
     /// Distance from the start node (number of edges traversed).
     depth: Int,
     /// The parent node that led to this node (None for the start node).
-    parent: Option(NodeId),
+    parent: Option(nid),
   )
 }
 
@@ -193,7 +193,7 @@ pub fn fold_walk(
   from start: NodeId,
   using order: Order,
   initial acc: a,
-  with folder: fn(a, NodeId, WalkMetadata) -> #(WalkControl, a),
+  with folder: fn(a, NodeId, WalkMetadata(NodeId)) -> #(WalkControl, a),
 ) -> a {
   let start_metadata = WalkMetadata(depth: 0, parent: None)
 
@@ -217,13 +217,60 @@ pub fn fold_walk(
   }
 }
 
+/// Traverses an *implicit* graph using BFS or DFS,
+/// folding over visited nodes with metadata.
+///
+/// Unlike `fold_walk`, this does not require a materialised `Graph` value.
+/// Instead, you supply a `successors_of` function that computes neighbours
+/// on the fly — ideal for infinite grids, state-space search, or any
+/// graph that is too large or expensive to build upfront.
+///
+/// ## Example
+///
+/// ```gleam
+/// // BFS shortest path in an implicit maze
+/// traversal.implicit_fold(
+///   from: #(1, 1),
+///   using: BreadthFirst,
+///   initial: -1,
+///   successors_of: fn(pos) { open_neighbours(pos, fav) },
+///   with: fn(acc, pos, meta) {
+///     case pos == target {
+///       True -> #(Halt, meta.depth)
+///       False -> #(Continue, acc)
+///     }
+///   },
+/// )
+/// ```
+pub fn implicit_fold(
+  from start: nid,
+  using order: Order,
+  initial acc: a,
+  successors_of successors: fn(nid) -> List(nid),
+  with folder: fn(a, nid, WalkMetadata(nid)) -> #(WalkControl, a),
+) -> a {
+  let start_meta = WalkMetadata(depth: 0, parent: None)
+  case order {
+    BreadthFirst ->
+      do_virtual_bfs(
+        queue.new() |> queue.push(#(start, start_meta)),
+        set.new(),
+        acc,
+        successors,
+        folder,
+      )
+    DepthFirst ->
+      do_virtual_dfs([#(start, start_meta)], set.new(), acc, successors, folder)
+  }
+}
+
 // BFS with fold and metadata
 fn do_fold_walk_bfs(
   graph: Graph(n, e),
-  q: queue.Queue(#(NodeId, WalkMetadata)),
+  q: queue.Queue(#(NodeId, WalkMetadata(NodeId))),
   visited: Set(NodeId),
   acc: a,
-  folder: fn(a, NodeId, WalkMetadata) -> #(WalkControl, a),
+  folder: fn(a, NodeId, WalkMetadata(NodeId)) -> #(WalkControl, a),
 ) -> a {
   case queue.pop(q) {
     Error(Nil) -> acc
@@ -263,10 +310,10 @@ fn do_fold_walk_bfs(
 // DFS with fold and metadata
 fn do_fold_walk_dfs(
   graph: Graph(n, e),
-  stack: List(#(NodeId, WalkMetadata)),
+  stack: List(#(NodeId, WalkMetadata(NodeId))),
   visited: Set(NodeId),
   acc: a,
-  folder: fn(a, NodeId, WalkMetadata) -> #(WalkControl, a),
+  folder: fn(a, NodeId, WalkMetadata(NodeId)) -> #(WalkControl, a),
 ) -> a {
   case stack {
     [] -> acc
@@ -274,17 +321,13 @@ fn do_fold_walk_dfs(
       case set.contains(visited, node_id) {
         True -> do_fold_walk_dfs(graph, tail, visited, acc, folder)
         False -> {
-          // Call folder with current node
           let #(control, new_acc) = folder(acc, node_id, metadata)
           let new_visited = set.insert(visited, node_id)
-
           case control {
             Halt -> new_acc
             Stop -> do_fold_walk_dfs(graph, tail, new_visited, new_acc, folder)
             Continue -> {
-              // Add successors to stack with updated metadata
               let next_nodes = model.successor_ids(graph, node_id)
-              // Reverse to maintain correct DFS order (since we prepend during fold)
               let next_stack =
                 list.fold(
                   list.reverse(next_nodes),
@@ -298,12 +341,109 @@ fn do_fold_walk_dfs(
                     [#(next_id, next_meta), ..current_stack]
                   },
                 )
-
               do_fold_walk_dfs(graph, next_stack, new_visited, new_acc, folder)
             }
           }
         }
       }
     }
+  }
+}
+
+// Virtual BFS: same as do_fold_walk_bfs but uses a successors function
+// instead of querying a Graph.
+fn do_virtual_bfs(
+  q: queue.Queue(#(nid, WalkMetadata(nid))),
+  visited: Set(nid),
+  acc: a,
+  successors: fn(nid) -> List(nid),
+  folder: fn(a, nid, WalkMetadata(nid)) -> #(WalkControl, a),
+) -> a {
+  case queue.pop(q) {
+    Error(Nil) -> acc
+    Ok(#(#(node_id, metadata), rest)) ->
+      case set.contains(visited, node_id) {
+        True -> do_virtual_bfs(rest, visited, acc, successors, folder)
+        False -> {
+          let #(control, new_acc) = folder(acc, node_id, metadata)
+          let new_visited = set.insert(visited, node_id)
+          case control {
+            Halt -> new_acc
+            Stop ->
+              do_virtual_bfs(rest, new_visited, new_acc, successors, folder)
+            Continue -> {
+              let next_queue =
+                list.fold(successors(node_id), rest, fn(q2, next_id) {
+                  queue.push(q2, #(
+                    next_id,
+                    WalkMetadata(
+                      depth: metadata.depth + 1,
+                      parent: Some(node_id),
+                    ),
+                  ))
+                })
+              do_virtual_bfs(
+                next_queue,
+                new_visited,
+                new_acc,
+                successors,
+                folder,
+              )
+            }
+          }
+        }
+      }
+  }
+}
+
+// Virtual DFS: same as do_fold_walk_dfs but uses a successors function.
+fn do_virtual_dfs(
+  stack: List(#(nid, WalkMetadata(nid))),
+  visited: Set(nid),
+  acc: a,
+  successors: fn(nid) -> List(nid),
+  folder: fn(a, nid, WalkMetadata(nid)) -> #(WalkControl, a),
+) -> a {
+  case stack {
+    [] -> acc
+    [#(node_id, metadata), ..tail] ->
+      case set.contains(visited, node_id) {
+        True -> do_virtual_dfs(tail, visited, acc, successors, folder)
+        False -> {
+          let #(control, new_acc) = folder(acc, node_id, metadata)
+          let new_visited = set.insert(visited, node_id)
+          case control {
+            Halt -> new_acc
+            Stop ->
+              do_virtual_dfs(tail, new_visited, new_acc, successors, folder)
+            Continue -> {
+              let next_stack =
+                list.fold(
+                  list.reverse(successors(node_id)),
+                  tail,
+                  fn(stk, next_id) {
+                    [
+                      #(
+                        next_id,
+                        WalkMetadata(
+                          depth: metadata.depth + 1,
+                          parent: Some(node_id),
+                        ),
+                      ),
+                      ..stk
+                    ]
+                  },
+                )
+              do_virtual_dfs(
+                next_stack,
+                new_visited,
+                new_acc,
+                successors,
+                folder,
+              )
+            }
+          }
+        }
+      }
   }
 }
