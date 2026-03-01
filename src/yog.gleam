@@ -71,6 +71,7 @@
 ////
 //// - **`yog/components`** - Connected components
 ////   - Tarjan's algorithm for Strongly Connected Components (SCC)
+////   - Kosaraju's algorithm for SCC (two-pass with transpose)
 ////
 //// - **`yog/connectivity`** - Graph connectivity analysis
 ////   - Tarjan's algorithm for bridges and articulation points

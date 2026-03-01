@@ -584,3 +584,269 @@ pub fn scc_package_deps_test() {
   list.all(result, fn(comp) { list.length(comp) == 1 })
   |> should.be_true()
 }
+
+// ============= Kosaraju's Algorithm Tests =============
+
+pub fn kosaraju_single_node_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+
+  let result = components.kosaraju(graph)
+
+  // Each node is its own SCC when no cycles
+  list.length(result)
+  |> should.equal(2)
+}
+
+pub fn kosaraju_empty_graph_test() {
+  let graph = model.new(Directed)
+
+  let result = components.kosaraju(graph)
+
+  result
+  |> should.equal([])
+}
+
+pub fn kosaraju_simple_cycle_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edge(from: 3, to: 1, with: 1)
+
+  let result = components.kosaraju(graph)
+
+  // All three nodes form one SCC
+  list.length(result)
+  |> should.equal(1)
+
+  case result {
+    [component] -> {
+      list.length(component)
+      |> should.equal(3)
+
+      list.contains(component, 1)
+      |> should.be_true()
+
+      list.contains(component, 2)
+      |> should.be_true()
+
+      list.contains(component, 3)
+      |> should.be_true()
+    }
+    _ -> should.fail()
+  }
+}
+
+pub fn kosaraju_two_separate_cycles_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    // Cycle 1: 1->2->1
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 1, with: 1)
+    // Cycle 2: 3->4->3
+    |> model.add_edge(from: 3, to: 4, with: 1)
+    |> model.add_edge(from: 4, to: 3, with: 1)
+
+  let result = components.kosaraju(graph)
+
+  // Should have 2 SCCs
+  list.length(result)
+  |> should.equal(2)
+
+  // Each should have 2 nodes
+  list.all(result, fn(comp) { list.length(comp) == 2 })
+  |> should.be_true()
+}
+
+pub fn kosaraju_classic_example_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "1")
+    |> model.add_node(2, "2")
+    |> model.add_node(3, "3")
+    |> model.add_node(4, "4")
+    |> model.add_node(5, "5")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edge(from: 3, to: 1, with: 1)
+    |> model.add_edge(from: 3, to: 4, with: 1)
+    |> model.add_edge(from: 4, to: 5, with: 1)
+    |> model.add_edge(from: 5, to: 4, with: 1)
+
+  let result = components.kosaraju(graph)
+
+  // Should have 2 SCCs: {1,2,3} and {4,5}
+  list.length(result)
+  |> should.equal(2)
+
+  let sizes = list.map(result, list.length) |> list.sort(int.compare)
+  sizes
+  |> should.equal([2, 3])
+}
+
+pub fn kosaraju_complete_graph_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    // All edges in both directions
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 1, with: 1)
+    |> model.add_edge(from: 1, to: 3, with: 1)
+    |> model.add_edge(from: 3, to: 1, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edge(from: 3, to: 2, with: 1)
+
+  let result = components.kosaraju(graph)
+
+  // All nodes form one SCC
+  list.length(result)
+  |> should.equal(1)
+
+  case result {
+    [component] -> {
+      list.length(component)
+      |> should.equal(3)
+    }
+    _ -> should.fail()
+  }
+}
+
+pub fn kosaraju_chain_of_cycles_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "1")
+    |> model.add_node(2, "2")
+    |> model.add_node(3, "3")
+    |> model.add_node(4, "4")
+    |> model.add_node(5, "5")
+    |> model.add_node(6, "6")
+    // Cycle 1: 1<->2
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 1, with: 1)
+    // Connection: 2->3
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    // Cycle 2: 3<->4
+    |> model.add_edge(from: 3, to: 4, with: 1)
+    |> model.add_edge(from: 4, to: 3, with: 1)
+    // Connection: 4->5
+    |> model.add_edge(from: 4, to: 5, with: 1)
+    // Cycle 3: 5<->6
+    |> model.add_edge(from: 5, to: 6, with: 1)
+    |> model.add_edge(from: 6, to: 5, with: 1)
+
+  let result = components.kosaraju(graph)
+
+  // Should have 3 SCCs
+  list.length(result)
+  |> should.equal(3)
+
+  // Each should have 2 nodes
+  list.all(result, fn(comp) { list.length(comp) == 2 })
+  |> should.be_true()
+}
+
+pub fn kosaraju_tree_no_cycles_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "Root")
+    |> model.add_node(2, "L")
+    |> model.add_node(3, "R")
+    |> model.add_node(4, "LL")
+    |> model.add_node(5, "LR")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 1, to: 3, with: 1)
+    |> model.add_edge(from: 2, to: 4, with: 1)
+    |> model.add_edge(from: 2, to: 5, with: 1)
+
+  let result = components.kosaraju(graph)
+
+  // Each node is its own SCC (no cycles)
+  list.length(result)
+  |> should.equal(5)
+
+  // Each component has 1 node
+  list.all(result, fn(comp) { list.length(comp) == 1 })
+  |> should.be_true()
+}
+
+pub fn kosaraju_single_large_cycle_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "1")
+    |> model.add_node(2, "2")
+    |> model.add_node(3, "3")
+    |> model.add_node(4, "4")
+    |> model.add_node(5, "5")
+    |> model.add_node(6, "6")
+    |> model.add_node(7, "7")
+    |> model.add_node(8, "8")
+    // Cycle: 1->2->3->4->5->6->7->8->1
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edge(from: 3, to: 4, with: 1)
+    |> model.add_edge(from: 4, to: 5, with: 1)
+    |> model.add_edge(from: 5, to: 6, with: 1)
+    |> model.add_edge(from: 6, to: 7, with: 1)
+    |> model.add_edge(from: 7, to: 8, with: 1)
+    |> model.add_edge(from: 8, to: 1, with: 1)
+
+  let result = components.kosaraju(graph)
+
+  // All form one SCC
+  list.length(result)
+  |> should.equal(1)
+
+  case result {
+    [component] -> {
+      list.length(component)
+      |> should.equal(8)
+    }
+    _ -> should.fail()
+  }
+}
+
+// Compare Tarjan vs Kosaraju - should produce same number of SCCs with same sizes
+pub fn tarjan_vs_kosaraju_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "1")
+    |> model.add_node(2, "2")
+    |> model.add_node(3, "3")
+    |> model.add_node(4, "4")
+    |> model.add_node(5, "5")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edge(from: 3, to: 1, with: 1)
+    |> model.add_edge(from: 3, to: 4, with: 1)
+    |> model.add_edge(from: 4, to: 5, with: 1)
+    |> model.add_edge(from: 5, to: 4, with: 1)
+
+  let tarjan_result = components.strongly_connected_components(graph)
+  let kosaraju_result = components.kosaraju(graph)
+
+  // Both should find same number of SCCs
+  list.length(tarjan_result)
+  |> should.equal(list.length(kosaraju_result))
+
+  // Both should have same distribution of component sizes
+  let tarjan_sizes =
+    list.map(tarjan_result, list.length) |> list.sort(int.compare)
+  let kosaraju_sizes =
+    list.map(kosaraju_result, list.length) |> list.sort(int.compare)
+
+  tarjan_sizes
+  |> should.equal(kosaraju_sizes)
+}
