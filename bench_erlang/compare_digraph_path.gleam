@@ -1,14 +1,18 @@
-////  Yog vs Erlang digraph - Reachability Comparison
+////  Yog vs Erlang digraph - Shortest Path Comparison
 ////
-//// Run with: gleam run -m internal/bench/compare_digraph_reachability
+//// This benchmark is Erlang-only and must be copied to src/internal/bench/ first:
+////   cp bench_erlang/compare_digraph_path.gleam src/internal/bench/
+////   gleam run -m internal/bench/compare_digraph_path
+////   rm src/internal/bench/compare_digraph_path.gleam
 
 import gleam/dict
+import gleam/int
 import gleam/io
 import gleam/list
 import gleamy/bench
 import internal/bench/bench_utils
 import yog/model.{type Graph}
-import yog/traversal
+import yog/pathfinding
 
 // Erlang digraph FFI
 @external(erlang, "digraph", "new")
@@ -20,8 +24,12 @@ fn digraph_add_vertex(g: DigraphHandle, v: Int) -> Int
 @external(erlang, "digraph", "add_edge")
 fn digraph_add_edge(g: DigraphHandle, from: Int, to: Int) -> EdgeHandle
 
-@external(erlang, "digraph_utils", "reachable")
-fn digraph_reachable(vertices: List(Int), g: DigraphHandle) -> List(Int)
+@external(erlang, "digraph", "get_short_path")
+fn digraph_get_short_path(
+  g: DigraphHandle,
+  from: Int,
+  to: Int,
+) -> Result(List(Int), Nil)
 
 @external(erlang, "digraph", "delete")
 fn digraph_delete(g: DigraphHandle) -> Bool
@@ -32,10 +40,10 @@ type EdgeHandle
 
 pub fn main() {
   io.println("\n╔════════════════════════════════════════════════════════════╗")
-  io.println("║       YOG vs ERLANG DIGRAPH - REACHABILITY QUERIES        ║")
+  io.println("║        YOG vs ERLANG DIGRAPH - SHORTEST PATH              ║")
   io.println("╚════════════════════════════════════════════════════════════╝\n")
 
-  io.println("Benchmarking: Find all reachable vertices from a starting point")
+  io.println("Benchmarking: Shortest Path (unweighted)")
   io.println("Both graphs pre-built - measuring algorithm only\n")
 
   // Create test graphs
@@ -48,13 +56,13 @@ pub fn main() {
   let medium_dg = yog_to_digraph(medium_yog)
 
   let inputs = [
-    bench.Input("Small: 100 nodes", #(small_yog, small_dg, 0)),
-    bench.Input("Medium: 1K nodes", #(medium_yog, medium_dg, 0)),
+    bench.Input("Small: 100 nodes", #(small_yog, small_dg, 0, 99)),
+    bench.Input("Medium: 1K nodes", #(medium_yog, medium_dg, 0, 999)),
   ]
 
   let functions = [
-    bench.Function("Yog (BFS)", bench_yog_reachable),
-    bench.Function("Erlang digraph", bench_digraph_reachable),
+    bench.Function("Yog (Dijkstra)", bench_yog_path),
+    bench.Function("Erlang digraph (BFS)", bench_digraph_path),
   ]
 
   bench.run(inputs, functions, [bench.Duration(2000), bench.Warmup(500)])
@@ -69,8 +77,9 @@ pub fn main() {
   io.println("║                      BENCHMARK COMPLETE                    ║")
   io.println("╚════════════════════════════════════════════════════════════╝\n")
 
-  io.println("Note: Yog uses BFS traversal.")
-  io.println("digraph_utils:reachable/2 uses depth-first traversal.\n")
+  io.println("Note: Yog uses Dijkstra's algorithm (O((V+E) log V)).")
+  io.println("digraph:get_short_path/3 uses BFS (O(V+E)).")
+  io.println("BFS is optimal for unweighted graphs.\n")
 }
 
 fn yog_to_digraph(graph: Graph(Nil, Int)) -> DigraphHandle {
@@ -95,16 +104,22 @@ fn yog_to_digraph(graph: Graph(Nil, Int)) -> DigraphHandle {
   dg
 }
 
-fn bench_yog_reachable(input: #(Graph(Nil, Int), DigraphHandle, Int)) -> Nil {
-  let #(yog_graph, _dg, start) = input
-  // BFS traversal gives us all reachable nodes
+fn bench_yog_path(input: #(Graph(Nil, Int), DigraphHandle, Int, Int)) -> Nil {
+  let #(yog_graph, _dg, from, to) = input
   let _ =
-    traversal.walk(from: start, in: yog_graph, using: traversal.BreadthFirst)
+    pathfinding.shortest_path(
+      in: yog_graph,
+      from: from,
+      to: to,
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
   Nil
 }
 
-fn bench_digraph_reachable(input: #(Graph(Nil, Int), DigraphHandle, Int)) -> Nil {
-  let #(_yog_graph, dg, start) = input
-  let _ = digraph_reachable([start], dg)
+fn bench_digraph_path(input: #(Graph(Nil, Int), DigraphHandle, Int, Int)) -> Nil {
+  let #(_yog_graph, dg, from, to) = input
+  let _ = digraph_get_short_path(dg, from, to)
   Nil
 }

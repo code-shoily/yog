@@ -18,6 +18,27 @@ gleam run -m internal/bench/my_benchmark
 - **`simple_pathfinding.gleam`** - Working example (use as template)
 - **`bench_utils.gleam`** - Graph generators and utilities
 
+### Erlang-Only Benchmarks
+
+The `bench_erlang/` directory at the project root contains benchmarks that compare Yog algorithms with Erlang's `:digraph` module. These benchmarks are only compatible with the Erlang target and won't compile for JavaScript.
+
+To run these benchmarks:
+1. Copy the desired benchmark file from `bench_erlang/` to `src/internal/bench/`
+2. Run the benchmark with `gleam run -m internal/bench/compare_digraph_<name>`
+3. Delete the copied file when done (to keep the codebase JS-compatible)
+
+Example:
+```bash
+# Copy the benchmark
+cp bench_erlang/compare_digraph_acyclic.gleam src/internal/bench/
+
+# Run it
+gleam run -m internal/bench/compare_digraph_acyclic
+
+# Clean up
+rm src/internal/bench/compare_digraph_acyclic.gleam
+```
+
 ## Documentation
 
 See **`BENCHMARKING_GUIDE.md`** in the project root for:

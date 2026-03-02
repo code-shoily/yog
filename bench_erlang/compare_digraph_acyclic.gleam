@@ -1,6 +1,9 @@
 ////  Yog vs Erlang digraph - Acyclic Check Comparison
 ////
-//// Run with: gleam run -m internal/bench/compare_digraph_acyclic
+//// This benchmark is Erlang-only and must be copied to src/internal/bench/ first:
+////   cp bench_erlang/compare_digraph_acyclic.gleam src/internal/bench/
+////   gleam run -m internal/bench/compare_digraph_acyclic
+////   rm src/internal/bench/compare_digraph_acyclic.gleam
 
 import gleam/dict
 import gleam/io

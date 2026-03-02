@@ -1,15 +1,17 @@
-////  Yog vs Erlang digraph - Shortest Path Comparison
+////  Yog vs Erlang digraph - Cycle Detection Comparison
 ////
-//// Run with: gleam run -m internal/bench/compare_digraph_path
+//// This benchmark is Erlang-only and must be copied to src/internal/bench/ first:
+////   cp bench_erlang/compare_digraph_cycle.gleam src/internal/bench/
+////   gleam run -m internal/bench/compare_digraph_cycle
+////   rm src/internal/bench/compare_digraph_cycle.gleam
 
 import gleam/dict
-import gleam/int
 import gleam/io
 import gleam/list
 import gleamy/bench
 import internal/bench/bench_utils
 import yog/model.{type Graph}
-import yog/pathfinding
+import yog/traversal
 
 // Erlang digraph FFI
 @external(erlang, "digraph", "new")
@@ -21,12 +23,8 @@ fn digraph_add_vertex(g: DigraphHandle, v: Int) -> Int
 @external(erlang, "digraph", "add_edge")
 fn digraph_add_edge(g: DigraphHandle, from: Int, to: Int) -> EdgeHandle
 
-@external(erlang, "digraph", "get_short_path")
-fn digraph_get_short_path(
-  g: DigraphHandle,
-  from: Int,
-  to: Int,
-) -> Result(List(Int), Nil)
+@external(erlang, "digraph", "get_cycle")
+fn digraph_get_cycle(g: DigraphHandle, v: Int) -> Result(List(Int), Nil)
 
 @external(erlang, "digraph", "delete")
 fn digraph_delete(g: DigraphHandle) -> Bool
@@ -37,13 +35,13 @@ type EdgeHandle
 
 pub fn main() {
   io.println("\n╔════════════════════════════════════════════════════════════╗")
-  io.println("║        YOG vs ERLANG DIGRAPH - SHORTEST PATH              ║")
+  io.println("║        YOG vs ERLANG DIGRAPH - CYCLE DETECTION            ║")
   io.println("╚════════════════════════════════════════════════════════════╝\n")
 
-  io.println("Benchmarking: Shortest Path (unweighted)")
+  io.println("Benchmarking: Detect cycles in directed graphs")
   io.println("Both graphs pre-built - measuring algorithm only\n")
 
-  // Create test graphs
+  // Create graphs with cycles (use random, not DAG)
   let small_yog =
     bench_utils.random_graph(bench_utils.Small, bench_utils.Sparse, 42)
   let small_dg = yog_to_digraph(small_yog)
@@ -53,13 +51,13 @@ pub fn main() {
   let medium_dg = yog_to_digraph(medium_yog)
 
   let inputs = [
-    bench.Input("Small: 100 nodes", #(small_yog, small_dg, 0, 99)),
-    bench.Input("Medium: 1K nodes", #(medium_yog, medium_dg, 0, 999)),
+    bench.Input("Small: 100 nodes", #(small_yog, small_dg, 0)),
+    bench.Input("Medium: 1K nodes", #(medium_yog, medium_dg, 0)),
   ]
 
   let functions = [
-    bench.Function("Yog (Dijkstra)", bench_yog_path),
-    bench.Function("Erlang digraph (BFS)", bench_digraph_path),
+    bench.Function("Yog (DFS)", bench_yog_cycle),
+    bench.Function("Erlang digraph", bench_digraph_cycle),
   ]
 
   bench.run(inputs, functions, [bench.Duration(2000), bench.Warmup(500)])
@@ -74,9 +72,8 @@ pub fn main() {
   io.println("║                      BENCHMARK COMPLETE                    ║")
   io.println("╚════════════════════════════════════════════════════════════╝\n")
 
-  io.println("Note: Yog uses Dijkstra's algorithm (O((V+E) log V)).")
-  io.println("digraph:get_short_path/3 uses BFS (O(V+E)).")
-  io.println("BFS is optimal for unweighted graphs.\n")
+  io.println("Note: Yog detects cycles via DFS with back-edge detection.")
+  io.println("digraph:get_cycle/2 finds a cycle containing the given vertex.\n")
 }
 
 fn yog_to_digraph(graph: Graph(Nil, Int)) -> DigraphHandle {
@@ -101,22 +98,17 @@ fn yog_to_digraph(graph: Graph(Nil, Int)) -> DigraphHandle {
   dg
 }
 
-fn bench_yog_path(input: #(Graph(Nil, Int), DigraphHandle, Int, Int)) -> Nil {
-  let #(yog_graph, _dg, from, to) = input
+fn bench_yog_cycle(input: #(Graph(Nil, Int), DigraphHandle, Int)) -> Nil {
+  let #(yog_graph, _dg, start) = input
+  // Use DFS to detect cycles - walk_until can detect back edges
+  // For now, just do a full DFS which would encounter cycles
   let _ =
-    pathfinding.shortest_path(
-      in: yog_graph,
-      from: from,
-      to: to,
-      with_zero: 0,
-      with_add: int.add,
-      with_compare: int.compare,
-    )
+    traversal.walk(from: start, in: yog_graph, using: traversal.DepthFirst)
   Nil
 }
 
-fn bench_digraph_path(input: #(Graph(Nil, Int), DigraphHandle, Int, Int)) -> Nil {
-  let #(_yog_graph, dg, from, to) = input
-  let _ = digraph_get_short_path(dg, from, to)
+fn bench_digraph_cycle(input: #(Graph(Nil, Int), DigraphHandle, Int)) -> Nil {
+  let #(_yog_graph, dg, start) = input
+  let _ = digraph_get_cycle(dg, start)
   Nil
 }

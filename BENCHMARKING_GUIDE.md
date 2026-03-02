@@ -290,6 +290,36 @@ Benchmarks are in `src/internal/bench/` to:
 
 This follows Gleam best practices for internal tooling.
 
+## Why `bench_erlang/` (and not in `src/`)?
+
+The `bench_erlang/` directory at the project root contains benchmarks that compare Yog with Erlang's `:digraph` module using FFI (Foreign Function Interface). These files can't live in `src/` because:
+
+### The Multi-Target Problem
+
+Yog supports both **Erlang** and **JavaScript** targets (`targets = ["erlang", "javascript"]` in `gleam.toml`). When you run `gleam build --target javascript`, Gleam compiles everything in `src/` - and Erlang FFI code doesn't exist in JavaScript, causing compilation to fail.
+
+### Why Not Just Remove JS Support?
+
+We wanted Yog to be usable in both ecosystems. JavaScript developers deserve good graph libraries too!
+
+### The Solution
+
+Keep target-specific benchmarks **outside** `src/`:
+- ✅ `src/` compiles on all targets (Erlang + JS)
+- ✅ `bench_erlang/` preserves powerful Erlang comparisons
+- ✅ Files keep `.gleam` extension (IDE support, syntax highlighting)
+- ✅ Gleam ignores them (only compiles `src/`)
+- ✅ Copy when needed: `cp bench_erlang/compare_digraph_acyclic.gleam src/internal/bench/`
+
+### Future: `bench_javascript/`?
+
+Following this pattern, we could add `bench_javascript/` for comparing Yog against popular JS libraries like:
+- **graphology** - Comprehensive graph library
+- **graphlib** - Used by Mermaid, D3, Dagre
+- **js-graph-algorithms** - Pure algorithm implementations
+
+This structure lets us maintain comprehensive, target-specific benchmarks while keeping the main library compatible with all targets.
+
 ## Further Reading
 
 - [gleamy_bench documentation](https://hexdocs.pm/gleamy_bench/)

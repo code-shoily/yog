@@ -1,6 +1,9 @@
 ////  Yog vs Erlang digraph - Condensation Comparison
 ////
-//// Run with: gleam run -m internal/bench/compare_digraph_condensation
+//// This benchmark is Erlang-only and must be copied to src/internal/bench/ first:
+////   cp bench_erlang/compare_digraph_condensation.gleam src/internal/bench/
+////   gleam run -m internal/bench/compare_digraph_condensation
+////   rm src/internal/bench/compare_digraph_condensation.gleam
 
 import gleam/dict
 import gleam/io
