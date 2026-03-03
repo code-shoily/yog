@@ -77,6 +77,11 @@ pub fn main() {
 
 ## Examples
 
+We have some real-world projects that use Yog for graph algorithms:
+
+- [Lustre Graph Generator](https://github.com/code-shoily/lustre_graph_generator) ([Demo](https://code-shoily.github.io/lustre_graph_generator/)) - Showcases graph generation, topological sort and shortest distance feature of Yog.
+- [Advent of Code Solutions](https://github.com/code-shoily/aocgl/blob/main/wiki/tags/graph.md) - Multiple AoC puzzles solved using Yog's graph capabilities.
+
 Detailed examples are located in the [examples/](https://github.com/code-shoily/yog/tree/main/examples) directory:
 
 - [Social Network Analysis](examples/social_network_analysis.gleam) - Finding communities using SCCs.
