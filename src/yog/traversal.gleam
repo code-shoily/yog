@@ -255,7 +255,7 @@ pub fn implicit_fold(
   let start_meta = WalkMetadata(depth: 0, parent: None)
   case order {
     BreadthFirst ->
-      do_virtual_bfs(
+      do_implicit_bfs(
         queue.new() |> queue.push(#(start, start_meta)),
         set.new(),
         acc,
@@ -263,7 +263,13 @@ pub fn implicit_fold(
         folder,
       )
     DepthFirst ->
-      do_virtual_dfs([#(start, start_meta)], set.new(), acc, successors, folder)
+      do_implicit_dfs(
+        [#(start, start_meta)],
+        set.new(),
+        acc,
+        successors,
+        folder,
+      )
   }
 }
 
@@ -334,7 +340,7 @@ pub fn implicit_fold_by(
   let start_meta = WalkMetadata(depth: 0, parent: None)
   case order {
     BreadthFirst ->
-      do_virtual_bfs_by(
+      do_implicit_bfs_by(
         queue.new() |> queue.push(#(start, start_meta)),
         set.new(),
         acc,
@@ -343,7 +349,7 @@ pub fn implicit_fold_by(
         folder,
       )
     DepthFirst ->
-      do_virtual_dfs_by(
+      do_implicit_dfs_by(
         [#(start, start_meta)],
         set.new(),
         acc,
@@ -440,9 +446,9 @@ fn do_fold_walk_dfs(
   }
 }
 
-// Virtual BFS: same as do_fold_walk_bfs but uses a successors function
+// Implicit BFS: same as do_fold_walk_bfs but uses a successors function
 // instead of querying a Graph.
-fn do_virtual_bfs(
+fn do_implicit_bfs(
   q: queue.Queue(#(nid, WalkMetadata(nid))),
   visited: Set(nid),
   acc: a,
@@ -453,14 +459,14 @@ fn do_virtual_bfs(
     Error(Nil) -> acc
     Ok(#(#(node_id, metadata), rest)) ->
       case set.contains(visited, node_id) {
-        True -> do_virtual_bfs(rest, visited, acc, successors, folder)
+        True -> do_implicit_bfs(rest, visited, acc, successors, folder)
         False -> {
           let #(control, new_acc) = folder(acc, node_id, metadata)
           let new_visited = set.insert(visited, node_id)
           case control {
             Halt -> new_acc
             Stop ->
-              do_virtual_bfs(rest, new_visited, new_acc, successors, folder)
+              do_implicit_bfs(rest, new_visited, new_acc, successors, folder)
             Continue -> {
               let next_queue =
                 list.fold(successors(node_id), rest, fn(q2, next_id) {
@@ -472,7 +478,7 @@ fn do_virtual_bfs(
                     ),
                   ))
                 })
-              do_virtual_bfs(
+              do_implicit_bfs(
                 next_queue,
                 new_visited,
                 new_acc,
@@ -486,8 +492,8 @@ fn do_virtual_bfs(
   }
 }
 
-// Virtual DFS: same as do_fold_walk_dfs but uses a successors function.
-fn do_virtual_dfs(
+// Implicit DFS: same as do_fold_walk_dfs but uses a successors function.
+fn do_implicit_dfs(
   stack: List(#(nid, WalkMetadata(nid))),
   visited: Set(nid),
   acc: a,
@@ -498,14 +504,14 @@ fn do_virtual_dfs(
     [] -> acc
     [#(node_id, metadata), ..tail] ->
       case set.contains(visited, node_id) {
-        True -> do_virtual_dfs(tail, visited, acc, successors, folder)
+        True -> do_implicit_dfs(tail, visited, acc, successors, folder)
         False -> {
           let #(control, new_acc) = folder(acc, node_id, metadata)
           let new_visited = set.insert(visited, node_id)
           case control {
             Halt -> new_acc
             Stop ->
-              do_virtual_dfs(tail, new_visited, new_acc, successors, folder)
+              do_implicit_dfs(tail, new_visited, new_acc, successors, folder)
             Continue -> {
               let next_stack =
                 list.fold(
@@ -524,7 +530,7 @@ fn do_virtual_dfs(
                     ]
                   },
                 )
-              do_virtual_dfs(
+              do_implicit_dfs(
                 next_stack,
                 new_visited,
                 new_acc,
@@ -538,9 +544,9 @@ fn do_virtual_dfs(
   }
 }
 
-// Virtual BFS with custom key function for deduplication.
-// Same as do_virtual_bfs but checks visited by key_fn(node_id).
-fn do_virtual_bfs_by(
+// Implicit BFS with custom key function for deduplication.
+// Same as do_implicit_bfs but checks visited by key_fn(node_id).
+fn do_implicit_bfs_by(
   q: queue.Queue(#(nid, WalkMetadata(nid))),
   visited: Set(key),
   acc: a,
@@ -554,14 +560,14 @@ fn do_virtual_bfs_by(
       let node_key = key_fn(node_id)
       case set.contains(visited, node_key) {
         True ->
-          do_virtual_bfs_by(rest, visited, acc, successors, key_fn, folder)
+          do_implicit_bfs_by(rest, visited, acc, successors, key_fn, folder)
         False -> {
           let #(control, new_acc) = folder(acc, node_id, metadata)
           let new_visited = set.insert(visited, node_key)
           case control {
             Halt -> new_acc
             Stop ->
-              do_virtual_bfs_by(
+              do_implicit_bfs_by(
                 rest,
                 new_visited,
                 new_acc,
@@ -580,7 +586,7 @@ fn do_virtual_bfs_by(
                     ),
                   ))
                 })
-              do_virtual_bfs_by(
+              do_implicit_bfs_by(
                 next_queue,
                 new_visited,
                 new_acc,
@@ -596,9 +602,9 @@ fn do_virtual_bfs_by(
   }
 }
 
-// Virtual DFS with custom key function for deduplication.
-// Same as do_virtual_dfs but checks visited by key_fn(node_id).
-fn do_virtual_dfs_by(
+// Implicit DFS with custom key function for deduplication.
+// Same as do_implicit_dfs but checks visited by key_fn(node_id).
+fn do_implicit_dfs_by(
   stack: List(#(nid, WalkMetadata(nid))),
   visited: Set(key),
   acc: a,
@@ -612,14 +618,14 @@ fn do_virtual_dfs_by(
       let node_key = key_fn(node_id)
       case set.contains(visited, node_key) {
         True ->
-          do_virtual_dfs_by(tail, visited, acc, successors, key_fn, folder)
+          do_implicit_dfs_by(tail, visited, acc, successors, key_fn, folder)
         False -> {
           let #(control, new_acc) = folder(acc, node_id, metadata)
           let new_visited = set.insert(visited, node_key)
           case control {
             Halt -> new_acc
             Stop ->
-              do_virtual_dfs_by(
+              do_implicit_dfs_by(
                 tail,
                 new_visited,
                 new_acc,
@@ -645,7 +651,7 @@ fn do_virtual_dfs_by(
                     ]
                   },
                 )
-              do_virtual_dfs_by(
+              do_implicit_dfs_by(
                 next_stack,
                 new_visited,
                 new_acc,
