@@ -151,6 +151,10 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 - **Stable Marriage**: O(n²) Gale-Shapley with deterministic proposal ordering
 - **Test Suite**: 589 tests pass in ~2 seconds
 
+## AI Assistance
+
+Parts of this project were developed with the assistance of AI coding tools. All AI-generated code has been reviewed, tested, and validated by the maintainer.
+
 ---
 
 **Yog** - Graph algorithms for Gleam 🌳
