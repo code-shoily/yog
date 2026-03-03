@@ -3,3 +3,5 @@
 /build
 erl_crash.dump
 src/yog/internal/examples
+src/internal/bench
+src/playground
