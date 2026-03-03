@@ -2,10 +2,12 @@ import gleam/dict.{type Dict}
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/result
 import gleam/set.{type Set}
 import gleamy/priority_queue
 import yog/internal/queue
 import yog/model.{type Graph, type NodeId}
+import yog/topological_sort
 
 /// Traversal order for graph walking algorithms.
 pub type Order {
@@ -33,6 +35,103 @@ pub type WalkMetadata(nid) {
     /// The parent node that led to this node (None for the start node).
     parent: Option(nid),
   )
+}
+
+/// Determines if a graph contains any cycles.
+///
+/// For directed graphs, a cycle exists if there is a path from a node back to itself
+/// (evaluated efficiently via Kahn's algorithm).
+/// For undirected graphs, a cycle exists if there is a path of length >= 3 from a node back to itself,
+/// or a self-loop.
+///
+/// **Time Complexity:** O(V + E)
+///
+/// ## Example
+///
+/// ```gleam
+/// traversal.is_cyclic(graph)
+/// // => True // Cycle detected
+/// ```
+pub fn is_cyclic(graph: Graph(n, e)) -> Bool {
+  case graph.kind {
+    model.Directed -> result.is_error(topological_sort.topological_sort(graph))
+    model.Undirected ->
+      do_has_undirected_cycle(graph, model.all_nodes(graph), set.new())
+  }
+}
+
+/// Determines if a graph is acyclic (contains no cycles).
+///
+/// This is the logical opposite of `is_cyclic`. For directed graphs, returning
+/// `True` means the graph is a Directed Acyclic Graph (DAG).
+///
+/// **Time Complexity:** O(V + E)
+///
+/// ## Example
+///
+/// ```gleam
+/// traversal.is_acyclic(graph)
+/// // => True // Valid DAG or undirected forest
+/// ```
+pub fn is_acyclic(graph: Graph(n, e)) -> Bool {
+  !is_cyclic(graph)
+}
+
+fn do_has_undirected_cycle(
+  graph: Graph(n, e),
+  nodes: List(NodeId),
+  visited: Set(NodeId),
+) -> Bool {
+  case nodes {
+    [] -> False
+    [node, ..rest] -> {
+      case set.contains(visited, node) {
+        True -> do_has_undirected_cycle(graph, rest, visited)
+        False -> {
+          let #(cycle, new_visited) =
+            check_undirected_cycle(graph, node, None, visited)
+          case cycle {
+            True -> True
+            False -> do_has_undirected_cycle(graph, rest, new_visited)
+          }
+        }
+      }
+    }
+  }
+}
+
+fn check_undirected_cycle(
+  graph: Graph(n, e),
+  node: NodeId,
+  parent: Option(NodeId),
+  visited: Set(NodeId),
+) -> #(Bool, Set(NodeId)) {
+  let new_visited = set.insert(visited, node)
+  let neighbors = model.successor_ids(graph, node)
+
+  list.fold_until(neighbors, #(False, new_visited), fn(acc, neighbor) {
+    let #(_, current_visited) = acc
+    case set.contains(current_visited, neighbor) {
+      True -> {
+        let is_parent = case parent {
+          Some(p) -> p == neighbor
+          None -> False
+        }
+        case is_parent {
+          True -> list.Continue(#(False, current_visited))
+          False -> list.Stop(#(True, current_visited))
+        }
+      }
+      False -> {
+        let #(has_cycle, next_visited) =
+          check_undirected_cycle(graph, neighbor, Some(node), current_visited)
+        case has_cycle {
+          True -> list.Stop(#(True, next_visited))
+          False -> list.Continue(#(False, next_visited))
+        }
+      }
+    }
+  })
 }
 
 /// Walks the graph starting from the given node, visiting all reachable nodes.

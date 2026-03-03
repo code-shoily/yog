@@ -1673,3 +1673,72 @@ pub fn implicit_fold_by_identity_key_test() {
   result_by
   |> should.equal(result_regular)
 }
+
+// ============= Cycle Detection Tests =============
+
+pub fn is_cyclic_directed_acyclic_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, Nil)
+    |> model.add_node(2, Nil)
+    |> model.add_node(3, Nil)
+    |> model.add_edge(1, 2, 1)
+    |> model.add_edge(2, 3, 1)
+    |> model.add_edge(1, 3, 1)
+
+  traversal.is_cyclic(graph) |> should.be_false()
+  traversal.is_acyclic(graph) |> should.be_true()
+}
+
+pub fn is_cyclic_directed_cyclic_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, Nil)
+    |> model.add_node(2, Nil)
+    |> model.add_node(3, Nil)
+    |> model.add_edge(1, 2, 1)
+    |> model.add_edge(2, 3, 1)
+    |> model.add_edge(3, 1, 1)
+
+  traversal.is_cyclic(graph) |> should.be_true()
+  traversal.is_acyclic(graph) |> should.be_false()
+}
+
+pub fn is_cyclic_undirected_acyclic_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, Nil)
+    |> model.add_node(2, Nil)
+    |> model.add_node(3, Nil)
+    |> model.add_node(4, Nil)
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edge(from: 2, to: 4, with: 1)
+
+  traversal.is_cyclic(graph) |> should.be_false()
+  traversal.is_acyclic(graph) |> should.be_true()
+}
+
+pub fn is_cyclic_undirected_cyclic_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, Nil)
+    |> model.add_node(2, Nil)
+    |> model.add_node(3, Nil)
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edge(from: 3, to: 1, with: 1)
+
+  traversal.is_cyclic(graph) |> should.be_true()
+  traversal.is_acyclic(graph) |> should.be_false()
+}
+
+pub fn is_cyclic_undirected_self_loop_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, Nil)
+    |> model.add_edge(from: 1, to: 1, with: 1)
+
+  traversal.is_cyclic(graph) |> should.be_true()
+  traversal.is_acyclic(graph) |> should.be_false()
+}

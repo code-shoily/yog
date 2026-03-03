@@ -120,6 +120,7 @@
 
 import gleam/list
 import yog/model
+import yog/traversal
 
 // Re-export commonly used types for convenience
 pub type Graph(node_data, edge_data) =
@@ -355,4 +356,39 @@ pub fn from_adjacency_list(
 /// Convenient for traversal algorithms that only need the IDs.
 pub fn successor_ids(graph: Graph(n, e), id: NodeId) -> List(NodeId) {
   model.successor_ids(graph, id)
+}
+
+/// Determines if a graph contains any cycles.
+/// 
+/// For directed graphs, a cycle exists if there is a path from a node back to itself.
+/// For undirected graphs, a cycle exists if there is a path of length >= 3 from a node back to itself,
+/// or a self-loop.
+///
+/// **Time Complexity:** O(V + E)
+///
+/// ## Example
+///
+/// ```gleam
+/// yog.is_cyclic(graph)
+/// // => True // Cycle detected
+/// ```
+pub fn is_cyclic(graph: Graph(n, e)) -> Bool {
+  traversal.is_cyclic(graph)
+}
+
+/// Determines if a graph is acyclic (contains no cycles).
+///
+/// This is the logical opposite of `is_cyclic`. For directed graphs, returning
+/// `True` means the graph is a Directed Acyclic Graph (DAG).
+///
+/// **Time Complexity:** O(V + E)
+///
+/// ## Example
+///
+/// ```gleam
+/// yog.is_acyclic(graph)
+/// // => True // Valid DAG or undirected forest
+/// ```
+pub fn is_acyclic(graph: Graph(n, e)) -> Bool {
+  traversal.is_acyclic(graph)
 }
