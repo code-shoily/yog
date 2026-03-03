@@ -2,6 +2,7 @@ import gleam/dict.{type Dict}
 import gleam/list
 import gleam/option
 import gleam/result
+import gleam/set
 import yog/internal/utils
 
 /// Unique identifier for a node in the graph.
@@ -110,10 +111,12 @@ pub fn neighbors(graph: Graph(n, e), id: NodeId) -> List(#(NodeId, e)) {
     Directed -> {
       let out = successors(graph, id)
       let in_ = predecessors(graph, id)
-      // Combine them and remove duplicates if an edge exists in both directions
+      // Build a set of outgoing IDs for O(log N) membership checks
+      let out_ids = set.from_list(list.map(out, fn(o) { o.0 }))
+      // Combine: add incoming edges not already present in out
       list.fold(in_, out, fn(acc, incoming) {
         let #(in_id, _) = incoming
-        case list.any(out, fn(o) { o.0 == in_id }) {
+        case set.contains(out_ids, in_id) {
           True -> acc
           False -> [incoming, ..acc]
         }

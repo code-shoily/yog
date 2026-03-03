@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Fixed
+
+- **`mst.prim()`**: Fixed frontier trap where undirected edges with `from > to_id` were dropped during neighbor expansion. Prim's needs to see all outgoing edges to grow the MST correctly; the deduplication filter was only appropriate for Kruskal's global edge processing. Created a separate `get_all_edges_from_node` helper for Prim's that returns all neighbors regardless of ID order.
+- **`min_cut.global_min_cut()`**: Fixed incorrect cut weight calculation in Stoer-Wagner's Maximum Adjacency Search. The cut weight was being recalculated by summing all edges of node `t`, which incorrectly included edges outside the current MAS phase. Now uses the accumulated weight from the MAS weights dictionary, which is the mathematically correct cut-of-the-phase value.
+- **`traversal` DFS ordering**: Fixed implicit DFS stack order in `do_fold_walk_dfs`, `do_implicit_dfs`, and `do_implicit_dfs_by`. The combination of `list.reverse` + `list.fold` with prepend inadvertently restored the original order, causing the last successor to be explored first. Replaced with `list.fold_right` to ensure the first successor ends up on top of the LIFO stack, matching standard DFS behavior.
+
+### Performance
+
+- **Bron-Kerbosch (`yog/clique`)**: Precomputed adjacency sets into a `Dict(NodeId, Set(NodeId))` built once per entry point, eliminating repeated `neighbors → list.map → set.from_list` allocations on every recursive iteration. Additionally, replaced the naive `list.first` pivot selection with greedy pivoting that maximizes |P ∩ N(u)|, aggressively pruning the search tree.
+- **Directed `neighbors()` (`yog/model`)**: Replaced O(N²) deduplication of incoming vs outgoing edges (using `list.any` inside `list.fold`) with O(N log N) approach that converts outgoing IDs to a `Set` first, then uses `set.contains` for membership checks.
+- **`filter_nodes()` (`yog/transform`)**: Replaced O(E×V) edge pruning (using `list.contains` per edge) with O(E log V) approach by converting `kept_ids` to a `Set`, matching the pattern already used in `subgraph`.
+- **Hierholzer's algorithm (`yog/eulerian`)**: Replaced flat `List(#(NodeId, NodeId))` edge tracking with `Dict(NodeId, List(NodeId))` adjacency. Edge lookup/removal is now O(1) amortized (pop from neighbor list head) instead of O(E) linear scan per step, bringing Hierholzer's from O(E²) to the expected O(E).
+
 ## 2026-03-01 - 2.1.0
 
 ### Added

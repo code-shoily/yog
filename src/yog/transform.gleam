@@ -1,5 +1,4 @@
 import gleam/dict
-import gleam/list
 import gleam/result
 import gleam/set
 import yog/model.{type Graph, type NodeId, Graph, remove_node}
@@ -168,13 +167,13 @@ pub fn filter_nodes(
 ) -> Graph(n, e) {
   let kept_nodes = dict.filter(graph.nodes, fn(_id, data) { predicate(data) })
 
-  let kept_ids = dict.keys(kept_nodes)
+  let kept_ids = set.from_list(dict.keys(kept_nodes))
 
-  // Prune edges: keep only if both src and dst are in the kept_ids list
+  // Prune edges: keep only if both src and dst are in the kept set
   let prune_edges = fn(outer_map) {
-    dict.filter(outer_map, fn(src, _) { list.contains(kept_ids, src) })
+    dict.filter(outer_map, fn(src, _) { set.contains(kept_ids, src) })
     |> dict.map_values(fn(_src, inner_map) {
-      dict.filter(inner_map, fn(dst, _) { list.contains(kept_ids, dst) })
+      dict.filter(inner_map, fn(dst, _) { set.contains(kept_ids, dst) })
     })
   }
 

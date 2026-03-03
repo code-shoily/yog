@@ -108,7 +108,7 @@ pub fn prim(
       let initial_visited = set.from_list([start])
 
       // Add all edges from the start node to the priority queue
-      let initial_edges = get_edges_from_node(graph, start)
+      let initial_edges = get_all_edges_from_node(graph, start)
       let pq_with_initial_edges =
         list.fold(initial_edges, initial_pq, fn(pq, edge) {
           priority_queue.push(pq, edge)
@@ -137,7 +137,7 @@ fn do_prim(
           let new_acc = [edge, ..acc]
 
           // Add all edges from the newly visited node to unvisited nodes
-          let new_edges = get_edges_from_node(graph, edge.to)
+          let new_edges = get_all_edges_from_node(graph, edge.to)
           let filtered_edges =
             list.filter(new_edges, fn(e) { !set.contains(new_visited, e.to) })
 
@@ -153,16 +153,14 @@ fn do_prim(
   }
 }
 
-// Helper function to get all edges from a node
-fn get_edges_from_node(graph: Graph(n, e), from: NodeId) -> List(Edge(e)) {
+// Helper function to get all outgoing edges from a node (for Prim's).
+// Does NOT filter by ID order, because Prim's needs to see all neighbors
+// to expand its frontier. The visited set already prevents revisiting nodes.
+fn get_all_edges_from_node(graph: Graph(n, e), from: NodeId) -> List(Edge(e)) {
   case dict.get(graph.out_edges, from) {
     Ok(targets) ->
       dict.fold(targets, [], fn(acc, to_id, weight) {
-        // For undirected graphs, avoid creating duplicate edges
-        case graph.kind == Undirected && from > to_id {
-          True -> acc
-          False -> [Edge(from: from, to: to_id, weight: weight), ..acc]
-        }
+        [Edge(from: from, to: to_id, weight: weight), ..acc]
       })
     Error(Nil) -> []
   }

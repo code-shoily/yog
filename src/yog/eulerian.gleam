@@ -291,29 +291,37 @@ fn find_unbalanced_vertex(graph: Graph(n, e)) -> Option(NodeId) {
 }
 
 // Hierholzer's algorithm implementation
-// Returns path in correct order
+// Uses Dict(NodeId, List(NodeId)) for O(1) edge lookup/removal per step.
 fn hierholzer(graph: Graph(n, e), start: NodeId) -> List(NodeId) {
-  let all_edges = build_edge_list(graph)
-  let #(_remaining, path) = do_hierholzer(graph, start, all_edges, [])
+  let adj = build_adjacency_lists(graph)
+  let #(_remaining, path) = do_hierholzer(graph, start, adj, [])
   path
 }
 
 fn do_hierholzer(
   graph: Graph(n, e),
   current: NodeId,
-  available_edges: List(#(NodeId, NodeId)),
+  adj: dict.Dict(NodeId, List(NodeId)),
   path: List(NodeId),
-) -> #(List(#(NodeId, NodeId)), List(NodeId)) {
-  // Find an unused edge from current
-  case find_and_remove_edge(graph, current, available_edges) {
-    None -> {
+) -> #(dict.Dict(NodeId, List(NodeId)), List(NodeId)) {
+  // Try to pop the first available neighbor from the current node's list
+  case dict.get(adj, current) {
+    Error(_) | Ok([]) -> {
       // No more edges from current, add to path
-      #(available_edges, [current, ..path])
+      #(adj, [current, ..path])
     }
-    Some(#(next, remaining_edges)) -> {
+    Ok([next, ..rest]) -> {
+      // Remove the edge current -> next by updating the adjacency list
+      let adj = dict.insert(adj, current, rest)
+
+      // For undirected graphs, also remove the reverse edge (next -> current)
+      let adj = case graph.kind {
+        Directed -> adj
+        Undirected -> remove_first_occurrence(adj, next, current)
+      }
+
       // Follow the edge and continue
-      do_hierholzer(graph, next, remaining_edges, path)
-      // After exhausting path from 'next', add current
+      do_hierholzer(graph, next, adj, path)
       |> fn(result) {
         let #(edges_left, built_path) = result
         #(edges_left, [current, ..built_path])
@@ -322,49 +330,36 @@ fn do_hierholzer(
   }
 }
 
-fn find_and_remove_edge(
-  graph: Graph(n, e),
-  from: NodeId,
-  edges: List(#(NodeId, NodeId)),
-) -> Option(#(NodeId, List(#(NodeId, NodeId)))) {
-  find_and_remove_edge_helper(graph, from, edges, [])
-}
-
-fn find_and_remove_edge_helper(
-  graph: Graph(n, e),
-  from: NodeId,
-  edges: List(#(NodeId, NodeId)),
-  checked: List(#(NodeId, NodeId)),
-) -> Option(#(NodeId, List(#(NodeId, NodeId)))) {
-  case edges {
-    [] -> None
-    [#(f, t), ..rest] if f == from -> {
-      // Found an edge from 'from'
-      let remaining = case graph.kind {
-        Directed -> list.append(checked, rest)
-        Undirected -> {
-          // For undirected, also remove the reverse edge
-          list.append(checked, rest)
-          |> list.filter(fn(edge) {
-            let #(a, b) = edge
-            a != t || b != f
-          })
-        }
-      }
-      Some(#(t, remaining))
-    }
-    [edge, ..rest] -> {
-      // Not the right edge, keep looking
-      find_and_remove_edge_helper(graph, from, rest, [edge, ..checked])
+// Remove the first occurrence of `target` from `node`'s neighbor list.
+fn remove_first_occurrence(
+  adj: dict.Dict(NodeId, List(NodeId)),
+  node: NodeId,
+  target: NodeId,
+) -> dict.Dict(NodeId, List(NodeId)) {
+  case dict.get(adj, node) {
+    Error(_) -> adj
+    Ok(neighbors) -> {
+      let updated = do_remove_first(neighbors, target, [])
+      dict.insert(adj, node, updated)
     }
   }
 }
 
-fn build_edge_list(graph: Graph(n, e)) -> List(#(NodeId, NodeId)) {
-  dict.fold(graph.out_edges, [], fn(acc, from, neighbors) {
-    let edges_from_node =
-      dict.keys(neighbors)
-      |> list.map(fn(to) { #(from, to) })
-    list.append(acc, edges_from_node)
+fn do_remove_first(
+  items: List(NodeId),
+  target: NodeId,
+  checked: List(NodeId),
+) -> List(NodeId) {
+  case items {
+    [] -> list.reverse(checked)
+    [head, ..tail] if head == target -> list.append(list.reverse(checked), tail)
+    [head, ..tail] -> do_remove_first(tail, target, [head, ..checked])
+  }
+}
+
+// Build Dict(NodeId, List(NodeId)) from the graph's out_edges.
+fn build_adjacency_lists(graph: Graph(n, e)) -> dict.Dict(NodeId, List(NodeId)) {
+  dict.fold(graph.out_edges, dict.new(), fn(acc, from, neighbors) {
+    dict.insert(acc, from, dict.keys(neighbors))
   })
 }

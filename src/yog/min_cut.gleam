@@ -115,7 +115,7 @@ fn maximum_adjacency_search(graph: Graph(Int, Int)) -> #(NodeId, NodeId, Int) {
       }
     })
 
-  let final_order =
+  let #(final_order, final_weights) =
     build_mas_order(
       graph,
       initial_order,
@@ -124,29 +124,31 @@ fn maximum_adjacency_search(graph: Graph(Int, Int)) -> #(NodeId, NodeId, Int) {
       initial_queue,
     )
 
-  // Fix: Don't reverse! The list is built with newest at head
+  // The list is built with newest at head
   let assert [t, s, ..] = final_order
 
-  let cut_weight =
-    model.neighbors(graph, t)
-    |> list.fold(0, fn(sum, edge) {
-      let #(_, weight) = edge
-      sum + weight
-    })
+  // The true cut weight of t is the accumulated weight in the MAS weights dict
+  // at the time t was popped — not the sum of all t's edges.
+  let cut_weight = case dict.get(final_weights, t) {
+    Ok(w) -> w
+    Error(_) -> 0
+  }
 
   #(s, t, cut_weight)
 }
 
 /// Builds the MAS ordering by greedily adding the most tightly connected node.
+/// Returns #(order, final_weights) so that the caller can look up the cut weight
+/// of the last node directly from the weights dict.
 fn build_mas_order(
   graph: Graph(Int, Int),
   current_order: List(NodeId),
   remaining: Set(NodeId),
   weights: dict.Dict(NodeId, Int),
   queue: priority_queue.Queue(#(Int, NodeId)),
-) -> List(NodeId) {
+) -> #(List(NodeId), dict.Dict(NodeId, Int)) {
   case set.size(remaining) {
-    0 -> current_order
+    0 -> #(current_order, weights)
     _ -> {
       let #(node, new_queue) = get_next_mas_node(queue, remaining, weights)
       let new_remaining = set.delete(remaining, node)

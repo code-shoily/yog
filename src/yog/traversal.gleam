@@ -524,18 +524,14 @@ fn do_fold_walk_dfs(
             Continue -> {
               let next_nodes = model.successor_ids(graph, node_id)
               let next_stack =
-                list.fold(
-                  list.reverse(next_nodes),
-                  tail,
-                  fn(current_stack, next_id) {
-                    let next_meta =
-                      WalkMetadata(
-                        depth: metadata.depth + 1,
-                        parent: Some(node_id),
-                      )
-                    [#(next_id, next_meta), ..current_stack]
-                  },
-                )
+                list.fold_right(next_nodes, tail, fn(current_stack, next_id) {
+                  let next_meta =
+                    WalkMetadata(
+                      depth: metadata.depth + 1,
+                      parent: Some(node_id),
+                    )
+                  [#(next_id, next_meta), ..current_stack]
+                })
               do_fold_walk_dfs(graph, next_stack, new_visited, new_acc, folder)
             }
           }
@@ -613,22 +609,18 @@ fn do_implicit_dfs(
               do_implicit_dfs(tail, new_visited, new_acc, successors, folder)
             Continue -> {
               let next_stack =
-                list.fold(
-                  list.reverse(successors(node_id)),
-                  tail,
-                  fn(stk, next_id) {
-                    [
-                      #(
-                        next_id,
-                        WalkMetadata(
-                          depth: metadata.depth + 1,
-                          parent: Some(node_id),
-                        ),
+                list.fold_right(successors(node_id), tail, fn(stk, next_id) {
+                  [
+                    #(
+                      next_id,
+                      WalkMetadata(
+                        depth: metadata.depth + 1,
+                        parent: Some(node_id),
                       ),
-                      ..stk
-                    ]
-                  },
-                )
+                    ),
+                    ..stk
+                  ]
+                })
               do_implicit_dfs(
                 next_stack,
                 new_visited,
@@ -734,22 +726,18 @@ fn do_implicit_dfs_by(
               )
             Continue -> {
               let next_stack =
-                list.fold(
-                  list.reverse(successors(node_id)),
-                  tail,
-                  fn(stk, next_id) {
-                    [
-                      #(
-                        next_id,
-                        WalkMetadata(
-                          depth: metadata.depth + 1,
-                          parent: Some(node_id),
-                        ),
+                list.fold_right(successors(node_id), tail, fn(stk, next_id) {
+                  [
+                    #(
+                      next_id,
+                      WalkMetadata(
+                        depth: metadata.depth + 1,
+                        parent: Some(node_id),
                       ),
-                      ..stk
-                    ]
-                  },
-                )
+                    ),
+                    ..stk
+                  ]
+                })
               do_implicit_dfs_by(
                 next_stack,
                 new_visited,
