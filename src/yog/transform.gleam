@@ -1,7 +1,8 @@
 import gleam/dict
+import gleam/list
 import gleam/result
 import gleam/set
-import yog/model.{type Graph, type NodeId, Graph, remove_node}
+import yog/model.{type Graph, type NodeId, Directed, Graph, Undirected}
 
 /// Reverses the direction of every edge in the graph (graph transpose).
 ///
@@ -169,7 +170,6 @@ pub fn filter_nodes(
 
   let kept_ids = set.from_list(dict.keys(kept_nodes))
 
-  // Prune edges: keep only if both src and dst are in the kept set
   let prune_edges = fn(outer_map) {
     dict.filter(outer_map, fn(src, _) { set.contains(kept_ids, src) })
     |> dict.map_values(fn(_src, inner_map) {
@@ -183,6 +183,116 @@ pub fn filter_nodes(
     out_edges: prune_edges(graph.out_edges),
     in_edges: prune_edges(graph.in_edges),
   )
+}
+
+/// Filters edges by a predicate, preserving all nodes.
+///
+/// Returns a new graph with the same nodes but only the edges where the
+/// predicate returns `True`. The predicate receives `(src, dst, weight)`.
+///
+/// **Time Complexity:** O(E) where E is the number of edges
+///
+/// ## Example
+///
+/// ```gleam
+/// let graph =
+///   model.new(Directed)
+///   |> model.add_node(1, "A")
+///   |> model.add_node(2, "B")
+///   |> model.add_node(3, "C")
+///   |> model.add_edge(from: 1, to: 2, with: 5)
+///   |> model.add_edge(from: 1, to: 3, with: 15)
+///   |> model.add_edge(from: 2, to: 3, with: 3)
+///
+/// // Keep only edges with weight >= 10
+/// let heavy = transform.filter_edges(graph, fn(_src, _dst, w) { w >= 10 })
+/// // Result: edges [1->3 (15)], edges 1->2 and 2->3 removed
+/// ```
+///
+/// ## Use Cases
+///
+/// - Pruning low-weight edges in weighted networks
+/// - Removing self-loops: `filter_edges(g, fn(s, d, _) { s != d })`
+/// - Threshold-based graph sparsification
+pub fn filter_edges(
+  graph: Graph(n, e),
+  keeping predicate: fn(NodeId, NodeId, e) -> Bool,
+) -> Graph(n, e) {
+  let filter_outer = fn(outer_map) {
+    dict.map_values(outer_map, fn(src, inner_map) {
+      dict.filter(inner_map, fn(dst, weight) { predicate(src, dst, weight) })
+    })
+    |> dict.filter(fn(_src, inner_map) { dict.size(inner_map) > 0 })
+  }
+
+  Graph(
+    ..graph,
+    out_edges: filter_outer(graph.out_edges),
+    in_edges: filter_outer(graph.in_edges),
+  )
+}
+
+/// Creates the complement of a graph.
+///
+/// The complement contains the same nodes but connects all pairs of nodes
+/// that are **not** connected in the original graph, and removes all edges
+/// that **are** present. Each new edge gets the supplied `default_weight`.
+///
+/// Self-loops are never added in the complement.
+///
+/// **Time Complexity:** O(V² + E)
+///
+/// ## Example
+///
+/// ```gleam
+/// let graph =
+///   model.new(Undirected)
+///   |> model.add_node(1, "A")
+///   |> model.add_node(2, "B")
+///   |> model.add_node(3, "C")
+///   |> model.add_edge(from: 1, to: 2, with: 1)
+///
+/// let comp = transform.complement(graph, default_weight: 1)
+/// // Original: 1-2 connected, 1-3 and 2-3 not
+/// // Complement: 1-3 and 2-3 connected, 1-2 not
+/// ```
+///
+/// ## Use Cases
+///
+/// - Finding independent sets (cliques in the complement)
+/// - Graph coloring via complement analysis
+/// - Testing graph density (sparse ↔ dense complement)
+pub fn complement(
+  graph: Graph(n, e),
+  default_weight default_weight: e,
+) -> Graph(n, e) {
+  let node_ids = dict.keys(graph.nodes)
+
+  let new_graph =
+    list.fold(
+      node_ids,
+      Graph(..graph, out_edges: dict.new(), in_edges: dict.new()),
+      fn(g, src) {
+        list.fold(node_ids, g, fn(acc, dst) {
+          case src == dst {
+            True -> acc
+            False -> {
+              let has_edge = case dict.get(graph.out_edges, src) {
+                Ok(inner) -> dict.has_key(inner, dst)
+                Error(_) -> False
+              }
+              case has_edge {
+                True -> acc
+                False ->
+                  model.add_edge(acc, from: src, to: dst, with: default_weight)
+              }
+            }
+          }
+        })
+      },
+    )
+
+  new_graph
 }
 
 /// Combines two graphs, with the second graph's data taking precedence on conflicts.
@@ -226,14 +336,10 @@ pub fn filter_nodes(
 /// - Applying updates/patches to a graph
 /// - Building graphs incrementally from multiple sources
 pub fn merge(base: Graph(n, e), other: Graph(n, e)) -> Graph(n, e) {
-  let merge_inner = fn(m1, m2) {
-    dict.merge(m1, m2)
-    // Merge the inner neighbor maps (same edge = other wins)
-  }
+  let merge_inner = fn(m1, m2) { dict.merge(m1, m2) }
 
   let merge_outer = fn(outer1, outer2) {
     dict.combine(outer1, outer2, merge_inner)
-    // Deep merge: combine both outer maps, merging inner dicts
   }
 
   Graph(
@@ -286,10 +392,8 @@ pub fn merge(base: Graph(n, e), other: Graph(n, e)) -> Graph(n, e) {
 pub fn subgraph(graph: Graph(n, e), keeping ids: List(NodeId)) -> Graph(n, e) {
   let id_set = set.from_list(ids)
 
-  // Filter nodes to only those in the ID set
   let nodes = dict.filter(graph.nodes, fn(id, _) { set.contains(id_set, id) })
 
-  // Prune edges: keep only if both src and dst are in the ID set
   let prune = fn(outer) {
     dict.filter(outer, fn(src, _) { set.contains(id_set, src) })
     |> dict.map_values(fn(_, inner) {
@@ -370,7 +474,6 @@ pub fn contract(
   with b: NodeId,
   combine_weights with_combine: fn(e, e) -> e,
 ) -> Graph(n, e) {
-  // 1. Process outgoing edges (this handles both directions for Undirected graphs)
   let b_out = dict.get(graph.out_edges, b) |> result.unwrap(dict.new())
   let graph =
     dict.fold(b_out, graph, fn(acc_g, neighbor, weight) {
@@ -381,8 +484,6 @@ pub fn contract(
       }
     })
 
-  // 2. Only process incoming edges if the graph is Directed!
-  // For Undirected graphs, out_edges already contains all neighbors in both directions
   let graph = case graph.kind {
     model.Undirected -> graph
     model.Directed -> {
@@ -403,5 +504,99 @@ pub fn contract(
     }
   }
 
-  remove_node(graph, b)
+  model.remove_node(graph, b)
+}
+
+/// Converts an undirected graph to a directed graph.
+///
+/// Since yog internally stores undirected edges as bidirectional directed edges,
+/// this is essentially free — it just changes the `kind` flag. The resulting
+/// directed graph has two directed edges (A→B and B→A) for each original
+/// undirected edge.
+///
+/// If the graph is already directed, it is returned unchanged.
+///
+/// **Time Complexity:** O(1)
+///
+/// ## Example
+///
+/// ```gleam
+/// let undirected =
+///   model.new(Undirected)
+///   |> model.add_node(1, "A")
+///   |> model.add_node(2, "B")
+///   |> model.add_edge(from: 1, to: 2, with: 10)
+///
+/// let directed = transform.to_directed(undirected)
+/// // Has edges: 1->2 and 2->1 (both with weight 10)
+/// ```
+pub fn to_directed(graph: Graph(n, e)) -> Graph(n, e) {
+  Graph(..graph, kind: Directed)
+}
+
+/// Converts a directed graph to an undirected graph.
+///
+/// For each directed edge A→B, ensures B→A also exists. If both A→B and B→A
+/// already exist with different weights, the `resolve` function decides which
+/// weight to keep.
+///
+/// If the graph is already undirected, it is returned unchanged.
+///
+/// **Time Complexity:** O(E) where E is the number of edges
+///
+/// ## Example
+///
+/// ```gleam
+/// let directed =
+///   model.new(Directed)
+///   |> model.add_node(1, "A")
+///   |> model.add_node(2, "B")
+///   |> model.add_edge(from: 1, to: 2, with: 10)
+///   |> model.add_edge(from: 2, to: 1, with: 20)
+///
+/// // When both directions exist, keep the smaller weight
+/// let undirected = transform.to_undirected(directed, resolve: int.min)
+/// // Edge 1-2 has weight 10 (min of 10 and 20)
+/// ```
+///
+/// ```gleam
+/// // One-directional edges get mirrored automatically
+/// let directed =
+///   model.new(Directed)
+///   |> model.add_edge(from: 1, to: 2, with: 5)
+///
+/// let undirected = transform.to_undirected(directed, resolve: int.min)
+/// // Edge exists in both directions with weight 5
+/// ```
+pub fn to_undirected(
+  graph: Graph(n, e),
+  resolve resolve: fn(e, e) -> e,
+) -> Graph(n, e) {
+  case graph.kind {
+    Undirected -> graph
+    Directed -> {
+      let symmetric_out =
+        dict.fold(graph.out_edges, graph.out_edges, fn(acc_outer, src, inner) {
+          dict.fold(inner, acc_outer, fn(acc, dst, weight) {
+            let dst_inner = case dict.get(acc, dst) {
+              Ok(m) -> m
+              Error(_) -> dict.new()
+            }
+            let updated_inner = case dict.get(dst_inner, src) {
+              Ok(existing) ->
+                dict.insert(dst_inner, src, resolve(existing, weight))
+              Error(_) -> dict.insert(dst_inner, src, weight)
+            }
+            dict.insert(acc, dst, updated_inner)
+          })
+        })
+
+      Graph(
+        ..graph,
+        kind: Undirected,
+        out_edges: symmetric_out,
+        in_edges: symmetric_out,
+      )
+    }
+  }
 }

@@ -1136,3 +1136,255 @@ pub fn contract_complex_graph_test() {
   model.successors(contracted, 3)
   |> should.equal([#(5, 35)])
 }
+
+// ============= Filter Edges Tests =============
+
+pub fn filter_edges_by_weight_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 5)
+    |> model.add_edge(from: 1, to: 3, with: 15)
+    |> model.add_edge(from: 2, to: 3, with: 3)
+
+  let heavy = transform.filter_edges(graph, fn(_src, _dst, w) { w >= 10 })
+
+  // Only 1->3 (15) should remain
+  model.successors(heavy, 1)
+  |> should.equal([#(3, 15)])
+
+  model.successors(heavy, 2)
+  |> should.equal([])
+
+  // All nodes preserved
+  dict.size(heavy.nodes)
+  |> should.equal(3)
+}
+
+pub fn filter_edges_remove_self_loops_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 1, with: 5)
+    |> model.add_edge(from: 1, to: 2, with: 10)
+
+  let no_loops = transform.filter_edges(graph, fn(src, dst, _w) { src != dst })
+
+  model.successors(no_loops, 1)
+  |> should.equal([#(2, 10)])
+}
+
+pub fn filter_edges_empty_graph_test() {
+  let graph = model.new(Directed)
+  let filtered = transform.filter_edges(graph, fn(_s, _d, _w) { True })
+
+  dict.size(filtered.out_edges)
+  |> should.equal(0)
+}
+
+pub fn filter_edges_keep_all_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+
+  let same = transform.filter_edges(graph, fn(_s, _d, _w) { True })
+
+  model.successors(same, 1)
+  |> should.equal([#(2, 10)])
+}
+
+pub fn filter_edges_undirected_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 5)
+    |> model.add_edge(from: 1, to: 3, with: 15)
+
+  let heavy = transform.filter_edges(graph, fn(_s, _d, w) { w >= 10 })
+
+  // Only 1-3 edge remains (both directions)
+  model.successors(heavy, 1) |> should.equal([#(3, 15)])
+  model.successors(heavy, 3) |> should.equal([#(1, 15)])
+  model.successors(heavy, 2) |> should.equal([])
+}
+
+// ============= Complement Tests =============
+
+pub fn complement_triangle_test() {
+  // Triangle: 1-2, 2-3, 1-3
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edge(from: 1, to: 3, with: 1)
+
+  let comp = transform.complement(graph, default_weight: 1)
+
+  // Complete graph → complement has no edges
+  model.successors(comp, 1) |> should.equal([])
+  model.successors(comp, 2) |> should.equal([])
+  model.successors(comp, 3) |> should.equal([])
+}
+
+pub fn complement_path_graph_test() {
+  // Path: 1-2-3 (undirected)
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edge(from: 2, to: 3, with: 1)
+
+  let comp = transform.complement(graph, default_weight: 99)
+
+  // Missing edge: 1-3 → appears in complement
+  model.successors(comp, 1) |> list.length |> should.equal(1)
+  model.successors(comp, 1)
+  |> list.contains(#(3, 99))
+  |> should.be_true
+
+  // 1-2 and 2-3 existed → gone in complement
+  model.successors(comp, 2) |> should.equal([])
+}
+
+pub fn complement_directed_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 5)
+
+  let comp = transform.complement(graph, default_weight: 1)
+
+  // 1→2 existed, so gone. 2→1 didn't exist, so present
+  model.successors(comp, 1) |> should.equal([])
+  model.successors(comp, 2) |> should.equal([#(1, 1)])
+}
+
+pub fn complement_preserves_nodes_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+
+  let comp = transform.complement(graph, default_weight: 0)
+
+  // All nodes preserved
+  dict.size(comp.nodes) |> should.equal(3)
+  dict.get(comp.nodes, 1) |> should.equal(Ok("A"))
+}
+
+// ============= to_directed Tests =============
+
+pub fn to_directed_changes_kind_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+
+  let directed = transform.to_directed(graph)
+
+  directed.kind |> should.equal(Directed)
+
+  // Both directions from undirected are preserved
+  model.successors(directed, 1) |> should.equal([#(2, 10)])
+  model.successors(directed, 2) |> should.equal([#(1, 10)])
+}
+
+pub fn to_directed_already_directed_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_edge(from: 1, to: 2, with: 5)
+
+  let result = transform.to_directed(graph)
+  result.kind |> should.equal(Directed)
+
+  model.successors(result, 1) |> should.equal([#(2, 5)])
+}
+
+// ============= to_undirected Tests =============
+
+pub fn to_undirected_mirrors_edges_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+
+  let undirected = transform.to_undirected(graph, resolve: int.min)
+
+  undirected.kind |> should.equal(Undirected)
+
+  // Edge now in both directions
+  model.successors(undirected, 1) |> should.equal([#(2, 10)])
+  model.successors(undirected, 2) |> should.equal([#(1, 10)])
+}
+
+pub fn to_undirected_resolves_conflicts_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 2, to: 1, with: 20)
+
+  let min_undirected = transform.to_undirected(graph, resolve: int.min)
+
+  // Both directions should have min(10, 20) = 10
+  model.successors(min_undirected, 1) |> should.equal([#(2, 10)])
+  model.successors(min_undirected, 2) |> should.equal([#(1, 10)])
+
+  let max_undirected = transform.to_undirected(graph, resolve: int.max)
+
+  // Both directions should have max(10, 20) = 20
+  model.successors(max_undirected, 1) |> should.equal([#(2, 20)])
+  model.successors(max_undirected, 2) |> should.equal([#(1, 20)])
+}
+
+pub fn to_undirected_already_undirected_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_edge(from: 1, to: 2, with: 5)
+
+  let result = transform.to_undirected(graph, resolve: int.min)
+  result.kind |> should.equal(Undirected)
+}
+
+pub fn to_directed_then_to_undirected_roundtrip_test() {
+  let original =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 2, to: 3, with: 20)
+
+  let roundtripped =
+    original
+    |> transform.to_directed
+    |> transform.to_undirected(resolve: int.min)
+
+  roundtripped.kind |> should.equal(Undirected)
+
+  // Same edges as original
+  model.successors(roundtripped, 1) |> should.equal([#(2, 10)])
+  model.successors(roundtripped, 2)
+  |> list.length
+  |> should.equal(2)
+}
