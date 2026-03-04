@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`min_cut.global_min_cut()`**: Fixed incorrect cut weight calculation in Stoer-Wagner's Maximum Adjacency Search. The cut weight was being recalculated by summing all edges of node `t`, which incorrectly included edges outside the current MAS phase. Now uses the accumulated weight from the MAS weights dictionary, which is the mathematically correct cut-of-the-phase value.
 - **`traversal` DFS ordering**: Fixed implicit DFS stack order in `do_fold_walk_dfs`, `do_implicit_dfs`, and `do_implicit_dfs_by`. The combination of `list.reverse` + `list.fold` with prepend inadvertently restored the original order, causing the last successor to be explored first. Replaced with `list.fold_right` to ensure the first successor ends up on top of the LIFO stack, matching standard DFS behavior.
 
+### Added
+
+- **`builder/grid.from_2d_list_with_topology()`**: Create grids with custom movement patterns using `#(row_delta, col_delta)` offsets. `from_2d_list` now delegates to this with `rook()` topology.
+- **Chess-themed topology presets**: `rook()` (4-way cardinal), `bishop()` (4 diagonals), `queen()` (8-way), `knight()` (L-shaped jumps). Pass to `from_2d_list_with_topology` for instant custom movement graphs.
+- **Movement predicate helpers**: `avoiding(wall)` blocks a value, `walkable(tile)` whitelists a value, `always()` allows all movement. Composable with both `from_2d_list` and `from_2d_list_with_topology`.
+
 ### Performance
 
 - **Bron-Kerbosch (`yog/clique`)**: Precomputed adjacency sets into a `Dict(NodeId, Set(NodeId))` built once per entry point, eliminating repeated `neighbors → list.map → set.from_list` allocations on every recursive iteration. Additionally, replaced the naive `list.first` pivot selection with greedy pivoting that maximizes |P ∩ N(u)|, aggressively pruning the search tree.
