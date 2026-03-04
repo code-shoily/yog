@@ -976,3 +976,75 @@ pub fn add_edge_with_combine_max_test() {
   model.successors(graph, 1)
   |> should.equal([#(2, 15)])
 }
+
+// ============= Tests for add_edge_ensured() =============
+
+pub fn add_edge_ensured_creates_both_missing_nodes_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_edge_ensured(from: 1, to: 2, with: 10, default: "anon")
+
+  // Both nodes should exist with default data
+  dict.get(graph.nodes, 1)
+  |> should.equal(Ok("anon"))
+
+  dict.get(graph.nodes, 2)
+  |> should.equal(Ok("anon"))
+
+  // Edge should exist
+  model.successors(graph, 1)
+  |> should.equal([#(2, 10)])
+}
+
+pub fn add_edge_ensured_preserves_existing_nodes_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "Alice")
+    |> model.add_edge_ensured(from: 1, to: 2, with: 5, default: "anon")
+
+  // Node 1 keeps its original data
+  dict.get(graph.nodes, 1)
+  |> should.equal(Ok("Alice"))
+
+  // Node 2 gets the default
+  dict.get(graph.nodes, 2)
+  |> should.equal(Ok("anon"))
+}
+
+pub fn add_edge_ensured_both_nodes_exist_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "Alice")
+    |> model.add_node(2, "Bob")
+    |> model.add_edge_ensured(from: 1, to: 2, with: 7, default: "anon")
+
+  // Neither should be overwritten
+  dict.get(graph.nodes, 1) |> should.equal(Ok("Alice"))
+  dict.get(graph.nodes, 2) |> should.equal(Ok("Bob"))
+
+  model.successors(graph, 1)
+  |> should.equal([#(2, 7)])
+}
+
+pub fn add_edge_ensured_undirected_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_edge_ensured(from: 1, to: 2, with: 10, default: "x")
+
+  // Both directions
+  model.successors(graph, 1) |> should.equal([#(2, 10)])
+  model.successors(graph, 2) |> should.equal([#(1, 10)])
+
+  // Both nodes exist
+  dict.get(graph.nodes, 1) |> should.equal(Ok("x"))
+  dict.get(graph.nodes, 2) |> should.equal(Ok("x"))
+}
+
+pub fn add_edge_ensured_self_loop_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_edge_ensured(from: 1, to: 1, with: 5, default: "self")
+
+  dict.get(graph.nodes, 1) |> should.equal(Ok("self"))
+  model.successors(graph, 1) |> should.equal([#(1, 5)])
+}

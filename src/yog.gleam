@@ -224,6 +224,28 @@ pub fn add_edge(
   model.add_edge(graph, from: src, to: dst, with: weight)
 }
 
+/// Like `add_edge`, but ensures both endpoint nodes exist first.
+///
+/// If `src` or `dst` is not already in the graph, it is created with
+/// the supplied `default` node data. Existing nodes are left unchanged.
+///
+/// ## Example
+///
+/// ```gleam
+/// yog.directed()
+/// |> yog.add_edge_ensured(from: 1, to: 2, with: 10, default: "anon")
+/// // Nodes 1 and 2 are auto-created with data "anon"
+/// ```
+pub fn add_edge_ensured(
+  graph: Graph(n, e),
+  from src: NodeId,
+  to dst: NodeId,
+  with weight: e,
+  default default: n,
+) -> Graph(n, e) {
+  model.add_edge_ensured(graph, from: src, to: dst, with: weight, default:)
+}
+
 /// Adds an unweighted edge to the graph.
 ///
 /// This is a convenience function for graphs where edges have no meaningful weight.

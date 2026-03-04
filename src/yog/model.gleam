@@ -1,6 +1,6 @@
 import gleam/dict.{type Dict}
 import gleam/list
-import gleam/option
+import gleam/option.{None, Some}
 import gleam/result
 import gleam/set
 import yog/internal/utils
@@ -66,6 +66,13 @@ pub fn add_node(graph: Graph(n, e), id: NodeId, data: n) -> Graph(n, e) {
 /// For directed graphs, adds a single edge from `src` to `dst`.
 /// For undirected graphs, adds edges in both directions.
 ///
+/// > **Note:** If `src` or `dst` have not been added via `add_node`,
+/// > the edge will still be created in the edge dictionaries but the
+/// > nodes will be missing from `graph.nodes`. This creates "ghost nodes"
+/// > that are traversable but invisible to functions that iterate over
+/// > nodes (e.g. `order`, `filter_nodes`). Use `add_edge_ensured` to
+/// > auto-create missing endpoints with a default value.
+///
 /// ## Example
 ///
 /// ```gleam
@@ -83,6 +90,47 @@ pub fn add_edge(
   case graph.kind {
     Directed -> graph
     Undirected -> do_add_directed_edge(graph, dst, src, weight)
+  }
+}
+
+/// Like `add_edge`, but ensures both endpoint nodes exist first.
+///
+/// If `src` or `dst` is not already in the graph, it is created with
+/// the supplied `default` node data before the edge is added. Nodes
+/// that already exist are left unchanged.
+///
+/// ## Example
+///
+/// ```gleam
+/// // Nodes 1 and 2 are created automatically with data "unknown"
+/// model.new(model.Directed)
+/// |> model.add_edge_ensured(from: 1, to: 2, with: 10, default: "unknown")
+/// ```
+///
+/// ```gleam
+/// // Existing nodes keep their data; only missing ones get the default
+/// model.new(model.Directed)
+/// |> model.add_node(1, "Alice")
+/// |> model.add_edge_ensured(from: 1, to: 2, with: 5, default: "anon")
+/// // Node 1 is still "Alice", node 2 is "anon"
+/// ```
+pub fn add_edge_ensured(
+  graph: Graph(n, e),
+  from src: NodeId,
+  to dst: NodeId,
+  with weight: e,
+  default default: n,
+) -> Graph(n, e) {
+  let graph = ensure_node(graph, src, default)
+  let graph = ensure_node(graph, dst, default)
+  add_edge(graph, from: src, to: dst, with: weight)
+}
+
+/// Adds a node only if it doesn't already exist.
+fn ensure_node(graph: Graph(n, e), id: NodeId, data: n) -> Graph(n, e) {
+  case dict.has_key(graph.nodes, id) {
+    True -> graph
+    False -> add_node(graph, id, data)
   }
 }
 
@@ -153,15 +201,15 @@ fn do_add_directed_edge(
 ) -> Graph(n, e) {
   let out_update_fn = fn(maybe_inner_map) {
     case maybe_inner_map {
-      option.Some(m) -> dict.insert(m, dst, weight)
-      option.None -> dict.from_list([#(dst, weight)])
+      Some(m) -> dict.insert(m, dst, weight)
+      None -> dict.from_list([#(dst, weight)])
     }
   }
 
   let in_update_fn = fn(maybe_inner_map) {
     case maybe_inner_map {
-      option.Some(m) -> dict.insert(m, src, weight)
-      option.None -> dict.from_list([#(src, weight)])
+      Some(m) -> dict.insert(m, src, weight)
+      None -> dict.from_list([#(src, weight)])
     }
   }
 
@@ -262,14 +310,14 @@ fn do_add_directed_combine(
 ) -> Graph(n, e) {
   let update_fn = fn(maybe_inner_map) {
     case maybe_inner_map {
-      option.Some(m) -> {
+      Some(m) -> {
         let new_weight = case dict.get(m, dst) {
           Ok(existing) -> with_combine(existing, weight)
           Error(_) -> weight
         }
         dict.insert(m, dst, new_weight)
       }
-      option.None -> dict.from_list([#(dst, weight)])
+      None -> dict.from_list([#(dst, weight)])
     }
   }
 
@@ -277,14 +325,14 @@ fn do_add_directed_combine(
   let new_in =
     dict.upsert(graph.in_edges, dst, fn(maybe_m) {
       case maybe_m {
-        option.Some(m) -> {
+        Some(m) -> {
           let new_weight = case dict.get(m, src) {
             Ok(existing) -> with_combine(existing, weight)
             Error(_) -> weight
           }
           dict.insert(m, src, new_weight)
         }
-        option.None -> dict.from_list([#(src, weight)])
+        None -> dict.from_list([#(src, weight)])
       }
     })
 
