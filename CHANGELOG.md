@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`builder/grid.from_2d_list_with_topology()`**: Create grids with custom movement patterns using `#(row_delta, col_delta)` offsets. `from_2d_list` now delegates to this with `rook()` topology.
 - **Chess-themed topology presets**: `rook()` (4-way cardinal), `bishop()` (4 diagonals), `queen()` (8-way), `knight()` (L-shaped jumps). Pass to `from_2d_list_with_topology` for instant custom movement graphs.
 - **Movement predicate helpers**: `avoiding(wall)` blocks a value, `walkable(tile)` whitelists a value, `always()` allows all movement. Composable with both `from_2d_list` and `from_2d_list_with_topology`.
+- **`model.add_edge_ensured()`**: Like `add_edge`, but auto-creates missing endpoint nodes with a caller-supplied `default` value. Prevents "ghost nodes" caused by adding edges to non-existent nodes.
+- **`transform.filter_edges()`**: Filters edges by a `(src, dst, weight)` predicate while preserving all nodes. Useful for weight-based pruning, self-loop removal, and graph sparsification.
+- **`transform.complement()`**: Creates the graph complement — connects all non-adjacent node pairs, removes existing edges. Useful for independent set analysis and graph coloring.
+- **`transform.to_directed()`**: Converts undirected to directed (O(1) — just a flag change since yog stores both directions internally).
+- **`transform.to_undirected()`**: Converts directed to undirected by mirroring edges, with a `resolve` function for conflicting weights.
 
 ### Performance
 
