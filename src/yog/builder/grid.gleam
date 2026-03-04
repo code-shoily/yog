@@ -84,17 +84,14 @@ pub fn from_2d_list(
   graph_type: GraphType,
   can_move can_move: fn(cell_data, cell_data) -> Bool,
 ) -> Grid(cell_data, Int) {
-  // Calculate dimensions
   let rows = list.length(grid_data)
   let cols = case grid_data {
     [first_row, ..] -> list.length(first_row)
     [] -> 0
   }
 
-  // Create empty graph
   let mut_graph = model.new(graph_type)
 
-  // Flatten grid to list of (row, col, cell_data)
   let cells =
     grid_data
     |> list.index_map(fn(row, row_idx) {
@@ -103,7 +100,6 @@ pub fn from_2d_list(
     })
     |> list.flatten
 
-  // Add all nodes
   let graph_with_nodes =
     cells
     |> list.fold(mut_graph, fn(g, cell) {
@@ -112,7 +108,6 @@ pub fn from_2d_list(
       model.add_node(g, id, data)
     })
 
-  // Add edges between adjacent cells
   let graph_with_edges =
     cells
     |> list.fold(graph_with_nodes, fn(g, cell) {
@@ -135,16 +130,13 @@ pub fn from_2d_list(
       |> list.fold(g, fn(acc_g, neighbor) {
         let #(n_row, n_col) = neighbor
 
-        // Check bounds
         case n_row >= 0 && n_row < rows && n_col >= 0 && n_col < cols {
           False -> acc_g
           True -> {
             let to_id = coord_to_id(n_row, n_col, cols)
 
-            // Get neighbor's cell data from already-built graph nodes (O(1) dict lookup)
             case dict.get(graph_with_nodes.nodes, to_id) {
               Ok(to_data) -> {
-                // Check if move is valid
                 case can_move(from_data, to_data) {
                   True ->
                     model.add_edge(acc_g, from: from_id, to: to_id, with: 1)
@@ -277,7 +269,6 @@ pub fn find_node(
   grid: Grid(cell_data, e),
   predicate: fn(cell_data) -> Bool,
 ) -> Result(NodeId, Nil) {
-  // Generate list of all node IDs
   let max_id = grid.rows * grid.cols - 1
   utils.range(0, max_id)
   |> list.find_map(fn(id) {
@@ -290,4 +281,67 @@ pub fn find_node(
       Error(_) -> Error(Nil)
     }
   })
+}
+
+/// Allows movement into any cell except the specified wall value.
+///
+/// Useful for maze-style grids where `"#"` or similar marks a wall.
+/// The `from` cell is ignored — only the destination is checked.
+///
+/// ## Example
+///
+/// ```gleam
+/// // Maze where "#" is impassable
+/// let maze = [
+///   [".", "#", "."],
+///   [".", ".", "."],
+///   ["#", "#", "."],
+/// ]
+///
+/// let g = grid.from_2d_list(maze, model.Directed, can_move: grid.avoiding("#"))
+/// // Edges only connect non-wall cells
+/// ```
+pub fn avoiding(wall_value: cell_data) -> fn(cell_data, cell_data) -> Bool {
+  fn(_from, to) { to != wall_value }
+}
+
+/// Allows movement only into cells matching the specified value.
+///
+/// The inverse of `avoiding` — instead of blacklisting one value,
+/// this whitelists exactly one value. Useful when the grid has many
+/// different cell types but only one is traversable.
+///
+/// ## Example
+///
+/// ```gleam
+/// // Grid with varied terrain — only "." is walkable
+/// let terrain = [
+///   [".", "~", "^"],
+///   [".", ".", "^"],
+///   ["~", ".", "."],
+/// ]
+///
+/// let g = grid.from_2d_list(terrain, model.Directed, can_move: grid.walkable("."))
+/// // Only "." → "." edges exist
+/// ```
+pub fn walkable(valid_value: cell_data) -> fn(cell_data, cell_data) -> Bool {
+  fn(_from, to) { to == valid_value }
+}
+
+/// Always allows movement between adjacent cells.
+///
+/// Every 4-directional neighbor pair gets an edge regardless of cell data.
+/// Useful for fully connected grids or when the cell data is purely
+/// informational (e.g., storing coordinates or labels).
+///
+/// ## Example
+///
+/// ```gleam
+/// let labels = [["A", "B"], ["C", "D"]]
+///
+/// let g = grid.from_2d_list(labels, model.Undirected, can_move: grid.always())
+/// // All adjacent cells are connected
+/// ```
+pub fn always() -> fn(cell_data, cell_data) -> Bool {
+  fn(_from, _to) { True }
 }

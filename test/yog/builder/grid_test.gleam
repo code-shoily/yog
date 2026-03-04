@@ -1,3 +1,4 @@
+import gleam/int
 import gleam/list
 import gleeunit/should
 import yog
@@ -250,4 +251,155 @@ pub fn heightmap_climbing_test() {
   middle_successors
   |> list.length
   |> should.equal(4)
+}
+
+// Predicate helper tests
+
+pub fn avoiding_blocks_walls_test() {
+  // "#" cells should be unreachable
+  let maze = [[".", "#", "."], [".", ".", "."], ["#", "#", "."]]
+
+  let g = grid.from_2d_list(maze, model.Directed, can_move: grid.avoiding("#"))
+  let graph = grid.to_graph(g)
+
+  // (0,0)="." -> can reach (1,0)="." (down) but NOT (0,1)="#" (right)
+  let top_left_successors = yog.successors(graph, grid.coord_to_id(0, 0, 3))
+  top_left_successors
+  |> list.map(fn(s) { s.0 })
+  |> list.contains(grid.coord_to_id(1, 0, 3))
+  |> should.be_true
+
+  top_left_successors
+  |> list.map(fn(s) { s.0 })
+  |> list.contains(grid.coord_to_id(0, 1, 3))
+  |> should.be_false
+
+  // (1,1)="." -> can reach all 4 non-wall neighbors
+  // up=(0,1)="#" NO, down=(2,1)="#" NO, left=(1,0)="." YES, right=(1,2)="." YES
+  let center_successors = yog.successors(graph, grid.coord_to_id(1, 1, 3))
+  center_successors
+  |> list.length
+  |> should.equal(2)
+}
+
+pub fn avoiding_allows_movement_from_wall_test() {
+  // avoiding only checks the destination, not the source
+  let maze = [["#", "."]]
+
+  let g = grid.from_2d_list(maze, model.Directed, can_move: grid.avoiding("#"))
+  let graph = grid.to_graph(g)
+
+  // From "#" at (0,0), can move to "." at (0,1) because destination is not "#"
+  let wall_successors = yog.successors(graph, grid.coord_to_id(0, 0, 2))
+  wall_successors
+  |> list.map(fn(s) { s.0 })
+  |> list.contains(grid.coord_to_id(0, 1, 2))
+  |> should.be_true
+}
+
+pub fn walkable_only_allows_matching_cells_test() {
+  // Only "." -> "." edges should exist
+  let terrain = [[".", "~", "^"], [".", ".", "^"], ["~", ".", "."]]
+
+  let g =
+    grid.from_2d_list(terrain, model.Directed, can_move: grid.walkable("."))
+  let graph = grid.to_graph(g)
+
+  // (0,0)="." -> can only reach (1,0)="." (down), NOT (0,1)="~" (right)
+  let successors_00 = yog.successors(graph, grid.coord_to_id(0, 0, 3))
+  successors_00
+  |> list.length
+  |> should.equal(1)
+  successors_00
+  |> list.map(fn(s) { s.0 })
+  |> list.contains(grid.coord_to_id(1, 0, 3))
+  |> should.be_true
+
+  // (1,1)="." -> can reach (1,0)="." (left) and (2,1)="." (down)
+  // cannot reach (0,1)="~" (up) or (1,2)="^" (right)
+  let successors_11 = yog.successors(graph, grid.coord_to_id(1, 1, 3))
+  successors_11
+  |> list.length
+  |> should.equal(2)
+}
+
+pub fn walkable_blocks_movement_from_non_matching_test() {
+  // walkable only checks destination, so "~" can still move to "."
+  let terrain = [["~", "."]]
+
+  let g =
+    grid.from_2d_list(terrain, model.Directed, can_move: grid.walkable("."))
+  let graph = grid.to_graph(g)
+
+  // From "~" at (0,0), can still move to "." at (0,1)
+  let successors = yog.successors(graph, grid.coord_to_id(0, 0, 2))
+  successors
+  |> list.length
+  |> should.equal(1)
+}
+
+pub fn always_connects_all_adjacent_cells_test() {
+  let labels = [["A", "B", "C"], ["D", "E", "F"]]
+
+  let g = grid.from_2d_list(labels, model.Directed, can_move: grid.always())
+  let graph = grid.to_graph(g)
+
+  // All 6 nodes should exist
+  model.order(graph)
+  |> should.equal(6)
+
+  // Corner (0,0) has 2 neighbors: right and down
+  let corner_successors = yog.successors(graph, grid.coord_to_id(0, 0, 3))
+  corner_successors
+  |> list.length
+  |> should.equal(2)
+
+  // Middle top (0,1) has 3 neighbors: left, right, down
+  let mid_top_successors = yog.successors(graph, grid.coord_to_id(0, 1, 3))
+  mid_top_successors
+  |> list.length
+  |> should.equal(3)
+
+  // Center (1,1) has 3 neighbors: up, left, right (no down, only 2 rows)
+  let center_successors = yog.successors(graph, grid.coord_to_id(1, 1, 3))
+  center_successors
+  |> list.length
+  |> should.equal(3)
+}
+
+pub fn always_undirected_test() {
+  let labels = [["A", "B"], ["C", "D"]]
+
+  let g = grid.from_2d_list(labels, model.Undirected, can_move: grid.always())
+  let graph = grid.to_graph(g)
+
+  // In undirected 2x2, each corner has 2 neighbors
+  let tl = yog.successors(graph, grid.coord_to_id(0, 0, 2))
+  tl |> list.length |> should.equal(2)
+
+  let br = yog.successors(graph, grid.coord_to_id(1, 1, 2))
+  br |> list.length |> should.equal(2)
+}
+
+pub fn avoiding_and_walkable_equivalence_for_binary_grid_test() {
+  // For a grid with only "." and "#", avoiding("#") and walkable(".") behave
+  // identically: both allow movement only into "." cells.
+  let maze = [[".", "#"], [".", "."]]
+
+  let g1 = grid.from_2d_list(maze, model.Directed, can_move: grid.avoiding("#"))
+  let g2 = grid.from_2d_list(maze, model.Directed, can_move: grid.walkable("."))
+
+  // Both should produce the same edges from every node
+  [0, 1, 2, 3]
+  |> list.each(fn(id) {
+    let s1 =
+      yog.successors(grid.to_graph(g1), id)
+      |> list.map(fn(s) { s.0 })
+      |> list.sort(int.compare)
+    let s2 =
+      yog.successors(grid.to_graph(g2), id)
+      |> list.map(fn(s) { s.0 })
+      |> list.sort(int.compare)
+    s1 |> should.equal(s2)
+  })
 }
