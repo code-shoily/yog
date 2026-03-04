@@ -403,3 +403,118 @@ pub fn avoiding_and_walkable_equivalence_for_binary_grid_test() {
     s1 |> should.equal(s2)
   })
 }
+
+// Topology preset tests
+
+pub fn queen_topology_gives_8_neighbors_for_center_test() {
+  // 3x3 grid, center cell should have all 8 neighbors
+  let data = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+
+  let g =
+    grid.from_2d_list_with_topology(
+      data,
+      model.Directed,
+      grid.queen(),
+      can_move: grid.always(),
+    )
+  let graph = grid.to_graph(g)
+
+  // Center (1,1) should have 8 neighbors
+  let center = yog.successors(graph, grid.coord_to_id(1, 1, 3))
+  center |> list.length |> should.equal(8)
+
+  // Corner (0,0) should have 3 neighbors: right, down, diagonal
+  let corner = yog.successors(graph, grid.coord_to_id(0, 0, 3))
+  corner |> list.length |> should.equal(3)
+}
+
+pub fn bishop_topology_diagonal_only_test() {
+  let data = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+
+  let g =
+    grid.from_2d_list_with_topology(
+      data,
+      model.Directed,
+      grid.bishop(),
+      can_move: grid.always(),
+    )
+  let graph = grid.to_graph(g)
+
+  // Center (1,1) should have exactly 4 diagonal neighbors
+  let center = yog.successors(graph, grid.coord_to_id(1, 1, 3))
+  center |> list.length |> should.equal(4)
+
+  // Verify neighbors are the 4 corners
+  let neighbor_ids = list.map(center, fn(s) { s.0 })
+  neighbor_ids |> list.contains(grid.coord_to_id(0, 0, 3)) |> should.be_true
+  neighbor_ids |> list.contains(grid.coord_to_id(0, 2, 3)) |> should.be_true
+  neighbor_ids |> list.contains(grid.coord_to_id(2, 0, 3)) |> should.be_true
+  neighbor_ids |> list.contains(grid.coord_to_id(2, 2, 3)) |> should.be_true
+
+  // Center should NOT reach cardinal neighbors
+  neighbor_ids |> list.contains(grid.coord_to_id(0, 1, 3)) |> should.be_false
+  neighbor_ids |> list.contains(grid.coord_to_id(1, 0, 3)) |> should.be_false
+
+  // Corner (0,0) should have exactly 1 diagonal neighbor: (1,1)
+  let corner = yog.successors(graph, grid.coord_to_id(0, 0, 3))
+  corner |> list.length |> should.equal(1)
+}
+
+pub fn knight_topology_l_shaped_jumps_test() {
+  // 5x5 board, knight in center should have all 8 L-shaped targets
+  let board = [
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+  ]
+
+  let g =
+    grid.from_2d_list_with_topology(
+      board,
+      model.Directed,
+      grid.knight(),
+      can_move: grid.always(),
+    )
+  let graph = grid.to_graph(g)
+
+  // Knight at center (2,2) should reach all 8 L-shaped squares
+  let center = yog.successors(graph, grid.coord_to_id(2, 2, 5))
+  center |> list.length |> should.equal(8)
+
+  // Knight at corner (0,0) can only reach (1,2) and (2,1)
+  let corner = yog.successors(graph, grid.coord_to_id(0, 0, 5))
+  corner |> list.length |> should.equal(2)
+  let corner_ids = list.map(corner, fn(s) { s.0 })
+  corner_ids |> list.contains(grid.coord_to_id(1, 2, 5)) |> should.be_true
+  corner_ids |> list.contains(grid.coord_to_id(2, 1, 5)) |> should.be_true
+}
+
+pub fn rook_matches_from_2d_list_test() {
+  // rook() topology should produce identical results to from_2d_list
+  let data = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+
+  let g1 = grid.from_2d_list(data, model.Directed, can_move: grid.always())
+  let g2 =
+    grid.from_2d_list_with_topology(
+      data,
+      model.Directed,
+      grid.rook(),
+      can_move: grid.always(),
+    )
+
+  // Every node should have the same successors
+  [0, 1, 2, 3, 4, 5, 6, 7, 8]
+  |> list.each(fn(id) {
+    let s1 =
+      yog.successors(grid.to_graph(g1), id)
+      |> list.map(fn(s) { s.0 })
+      |> list.sort(int.compare)
+    let s2 =
+      yog.successors(grid.to_graph(g2), id)
+      |> list.map(fn(s) { s.0 })
+      |> list.sort(int.compare)
+    s1 |> should.equal(s2)
+  })
+}

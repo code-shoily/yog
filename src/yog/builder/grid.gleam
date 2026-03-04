@@ -60,28 +60,77 @@ pub type Grid(cell_data, edge_data) {
   )
 }
 
-/// Creates a graph from a 2D list (list of rows).
+/// Creates a graph from a 2D list using 4-directional (rook) movement.
 ///
 /// Each cell becomes a node, and edges are added between adjacent cells
 /// (up/down/left/right) if the `can_move` predicate returns True.
+/// This is equivalent to `from_2d_list_with_topology` with `rook()`.
 ///
 /// ## Example
 ///
 /// ```gleam
-/// // A heightmap where you can only climb 1 unit at a time
 /// let heightmap = [[1, 2, 3], [2, 3, 4], [3, 4, 5]]
 ///
-/// let grid = grid.from_2d_list(
+/// let g = grid.from_2d_list(
 ///   heightmap,
 ///   model.Directed,
-///   can_move: fn(from, to) { to - from <= 1 }
+///   can_move: fn(from, to) { to - from <= 1 },
 /// )
 /// ```
 ///
-/// **Time Complexity:** O(rows * cols)
+/// **Time Complexity:** O(rows × cols)
 pub fn from_2d_list(
   grid_data: List(List(cell_data)),
   graph_type: GraphType,
+  can_move can_move: fn(cell_data, cell_data) -> Bool,
+) -> Grid(cell_data, Int) {
+  from_2d_list_with_topology(grid_data, graph_type, rook(), can_move:)
+}
+
+/// Creates a graph from a 2D list using a custom movement topology.
+///
+/// The `topology` parameter is a list of `#(row_delta, col_delta)` offsets
+/// that define which neighbors each cell can reach. Use the built-in
+/// presets — `rook()`, `bishop()`, `queen()`, `knight()` — or define
+/// your own.
+///
+/// ## Example
+///
+/// ```gleam
+/// // 8-way movement (queen topology) on a maze
+/// let maze = [[".", "#", "."], [".", ".", "."], ["#", ".", "."]]
+///
+/// let g = grid.from_2d_list_with_topology(
+///   maze,
+///   model.Directed,
+///   grid.queen(),
+///   can_move: grid.avoiding("#"),
+/// )
+/// ```
+///
+/// ```gleam
+/// // Knight jumps on a chessboard
+/// let board = [
+///   [0, 0, 0, 0, 0],
+///   [0, 0, 0, 0, 0],
+///   [0, 0, 0, 0, 0],
+///   [0, 0, 0, 0, 0],
+///   [0, 0, 0, 0, 0],
+/// ]
+///
+/// let g = grid.from_2d_list_with_topology(
+///   board,
+///   model.Directed,
+///   grid.knight(),
+///   can_move: grid.always(),
+/// )
+/// ```
+///
+/// **Time Complexity:** O(rows × cols × |topology|)
+pub fn from_2d_list_with_topology(
+  grid_data: List(List(cell_data)),
+  graph_type: GraphType,
+  topology: List(#(Int, Int)),
   can_move can_move: fn(cell_data, cell_data) -> Bool,
 ) -> Grid(cell_data, Int) {
   let rows = list.length(grid_data)
@@ -114,21 +163,11 @@ pub fn from_2d_list(
       let #(row, col, from_data) = cell
       let from_id = coord_to_id(row, col, cols)
 
-      // Check all 4-directional neighbors
-      let neighbors = [
-        #(row - 1, col),
-        // Up
-        #(row + 1, col),
-        // Down
-        #(row, col - 1),
-        // Left
-        #(row, col + 1),
-        // Right
-      ]
-
-      neighbors
-      |> list.fold(g, fn(acc_g, neighbor) {
-        let #(n_row, n_col) = neighbor
+      topology
+      |> list.fold(g, fn(acc_g, delta) {
+        let #(d_row, d_col) = delta
+        let n_row = row + d_row
+        let n_col = col + d_col
 
         case n_row >= 0 && n_row < rows && n_col >= 0 && n_col < cols {
           False -> acc_g
@@ -151,6 +190,71 @@ pub fn from_2d_list(
     })
 
   Grid(graph: graph_with_edges, rows: rows, cols: cols)
+}
+
+/// Cardinal (4-way) movement: up, down, left, right.
+///
+/// Named after the rook in chess, which moves along ranks and files.
+/// This is the default topology used by `from_2d_list`.
+///
+/// ```
+/// . ↑ .
+/// ← · →
+/// . ↓ .
+/// ```
+pub fn rook() -> List(#(Int, Int)) {
+  [#(-1, 0), #(1, 0), #(0, -1), #(0, 1)]
+}
+
+/// Diagonal (4-way) movement: the four diagonal directions.
+///
+/// Named after the bishop in chess, which moves along diagonals.
+///
+/// ```
+/// ↖ . ↗
+/// . · .
+/// ↙ . ↘
+/// ```
+pub fn bishop() -> List(#(Int, Int)) {
+  [#(-1, -1), #(-1, 1), #(1, -1), #(1, 1)]
+}
+
+/// All 8 surrounding directions: cardinal + diagonal.
+///
+/// Named after the queen in chess, which combines rook and bishop movement.
+///
+/// ```
+/// ↖ ↑ ↗
+/// ← · →
+/// ↙ ↓ ↘
+/// ```
+pub fn queen() -> List(#(Int, Int)) {
+  [#(-1, -1), #(-1, 0), #(-1, 1), #(0, -1), #(0, 1), #(1, -1), #(1, 0), #(1, 1)]
+}
+
+/// L-shaped jumps in all 8 orientations.
+///
+/// Named after the knight in chess, which jumps in an L-shape
+/// (2 squares in one direction, 1 square perpendicular).
+///
+/// ```
+/// . ♞ . ♞ .
+/// ♞ . . . ♞
+/// . . · . .
+/// ♞ . . . ♞
+/// . ♞ . ♞ .
+/// ```
+pub fn knight() -> List(#(Int, Int)) {
+  [
+    #(-2, -1),
+    #(-2, 1),
+    #(-1, -2),
+    #(-1, 2),
+    #(1, -2),
+    #(1, 2),
+    #(2, -1),
+    #(2, 1),
+  ]
 }
 
 /// Converts grid coordinates (row, col) to a node ID.
