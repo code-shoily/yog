@@ -22,10 +22,8 @@ import yog/model.{type Graph, type NodeId}
 /// // or Error(Nil)         // Cycle detected
 /// ```
 pub fn topological_sort(graph: Graph(n, e)) -> Result(List(NodeId), Nil) {
-  // 1. Get all unique NodeIds from both out_edges and in_edges
   let all_nodes = model.all_nodes(graph)
 
-  // 2. Calculate initial in-degrees
   let in_degrees =
     all_nodes
     |> list.map(fn(id) {
@@ -37,7 +35,6 @@ pub fn topological_sort(graph: Graph(n, e)) -> Result(List(NodeId), Nil) {
     })
     |> dict.from_list()
 
-  // 3. Find starting nodes (in-degree 0)
   let queue =
     dict.to_list(in_degrees)
     |> list.filter(fn(pair) { pair.1 == 0 })
@@ -74,10 +71,8 @@ pub fn lexicographical_topological_sort(
   graph: Graph(n, e),
   compare_nodes: fn(n, n) -> Order,
 ) -> Result(List(NodeId), Nil) {
-  // 1. Get all nodes from the edge maps
   let all_nodes = model.all_nodes(graph)
 
-  // 2. Initial in-degrees
   let in_degrees =
     all_nodes
     |> list.map(fn(id) {
@@ -89,16 +84,13 @@ pub fn lexicographical_topological_sort(
     })
     |> dict.from_list()
 
-  // 3. Create a comparison function that compares node data instead of IDs
   let compare_by_data = fn(id_a: NodeId, id_b: NodeId) -> Order {
     case dict.get(graph.nodes, id_a), dict.get(graph.nodes, id_b) {
       Ok(data_a), Ok(data_b) -> compare_nodes(data_a, data_b)
-      // Fallback to ID comparison if node data not found (shouldn't happen)
       _, _ -> order.Eq
     }
   }
 
-  // 4. Find initial nodes with 0 in-degree and put them in the priority queue
   let initial_queue =
     dict.to_list(in_degrees)
     |> list.filter(fn(pair) { pair.1 == 0 })
@@ -152,7 +144,6 @@ fn do_kahn(graph, queue, in_degrees, acc, total_node_count) {
       case list.length(acc) == total_node_count {
         True -> Ok(list.reverse(acc))
         False -> Error(Nil)
-        // Cycle detected!
       }
     }
     [head, ..tail] -> {

@@ -207,7 +207,6 @@ fn do_single_source_dijkstra(
   case priority_queue.pop(frontier) {
     Error(Nil) -> distances
     Ok(#(#(dist, current), rest_frontier)) -> {
-      // Check if we've already found a better path to this node
       let should_explore =
         should_explore_node(distances, current, dist, compare)
 
@@ -286,7 +285,6 @@ pub fn a_star(
   heuristic h: fn(NodeId, NodeId) -> e,
 ) -> Option(Path(e)) {
   let initial_f = h(start, goal)
-  // Queue stores #(F_Score, Actual_Dist, Path)
   let frontier =
     priority_queue.new(fn(a, b) { compare_a_star_frontier(a, b, compare) })
     |> priority_queue.push(#(initial_f, zero, [start]))
@@ -301,7 +299,6 @@ fn do_a_star(graph, goal, frontier, visited, add, compare, h) {
       case current == goal {
         True -> Some(Path(nodes: list.reverse(path), total_weight: dist))
         False -> {
-          // G-SAFE BRANCHING (No guards)
           let should_explore =
             should_explore_node(visited, current, dist, compare)
 
@@ -387,14 +384,11 @@ pub fn bellman_ford(
   with_add add: fn(e, e) -> e,
   with_compare compare: fn(e, e) -> Order,
 ) -> BellmanFordResult(e) {
-  // Get all nodes
   let all_nodes = model.all_nodes(graph)
 
-  // Initialize distances: start=0, others=infinity (represented as None)
   let initial_distances = dict.from_list([#(start, zero)])
   let initial_predecessors = dict.new()
 
-  // Run V-1 iterations of edge relaxation
   let node_count = list.length(all_nodes)
   let #(distances, predecessors) =
     relaxation_passes(
@@ -407,11 +401,9 @@ pub fn bellman_ford(
       compare,
     )
 
-  // Check for negative cycles
   case has_negative_cycle(graph, all_nodes, distances, add, compare) {
     True -> NegativeCycle
     False -> {
-      // Reconstruct path
       case dict.get(distances, goal) {
         Error(Nil) -> NoPath
         Ok(dist) -> {
@@ -437,7 +429,6 @@ fn relaxation_passes(
   case remaining <= 0 {
     True -> #(distances, predecessors)
     False -> {
-      // Relax all edges
       let #(new_distances, new_predecessors) =
         list.fold(nodes, #(distances, predecessors), fn(acc, u) {
           let #(dists, preds) = acc
@@ -445,7 +436,6 @@ fn relaxation_passes(
           case dict.get(dists, u) {
             Error(Nil) -> acc
             Ok(u_dist) -> {
-              // Get all outgoing edges from u
               let neighbors = model.successors(graph, u)
 
               list.fold(neighbors, #(dists, preds), fn(inner_acc, edge) {
@@ -454,20 +444,16 @@ fn relaxation_passes(
                 let new_dist = add(u_dist, weight)
 
                 case dict.get(curr_dists, v) {
-                  Error(Nil) ->
-                    // v not reached yet, update it
-                    #(
-                      dict.insert(curr_dists, v, new_dist),
-                      dict.insert(curr_preds, v, u),
-                    )
+                  Error(Nil) -> #(
+                    dict.insert(curr_dists, v, new_dist),
+                    dict.insert(curr_preds, v, u),
+                  )
                   Ok(v_dist) ->
                     case compare(new_dist, v_dist) {
-                      Lt ->
-                        // Found shorter path
-                        #(
-                          dict.insert(curr_dists, v, new_dist),
-                          dict.insert(curr_preds, v, u),
-                        )
+                      Lt -> #(
+                        dict.insert(curr_dists, v, new_dist),
+                        dict.insert(curr_preds, v, u),
+                      )
                       _ -> inner_acc
                     }
                 }
@@ -496,8 +482,6 @@ fn has_negative_cycle(
   add: fn(e, e) -> e,
   compare: fn(e, e) -> Order,
 ) -> Bool {
-  // Try to relax edges one more time
-  // If any edge can still be relaxed, there's a negative cycle
   list.any(nodes, fn(u) {
     case dict.get(distances, u) {
       Error(Nil) -> False
@@ -632,8 +616,6 @@ pub fn floyd_warshall(
 ) -> Result(Dict(#(NodeId, NodeId), e), Nil) {
   let nodes = dict.keys(graph.nodes)
 
-  // Initialize distances: direct edges + zero distance to self
-  // Using flat dictionary with composite keys for better performance
   let initial_distances =
     nodes
     |> list.fold(dict.new(), fn(distances, i) {
@@ -641,14 +623,10 @@ pub fn floyd_warshall(
       |> list.fold(distances, fn(distances, j) {
         case i == j {
           True -> {
-            // Self-distance: check for self-loop edge
             case dict.get(graph.out_edges, i) {
               Ok(neighbors) ->
                 case dict.get(neighbors, j) {
                   Ok(weight) -> {
-                    // Self-loop exists: use min(zero, weight)
-                    // If weight < 0, use it (will be detected as negative cycle)
-                    // If weight > 0, use zero (staying put is shorter)
                     case compare(weight, zero) {
                       Lt -> dict.insert(distances, #(i, j), weight)
                       _ -> dict.insert(distances, #(i, j), zero)
@@ -660,7 +638,6 @@ pub fn floyd_warshall(
             }
           }
           False -> {
-            // Different nodes: check if there's a direct edge from i to j
             case dict.get(graph.out_edges, i) {
               Ok(neighbors) ->
                 case dict.get(neighbors, j) {
@@ -674,7 +651,6 @@ pub fn floyd_warshall(
       })
     })
 
-  // Floyd-Warshall: for each intermediate node k, try routing through k
   let final_distances =
     nodes
     |> list.fold(initial_distances, fn(distances, k) {
@@ -682,7 +658,6 @@ pub fn floyd_warshall(
       |> list.fold(distances, fn(distances, i) {
         nodes
         |> list.fold(distances, fn(distances, j) {
-          // Try path i -> k -> j
           case dict.get(distances, #(i, k)) {
             Error(Nil) -> distances
             Ok(dist_ik) -> {
@@ -691,11 +666,8 @@ pub fn floyd_warshall(
                 Ok(dist_kj) -> {
                   let new_dist = add(dist_ik, dist_kj)
                   case dict.get(distances, #(i, j)) {
-                    Error(Nil) ->
-                      // No existing path, use new path
-                      dict.insert(distances, #(i, j), new_dist)
+                    Error(Nil) -> dict.insert(distances, #(i, j), new_dist)
                     Ok(current_dist) -> {
-                      // Compare and keep shorter path
                       case compare(new_dist, current_dist) {
                         Lt -> dict.insert(distances, #(i, j), new_dist)
                         _ -> distances
@@ -710,7 +682,6 @@ pub fn floyd_warshall(
       })
     })
 
-  // Check for negative cycles: if distance[i][i] < 0 for any i
   case detect_negative_cycle(final_distances, nodes, zero, compare) {
     True -> Error(Nil)
     False -> Ok(final_distances)
@@ -821,7 +792,6 @@ pub fn distance_matrix(
   // Crossover heuristic: P > V/3
   case num_pois * 3 > num_nodes {
     True -> {
-      // Dense POIs: Use Floyd-Warshall and filter to POI pairs
       case
         floyd_warshall(
           in: graph,
