@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 2026-03-05 - 2.2.1 (Unreleased)
 
+### Added
+
+- **Top-level ergonomics**: Re-exported common functions and types from `yog/traversal` and `yog/transform` in the main `yog` module.
+  - Traversal: `walk`, `walk_until`, `fold_walk`, `Order`, `BreadthFirst`, `DepthFirst`, etc.
+  - Transform: `transpose`, `map_nodes`, `map_edges`, `filter_nodes`, `filter_edges`, `subgraph`, `merge`, `contract`, `to_directed`, `to_undirected`, `complement`.
+
+### Fixed
+
+- **`builder/grid` predicates**: Fixed `avoiding`, `walkable`, and `including` to properly filter both the source and destination cells. Previously, they only checked the destination, which allowed invalid cells (like walls) to have outgoing edges.
+
 ### Performance
 
 - **`mst.kruskal()`**: Optimized disjoint set initialization by removing redundant node ID extraction and pre-population. Since `disjoint_set.find` automatically adds missing nodes, starting with an empty set is sufficient and prevents unnecessary upfront allocations.
