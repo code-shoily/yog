@@ -387,10 +387,10 @@ pub fn find_node(
   })
 }
 
-/// Allows movement into any cell except the specified wall value.
+/// Allows movement between any cells except the specified wall value.
 ///
 /// Useful for maze-style grids where `"#"` or similar marks a wall.
-/// The `from` cell is ignored — only the destination is checked.
+/// Both the source and destination cells must not be the wall value.
 ///
 /// ## Example
 ///
@@ -406,14 +406,14 @@ pub fn find_node(
 /// // Edges only connect non-wall cells
 /// ```
 pub fn avoiding(wall_value: cell_data) -> fn(cell_data, cell_data) -> Bool {
-  fn(_from, to) { to != wall_value }
+  fn(from, to) { from != wall_value && to != wall_value }
 }
 
-/// Allows movement only into cells matching the specified value.
+/// Allows movement only between cells matching the specified value.
 ///
 /// The inverse of `avoiding` — instead of blacklisting one value,
-/// this whitelists exactly one value. Useful when the grid has many
-/// different cell types but only one is traversable.
+/// this whitelists exactly one value. Both the source and destination
+/// cells must match the valid value.
 ///
 /// ## Example
 ///
@@ -429,7 +429,7 @@ pub fn avoiding(wall_value: cell_data) -> fn(cell_data, cell_data) -> Bool {
 /// // Only "." → "." edges exist
 /// ```
 pub fn walkable(valid_value: cell_data) -> fn(cell_data, cell_data) -> Bool {
-  fn(_from, to) { to == valid_value }
+  fn(from, to) { from == valid_value && to == valid_value }
 }
 
 /// Always allows movement between adjacent cells.
@@ -448,4 +448,29 @@ pub fn walkable(valid_value: cell_data) -> fn(cell_data, cell_data) -> Bool {
 /// ```
 pub fn always() -> fn(cell_data, cell_data) -> Bool {
   fn(_from, _to) { True }
+}
+
+/// Allows movement only between cells matching any of the specified values.
+///
+/// A multi-value version of `walkable`. Both the source and destination
+/// cells must be included in the valid values list.
+///
+/// ## Example
+///
+/// ```gleam
+/// // Grid where both "." and "P" are walkable
+/// let terrain = [
+///   [".", "P", "#"],
+///   ["#", ".", "."],
+/// ]
+///
+/// let g = grid.from_2d_list(terrain, model.Directed, can_move: grid.including([".", "P"]))
+/// // Edges exist between any combination of "." and "P"
+/// ```
+pub fn including(
+  valid_values: List(cell_data),
+) -> fn(cell_data, cell_data) -> Bool {
+  fn(from, to) {
+    list.contains(valid_values, from) && list.contains(valid_values, to)
+  }
 }

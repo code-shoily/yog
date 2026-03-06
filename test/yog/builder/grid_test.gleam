@@ -282,19 +282,19 @@ pub fn avoiding_blocks_walls_test() {
   |> should.equal(2)
 }
 
-pub fn avoiding_allows_movement_from_wall_test() {
-  // avoiding only checks the destination, not the source
+pub fn avoiding_blocks_movement_from_wall_test() {
+  // avoiding checks both from and to, blocking movement from the wall
   let maze = [["#", "."]]
 
   let g = grid.from_2d_list(maze, model.Directed, can_move: grid.avoiding("#"))
   let graph = grid.to_graph(g)
 
-  // From "#" at (0,0), can move to "." at (0,1) because destination is not "#"
+  // From "#" at (0,0), cannot move to "." at (0,1) because source is "#"
   let wall_successors = yog.successors(graph, grid.coord_to_id(0, 0, 2))
   wall_successors
   |> list.map(fn(s) { s.0 })
   |> list.contains(grid.coord_to_id(0, 1, 2))
-  |> should.be_true
+  |> should.be_false
 }
 
 pub fn walkable_only_allows_matching_cells_test() {
@@ -324,18 +324,18 @@ pub fn walkable_only_allows_matching_cells_test() {
 }
 
 pub fn walkable_blocks_movement_from_non_matching_test() {
-  // walkable only checks destination, so "~" can still move to "."
+  // walkable checks both from and to, so "~" cannot move to "."
   let terrain = [["~", "."]]
 
   let g =
     grid.from_2d_list(terrain, model.Directed, can_move: grid.walkable("."))
   let graph = grid.to_graph(g)
 
-  // From "~" at (0,0), can still move to "." at (0,1)
+  // From "~" at (0,0), cannot move to "." at (0,1)
   let successors = yog.successors(graph, grid.coord_to_id(0, 0, 2))
   successors
   |> list.length
-  |> should.equal(1)
+  |> should.equal(0)
 }
 
 pub fn always_connects_all_adjacent_cells_test() {
@@ -517,4 +517,31 @@ pub fn rook_matches_from_2d_list_test() {
       |> list.sort(int.compare)
     s1 |> should.equal(s2)
   })
+}
+
+pub fn including_allows_multiple_cell_types_test() {
+  // ".", "S", and "E" should be walkable, while "#" is not
+  let maze = [["S", "#"], [".", "E"]]
+
+  let g =
+    grid.from_2d_list(
+      maze,
+      model.Directed,
+      can_move: grid.including([".", "S", "E"]),
+    )
+  let graph = grid.to_graph(g)
+
+  // From "S" at (0,0), can reach "E" at (1,1) via "." at (1,0)
+  // (0,0)="S" -> (1,0)="." (down) YES, (0,1)="#" (right) NO
+  let start_successors = yog.successors(graph, grid.coord_to_id(0, 0, 2))
+  start_successors
+  |> list.map(fn(s) { s.0 })
+  |> should.equal([grid.coord_to_id(1, 0, 2)])
+
+  // From (1,0)=".", can reach (0,0)="S" (up) and (1,1)="E" (right)
+  let mid_successors = yog.successors(graph, grid.coord_to_id(1, 0, 2))
+  mid_successors
+  |> list.map(fn(s) { s.0 })
+  |> list.sort(int.compare)
+  |> should.equal([grid.coord_to_id(0, 0, 2), grid.coord_to_id(1, 1, 2)])
 }
