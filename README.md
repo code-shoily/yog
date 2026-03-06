@@ -14,16 +14,17 @@ In the world of computer science, this is the literal definition of Graph Theory
 ## Features
 
 - **Graph Data Structures**: Directed and undirected graphs with generic node and edge data
-- **Pathfinding Algorithms**: Dijkstra, A*, Bellman-Ford, Floyd-Warshall
+- **Pathfinding Algorithms**: Dijkstra, A*, Bellman-Ford, Floyd-Warshall, and **Implicit Variants** (state-space search)
 - **Maximum Flow**: Highly optimized Edmonds-Karp algorithm with flat dictionary residuals
 - **Graph Generators**: Create classic patterns (complete, cycle, path, star, wheel, bipartite, trees, grids) and random graphs (Erdős-Rényi, Barabási-Albert, Watts-Strogatz)
-- **Graph Traversal**: BFS and DFS with early termination support
+- **Graph Traversal**: BFS and DFS with early termination and **Implicit Variants**
 - **Graph Transformations**: Transpose (O(1)!), map, filter, merge, subgraph extraction, edge contraction
 - **Graph Visualization**: Mermaid, DOT (Graphviz), and JSON rendering
-- **Minimum Spanning Tree**: Kruskal's algorithm with Union-Find
+- **Minimum Spanning Tree**: Kruskal's and Prim's algorithms with Union-Find and Priority Queues
 - **Minimum Cut**: Stoer-Wagner algorithm for global min-cut
 - **Topological Sorting**: Kahn's algorithm with lexicographical variant
-- **Strongly Connected Components**: Tarjan's algorithm
+- **Strongly Connected Components**: Tarjan's and Kosaraju's algorithms
+- **Maximum Clique**: Bron-Kerbosch algorithm for maximal and all maximal cliques
 - **Connectivity**: Bridge and articulation point detection
 - **Eulerian Paths & Circuits**: Detection and finding using Hierholzer's algorithm
 - **Bipartite Graphs**: Detection, maximum matching, and stable marriage (Gale-Shapley)
@@ -140,6 +141,10 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 | **Hierholzer** | Eulerian paths/circuits, route planning | O(V+E) |
 | **Topological Sort** | Ordering tasks with dependencies | O(V+E) |
 | **Gale-Shapley** | Stable matching, college admissions, medical residency | O(n²) |
+| **Prim's MST** | Minimum spanning tree (starts from node) | O(E log V) |
+| **Kosaraju's SCC** | Strongly connected components (two-pass) | O(V+E) |
+| **Bron-Kerbosch** | Maximum and all maximal cliques | O(3^(n/3)) |
+| **Implicit Search** | Pathfinding/Traversal on on-demand graphs | O((V+E) log V) |
 
 ## Performance Characteristics
 
