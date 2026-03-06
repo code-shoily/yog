@@ -120,6 +120,7 @@
 
 import gleam/list
 import yog/model
+import yog/transform
 import yog/traversal
 
 // Re-export commonly used types for convenience
@@ -131,6 +132,25 @@ pub type NodeId =
 
 pub type GraphType =
   model.GraphType
+
+pub type Order =
+  traversal.Order
+
+pub const breadth_first = traversal.BreadthFirst
+
+pub const depth_first = traversal.DepthFirst
+
+pub type WalkControl =
+  traversal.WalkControl
+
+pub const continue = traversal.Continue
+
+pub const stop = traversal.Stop
+
+pub const halt = traversal.Halt
+
+pub type WalkMetadata(nid) =
+  traversal.WalkMetadata(nid)
 
 // Re-export core graph operations for convenience
 // This allows users to do: import yog; yog.new(Directed)
@@ -413,4 +433,110 @@ pub fn is_cyclic(graph: Graph(n, e)) -> Bool {
 /// ```
 pub fn is_acyclic(graph: Graph(n, e)) -> Bool {
   traversal.is_acyclic(graph)
+}
+
+// Re-export traversal operations
+pub fn walk(
+  from start_id: NodeId,
+  in graph: Graph(n, e),
+  using order: Order,
+) -> List(NodeId) {
+  traversal.walk(from: start_id, in: graph, using: order)
+}
+
+pub fn walk_until(
+  from start_id: NodeId,
+  in graph: Graph(n, e),
+  using order: Order,
+  until should_stop: fn(NodeId) -> Bool,
+) -> List(NodeId) {
+  traversal.walk_until(
+    from: start_id,
+    in: graph,
+    using: order,
+    until: should_stop,
+  )
+}
+
+pub fn fold_walk(
+  over graph: Graph(n, e),
+  from start: NodeId,
+  using order: Order,
+  initial acc: a,
+  with folder: fn(a, NodeId, WalkMetadata(NodeId)) -> #(WalkControl, a),
+) -> a {
+  traversal.fold_walk(
+    over: graph,
+    from: start,
+    using: order,
+    initial: acc,
+    with: folder,
+  )
+}
+
+// Re-export transform operations
+pub fn transpose(graph: Graph(n, e)) -> Graph(n, e) {
+  transform.transpose(graph)
+}
+
+pub fn map_nodes(graph: Graph(n, e), with fun: fn(n) -> m) -> Graph(m, e) {
+  transform.map_nodes(graph, with: fun)
+}
+
+pub fn map_edges(graph: Graph(n, e), with fun: fn(e) -> f) -> Graph(n, f) {
+  transform.map_edges(graph, with: fun)
+}
+
+pub fn filter_nodes(
+  graph: Graph(n, e),
+  keeping predicate: fn(n) -> Bool,
+) -> Graph(n, e) {
+  transform.filter_nodes(graph, keeping: predicate)
+}
+
+pub fn filter_edges(
+  graph: Graph(n, e),
+  keeping predicate: fn(NodeId, NodeId, e) -> Bool,
+) -> Graph(n, e) {
+  transform.filter_edges(graph, keeping: predicate)
+}
+
+pub fn complement(
+  graph: Graph(n, e),
+  default_weight default_weight: e,
+) -> Graph(n, e) {
+  transform.complement(graph, default_weight: default_weight)
+}
+
+pub fn merge(base: Graph(n, e), other: Graph(n, e)) -> Graph(n, e) {
+  transform.merge(base, other)
+}
+
+pub fn subgraph(graph: Graph(n, e), keeping ids: List(NodeId)) -> Graph(n, e) {
+  transform.subgraph(graph, keeping: ids)
+}
+
+pub fn contract(
+  in graph: Graph(n, e),
+  merge a: NodeId,
+  with b: NodeId,
+  combine_weights with_combine: fn(e, e) -> e,
+) -> Graph(n, e) {
+  transform.contract(
+    in: graph,
+    merge: a,
+    with: b,
+    combine_weights: with_combine,
+  )
+}
+
+pub fn to_directed(graph: Graph(n, e)) -> Graph(n, e) {
+  transform.to_directed(graph)
+}
+
+pub fn to_undirected(
+  graph: Graph(n, e),
+  resolve resolve: fn(e, e) -> e,
+) -> Graph(n, e) {
+  transform.to_undirected(graph, resolve: resolve)
 }
