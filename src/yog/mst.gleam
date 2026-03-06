@@ -28,12 +28,10 @@ pub fn kruskal(
   in graph: Graph(n, e),
   with_compare compare: fn(e, e) -> Order,
 ) -> List(Edge(e)) {
-  let node_ids = dict.keys(graph.nodes)
   let edges =
     dict.fold(graph.out_edges, [], fn(acc, from_id, targets) {
       let inner_edges =
         dict.fold(targets, [], fn(inner_acc, to_id, weight) {
-          // For Undirected, only keep edges where from < to to avoid duplicates
           case graph.kind == Undirected && from_id > to_id {
             True -> inner_acc
             False -> [
@@ -46,8 +44,7 @@ pub fn kruskal(
     })
     |> list.sort(fn(a, b) { compare(a.weight, b.weight) })
 
-  let initial_disjoint_set =
-    list.fold(node_ids, disjoint_set.new(), disjoint_set.add)
+  let initial_disjoint_set = disjoint_set.new()
 
   do_kruskal(edges, initial_disjoint_set, [])
 }
@@ -99,15 +96,12 @@ pub fn prim(
   case node_ids {
     [] -> []
     [start, ..] -> {
-      // Create priority queue with edge comparison
       let edge_compare = fn(a: Edge(e), b: Edge(e)) {
         compare(a.weight, b.weight)
       }
 
       let initial_pq = priority_queue.new(edge_compare)
       let initial_visited = set.from_list([start])
-
-      // Add all edges from the start node to the priority queue
       let initial_edges = get_all_edges_from_node(graph, start)
       let pq_with_initial_edges =
         list.fold(initial_edges, initial_pq, fn(pq, edge) {
@@ -128,15 +122,12 @@ fn do_prim(
   case priority_queue.pop(pq) {
     Error(Nil) -> list.reverse(acc)
     Ok(#(edge, rest_pq)) -> {
-      // Skip if the target node is already visited
       case set.contains(visited, edge.to) {
         True -> do_prim(graph, rest_pq, visited, acc)
         False -> {
-          // Add the edge to MST and mark node as visited
           let new_visited = set.insert(visited, edge.to)
           let new_acc = [edge, ..acc]
 
-          // Add all edges from the newly visited node to unvisited nodes
           let new_edges = get_all_edges_from_node(graph, edge.to)
           let filtered_edges =
             list.filter(new_edges, fn(e) { !set.contains(new_visited, e.to) })
