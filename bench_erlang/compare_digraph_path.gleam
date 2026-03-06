@@ -1,16 +1,16 @@
 ////  Yog vs Erlang digraph - Shortest Path Comparison
 ////
-//// This benchmark is Erlang-only and must be copied to src/internal/bench/ first:
-////   cp bench_erlang/compare_digraph_path.gleam src/internal/bench/
+//// This benchmark is Erlang-only and must be copied to src/yog/internal/bench/ first:
+////   cp bench_erlang/compare_digraph_path.gleam src/yog/internal/bench/
 ////   gleam run -m internal/bench/compare_digraph_path
-////   rm src/internal/bench/compare_digraph_path.gleam
+////   rm src/yog/internal/bench/compare_digraph_path.gleam
 
 import gleam/dict
 import gleam/int
 import gleam/io
 import gleam/list
 import gleamy/bench
-import internal/bench/bench_utils
+import yog/internal/bench/bench_utils
 import yog/model.{type Graph}
 import yog/pathfinding
 

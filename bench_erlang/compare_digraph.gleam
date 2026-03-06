@@ -2,17 +2,17 @@
 ////
 //// Compares Yog's SCC implementation against Erlang's built-in digraph
 ////
-//// This benchmark is Erlang-only and must be copied to src/internal/bench/ first:
-////   cp bench_erlang/compare_digraph.gleam src/internal/bench/
+//// This benchmark is Erlang-only and must be copied to src/yog/internal/bench/ first:
+////   cp bench_erlang/compare_digraph.gleam src/yog/internal/bench/
 ////   gleam run -m internal/bench/compare_digraph
-////   rm src/internal/bench/compare_digraph.gleam
+////   rm src/yog/internal/bench/compare_digraph.gleam
 
 import gleam/dict
 import gleam/io
 import gleam/list
 import gleamy/bench
-import internal/bench/bench_utils
 import yog/components
+import yog/internal/bench/bench_utils
 import yog/model.{type Graph}
 
 // Erlang digraph FFI

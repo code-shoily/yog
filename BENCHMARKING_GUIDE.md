@@ -13,7 +13,7 @@ gleam run -m internal/bench/simple_pathfinding
 ### Create Your Own
 
 ```bash
-cp src/internal/bench/simple_pathfinding.gleam src/internal/bench/my_benchmark.gleam
+cp src/yog/internal/bench/simple_pathfinding.gleam src/yog/internal/bench/my_benchmark.gleam
 # Edit my_benchmark.gleam
 gleam run -m internal/bench/my_benchmark
 ```
@@ -23,7 +23,7 @@ gleam run -m internal/bench/my_benchmark
 ```gleam
 import gleam/int
 import gleamy/bench
-import internal/bench/bench_utils
+import yog/internal/bench/bench_utils
 import yog/pathfinding
 
 pub fn main() {
@@ -278,12 +278,12 @@ io.println("Complexity: O(E log V) vs O(VE)\n")
 - Run multiple times
 
 ### Module not found
-- File must be in `src/internal/bench/`
+- File must be in `src/yog/internal/bench/`
 - Run: `gleam run -m internal/bench/filename`
 
 ## Why `internal/bench`?
 
-Benchmarks are in `src/internal/bench/` to:
+Benchmarks are in `src/yog/internal/bench/` to:
 - Keep them out of Yog's public API
 - Prevent pollution of user imports/autocomplete
 - Still allow individual execution: `gleam run -m internal/bench/...`
@@ -309,7 +309,7 @@ Keep target-specific benchmarks **outside** `src/`:
 - ✅ `bench_erlang/` preserves powerful Erlang comparisons
 - ✅ Files keep `.gleam` extension (IDE support, syntax highlighting)
 - ✅ Gleam ignores them (only compiles `src/`)
-- ✅ Copy when needed: `cp bench_erlang/compare_digraph_acyclic.gleam src/internal/bench/`
+- ✅ Copy when needed: `cp bench_erlang/compare_digraph_acyclic.gleam src/yog/internal/bench/`
 
 ### Future: `bench_javascript/`?
 
@@ -324,7 +324,7 @@ This structure lets us maintain comprehensive, target-specific benchmarks while 
 
 - [gleamy_bench documentation](https://hexdocs.pm/gleamy_bench/)
 - [Yog documentation](https://hexdocs.pm/yog/)
-- Example: `src/internal/bench/simple_pathfinding.gleam`
+- Example: `src/yog/internal/bench/simple_pathfinding.gleam`
 
 ---
 

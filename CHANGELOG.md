@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-03-05 - 2.2.1 (Unreleased)
+
+### Performance
+
+- **`mst.kruskal()`**: Optimized disjoint set initialization by removing redundant node ID extraction and pre-population. Since `disjoint_set.find` automatically adds missing nodes, starting with an empty set is sufficient and prevents unnecessary upfront allocations.
+
+### Changed
+
+- **Benchmark structure**: Moved internal benchmarks from `src/internal/bench` to `src/yog/internal/bench` to comply with Gleam's `internal` visibility rules (internal modules are only restricted when nested within their parent module's directory).
+- **Documentation**: Updated all benchmark docstrings and guides to reflect the new internal path structure.
+
 ## 2026-03-04 - 2.2.0
 
 ### Fixed

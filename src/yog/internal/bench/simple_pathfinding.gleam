@@ -6,7 +6,7 @@
 import gleam/int
 import gleam/io
 import gleamy/bench
-import internal/bench/bench_utils
+import yog/internal/bench/bench_utils
 import yog/model.{type Graph}
 import yog/pathfinding
 

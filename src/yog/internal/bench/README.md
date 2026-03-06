@@ -9,7 +9,7 @@ Internal benchmarking suite for Yog graph algorithms.
 gleam run -m internal/bench/simple_pathfinding
 
 # Create your own
-cp src/internal/bench/simple_pathfinding.gleam src/internal/bench/my_benchmark.gleam
+cp src/yog/internal/bench/simple_pathfinding.gleam src/yog/internal/bench/my_benchmark.gleam
 gleam run -m internal/bench/my_benchmark
 ```
 
@@ -23,20 +23,20 @@ gleam run -m internal/bench/my_benchmark
 The `bench_erlang/` directory at the project root contains benchmarks that compare Yog algorithms with Erlang's `:digraph` module. These benchmarks are only compatible with the Erlang target and won't compile for JavaScript.
 
 To run these benchmarks:
-1. Copy the desired benchmark file from `bench_erlang/` to `src/internal/bench/`
+1. Copy the desired benchmark file from `bench_erlang/` to `src/yog/internal/bench/`
 2. Run the benchmark with `gleam run -m internal/bench/compare_digraph_<name>`
 3. Delete the copied file when done (to keep the codebase JS-compatible)
 
 Example:
 ```bash
 # Copy the benchmark
-cp bench_erlang/compare_digraph_acyclic.gleam src/internal/bench/
+cp bench_erlang/compare_digraph_acyclic.gleam src/yog/internal/bench/
 
 # Run it
 gleam run -m internal/bench/compare_digraph_acyclic
 
 # Clean up
-rm src/internal/bench/compare_digraph_acyclic.gleam
+rm src/yog/internal/bench/compare_digraph_acyclic.gleam
 ```
 
 ## Documentation
@@ -63,7 +63,7 @@ See **`BENCHMARKING_GUIDE.md`** in the project root for:
 
 ### Graph Generators
 ```gleam
-import internal/bench/bench_utils
+import yog/internal/bench/bench_utils
 
 // Random
 bench_utils.random_graph(size, density, seed)
@@ -79,7 +79,7 @@ bench_utils.bipartite_graph(left, right)
 ```gleam
 import gleam/int
 import gleamy/bench
-import internal/bench/bench_utils
+import yog/internal/bench/bench_utils
 import yog/pathfinding
 
 pub fn main() {
