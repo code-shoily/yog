@@ -22,7 +22,8 @@ In the world of computer science, this is the literal definition of Graph Theory
 - **Graph Visualization**: Mermaid, DOT (Graphviz), and JSON rendering
 - **Minimum Spanning Tree**: Kruskal's and Prim's algorithms with Union-Find and Priority Queues
 - **Minimum Cut**: Stoer-Wagner algorithm for global min-cut
-- **Topological Sorting**: Kahn's algorithm with lexicographical variant
+- **Directed Acyclic Graphs (DAG)**: Strictly-validated `Dag(n, e)` wrapper bringing O(V+E) DP routines like `longest_path` (Critical Path), LCA, and transitive structures
+- **Topological Sorting**: Kahn's algorithm with lexicographical variant, alongside guaranteed cycle-free DAG-specific sorts
 - **Strongly Connected Components**: Tarjan's and Kosaraju's algorithms
 - **Maximum Clique**: Bron-Kerbosch algorithm for maximal and all maximal cliques
 - **Connectivity**: Bridge and articulation point detection
@@ -139,6 +140,7 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 | **Tarjan's SCC** | Finding strongly connected components | O(V+E) |
 | **Tarjan's Connectivity** | Finding bridges and articulation points | O(V+E) |
 | **Hierholzer** | Eulerian paths/circuits, route planning | O(V+E) |
+| **DAG Longest Path** | Critical path analysis on strictly directed acyclic graphs | O(V+E) |
 | **Topological Sort** | Ordering tasks with dependencies | O(V+E) |
 | **Gale-Shapley** | Stable matching, college admissions, medical residency | O(n²) |
 | **Prim's MST** | Minimum spanning tree (starts from node) | O(E log V) |
@@ -154,7 +156,7 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 - **Maximum Flow**: Flat dictionary residuals with O(1) amortized BFS queue operations
 - **Graph Generators**: O(V²) for complete graphs, O(V) or O(VE) for others
 - **Stable Marriage**: O(n²) Gale-Shapley with deterministic proposal ordering
-- **Test Suite**: 681 tests pass in ~2 seconds
+- **Test Suite**: 730 tests pass in ~2 seconds
 
 ## AI Assistance
 
