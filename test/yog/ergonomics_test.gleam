@@ -14,11 +14,11 @@ pub fn ergonomics_pipeline_test() {
   // Re-exported from transform
 
   // Verify re-exported traversal
-  let path = yog.walk(from: 1, using: yog.breadth_first, in: graph)
+  let path = yog.walk(in: graph, from: 1, using: yog.breadth_first)
   path |> should.equal([1])
   // 1 is now a sink since edges were 1->2 and 2->3, reversed it's 2->1 and 3->2
 
-  let reachable = yog.walk(from: 3, using: yog.breadth_first, in: graph)
+  let reachable = yog.walk(in: graph, from: 3, using: yog.breadth_first)
   reachable |> should.equal([3, 2, 1])
 }
 

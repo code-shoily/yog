@@ -437,40 +437,35 @@ pub fn is_acyclic(graph: Graph(n, e)) -> Bool {
 
 // Re-export traversal operations
 pub fn walk(
+  in graph: Graph(n, e),
   from start_id: NodeId,
   using order: Order,
-  in graph: Graph(n, e),
 ) -> List(NodeId) {
-  traversal.walk(from: start_id, using: order, in: graph)
+  traversal.walk(graph, from: start_id, using: order)
 }
 
 pub fn walk_until(
+  in graph: Graph(n, e),
   from start_id: NodeId,
   using order: Order,
   until should_stop: fn(NodeId) -> Bool,
-  in graph: Graph(n, e),
 ) -> List(NodeId) {
-  traversal.walk_until(
-    from: start_id,
-    using: order,
-    until: should_stop,
-    in: graph,
-  )
+  traversal.walk_until(graph, from: start_id, using: order, until: should_stop)
 }
 
 pub fn fold_walk(
+  over graph: Graph(n, e),
   from start: NodeId,
   using order: Order,
   initial acc: a,
   with folder: fn(a, NodeId, WalkMetadata(NodeId)) -> #(WalkControl, a),
-  over graph: Graph(n, e),
 ) -> a {
   traversal.fold_walk(
+    graph,
     from: start,
     using: order,
     initial: acc,
     with: folder,
-    over: graph,
   )
 }
 

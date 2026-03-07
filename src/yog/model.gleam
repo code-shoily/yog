@@ -261,6 +261,23 @@ pub fn remove_node(graph: Graph(n, e), id: NodeId) -> Graph(n, e) {
   Graph(..graph, nodes: new_nodes, out_edges: new_out_cleaned, in_edges: new_in)
 }
 
+/// Removes an edge between `src` and `dst`.
+pub fn remove_edge(
+  graph: Graph(node_data, edge_data),
+  src: NodeId,
+  dst: NodeId,
+) -> Graph(node_data, edge_data) {
+  let new_out = case dict.get(graph.out_edges, src) {
+    Ok(targets) -> dict.insert(graph.out_edges, src, dict.delete(targets, dst))
+    Error(_) -> graph.out_edges
+  }
+  let new_in = case dict.get(graph.in_edges, dst) {
+    Ok(sources) -> dict.insert(graph.in_edges, dst, dict.delete(sources, src))
+    Error(_) -> graph.in_edges
+  }
+  Graph(..graph, out_edges: new_out, in_edges: new_in)
+}
+
 /// Adds an edge, but if an edge already exists between `src` and `dst`,
 /// it combines the new weight with the existing one using `with_combine`.
 ///

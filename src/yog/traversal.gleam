@@ -143,24 +143,24 @@ fn check_undirected_cycle(
 ///
 /// ```gleam
 /// // BFS traversal
-/// traversal.walk(from: 1, in: graph, using: BreadthFirst)
+/// traversal.walk(graph, from: 1, using: BreadthFirst)
 /// // => [1, 2, 3, 4, 5]
 ///
 /// // DFS traversal
-/// traversal.walk(from: 1, in: graph, using: DepthFirst)
+/// traversal.walk(graph, from: 1, using: DepthFirst)
 /// // => [1, 2, 4, 5, 3]
 /// ```
 pub fn walk(
+  in graph: Graph(n, e),
   from start_id: NodeId,
   using order: Order,
-  in graph: Graph(n, e),
 ) -> List(NodeId) {
   fold_walk(
+    over: graph,
     from: start_id,
     using: order,
     initial: [],
     with: fn(acc, node_id, _meta) { #(Continue, [node_id, ..acc]) },
-    over: graph,
   )
   |> list.reverse()
 }
@@ -175,19 +175,20 @@ pub fn walk(
 /// ```gleam
 /// // Stop when we find node 5
 /// traversal.walk_until(
+///   graph,
 ///   from: 1,
-///   in: graph,
 ///   using: BreadthFirst,
 ///   until: fn(node) { node == 5 }
 /// )
 /// ```
 pub fn walk_until(
+  in graph: Graph(n, e),
   from start_id: NodeId,
   using order: Order,
   until should_stop: fn(NodeId) -> Bool,
-  in graph: Graph(n, e),
 ) -> List(NodeId) {
   fold_walk(
+    over: graph,
     from: start_id,
     using: order,
     initial: [],
@@ -198,7 +199,6 @@ pub fn walk_until(
         False -> #(Continue, new_acc)
       }
     },
-    over: graph,
   )
   |> list.reverse()
 }
@@ -228,7 +228,7 @@ pub fn walk_until(
 ///
 /// // Find all nodes within distance 3 from start
 /// let nearby = traversal.fold_walk(
-///   over: graph,
+///   graph,
 ///   from: 1,
 ///   using: BreadthFirst,
 ///   initial: dict.new(),
@@ -242,7 +242,7 @@ pub fn walk_until(
 ///
 /// // Stop immediately when target is found (like walk_until)
 /// let path_to_target = traversal.fold_walk(
-///   over: graph,
+///   graph,
 ///   from: start,
 ///   using: BreadthFirst,
 ///   initial: [],
@@ -257,7 +257,7 @@ pub fn walk_until(
 ///
 /// // Build a parent map for path reconstruction
 /// let parents = traversal.fold_walk(
-///   over: graph,
+///   graph,
 ///   from: start,
 ///   using: BreadthFirst,
 ///   initial: dict.new(),
@@ -272,7 +272,7 @@ pub fn walk_until(
 ///
 /// // Count nodes at each depth level
 /// let depth_counts = traversal.fold_walk(
-///   over: graph,
+///   graph,
 ///   from: root,
 ///   using: BreadthFirst,
 ///   initial: dict.new(),
@@ -291,11 +291,11 @@ pub fn walk_until(
 /// - Computing statistics during traversal (depth distribution, etc.)
 /// - BFS/DFS with early termination based on accumulated state
 pub fn fold_walk(
+  over graph: Graph(n, e),
   from start: NodeId,
   using order: Order,
   initial acc: a,
   with folder: fn(a, NodeId, WalkMetadata(NodeId)) -> #(WalkControl, a),
-  over graph: Graph(n, e),
 ) -> a {
   let start_metadata = WalkMetadata(depth: 0, parent: None)
 
