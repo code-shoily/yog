@@ -1,9 +1,9 @@
 import gleam/int
 import gleam/io
 import gleam/option.{None, Some}
+import yog/io/dot
 import yog/model
 import yog/pathfinding
-import yog/render
 import yog/transform
 
 pub fn main() {
@@ -20,9 +20,9 @@ pub fn main() {
   // 1. Basic DOT output
   io.println("--- Basic DOT Output ---")
   let dot_basic =
-    render.to_dot(
+    dot.to_dot(
       graph |> transform.map_edges(int.to_string),
-      render.default_dot_options(),
+      dot.default_dot_options(),
     )
   io.println(dot_basic)
 
@@ -30,10 +30,9 @@ pub fn main() {
   io.println("\n--- DOT with Highlighted Path ---")
   case pathfinding.shortest_path(graph, 1, 3, 0, int.add, int.compare) {
     Some(path) -> {
-      let options =
-        render.path_to_dot_options(path, render.default_dot_options())
+      let options = dot.path_to_dot_options(path, dot.default_dot_options())
       let dot_highlighted =
-        render.to_dot(graph |> transform.map_edges(int.to_string), options)
+        dot.to_dot(graph |> transform.map_edges(int.to_string), options)
       io.println(dot_highlighted)
     }
     None -> io.println("No path found")

@@ -253,7 +253,7 @@ fn is_connected(graph: Graph(n, e)) -> Bool {
     Error(_) -> True
     Ok(start) -> {
       let visited =
-        traversal.walk(from: start, in: graph, using: traversal.BreadthFirst)
+        traversal.walk(from: start, using: traversal.BreadthFirst, in: graph)
       list.length(visited) == dict.size(graph.nodes)
     }
   }

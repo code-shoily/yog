@@ -1,6 +1,6 @@
 import gleam/io
 import gleam/string
-import yog/components
+import yog/connectivity
 import yog/model.{Directed}
 
 pub fn main() {
@@ -15,7 +15,7 @@ pub fn main() {
     |> model.add_edge(from: 3, to: 1, with: Nil)
 
   // Find groups of mutually connected users
-  let communities = components.strongly_connected_components(social_graph)
+  let communities = connectivity.strongly_connected_components(social_graph)
   io.println(string.inspect(communities))
   // => [[1, 2, 3]]  // All three users form a strongly connected community
 }

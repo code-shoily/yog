@@ -15,7 +15,7 @@
 ////
 //// ```gleam
 //// import yog
-//// import yog/max_flow
+//// import yog/flow
 //// import gleam/int
 ////
 //// pub fn main() {
@@ -29,7 +29,7 @@
 ////     |> yog.add_edge(from: 1, to: 2, with: 2)   // A to B, capacity 2
 ////     |> yog.add_edge(from: 2, to: 3, with: 9)   // B to C, capacity 9
 ////
-////   let result = max_flow.edmonds_karp(
+////   let result = flow.edmonds_karp(
 ////     in: network,
 ////     from: 0,  // source
 ////     to: 3,    // sink
@@ -133,7 +133,7 @@ pub type MinCut {
 /// ```gleam
 /// import gleam/int
 /// import yog
-/// import yog/max_flow
+/// import yog/flow
 ///
 /// let network =
 ///   yog.directed()
@@ -148,7 +148,7 @@ pub type MinCut {
 ///   |> yog.add_edge(from: 4, to: 3, with: 7)
 ///   |> yog.add_edge(from: 4, to: 5, with: 4)
 ///
-/// let result = max_flow.edmonds_karp(
+/// let result = flow.edmonds_karp(
 ///   in: network,
 ///   from: 0,
 ///   to: 5,
@@ -236,8 +236,8 @@ pub fn edmonds_karp(
 /// ## Example
 ///
 /// ```gleam
-/// let result = max_flow.edmonds_karp(...)
-/// let cut = max_flow.min_cut(result, with_zero: 0, with_compare: int.compare)
+/// let result = flow.edmonds_karp(...)
+/// let cut = flow.min_cut(result, with_zero: 0, with_compare: int.compare)
 /// // cut.source_side contains nodes on source side
 /// // cut.sink_side contains nodes on sink side
 /// ```

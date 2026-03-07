@@ -1,7 +1,7 @@
 import gleam/int
 import gleam/io
 import yog
-import yog/max_flow
+import yog/flow
 import yog/model
 
 pub fn main() {
@@ -65,7 +65,7 @@ pub fn main() {
 
   // Find maximum matching
   let result =
-    max_flow.edmonds_karp(
+    flow.edmonds_karp(
       in: network,
       from: 0,
       to: 9,

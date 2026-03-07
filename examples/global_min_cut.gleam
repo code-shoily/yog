@@ -1,6 +1,6 @@
 import gleam/int
 import gleam/io
-import yog/min_cut
+import yog/flow
 import yog/model
 
 pub fn main() {
@@ -34,7 +34,7 @@ pub fn main() {
 
   io.println("--- Global Minimum Cut ---")
 
-  let result = min_cut.global_min_cut(graph)
+  let result = flow.global_min_cut(graph)
 
   io.println("Min cut weight: " <> int.to_string(result.weight))
   io.println("Group A size: " <> int.to_string(result.group_a_size))

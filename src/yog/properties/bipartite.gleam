@@ -30,7 +30,7 @@ pub type Partition {
 ///   |> yog.add_edge(from: 2, to: 3, with: 1)
 ///   |> yog.add_edge(from: 3, to: 4, with: 1)
 ///
-/// bipartite.is_bipartite(graph)  // => True (can color as: 1,3 vs 2,4)
+/// properties.is_bipartite(graph)  // => True (can color as: 1,3 vs 2,4)
 /// ```
 ///
 /// **Time Complexity:** O(V + E)
@@ -41,14 +41,14 @@ pub fn is_bipartite(graph: Graph(n, e)) -> Bool {
   }
 }
 
-/// Returns the two partitions of a bipartite graph, or None if the graph is not bipartite.
+/// Returns the two partitions of a bipartite graph, or None if the graph is not properties.
 ///
 /// Uses BFS with 2-coloring to detect bipartiteness and construct the partitions.
-/// Handles disconnected graphs by checking all components.
+/// Handles disconnected graphs by checking all connectivity.
 ///
 /// ## Example
 /// ```gleam
-/// case bipartite.partition(graph) {
+/// case properties.partition(graph) {
 ///   Some(Partition(left, right)) -> {
 ///     // left and right are the two independent sets
 ///     io.println("Graph is bipartite!")
@@ -103,9 +103,9 @@ pub fn partition(graph: Graph(n, e)) -> Option(Partition) {
 ///   |> yog.add_edge(from: 1, to: 4, with: 1)
 ///   |> yog.add_edge(from: 2, to: 3, with: 1)
 ///
-/// case bipartite.partition(graph) {
+/// case properties.partition(graph) {
 ///   Some(p) -> {
-///     let matching = bipartite.maximum_matching(graph, p)
+///     let matching = properties.maximum_matching(graph, p)
 ///     // => [#(1, 3), #(2, 4)] or [#(1, 4), #(2, 3)]
 ///   }
 ///   None -> panic as "Not bipartite"
@@ -395,7 +395,7 @@ pub type StableMarriage {
 ///   #(103, [1, 2, 3]),
 /// ])
 ///
-/// let matching = bipartite.stable_marriage(residents, hospitals)
+/// let matching = properties.stable_marriage(residents, hospitals)
 /// case get_partner(matching, 1) {
 ///   Some(hospital) -> io.println("Resident 1 matched to hospital " <> int.to_string(hospital))
 ///   None -> io.println("Resident 1 unmatched")

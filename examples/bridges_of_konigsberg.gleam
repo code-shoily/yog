@@ -1,8 +1,8 @@
 import gleam/io
 import gleam/option.{None, Some}
 import gleam/string
-import yog/eulerian
 import yog/model
+import yog/properties
 
 pub fn main() {
   // The Seven Bridges of Königsberg problem
@@ -26,16 +26,16 @@ pub fn main() {
   io.println("--- Seven Bridges of Königsberg ---")
 
   // Check if an Eulerian circuit exists (all even degrees)
-  case eulerian.has_eulerian_circuit(graph) {
+  case properties.has_eulerian_circuit(graph) {
     True -> io.println("Eulerian circuit exists!")
     False -> io.println("No Eulerian circuit exists.")
   }
 
   // Check if an Eulerian path exists (0 or 2 odd degrees)
-  case eulerian.has_eulerian_path(graph) {
+  case properties.has_eulerian_path(graph) {
     True -> {
       io.println("Eulerian path exists!")
-      case eulerian.find_eulerian_path(graph) {
+      case properties.find_eulerian_path(graph) {
         Some(path) -> io.println("Path: " <> string.inspect(path))
         None -> Nil
       }
@@ -54,7 +54,7 @@ pub fn main() {
     |> model.add_edge(from: 3, to: 1, with: Nil)
 
   io.println("\n--- Simple Triangle ---")
-  case eulerian.find_eulerian_circuit(circuit_graph) {
+  case properties.find_eulerian_circuit(circuit_graph) {
     Some(circuit) -> io.println("Circuit found: " <> string.inspect(circuit))
     None -> io.println("No circuit found")
   }

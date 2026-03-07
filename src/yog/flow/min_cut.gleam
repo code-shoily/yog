@@ -34,7 +34,7 @@ pub type MinCut {
 ///   |> yog.add_edge(from: 3, to: 4, with: 1)
 ///   |> yog.add_edge(from: 1, to: 4, with: 1)
 ///
-/// let result = min_cut.global_min_cut(in: graph)
+/// let result = flow.global_min_cut(in: graph)
 /// // result.weight == 2 (minimum cut)
 /// // result.group_a_size * result.group_b_size == product of partition sizes
 /// ```

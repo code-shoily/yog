@@ -1,6 +1,6 @@
 import gleam/list
 import gleeunit/should
-import yog/components
+import yog/connectivity
 import yog/generators/random
 import yog/model
 
@@ -46,7 +46,7 @@ pub fn barabasi_albert_connected_test() {
   let graph = random.barabasi_albert(30, 2)
 
   // BA graphs are always connected
-  let comps = components.strongly_connected_components(graph)
+  let comps = connectivity.strongly_connected_components(graph)
   list.length(comps)
   |> should.equal(1)
 }
@@ -75,7 +75,7 @@ pub fn random_tree_connected_test() {
   let graph = random.random_tree(20)
 
   // Tree should be connected
-  let comps = components.strongly_connected_components(graph)
+  let comps = connectivity.strongly_connected_components(graph)
   list.length(comps)
   |> should.equal(1)
 }

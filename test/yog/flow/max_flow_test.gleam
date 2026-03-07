@@ -4,7 +4,7 @@ import gleam/order
 import gleam/set
 import gleeunit/should
 import yog
-import yog/max_flow
+import yog/flow/max_flow
 import yog/model
 
 // Debug test: check if residual graph construction works

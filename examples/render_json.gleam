@@ -1,7 +1,7 @@
 import gleam/io
 import gleam/json
+import yog/io/json as yog_json
 import yog/model
-import yog/render
 
 pub fn main() {
   // Create a sample graph
@@ -13,13 +13,13 @@ pub fn main() {
 
   // 1. Basic JSON output
   io.println("--- Basic JSON Output ---")
-  let json_basic = render.to_json(graph, render.default_json_options())
+  let json_basic = yog_json.to_json(graph, yog_json.default_json_options())
   io.println(json_basic)
 
   // 2. Custom JSON structure (e.g., for D3.js or Cytoscape)
   io.println("\n--- Custom JSON Output ---")
   let options =
-    render.JsonOptions(
+    yog_json.JsonOptions(
       node_mapper: fn(id, data) {
         json.object([
           #("id", json.int(id)),
@@ -36,6 +36,6 @@ pub fn main() {
       },
     )
 
-  let json_custom = render.to_json(graph, options)
+  let json_custom = yog_json.to_json(graph, options)
   io.println(json_custom)
 }

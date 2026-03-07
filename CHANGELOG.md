@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-03-07 - 3.0.0
+
+### Breaking Changes
+
+- **Global Parameter Reordering**: The `graph` argument has been moved to the final position (adhering to the "Data-Last" rule) in all traversal functions to improve pipeline ergonomics. Affected functions include `walk`, `walk_until`, and `fold_walk` in both `yog` and `yog/traversal`.
+- **Module Namespace Consolidation**: Several standalone modules have been moved into category-based groups to simplify the API:
+  - `yog/components` functions are now in `yog/connectivity`.
+  - `yog/min_cut` and `yog/max_flow` are now within the `yog/flow` namespace.
+  - `yog/topological_sort` is now integrated into `yog/traversal`.
+  - `yog/clique`, `yog/bipartite`, and `yog/eulerian` are now within the `yog/properties` namespace.
+- **Rendering & IO**: The `yog/render` module has been completely split into format-specific modules under `yog/io/`: `mermaid` (currently implemented), `dot` (stubbed for v3.1), and `json` (stubbed for v3.1).
+- **Type Definitions**: Control flow for traversals (e.g., in `fold_walk` and `implicit_fold`) now exclusively uses the explicit `WalkControl` enum variants (`Continue`, `Stop`, `Halt`) for finer control over the traversal.
+
 ## 2026-03-05 - 2.2.1 (Unreleased)
 
 ### Added

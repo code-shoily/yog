@@ -3,7 +3,7 @@ import gleam/io
 import gleam/list
 import gleam/string
 import yog/model
-import yog/topological_sort
+import yog/traversal
 
 pub fn main() {
   // Model task dependencies where we want alphabetically earliest valid order
@@ -39,9 +39,7 @@ pub fn main() {
       |> model.add_edge(from: prereq_id, to: step_id, with: Nil)
     })
 
-  case
-    topological_sort.lexicographical_topological_sort(graph, string.compare)
-  {
+  case traversal.lexicographical_topological_sort(graph, string.compare) {
     Ok(order) -> {
       let task_order =
         order

@@ -151,7 +151,7 @@ pub fn predecessors(graph: Graph(n, e), id: NodeId) -> List(#(NodeId, e)) {
 }
 
 /// Gets everyone connected to the node, regardless of direction.
-/// Useful for algorithms like finding "connected components."
+/// Useful for algorithms like finding "connected connectivity."
 pub fn neighbors(graph: Graph(n, e), id: NodeId) -> List(#(NodeId, e)) {
   case graph.kind {
     Undirected -> successors(graph, id)

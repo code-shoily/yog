@@ -32,7 +32,7 @@ import yog/model.{type Graph, type NodeId}
 ///
 /// ```gleam
 /// import yog
-/// import yog/clique
+/// import yog/properties
 ///
 /// // Create a graph with a 4-clique
 /// let graph =
@@ -50,7 +50,7 @@ import yog/model.{type Graph, type NodeId}
 ///   |> yog.add_edge(from: 3, to: 4, with: 1)
 ///   |> yog.add_edge(from: 4, to: 5, with: 1)
 ///
-/// clique.max_clique(graph)
+/// properties.max_clique(graph)
 /// // => set.from_list([1, 2, 3, 4])  // The 4-clique
 /// ```
 pub fn max_clique(graph: Graph(n, e)) -> Set(NodeId) {
@@ -74,7 +74,7 @@ pub fn max_clique(graph: Graph(n, e)) -> Set(NodeId) {
 ///
 /// ```gleam
 /// import yog
-/// import yog/clique
+/// import yog/properties
 ///
 /// let graph =
 ///   yog.undirected()
@@ -84,7 +84,7 @@ pub fn max_clique(graph: Graph(n, e)) -> Set(NodeId) {
 ///   |> yog.add_edge(from: 1, to: 2, with: 1)
 ///   |> yog.add_edge(from: 2, to: 3, with: 1)
 ///
-/// clique.all_maximal_cliques(graph)
+/// properties.all_maximal_cliques(graph)
 /// // => [set.from_list([1, 2]), set.from_list([2, 3])]
 /// ```
 pub fn all_maximal_cliques(graph: Graph(n, e)) -> List(Set(NodeId)) {
@@ -109,7 +109,7 @@ pub fn all_maximal_cliques(graph: Graph(n, e)) -> List(Set(NodeId)) {
 ///
 /// ```gleam
 /// import yog
-/// import yog/clique
+/// import yog/properties
 ///
 /// // Create a graph with triangles (3-cliques)
 /// let graph =
@@ -123,10 +123,10 @@ pub fn all_maximal_cliques(graph: Graph(n, e)) -> List(Set(NodeId)) {
 ///   |> yog.add_edge(from: 1, to: 3, with: 1)
 ///   |> yog.add_edge(from: 3, to: 4, with: 1)
 ///
-/// clique.k_cliques(graph, 3)
+/// properties.k_cliques(graph, 3)
 /// // => [set.from_list([1, 2, 3])]  // The single triangle
 ///
-/// clique.k_cliques(graph, 2)
+/// properties.k_cliques(graph, 2)
 /// // => [set.from_list([1, 2]), set.from_list([1, 3]),
 /// //     set.from_list([2, 3]), set.from_list([3, 4])]  // All edges
 /// ```

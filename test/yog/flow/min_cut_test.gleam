@@ -1,6 +1,6 @@
 import gleeunit/should
 import yog
-import yog/min_cut
+import yog/flow/min_cut
 
 // ============= Basic Min Cut Tests =============
 

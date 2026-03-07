@@ -154,7 +154,7 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 - **Maximum Flow**: Flat dictionary residuals with O(1) amortized BFS queue operations
 - **Graph Generators**: O(V²) for complete graphs, O(V) or O(VE) for others
 - **Stable Marriage**: O(n²) Gale-Shapley with deterministic proposal ordering
-- **Test Suite**: 589 tests pass in ~2 seconds
+- **Test Suite**: 681 tests pass in ~2 seconds
 
 ## AI Assistance
 

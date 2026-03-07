@@ -11,7 +11,7 @@ import gleam/list
 import gleamy/bench
 import yog/internal/bench/bench_utils
 import yog/model.{type Graph}
-import yog/topological_sort
+import yog/traversal
 
 // Erlang digraph FFI
 @external(erlang, "digraph", "new")
@@ -98,7 +98,7 @@ fn yog_to_digraph(graph: Graph(Nil, Int)) -> DigraphHandle {
 
 fn bench_yog_topsort(input: #(Graph(Nil, Int), DigraphHandle)) -> Nil {
   let #(yog_graph, _dg) = input
-  let _ = topological_sort.topological_sort(yog_graph)
+  let _ = traversal.topological_sort(yog_graph)
   Nil
 }
 
