@@ -28,9 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `transitive_closure` and `transitive_reduction`: Reachability maps and structural deduplication with custom edge weight merging.
     - `lowest_common_ancestors`: Efficient common dependency intersections for DAG hierarchies.
     - `count_reachability`: Computes total ancestors or descendants for all nodes.
+- **Network Simplex solver** (`yog/flow/network_simplex`): A high-performance solver for Minimum Cost Flow (MCF) problems using the simplex method on spanning trees.
+  - Automatically handles multi-source and multi-sink supply/demand networks.
+  - Efficient spanning tree representation for $O(1)$ updates and pivot operations.
+  - Guarantees convergence via **Bland's Rule** for edge selection.
 - **Property Exports**: `is_acyclic` and `is_cyclic` functions are now re-exported from `yog/properties`, making graph trait querying more accessible without importing the `traversal` module.
 
-## 2026-03-05 - 2.2.1 (Unreleased)
+## 2026-03-07 - 2.2.1
 
 ### Added
 

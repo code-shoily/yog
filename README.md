@@ -29,6 +29,7 @@ In the world of computer science, this is the literal definition of Graph Theory
 - **Connectivity**: Bridge and articulation point detection
 - **Eulerian Paths & Circuits**: Detection and finding using Hierholzer's algorithm
 - **Bipartite Graphs**: Detection, maximum matching, and stable marriage (Gale-Shapley)
+- **Minimum Cost Flow (MCF)**: Global optimization using the robust **Network Simplex** algorithm
 - **Disjoint Set (Union-Find)**: With path compression and union by rank
 - **Efficient Data Structures**: Pairing heap for priority queues, two-list queue for BFS
 
@@ -144,8 +145,9 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 | **Topological Sort** | Ordering tasks with dependencies | O(V+E) |
 | **Gale-Shapley** | Stable matching, college admissions, medical residency | O(n²) |
 | **Prim's MST** | Minimum spanning tree (starts from node) | O(E log V) |
-| **Kosaraju's SCC** | Strongly connected components (two-pass) | O(V+E) |
+| **Kosaraju's SCC** | Strongly connected components (two-pass) | O(V + E) |
 | **Bron-Kerbosch** | Maximum and all maximal cliques | O(3^(n/3)) |
+| **Network Simplex** | Global minimum cost flow optimization | O(E) pivots |
 | **Implicit Search** | Pathfinding/Traversal on on-demand graphs | O((V+E) log V) |
 
 ## Performance Characteristics
@@ -156,7 +158,7 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 - **Maximum Flow**: Flat dictionary residuals with O(1) amortized BFS queue operations
 - **Graph Generators**: O(V²) for complete graphs, O(V) or O(VE) for others
 - **Stable Marriage**: O(n²) Gale-Shapley with deterministic proposal ordering
-- **Test Suite**: 730 tests pass in ~2 seconds
+- **Test Suite**: 733 tests pass in ~2 seconds
 
 ## AI Assistance
 
