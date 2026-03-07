@@ -141,12 +141,47 @@ pub fn lowest_common_ancestors_test() {
   // 1 and 2 are the "lowest" common ancestors because 0 is an ancestor of 1 and 2.
 
   let assert Ok(d) = dag.from_graph(g)
-  let lcas = dag.lowest_common_ancestors(d, 3, 4)
+  let lca = dag.lowest_common_ancestors(d, 3, 4)
 
-  list.length(lcas) |> should.equal(2)
-  list.contains(lcas, 1) |> should.be_true
-  list.contains(lcas, 2) |> should.be_true
-  list.contains(lcas, 0) |> should.be_false
+  list.length(lca) |> should.equal(2)
+  list.contains(lca, 1) |> should.be_true
+  list.contains(lca, 2) |> should.be_true
+  list.contains(lca, 0) |> should.be_false
+}
+
+pub fn dag_mutation_test() {
+  let g =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge_ensured(1, 2, 10, "")
+  let assert Ok(d) = dag.from_graph(g)
+
+  // Test add_node
+  let d2 = dag.add_node(d, 3, "C")
+  let g2 = dag.to_graph(d2)
+  list.contains(model.all_nodes(g2), 3) |> should.be_true
+
+  // Test remove_node
+  let d3 = dag.remove_node(d2, 2)
+  let g3 = dag.to_graph(d3)
+  list.contains(model.all_nodes(g3), 2) |> should.be_false
+  // Ensure the edge 1->2 was also removed from the underlying graph
+  list.length(model.successors(g3, 1)) |> should.equal(0)
+
+  // Test remove_edge
+  let d4 = dag.remove_edge(d, from: 1, to: 2)
+  let g4 = dag.to_graph(d4)
+  list.length(model.successors(g4, 1)) |> should.equal(0)
+
+  // Test add_edge success (no cycle)
+  let assert Ok(d5) = dag.add_edge(d, from: 2, to: 3, with: 20)
+  let g5 = dag.to_graph(d5)
+  list.length(model.successors(g5, 2)) |> should.equal(1)
+
+  // Test add_edge failure (cycle)
+  let d6 = dag.add_edge(d, from: 2, to: 1, with: 30)
+  d6 |> should.be_error
 }
 
 fn get_index(l: List(a), item: a) -> Int {

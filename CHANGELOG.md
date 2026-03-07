@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Frugal DAG Suite** (`yog/dag`): A strictly typed wrapper `Dag(n, e)` for modeling Directed Acyclic Graphs with fast property validation via `dag.from_graph`.
   - Exposes specialized DAG optimization algorithms in `yog/dag`:
+    - **DAG Builders/Mutators:** Safely construct and alter DAGs post-validation using `add_node`, `remove_node`, `remove_edge`, and a strictly cycle-checked `add_edge` returning `Result(Dag, DagError)`.
     - `topological_sort`: Safe topological sort that bypasses general cycle checks.
     - `longest_path`: $O(V+E)$ Dynamic Programming approach for Critical Path tracking in scheduling networks.
     - `transitive_closure` and `transitive_reduction`: Reachability maps and structural deduplication with custom edge weight merging.
