@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Rendering & IO**: The `yog/render` module has been completely split into format-specific modules under `yog/io/`: `mermaid` (currently implemented), `dot` (stubbed for v3.1), and `json` (stubbed for v3.1).
 - **Type Definitions**: Control flow for traversals (e.g., in `fold_walk` and `implicit_fold`) now exclusively uses the explicit `WalkControl` enum variants (`Continue`, `Stop`, `Halt`) for finer control over the traversal.
 
+### Added
+
+- **Property Exports**: `is_acyclic` and `is_cyclic` functions are now re-exported from `yog/properties`, making graph trait querying more accessible without importing the `traversal` module.
+
 ## 2026-03-05 - 2.2.1 (Unreleased)
 
 ### Added

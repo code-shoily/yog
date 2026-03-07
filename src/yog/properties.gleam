@@ -5,6 +5,17 @@ import yog/model.{type Graph, type NodeId}
 import yog/properties/bipartite
 import yog/properties/clique
 import yog/properties/eulerian
+import yog/traversal
+
+// --- Properties ---
+
+pub fn is_acyclic(graph: Graph(n, e)) -> Bool {
+  traversal.is_acyclic(graph)
+}
+
+pub fn is_cyclic(graph: Graph(n, e)) -> Bool {
+  traversal.is_cyclic(graph)
+}
 
 // --- Types ---
 
