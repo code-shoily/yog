@@ -5,26 +5,7 @@ import yog/model.{type Graph, type NodeId, Directed, Undirected}
 import yog/traversal
 
 /// Checks if the graph has an Eulerian circuit (a cycle that visits every edge exactly once).
-///
-/// ## Conditions
-/// - **Undirected graph:** All vertices must have even degree and the graph must be connected
-/// - **Directed graph:** All vertices must have equal in-degree and out-degree, and the graph must be strongly connected
-///
-/// ## Example
-/// ```gleam
-/// let graph =
-///   yog.undirected()
-///   |> yog.add_node(1, Nil)
-///   |> yog.add_node(2, Nil)
-///   |> yog.add_node(3, Nil)
-///   |> yog.add_edge(from: 1, to: 2, with: 1)
-///   |> yog.add_edge(from: 2, to: 3, with: 1)
-///   |> yog.add_edge(from: 3, to: 1, with: 1)
-///
-/// has_eulerian_circuit(graph)  // => True (triangle)
-/// ```
-///
-/// **Time Complexity:** O(V + E)
+/// Internal implementation. See `yog/properties` for public API and usage.
 pub fn has_eulerian_circuit(graph: Graph(n, e)) -> Bool {
   case dict.size(graph.nodes) {
     0 -> False
@@ -38,25 +19,7 @@ pub fn has_eulerian_circuit(graph: Graph(n, e)) -> Bool {
 }
 
 /// Checks if the graph has an Eulerian path (a path that visits every edge exactly once).
-///
-/// ## Conditions
-/// - **Undirected graph:** Exactly 0 or 2 vertices must have odd degree, and the graph must be connected
-/// - **Directed graph:** At most one vertex with (out-degree - in-degree = 1), at most one with (in-degree - out-degree = 1), all others balanced
-///
-/// ## Example
-/// ```gleam
-/// let graph =
-///   yog.undirected()
-///   |> yog.add_node(1, Nil)
-///   |> yog.add_node(2, Nil)
-///   |> yog.add_node(3, Nil)
-///   |> yog.add_edge(from: 1, to: 2, with: 1)
-///   |> yog.add_edge(from: 2, to: 3, with: 1)
-///
-/// has_eulerian_path(graph)  // => True (path from 1 to 3)
-/// ```
-///
-/// **Time Complexity:** O(V + E)
+/// Internal implementation. See `yog/properties` for public API and usage.
 pub fn has_eulerian_path(graph: Graph(n, e)) -> Bool {
   case dict.size(graph.nodes) {
     0 -> False
@@ -70,25 +33,7 @@ pub fn has_eulerian_path(graph: Graph(n, e)) -> Bool {
 }
 
 /// Finds an Eulerian circuit in the graph using Hierholzer's algorithm.
-///
-/// Returns the path as a list of node IDs that form a circuit (starts and ends at the same node).
-/// Returns None if no Eulerian circuit exists.
-///
-/// **Time Complexity:** O(E)
-///
-/// ## Example
-/// ```gleam
-/// let graph =
-///   yog.undirected()
-///   |> yog.add_node(1, Nil)
-///   |> yog.add_node(2, Nil)
-///   |> yog.add_node(3, Nil)
-///   |> yog.add_edge(from: 1, to: 2, with: 1)
-///   |> yog.add_edge(from: 2, to: 3, with: 1)
-///   |> yog.add_edge(from: 3, to: 1, with: 1)
-///
-/// find_eulerian_circuit(graph)  // => Some([1, 2, 3, 1])
-/// ```
+/// Internal implementation. See `yog/properties` for public API and usage.
 pub fn find_eulerian_circuit(graph: Graph(n, e)) -> Option(List(NodeId)) {
   case has_eulerian_circuit(graph) {
     False -> None
@@ -109,23 +54,7 @@ pub fn find_eulerian_circuit(graph: Graph(n, e)) -> Option(List(NodeId)) {
 }
 
 /// Finds an Eulerian path in the graph using Hierholzer's algorithm.
-///
-/// Returns the path as a list of node IDs. Returns None if no Eulerian path exists.
-///
-/// **Time Complexity:** O(E)
-///
-/// ## Example
-/// ```gleam
-/// let graph =
-///   yog.undirected()
-///   |> yog.add_node(1, Nil)
-///   |> yog.add_node(2, Nil)
-///   |> yog.add_node(3, Nil)
-///   |> yog.add_edge(from: 1, to: 2, with: 1)
-///   |> yog.add_edge(from: 2, to: 3, with: 1)
-///
-/// find_eulerian_path(graph)  // => Some([1, 2, 3])
-/// ```
+/// Internal implementation. See `yog/properties` for public API and usage.
 pub fn find_eulerian_path(graph: Graph(n, e)) -> Option(List(NodeId)) {
   case has_eulerian_path(graph) {
     False -> None

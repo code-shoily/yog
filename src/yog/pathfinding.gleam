@@ -1,3 +1,22 @@
+//// Shortest path and distance matrix algorithms.
+////
+//// This module provides various algorithms for finding shortest paths in both
+//// explicit (materialized) graphs and implicit (state-space) graphs.
+////
+//// ## Algorithms
+////
+//// - **Dijkstra:** For graphs with non-negative edge weights.
+//// - **A\*:** Heuristic-guided search for faster pathfinding.
+//// - **Bellman-Ford:** Support for negative edge weights and cycle detection.
+//// - **Floyd-Warshall:** All-pairs shortest paths.
+//// - **Distance Matrix:** Optimized all-pairs distances for specific points of interest.
+////
+//// ## Graph Types
+////
+//// - **Explicit Graphs:** Functions taking a `Graph(n, e)` use a materialized graph structure.
+//// - **Implicit Graphs:** Functions starting with `implicit_` take a successor function,
+////   allowing search in infinite or very large state spaces (e.g., puzzles, games).
+
 import gleam/dict.{type Dict}
 import gleam/list
 import gleam/option.{type Option}

@@ -109,9 +109,7 @@ fn seq(start: Int, end: Int) -> List(Int) {
 // ----------
 
 /// Main entry point for Network Simplex (Minimum Cost Flow).
-///
-/// Returns either the optimal flow assignment (along with the minimum cost)
-/// or an error if the demands cannot be met or if the problem is unbounded.
+/// Internal implementation. See `yog/flow` for public API and usage.
 pub fn solve(
   graph: Graph(n, e),
   get_demand: fn(n) -> Int,

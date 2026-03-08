@@ -9,70 +9,7 @@ import yog/model.{type Graph, type NodeId}
 // ======================== DISTANCE MATRIX ========================
 
 /// Computes shortest distances between all pairs of points of interest.
-///
-/// Automatically chooses the most efficient algorithm based on the density
-/// of points of interest relative to the total graph size:
-/// - When POIs are dense (> 1/3 of nodes): Uses Floyd-Warshall O(V³)
-/// - When POIs are sparse (≤ 1/3 of nodes): Uses multiple single-source Dijkstra O(P × (V+E) log V)
-///
-/// Returns only distances between the specified points of interest, not all node pairs.
-///
-/// **Time Complexity:** Automatically optimized based on POI density
-///
-/// ## Parameters
-///
-/// - `between`: List of points of interest (POI) nodes
-/// - `zero`: The identity element for addition (e.g., `0` for integers)
-/// - `add`: Function to add two weights
-/// - `compare`: Function to compare two weights
-///
-/// ## Returns
-///
-/// - `Ok(distances)`: Dictionary mapping POI pairs to their shortest distances
-/// - `Error(Nil)`: If a negative cycle is detected (only when using Floyd-Warshall)
-///
-/// ## Example
-///
-/// ```gleam
-/// import gleam/dict
-/// import yog
-/// import yog/pathfinding
-///
-/// // Graph with many nodes, but only care about distances between a few POIs
-/// let graph = build_large_graph()  // 1000 nodes
-/// let pois = [1, 5, 10, 42]       // 4 points of interest
-///
-/// // Efficiently computes only POI-to-POI distances
-/// case pathfinding.distance_matrix(
-///   in: graph,
-///   between: pois,
-///   with_zero: 0,
-///   with_add: int.add,
-///   with_compare: int.compare
-/// ) {
-///   Ok(distances) -> {
-///     // Get distance from POI 1 to POI 42
-///     dict.get(distances, #(1, 42))
-///   }
-///   Error(Nil) -> panic as "Negative cycle detected"
-/// }
-/// ```
-///
-/// ## Use Cases
-///
-/// - AoC 2016 Day 24: Computing distances between numbered locations
-/// - TSP-like problems: Finding optimal tour through specific landmarks
-/// - Network analysis: Distances between server hubs
-/// - Game pathfinding: Distances between quest objectives
-///
-/// ## Algorithm Selection
-///
-/// The function automatically chooses the optimal algorithm:
-/// - **Floyd-Warshall** when POIs are dense: Computes all-pairs shortest paths once,
-///   then filters to POIs. Efficient when you need distances for most nodes.
-/// - **Multiple Dijkstra** when POIs are sparse: Runs single-source shortest paths
-///   from each POI. Efficient when POIs are much fewer than total nodes.
-///
+/// Internal implementation. See `yog/pathfinding` for public API and usage.
 pub fn distance_matrix(
   in graph: Graph(n, e),
   between points_of_interest: List(NodeId),

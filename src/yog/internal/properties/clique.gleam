@@ -1,16 +1,5 @@
-//// Maximum clique finding using the Bron-Kerbosch algorithm.
-////
-//// A clique is a subset of vertices where every two vertices are adjacent
-//// (i.e., a complete subgraph). Finding the maximum clique is NP-complete,
-//// but the Bron-Kerbosch algorithm with pivoting is efficient in practice.
-////
-//// ## Use Cases
-////
-//// - Social network analysis: Finding tightly-knit friend groups
-//// - Computational biology: Identifying protein complexes
-//// - Code analysis: Detecting mutually dependent modules
-//// - Graph coloring: Chromatic number lower bounds
-//// - AoC 2024 Day 23: Finding largest sets of interconnected computers
+//// Internal implementation of Maximum clique finding.
+//// User-facing documentation is located in `src/yog/properties.gleam`.
 
 import gleam/dict.{type Dict}
 import gleam/list
@@ -18,41 +7,7 @@ import gleam/set.{type Set}
 import yog/model.{type Graph, type NodeId}
 
 /// Finds the maximum clique in an undirected graph.
-///
-/// A clique is a subset of nodes where every pair of nodes is connected.
-/// This function returns the largest such subset found using the Bron-Kerbosch
-/// algorithm with pivoting.
-///
-/// **Time Complexity:** O(3^(n/3)) worst case, but much faster in practice due to pivoting
-///
-/// **Note:** This algorithm works on undirected graphs. For directed graphs,
-/// consider using the underlying undirected structure.
-///
-/// ## Example
-///
-/// ```gleam
-/// import yog
-/// import yog/properties
-///
-/// // Create a graph with a 4-clique
-/// let graph =
-///   yog.undirected()
-///   |> yog.add_node(1, "A")
-///   |> yog.add_node(2, "B")
-///   |> yog.add_node(3, "C")
-///   |> yog.add_node(4, "D")
-///   |> yog.add_node(5, "E")
-///   |> yog.add_edge(from: 1, to: 2, with: 1)
-///   |> yog.add_edge(from: 1, to: 3, with: 1)
-///   |> yog.add_edge(from: 1, to: 4, with: 1)
-///   |> yog.add_edge(from: 2, to: 3, with: 1)
-///   |> yog.add_edge(from: 2, to: 4, with: 1)
-///   |> yog.add_edge(from: 3, to: 4, with: 1)
-///   |> yog.add_edge(from: 4, to: 5, with: 1)
-///
-/// properties.max_clique(graph)
-/// // => set.from_list([1, 2, 3, 4])  // The 4-clique
-/// ```
+/// Internal implementation. See `yog/properties` for public API and usage.
 pub fn max_clique(graph: Graph(n, e)) -> Set(NodeId) {
   let adj = build_adjacency(graph)
   let all_nodes = model.all_nodes(graph)
@@ -64,29 +19,7 @@ pub fn max_clique(graph: Graph(n, e)) -> Set(NodeId) {
 }
 
 /// Finds all maximal cliques in an undirected graph.
-///
-/// A maximal clique is a clique that cannot be extended by adding another node.
-/// Note that there can be many maximal cliques, and they may have different sizes.
-///
-/// **Time Complexity:** O(3^(n/3)) worst case
-///
-/// ## Example
-///
-/// ```gleam
-/// import yog
-/// import yog/properties
-///
-/// let graph =
-///   yog.undirected()
-///   |> yog.add_node(1, "A")
-///   |> yog.add_node(2, "B")
-///   |> yog.add_node(3, "C")
-///   |> yog.add_edge(from: 1, to: 2, with: 1)
-///   |> yog.add_edge(from: 2, to: 3, with: 1)
-///
-/// properties.all_maximal_cliques(graph)
-/// // => [set.from_list([1, 2]), set.from_list([2, 3])]
-/// ```
+/// Internal implementation. See `yog/properties` for public API and usage.
 pub fn all_maximal_cliques(graph: Graph(n, e)) -> List(Set(NodeId)) {
   let adj = build_adjacency(graph)
   let all_nodes = model.all_nodes(graph)
@@ -98,45 +31,7 @@ pub fn all_maximal_cliques(graph: Graph(n, e)) -> List(Set(NodeId)) {
 }
 
 /// Finds all cliques of exactly size k in an undirected graph.
-///
-/// Returns all subsets of k nodes where every pair of nodes is connected.
-/// Uses a modified Bron-Kerbosch algorithm with early pruning for efficiency.
-///
-/// **Time Complexity:** Generally faster than finding all maximal cliques when k is small,
-/// as branches are pruned when they cannot reach size k.
-///
-/// ## Example
-///
-/// ```gleam
-/// import yog
-/// import yog/properties
-///
-/// // Create a graph with triangles (3-cliques)
-/// let graph =
-///   yog.undirected()
-///   |> yog.add_node(1, "A")
-///   |> yog.add_node(2, "B")
-///   |> yog.add_node(3, "C")
-///   |> yog.add_node(4, "D")
-///   |> yog.add_edge(from: 1, to: 2, with: 1)
-///   |> yog.add_edge(from: 2, to: 3, with: 1)
-///   |> yog.add_edge(from: 1, to: 3, with: 1)
-///   |> yog.add_edge(from: 3, to: 4, with: 1)
-///
-/// properties.k_cliques(graph, 3)
-/// // => [set.from_list([1, 2, 3])]  // The single triangle
-///
-/// properties.k_cliques(graph, 2)
-/// // => [set.from_list([1, 2]), set.from_list([1, 3]),
-/// //     set.from_list([2, 3]), set.from_list([3, 4])]  // All edges
-/// ```
-///
-/// ## Use Cases
-///
-/// - Finding triangles (k=3) in social networks
-/// - Detecting specific-sized communities
-/// - Pattern matching in biological networks
-/// - Computational chemistry (finding molecular motifs)
+/// Internal implementation. See `yog/properties` for public API and usage.
 pub fn k_cliques(graph: Graph(n, e), k: Int) -> List(Set(NodeId)) {
   case k <= 0 {
     True -> []

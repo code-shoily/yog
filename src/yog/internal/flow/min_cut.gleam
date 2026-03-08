@@ -13,31 +13,7 @@ pub type MinCut {
 
 /// Finds the global minimum cut of an undirected weighted graph using the
 /// Stoer-Wagner algorithm.
-///
-/// Returns the minimum cut weight and the sizes of the two partitions.
-/// Perfect for AoC 2023 Day 25, where you need to find the cut of weight 3
-/// and compute the product of partition sizes.
-///
-/// **Time Complexity:** O(V³) or O(VE + V² log V) with a good priority queue
-///
-/// ## Example
-///
-/// ```gleam
-/// let graph =
-///   yog.undirected()
-///   |> yog.add_node(1, Nil)
-///   |> yog.add_node(2, Nil)
-///   |> yog.add_node(3, Nil)
-///   |> yog.add_node(4, Nil)
-///   |> yog.add_edge(from: 1, to: 2, with: 1)
-///   |> yog.add_edge(from: 2, to: 3, with: 1)
-///   |> yog.add_edge(from: 3, to: 4, with: 1)
-///   |> yog.add_edge(from: 1, to: 4, with: 1)
-///
-/// let result = flow.global_min_cut(in: graph)
-/// // result.weight == 2 (minimum cut)
-/// // result.group_a_size * result.group_b_size == product of partition sizes
-/// ```
+/// Internal implementation. See `yog/flow` for public API and usage.
 pub fn global_min_cut(in graph: Graph(n, Int)) -> MinCut {
   // Start every node with a weight of 1 (representing itself)
   // This tracks how many original nodes have been merged together

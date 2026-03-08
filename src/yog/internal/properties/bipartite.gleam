@@ -14,26 +14,7 @@ pub type Partition {
 }
 
 /// Checks if a graph is bipartite (2-colorable).
-///
-/// A graph is bipartite if its vertices can be divided into two disjoint sets
-/// such that every edge connects a vertex in one set to a vertex in the other set.
-///
-/// ## Example
-/// ```gleam
-/// let graph =
-///   yog.undirected()
-///   |> yog.add_node(1, Nil)
-///   |> yog.add_node(2, Nil)
-///   |> yog.add_node(3, Nil)
-///   |> yog.add_node(4, Nil)
-///   |> yog.add_edge(from: 1, to: 2, with: 1)
-///   |> yog.add_edge(from: 2, to: 3, with: 1)
-///   |> yog.add_edge(from: 3, to: 4, with: 1)
-///
-/// properties.is_bipartite(graph)  // => True (can color as: 1,3 vs 2,4)
-/// ```
-///
-/// **Time Complexity:** O(V + E)
+/// Internal implementation. See `yog/properties` for public API and usage.
 pub fn is_bipartite(graph: Graph(n, e)) -> Bool {
   case partition(graph) {
     Some(_) -> True
@@ -42,22 +23,7 @@ pub fn is_bipartite(graph: Graph(n, e)) -> Bool {
 }
 
 /// Returns the two partitions of a bipartite graph, or None if the graph is not properties.
-///
-/// Uses BFS with 2-coloring to detect bipartiteness and construct the partitions.
-/// Handles disconnected graphs by checking all connectivity.
-///
-/// ## Example
-/// ```gleam
-/// case properties.partition(graph) {
-///   Some(Partition(left, right)) -> {
-///     // left and right are the two independent sets
-///     io.println("Graph is bipartite!")
-///   }
-///   None -> io.println("Graph is not bipartite")
-/// }
-/// ```
-///
-/// **Time Complexity:** O(V + E)
+/// Internal implementation. See `yog/properties` for public API and usage.
 pub fn partition(graph: Graph(n, e)) -> Option(Partition) {
   let nodes = dict.keys(graph.nodes)
 
@@ -82,37 +48,7 @@ pub fn partition(graph: Graph(n, e)) -> Option(Partition) {
 }
 
 /// Finds a maximum matching in a bipartite graph.
-///
-/// A matching is a set of edges with no common vertices. A maximum matching
-/// has the largest possible number of edges.
-///
-/// Uses the augmenting path algorithm (also known as the Hungarian algorithm
-/// for unweighted bipartite matching).
-///
-/// Returns a list of matched pairs `#(left_node, right_node)`.
-///
-/// ## Example
-/// ```gleam
-/// let graph =
-///   yog.undirected()
-///   |> yog.add_node(1, Nil)  // left
-///   |> yog.add_node(2, Nil)  // left
-///   |> yog.add_node(3, Nil)  // right
-///   |> yog.add_node(4, Nil)  // right
-///   |> yog.add_edge(from: 1, to: 3, with: 1)
-///   |> yog.add_edge(from: 1, to: 4, with: 1)
-///   |> yog.add_edge(from: 2, to: 3, with: 1)
-///
-/// case properties.partition(graph) {
-///   Some(p) -> {
-///     let matching = properties.maximum_matching(graph, p)
-///     // => [#(1, 3), #(2, 4)] or [#(1, 4), #(2, 3)]
-///   }
-///   None -> panic as "Not bipartite"
-/// }
-/// ```
-///
-/// **Time Complexity:** O(V * E)
+/// Internal implementation. See `yog/properties` for public API and usage.
 pub fn maximum_matching(
   graph: Graph(n, e),
   partition: Partition,
@@ -362,62 +298,7 @@ pub type StableMarriage {
 }
 
 /// Finds a stable matching given preference lists for two groups.
-///
-/// Uses the Gale-Shapley algorithm to find a stable matching where no two people
-/// would both prefer each other over their current partners.
-///
-/// The algorithm is "proposer-optimal" - it finds the best stable matching for
-/// the proposing group (left), and the worst stable matching for the receiving
-/// group (right).
-///
-/// ## Parameters
-///
-/// - `left_prefs` - Dict mapping each left person to their preference list (most preferred first)
-/// - `right_prefs` - Dict mapping each right person to their preference list (most preferred first)
-///
-/// ## Returns
-///
-/// A `StableMarriage` containing the matched pairs. Use `get_partner()` to query matches.
-///
-/// ## Example
-///
-/// ```gleam
-/// // Medical residency matching
-/// let residents = dict.from_list([
-///   #(1, [101, 102, 103]),  // Resident 1 prefers hospitals 101, 102, 103
-///   #(2, [102, 101, 103]),
-///   #(3, [101, 103, 102]),
-/// ])
-///
-/// let hospitals = dict.from_list([
-///   #(101, [1, 2, 3]),      // Hospital 101 prefers residents 1, 2, 3
-///   #(102, [2, 1, 3]),
-///   #(103, [1, 2, 3]),
-/// ])
-///
-/// let matching = properties.stable_marriage(residents, hospitals)
-/// case get_partner(matching, 1) {
-///   Some(hospital) -> io.println("Resident 1 matched to hospital " <> int.to_string(hospital))
-///   None -> io.println("Resident 1 unmatched")
-/// }
-/// ```
-///
-/// ## Properties
-///
-/// - **Stable:** No two people would both prefer each other over their current partners
-/// - **Complete:** Everyone is matched (if groups are equal size)
-/// - **Optimal for proposers:** Left group gets best stable matching possible
-/// - **Pessimal for receivers:** Right group gets worst stable matching possible
-///
-/// **Time Complexity:** O(n²) where n is the size of each group
-///
-/// ## Use Cases
-///
-/// - Medical residency matching (NRMP)
-/// - College admissions
-/// - Job assignments
-/// - Roommate pairing
-/// - Task allocation
+/// Internal implementation. See `yog/properties` for public API and usage.
 pub fn stable_marriage(
   left_prefs: Dict(NodeId, List(NodeId)),
   right_prefs: Dict(NodeId, List(NodeId)),

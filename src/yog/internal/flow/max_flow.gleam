@@ -1,58 +1,5 @@
-//// Maximum flow algorithms for network flow problems.
-////
-//// This module provides implementations of maximum flow algorithms, which solve
-//// the problem of finding the maximum amount of "flow" that can be sent from a
-//// source node to a sink node in a flow network, respecting edge capacity constraints.
-////
-//// ## Algorithms
-////
-//// - **Edmonds-Karp** - Ford-Fulkerson with BFS for finding augmenting paths
-////   - Time Complexity: O(VE²)
-////   - Most straightforward and reliable implementation
-////   - Good performance for most practical problems
-////
-//// ## Example
-////
-//// ```gleam
-//// import yog
-//// import yog/flow
-//// import gleam/int
-////
-//// pub fn main() {
-////   // Create a flow network
-////   // Edges represent capacity constraints
-////   let network =
-////     yog.directed()
-////     |> yog.add_edge(from: 0, to: 1, with: 10)  // source to A, capacity 10
-////     |> yog.add_edge(from: 0, to: 2, with: 10)  // source to B, capacity 10
-////     |> yog.add_edge(from: 1, to: 3, with: 4)   // A to C, capacity 4
-////     |> yog.add_edge(from: 1, to: 2, with: 2)   // A to B, capacity 2
-////     |> yog.add_edge(from: 2, to: 3, with: 9)   // B to C, capacity 9
-////
-////   let result = flow.edmonds_karp(
-////     in: network,
-////     from: 0,  // source
-////     to: 3,    // sink
-////     with_zero: 0,
-////     with_add: int.add,
-////     with_subtract: fn(a, b) { a - b },
-////     with_compare: int.compare,
-////     with_min: int.min,
-////   )
-////
-////   // result.max_flow => 13
-////   // result.min_cut => [0] on one side, [1, 2, 3] on other
-//// }
-//// ```
-////
-//// ## Applications
-////
-//// - **Network flow optimization** - Bandwidth allocation, traffic routing, pipe networks
-//// - **Bipartite matching** - Assignment problems, job scheduling
-//// - **Min-cut problems** - Network reliability, graph partitioning via max-flow min-cut theorem
-//// - **Image segmentation** - Computer vision applications
-//// - **Circulation with demands** - Supply chain, resource distribution
-//// - **Project selection** - Maximize profit subject to dependencies
+//// Internal implementations of maximum flow algorithms.
+//// User-facing documentation is located in `src/yog/flow.gleam`.
 
 import gleam/dict.{type Dict}
 import gleam/list
@@ -103,64 +50,7 @@ pub type MinCut {
 }
 
 /// Finds the maximum flow using the Edmonds-Karp algorithm.
-///
-/// Edmonds-Karp is a specific implementation of the Ford-Fulkerson method
-/// that uses BFS to find the shortest augmenting path. This guarantees
-/// O(VE²) time complexity.
-///
-/// **Time Complexity:** O(VE²)
-///
-/// ## Parameters
-///
-/// - `in` - The flow network (directed graph where edge weights are capacities)
-/// - `from` - The source node (where flow originates)
-/// - `to` - The sink node (where flow terminates)
-/// - `with_zero` - The zero element for the capacity type (e.g., 0 for Int)
-/// - `with_add` - Function to add two capacity values
-/// - `with_subtract` - Function to subtract capacity values
-/// - `with_compare` - Function to compare capacity values
-/// - `with_min` - Function to find minimum of two capacity values
-///
-/// ## Returns
-///
-/// A `MaxFlowResult` containing:
-/// - The maximum flow value
-/// - The residual graph (for extracting flow paths or min-cut)
-/// - Source and sink node IDs
-///
-/// ## Example
-///
-/// ```gleam
-/// import gleam/int
-/// import yog
-/// import yog/flow
-///
-/// let network =
-///   yog.directed()
-///   |> yog.add_edge(from: 0, to: 1, with: 16)
-///   |> yog.add_edge(from: 0, to: 2, with: 13)
-///   |> yog.add_edge(from: 1, to: 2, with: 10)
-///   |> yog.add_edge(from: 1, to: 3, with: 12)
-///   |> yog.add_edge(from: 2, to: 1, with: 4)
-///   |> yog.add_edge(from: 2, to: 4, with: 14)
-///   |> yog.add_edge(from: 3, to: 2, with: 9)
-///   |> yog.add_edge(from: 3, to: 5, with: 20)
-///   |> yog.add_edge(from: 4, to: 3, with: 7)
-///   |> yog.add_edge(from: 4, to: 5, with: 4)
-///
-/// let result = flow.edmonds_karp(
-///   in: network,
-///   from: 0,
-///   to: 5,
-///   with_zero: 0,
-///   with_add: int.add,
-///   with_subtract: fn(a, b) { a - b },
-///   with_compare: int.compare,
-///   with_min: int.min,
-/// )
-///
-/// // result.max_flow => 23
-/// ```
+/// Internal implementation. See `yog/flow` for public API and usage.
 pub fn edmonds_karp(
   in graph: Graph(n, e),
   from source: NodeId,
@@ -218,29 +108,7 @@ pub fn edmonds_karp(
 }
 
 /// Extracts the minimum cut from a max flow result.
-///
-/// Uses the max-flow min-cut theorem: the minimum cut can be found by
-/// identifying all nodes reachable from the source in the residual graph
-/// after computing max flow.
-///
-/// The cut separates nodes reachable from source (source_side) from the
-/// rest (sink_side). The capacity of edges crossing from source_side to
-/// sink_side equals the max flow value.
-///
-/// ## Parameters
-///
-/// - `result` - The max flow result from `edmonds_karp`
-/// - `with_zero` - The zero element for the capacity type
-/// - `with_compare` - Function to compare capacity values
-///
-/// ## Example
-///
-/// ```gleam
-/// let result = flow.edmonds_karp(...)
-/// let cut = flow.min_cut(result, with_zero: 0, with_compare: int.compare)
-/// // cut.source_side contains nodes on source side
-/// // cut.sink_side contains nodes on sink side
-/// ```
+/// Internal implementation. See `yog/flow` for public API and usage.
 pub fn min_cut(
   result: MaxFlowResult(e),
   with_zero zero: e,
