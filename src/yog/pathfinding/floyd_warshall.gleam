@@ -1,6 +1,8 @@
 //// Floyd-Warshall algorithm for all-pairs shortest paths.
 
 import gleam/dict.{type Dict}
+import gleam/float
+import gleam/int
 import gleam/list
 import gleam/order.{type Order, Lt}
 import yog/model.{type Graph, type NodeId}
@@ -108,4 +110,60 @@ pub fn detect_negative_cycle(
       Error(Nil) -> False
     }
   })
+}
+
+// -----------------------------------------------------------------------------
+// CONVENIENCE WRAPPERS FOR COMMON TYPES
+// -----------------------------------------------------------------------------
+
+/// Computes all-pairs shortest paths with **integer weights**.
+///
+/// This is a convenience wrapper around `floyd_warshall` that uses:
+/// - `0` as the zero element
+/// - `int.add` for addition
+/// - `int.compare` for comparison
+///
+/// ## Example
+///
+/// ```gleam
+/// let result = floyd_warshall.floyd_warshall_int(graph)
+/// // => Ok(Dict([#(#(1, 2), 10), #(#(1, 3), 25), ...]))
+/// ```
+///
+/// ## When to Use
+///
+/// Use this for dense graphs where you need all-pairs distances with `Int`
+/// weights. For sparse graphs or single-source queries, prefer Dijkstra.
+/// Returns `Error(Nil)` if a negative cycle is detected.
+pub fn floyd_warshall_int(
+  in graph: Graph(n, Int),
+) -> Result(Dict(#(NodeId, NodeId), Int), Nil) {
+  floyd_warshall(
+    graph,
+    with_zero: 0,
+    with_add: int.add,
+    with_compare: int.compare,
+  )
+}
+
+/// Computes all-pairs shortest paths with **float weights**.
+///
+/// This is a convenience wrapper around `floyd_warshall` that uses:
+/// - `0.0` as the zero element
+/// - `float.add` for addition
+/// - `float.compare` for comparison
+///
+/// ## Warning
+///
+/// Float arithmetic has precision limitations. Negative cycles might not be
+/// detected reliably due to floating-point errors.
+pub fn floyd_warshall_float(
+  in graph: Graph(n, Float),
+) -> Result(Dict(#(NodeId, NodeId), Float), Nil) {
+  floyd_warshall(
+    graph,
+    with_zero: 0.0,
+    with_add: float.add,
+    with_compare: float.compare,
+  )
 }

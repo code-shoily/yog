@@ -4,6 +4,7 @@
 //// flow in a network and extracting the corresponding minimum cut.
 
 import gleam/dict.{type Dict}
+import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/order.{type Order, Gt}
@@ -512,4 +513,46 @@ fn do_dfs_reachable(
       }
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+// CONVENIENCE WRAPPER FOR INTEGER CAPACITIES
+// -----------------------------------------------------------------------------
+
+/// Finds maximum flow with **integer capacities**.
+///
+/// This is a convenience wrapper around `edmonds_karp` that uses:
+/// - `0` as the zero element
+/// - `int.add` for addition
+/// - `int.subtract` for subtraction
+/// - `int.compare` for comparison
+/// - `int.min` for minimum
+///
+/// ## Example
+///
+/// ```gleam
+/// let result = max_flow.edmonds_karp_int(network, from: 0, to: 5)
+/// // => MaxFlowResult(max_flow: 25, ...)
+/// ```
+///
+/// ## When to Use
+///
+/// Use this for flow networks with integer capacities (bandwidth in Mbps,
+/// vehicle capacity, number of lanes, etc.). This is the most common case
+/// for network flow problems.
+pub fn edmonds_karp_int(
+  in graph: Graph(n, Int),
+  from source: NodeId,
+  to sink: NodeId,
+) -> MaxFlowResult(Int) {
+  edmonds_karp(
+    graph,
+    source,
+    sink,
+    with_zero: 0,
+    with_add: int.add,
+    with_subtract: int.subtract,
+    with_compare: int.compare,
+    with_min: int.min,
+  )
 }

@@ -1,6 +1,8 @@
 //// A* search algorithm with heuristic guidance.
 
 import gleam/dict.{type Dict}
+import gleam/float
+import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/order.{type Order}
@@ -279,4 +281,71 @@ fn do_implicit_a_star_by(
       }
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+// CONVENIENCE WRAPPERS FOR COMMON TYPES
+// -----------------------------------------------------------------------------
+
+/// Finds the shortest path using A* with **integer weights**.
+///
+/// This is a convenience wrapper around `a_star` that uses:
+/// - `0` as the zero element
+/// - `int.add` for addition
+/// - `int.compare` for comparison
+///
+/// You still need to provide a heuristic function.
+///
+/// ## Example
+///
+/// ```gleam
+/// // Grid distance heuristic (Manhattan distance)
+/// let heuristic = fn(from, to) {
+///   let dx = int.absolute_value(from.x - to.x)
+///   let dy = int.absolute_value(from.y - to.y)
+///   dx + dy
+/// }
+///
+/// a_star.a_star_int(graph, from: start, to: goal, heuristic: heuristic)
+/// ```
+pub fn a_star_int(
+  in graph: Graph(n, Int),
+  from start: NodeId,
+  to goal: NodeId,
+  heuristic h: fn(NodeId, NodeId) -> Int,
+) -> Option(Path(Int)) {
+  a_star(
+    graph,
+    start,
+    goal,
+    with_zero: 0,
+    with_add: int.add,
+    with_compare: int.compare,
+    heuristic: h,
+  )
+}
+
+/// Finds the shortest path using A* with **float weights**.
+///
+/// This is a convenience wrapper around `a_star` that uses:
+/// - `0.0` as the zero element
+/// - `float.add` for addition
+/// - `float.compare` for comparison
+///
+/// You still need to provide a heuristic function.
+pub fn a_star_float(
+  in graph: Graph(n, Float),
+  from start: NodeId,
+  to goal: NodeId,
+  heuristic h: fn(NodeId, NodeId) -> Float,
+) -> Option(Path(Float)) {
+  a_star(
+    graph,
+    start,
+    goal,
+    with_zero: 0.0,
+    with_add: float.add,
+    with_compare: float.compare,
+    heuristic: h,
+  )
 }

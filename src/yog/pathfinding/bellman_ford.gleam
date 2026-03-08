@@ -1,6 +1,8 @@
 //// Bellman-Ford algorithm for finding shortest paths in graphs with negative edge weights.
 
 import gleam/dict.{type Dict}
+import gleam/float
+import gleam/int
 import gleam/list
 import gleam/order.{type Order, Lt}
 import gleam/result
@@ -452,4 +454,69 @@ fn do_implicit_bellman_ford_by(
       }
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+// CONVENIENCE WRAPPERS FOR COMMON TYPES
+// -----------------------------------------------------------------------------
+
+/// Finds shortest path with **integer weights**, handling negative edges.
+///
+/// This is a convenience wrapper around `bellman_ford` that uses:
+/// - `0` as the zero element
+/// - `int.add` for addition
+/// - `int.compare` for comparison
+///
+/// ## Example
+///
+/// ```gleam
+/// bellman_ford.bellman_ford_int(graph, from: 1, to: 5)
+/// // => ShortestPath(Path([1, 2, 5], 15))
+/// ```
+///
+/// ## When to Use
+///
+/// Use this for graphs with `Int` edge weights that may be negative (arbitrage
+/// detection, time-dependent costs, etc.). For graphs with only non-negative
+/// weights, prefer `dijkstra.shortest_path_int` which is faster.
+pub fn bellman_ford_int(
+  in graph: Graph(n, Int),
+  from start: NodeId,
+  to goal: NodeId,
+) -> BellmanFordResult(Int) {
+  bellman_ford(
+    graph,
+    start,
+    goal,
+    with_zero: 0,
+    with_add: int.add,
+    with_compare: int.compare,
+  )
+}
+
+/// Finds shortest path with **float weights**, handling negative edges.
+///
+/// This is a convenience wrapper around `bellman_ford` that uses:
+/// - `0.0` as the zero element
+/// - `float.add` for addition
+/// - `float.compare` for comparison
+///
+/// ## Warning
+///
+/// Float arithmetic has precision limitations. Negative cycles might not be
+/// detected reliably due to floating-point errors. Prefer `Int` weights for
+/// critical calculations.
+pub fn bellman_ford_float(
+  in graph: Graph(n, Float),
+  from start: NodeId,
+  to goal: NodeId,
+) -> BellmanFordResult(Float) {
+  bellman_ford(
+    graph,
+    start,
+    goal,
+    with_zero: 0.0,
+    with_add: float.add,
+    with_compare: float.compare,
+  )
 }

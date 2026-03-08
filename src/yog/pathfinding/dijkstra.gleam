@@ -1,6 +1,8 @@
 //// Dijkstra's algorithm for finding shortest paths in graphs with non-negative edge weights.
 
 import gleam/dict.{type Dict}
+import gleam/float
+import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/order.{type Order}
@@ -343,4 +345,118 @@ fn do_implicit_dijkstra_by(
       }
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+// CONVENIENCE WRAPPERS FOR COMMON TYPES
+// -----------------------------------------------------------------------------
+
+/// Finds the shortest path using **integer weights**.
+///
+/// This is a convenience wrapper around `shortest_path` that uses:
+/// - `0` as the zero element
+/// - `int.add` for addition
+/// - `int.compare` for comparison
+///
+/// ## Example
+///
+/// ```gleam
+/// // Much cleaner than the full explicit version
+/// dijkstra.shortest_path_int(graph, from: 1, to: 5)
+/// // => Some(Path([1, 2, 5], 15))
+///
+/// // Equivalent explicit call:
+/// // dijkstra.shortest_path(
+/// //   graph, from: 1, to: 5,
+/// //   with_zero: 0,
+/// //   with_add: int.add,
+/// //   with_compare: int.compare
+/// // )
+/// ```
+///
+/// ## When to Use
+///
+/// Use this for graphs with `Int` edge weights (hop counts, distances in meters,
+/// costs in cents, etc.). For custom weight types (Money, Distance, etc.), use
+/// the full `shortest_path` function with your own semiring operations.
+pub fn shortest_path_int(
+  in graph: Graph(n, Int),
+  from start: NodeId,
+  to goal: NodeId,
+) -> Option(Path(Int)) {
+  shortest_path(
+    graph,
+    start,
+    goal,
+    with_zero: 0,
+    with_add: int.add,
+    with_compare: int.compare,
+  )
+}
+
+/// Finds the shortest path using **float weights**.
+///
+/// This is a convenience wrapper around `shortest_path` that uses:
+/// - `0.0` as the zero element
+/// - `float.add` for addition
+/// - `float.compare` for comparison
+///
+/// ## Example
+///
+/// ```gleam
+/// dijkstra.shortest_path_float(graph, from: 1, to: 5)
+/// // => Some(Path([1, 2, 5], 15.5))
+/// ```
+///
+/// ## When to Use
+///
+/// Use this for graphs with `Float` edge weights (probabilities, distances in
+/// kilometers with decimal precision, continuous costs, etc.). Note that float
+/// arithmetic has precision limitations - for exact calculations, prefer `Int`
+/// weights (e.g., store cents instead of dollars).
+pub fn shortest_path_float(
+  in graph: Graph(n, Float),
+  from start: NodeId,
+  to goal: NodeId,
+) -> Option(Path(Float)) {
+  shortest_path(
+    graph,
+    start,
+    goal,
+    with_zero: 0.0,
+    with_add: float.add,
+    with_compare: float.compare,
+  )
+}
+
+/// Computes shortest distances using **integer weights**.
+///
+/// Convenience wrapper for `single_source_distances` with `Int` weights.
+pub fn single_source_distances_int(
+  in graph: Graph(n, Int),
+  from source: NodeId,
+) -> Dict(NodeId, Int) {
+  single_source_distances(
+    graph,
+    source,
+    with_zero: 0,
+    with_add: int.add,
+    with_compare: int.compare,
+  )
+}
+
+/// Computes shortest distances using **float weights**.
+///
+/// Convenience wrapper for `single_source_distances` with `Float` weights.
+pub fn single_source_distances_float(
+  in graph: Graph(n, Float),
+  from source: NodeId,
+) -> Dict(NodeId, Float) {
+  single_source_distances(
+    graph,
+    source,
+    with_zero: 0.0,
+    with_add: float.add,
+    with_compare: float.compare,
+  )
 }
