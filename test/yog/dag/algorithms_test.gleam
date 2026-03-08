@@ -1,6 +1,7 @@
 import gleam/dict
 import gleam/int
 import gleam/list
+import gleam/option.{None, Some}
 import gleeunit/should
 import yog/dag/algorithms.{Ancestors, Descendants}
 import yog/dag/models
@@ -44,6 +45,51 @@ pub fn longest_path_test() {
   let assert Ok(d) = models.from_graph(g)
   algorithms.longest_path(d)
   |> should.equal([1, 3, 4, 5])
+}
+
+pub fn shortest_path_test() {
+  let g =
+    model.new(Directed)
+    |> model.add_edge_ensured(1, 2, 10, "")
+    |> model.add_edge_ensured(1, 3, 20, "")
+    |> model.add_edge_ensured(2, 4, 30, "")
+    |> model.add_edge_ensured(3, 4, 40, "")
+    |> model.add_edge_ensured(4, 5, 5, "")
+
+  let assert Ok(d) = models.from_graph(g)
+
+  // Shortest path from 1 to 5: 1->2->4->5 = 10+30+5 = 45
+  let path = algorithms.shortest_path(d, from: 1, to: 5)
+  let assert Some(p) = path
+  p.nodes |> should.equal([1, 2, 4, 5])
+  p.total_weight |> should.equal(45)
+}
+
+pub fn shortest_path_no_path_test() {
+  let g =
+    model.new(Directed)
+    |> model.add_edge_ensured(1, 2, 10, "")
+    |> model.add_node(3, "isolated")
+
+  let assert Ok(d) = models.from_graph(g)
+
+  // No path from 1 to 3
+  algorithms.shortest_path(d, from: 1, to: 3)
+  |> should.equal(None)
+}
+
+pub fn shortest_path_same_node_test() {
+  let g =
+    model.new(Directed)
+    |> model.add_edge_ensured(1, 2, 10, "")
+
+  let assert Ok(d) = models.from_graph(g)
+
+  // Path from node to itself has distance 0
+  let path = algorithms.shortest_path(d, from: 1, to: 1)
+  let assert Some(p) = path
+  p.nodes |> should.equal([1])
+  p.total_weight |> should.equal(0)
 }
 
 pub fn transitive_closure_test() {

@@ -1,8 +1,10 @@
 import gleam/dict
 import gleam/list
-import gleam/option.{None, Some}
+import gleam/option.{type Option, None, Some}
+import gleam/set.{type Set}
 import yog/dag/models.{type Dag}
 import yog/model.{type NodeId}
+import yog/pathfinding/utils.{type Path, Path}
 import yog/traversal
 
 /// topological_sort(Dag(n, e)) -> List(NodeId)
@@ -209,8 +211,100 @@ pub type Direction {
   Descendants
 }
 
+/// shortest_path(Dag(n, Int), NodeId, NodeId) -> Option(Path(e))
+/// Finds the shortest path between two nodes in a DAG using O(V+E) dynamic programming.
+/// 
+/// Unlike Dijkstra's algorithm which works on general graphs in O((V+E) log V),
+/// this leverages the DAG property for linear time complexity.
+///
+/// Returns `None` if no path exists from `from` to `to`.
+pub fn shortest_path(
+  dag: Dag(n, Int),
+  from start: NodeId,
+  to goal: NodeId,
+) -> Option(Path(Int)) {
+  let graph = models.to_graph(dag)
+  let sorted_nodes = topological_sort(dag)
+
+  // Initialize distance and predecessor tables
+  let #(distances, predecessors) =
+    list.fold(sorted_nodes, #(dict.new(), dict.new()), fn(acc, node) {
+      let #(dist_acc, pred_acc) = acc
+
+      // For the start node, initialize distance to 0
+      let dist_acc = case node == start {
+        True -> dict.insert(dist_acc, node, 0)
+        False -> dist_acc
+      }
+
+      let node_dist = case dict.get(dist_acc, node) {
+        Ok(d) -> d
+        Error(_) -> 0
+      }
+
+      // Relax outgoing edges (minimize for shortest path)
+      case dict.get(graph.out_edges, node) {
+        Ok(edges) -> {
+          dict.fold(edges, #(dist_acc, pred_acc), fn(inner_acc, target, weight) {
+            let #(d_acc, p_acc) = inner_acc
+            let current_target_dist = dict.get(d_acc, target)
+            let new_dist = node_dist + weight
+
+            let should_update = case current_target_dist {
+              Ok(d) -> new_dist < d
+              // If we've never reached this node, any path is the shortest so far
+              Error(_) -> True
+            }
+
+            case should_update {
+              True -> #(
+                dict.insert(d_acc, target, new_dist),
+                dict.insert(p_acc, target, node),
+              )
+              False -> inner_acc
+            }
+          })
+        }
+        Error(_) -> acc
+      }
+    })
+
+  // Check if we can reach the goal
+  case dict.get(distances, goal) {
+    Error(_) -> None
+    Ok(total_dist) -> {
+      // Reconstruct path by backtracking from goal to start
+      let path = reconstruct_path_backward(goal, start, predecessors, [])
+      Some(Path(nodes: path, total_weight: total_dist))
+    }
+  }
+}
+
+fn reconstruct_path_backward(
+  current: NodeId,
+  start: NodeId,
+  predecessors: dict.Dict(NodeId, NodeId),
+  path: List(NodeId),
+) -> List(NodeId) {
+  let new_path = [current, ..path]
+  case current == start {
+    True -> new_path
+    False -> {
+      case dict.get(predecessors, current) {
+        Ok(prev) ->
+          reconstruct_path_backward(prev, start, predecessors, new_path)
+        Error(_) -> new_path
+        // Should not happen if path exists
+      }
+    }
+  }
+}
+
 /// count_reachability(Dag(n, e), Direction) -> Dict(NodeId, Int)
 /// Goal: Efficiently count total descendants/ancestors for every node.
+///
+/// Uses sets internally to handle diamond patterns efficiently - a node with
+/// multiple paths to the same descendant is only counted once.
 pub fn count_reachability(
   dag: Dag(n, e),
   direction: Direction,
@@ -224,7 +318,7 @@ pub fn count_reachability(
     Ancestors -> topological_sort(dag)
   }
 
-  // Pre-compute reversing relationships for Ancestors
+  // Pre-compute relationship lookup based on direction
   let get_related = fn(node) {
     case direction {
       Descendants -> {
@@ -243,14 +337,15 @@ pub fn count_reachability(
   }
 
   // DP state: Map of node -> Set of all reachable nodes
-  // We use sets to avoid double counting from diamond patterns
-  let reachability_sets =
+  // Using sets for O(1) membership check and automatic deduplication
+  let reachability_sets: dict.Dict(NodeId, Set(NodeId)) =
     list.fold(nodes_to_process, dict.new(), fn(acc, node) {
       let related = get_related(node)
-      let all_reachable =
-        list.fold(related, related, fn(set_acc, child) {
+      let related_set = set.from_list(related)
+      let all_reachable: Set(NodeId) =
+        list.fold(related, related_set, fn(set_acc: Set(NodeId), child) {
           case dict.get(acc, child) {
-            Ok(child_set) -> list.append(set_acc, child_set) |> list.unique()
+            Ok(child_set) -> set.union(set_acc, child_set)
             Error(_) -> set_acc
           }
         })
@@ -258,7 +353,7 @@ pub fn count_reachability(
     })
 
   // Convert sets to counts
-  dict.map_values(reachability_sets, fn(_, reachable) { list.length(reachable) })
+  dict.map_values(reachability_sets, fn(_, reachable) { set.size(reachable) })
 }
 
 /// lowest_common_ancestors(Dag(n, e), NodeId, NodeId) -> List(NodeId)
@@ -304,15 +399,16 @@ fn get_ancestors_set(dag: Dag(n, e), node: NodeId) -> List(NodeId) {
 fn has_path(dag: Dag(n, e), start: NodeId, target: NodeId) -> Bool {
   let graph = models.to_graph(dag)
 
-  // Simple DFS or BFS. Since it's a DAG, DFS is fine and fast.
-  do_has_path(graph, [start], target, dict.new())
+  // Simple DFS. Since it's a DAG, no cycle detection needed.
+  // Using prepend for O(1) stack operations.
+  do_has_path(graph, [start], target, set.new())
 }
 
 fn do_has_path(
   graph: model.Graph(n, e),
   stack: List(NodeId),
   target: NodeId,
-  visited: dict.Dict(NodeId, Bool),
+  visited: Set(NodeId),
 ) -> Bool {
   case stack {
     [] -> False
@@ -320,20 +416,18 @@ fn do_has_path(
       case current == target {
         True -> True
         False -> {
-          case dict.has_key(visited, current) {
+          case set.contains(visited, current) {
             True -> do_has_path(graph, rest, target, visited)
             False -> {
-              let new_visited = dict.insert(visited, current, True)
+              let new_visited = set.insert(visited, current)
               let children = case dict.get(graph.out_edges, current) {
                 Ok(edges) -> dict.keys(edges)
                 Error(_) -> []
               }
-              do_has_path(
-                graph,
-                list.append(children, rest),
-                target,
-                new_visited,
-              )
+              // Prepend children to stack for DFS (O(1) per child)
+              let new_stack =
+                list.fold(children, rest, fn(acc, child) { [child, ..acc] })
+              do_has_path(graph, new_stack, target, new_visited)
             }
           }
         }

@@ -24,8 +24,11 @@
 //// Attempting to build a 100,000-edge graph using `dag.add_edge` will result in 
 //// $O(N \cdot (V+E))$ performance decay.
 
+import gleam/option.{type Option}
 import yog/dag/algorithms
 import yog/dag/models.{type Dag}
+import yog/model.{type NodeId}
+import yog/pathfinding/utils.{type Path}
 
 // Re-export models
 pub fn from_graph(graph) {
@@ -55,6 +58,14 @@ pub fn add_edge(dag: Dag(n, e), from src, to dst, with weight: e) {
 // Re-export algorithms
 pub fn topological_sort(dag: Dag(n, e)) {
   algorithms.topological_sort(dag)
+}
+
+pub fn shortest_path(
+  dag: Dag(n, Int),
+  from start: NodeId,
+  to goal: NodeId,
+) -> Option(Path(Int)) {
+  algorithms.shortest_path(dag, from: start, to: goal)
 }
 
 pub fn longest_path(dag: Dag(n, Int)) {
