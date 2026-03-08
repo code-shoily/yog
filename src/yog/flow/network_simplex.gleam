@@ -1,4 +1,15 @@
 //// Network Simplex algorithm for minimum cost flow.
+////
+//// > **Note:** This implementation uses list-based data structures for the
+//// > internal spanning tree representation. While algorithmically correct,
+//// > random access and updates are O(n) rather than O(1). For large flow
+//// > networks (1000+ nodes/edges), this may impact performance. Consider
+//// > using alternative approaches for very large-scale problems:
+//// > - Erlang FFI to `:digraph` or optimized C libraries
+//// > - Specialized MCF solvers for production-scale optimization
+//// >
+//// > See [GitHub issue #TODO](https://github.com/code-shoily/yog/issues) for
+//// > potential future optimization to Dict-based arrays.
 
 import gleam/dict
 import gleam/int
