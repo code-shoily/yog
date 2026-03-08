@@ -24,20 +24,10 @@ gleeunit = ">= 1.0.0 and < 2.0.0"
 typescript_declarations = true
 
 internal_modules = [
-  "yog/pathfinding/a_star",
-  "yog/pathfinding/bellman_ford",
-  "yog/pathfinding/dijkstra",
-  "yog/pathfinding/floyd_warshall",
-  "yog/pathfinding/matrix",
-  "yog/pathfinding/utils",
-  "yog/flow/max_flow",
-  "yog/flow/min_cut",
-  "yog/flow/network_simplex",
-  "yog/properties/bipartite",
-  "yog/properties/clique",
-  "yog/properties/eulerian",
-  "yog/internal/bench/bench_utils",
-  "yog/internal/bench/simple_pathfinding",
-  "yog/internal/utils",
-  "yog/internal/queue",
+  "yog/flow/*",
+  "yog/internal",
+  "yog/internal/*",
+  "yog/internal/bench/*",
+  "yog/pathfinding/*",
+  "yog/properties/*",
 ]
