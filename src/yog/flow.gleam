@@ -1,7 +1,7 @@
 import gleam/order.{type Order}
-import yog/flow/max_flow
-import yog/flow/min_cut
-import yog/flow/network_simplex
+import yog/internal/flow/max_flow
+import yog/internal/flow/min_cut
+import yog/internal/flow/network_simplex
 import yog/model
 
 // Re-exports from Network Simplex

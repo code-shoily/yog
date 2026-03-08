@@ -2,7 +2,7 @@ import gleam/list
 import gleam/result
 import gleeunit/should
 import yog
-import yog/flow/network_simplex
+import yog/internal/flow/network_simplex
 
 pub fn simple_network_simplex_test() {
   let graph =

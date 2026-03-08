@@ -3,7 +3,7 @@ import gleam/option.{None, Some}
 import gleam/set
 import gleeunit/should
 import yog
-import yog/properties/bipartite
+import yog/internal/properties/bipartite
 
 // ============= Bipartite Detection Tests =============
 

@@ -1,10 +1,10 @@
 import gleam/dict.{type Dict}
 import gleam/option.{type Option}
 import gleam/set.{type Set}
+import yog/internal/properties/bipartite
+import yog/internal/properties/clique
+import yog/internal/properties/eulerian
 import yog/model.{type Graph, type NodeId}
-import yog/properties/bipartite
-import yog/properties/clique
-import yog/properties/eulerian
 import yog/traversal
 
 // --- Properties ---

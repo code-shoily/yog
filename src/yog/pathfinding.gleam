@@ -2,12 +2,12 @@ import gleam/dict.{type Dict}
 import gleam/list
 import gleam/option.{type Option}
 import gleam/order.{type Order}
+import yog/internal/pathfinding/a_star
+import yog/internal/pathfinding/bellman_ford
+import yog/internal/pathfinding/dijkstra
+import yog/internal/pathfinding/floyd_warshall
+import yog/internal/pathfinding/matrix
 import yog/model.{type Graph, type NodeId}
-import yog/pathfinding/a_star
-import yog/pathfinding/bellman_ford
-import yog/pathfinding/dijkstra
-import yog/pathfinding/floyd_warshall
-import yog/pathfinding/matrix
 
 /// Represents a path through the graph with its total weight.
 pub type Path(e) {

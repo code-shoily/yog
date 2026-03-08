@@ -2,7 +2,7 @@ import gleam/dict
 import gleam/int
 import gleam/order
 import gleeunit/should
-import yog/pathfinding/utils
+import yog/internal/pathfinding/utils
 
 pub fn compare_frontier_test() {
   let cmp = int.compare
