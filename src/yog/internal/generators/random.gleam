@@ -1,34 +1,5 @@
-//// Random graph generators for stochastic network models.
-////
-//// This module provides functions to generate random graphs using well-known
-//// probabilistic models:
-//// - **Erdős-Rényi**: Random graphs with uniform edge probability
-//// - **Barabási-Albert**: Scale-free networks with power-law degree distribution
-//// - **Watts-Strogatz**: Small-world networks with high clustering
-//// - **Random trees**: Uniformly random spanning trees
-////
-//// These generators are useful for:
-//// - **Testing**: Generate graphs with known statistical properties
-//// - **Simulation**: Model real-world networks (social, biological, technological)
-//// - **Benchmarking**: Create graphs of various sizes and structures
-//// - **Research**: Study network properties and algorithm behavior
-////
-//// ## Example
-////
-//// ```gleam
-//// import yog/generators/random
-////
-//// pub fn main() {
-////   // Erdős-Rényi: 100 nodes, each edge exists with 5% probability
-////   let er_graph = random.erdos_renyi_gnp(100, 0.05)
-////
-////   // Barabási-Albert: 100 nodes, each new node connects to 3 existing nodes
-////   let ba_graph = random.barabasi_albert(100, 3)
-////
-////   // Watts-Strogatz: 100 nodes in a ring, each connected to 4 neighbors, 10% rewiring
-////   let ws_graph = random.watts_strogatz(100, 4, 0.1)
-//// }
-//// ```
+//// Internal implementation of random graph generators.
+//// User-facing documentation is located in `src/yog/generators.gleam`.
 
 import gleam/float
 import gleam/int
@@ -38,27 +9,7 @@ import yog/internal/utils
 import yog/model.{type Graph, type GraphType}
 
 /// Generates a random graph using the Erdős-Rényi G(n, p) model.
-///
-/// Each possible edge is included independently with probability p.
-///
-/// **Expected edges:** p * n(n-1)/2 for undirected, p * n(n-1) for directed
-///
-/// **Time Complexity:** O(n²) - must consider all possible edges
-///
-/// ## Example
-///
-/// ```gleam
-/// // 50 nodes, each edge exists with 10% probability
-/// // Expected ~122 edges for undirected
-/// let graph = random.erdos_renyi_gnp(50, 0.1)
-/// ```
-///
-/// ## Use Cases
-///
-/// - Baseline for comparing other random graph models
-/// - Modeling networks with uniform connection probability
-/// - Testing graph algorithms on random structures
-/// - Phase transitions in network connectivity (p ~ 1/n)
+/// Internal implementation. See `yog/generators` for public API and usage.
 pub fn erdos_renyi_gnp(n: Int, p: Float) -> Graph(Nil, Int) {
   erdos_renyi_gnp_with_type(n, p, model.Undirected)
 }
@@ -106,23 +57,7 @@ pub fn erdos_renyi_gnp_with_type(
 }
 
 /// Generates a random graph using the Erdős-Rényi G(n, m) model.
-///
-/// Exactly m edges are added uniformly at random (without replacement).
-///
-/// **Time Complexity:** O(m) expected, O(m log m) worst case
-///
-/// ## Example
-///
-/// ```gleam
-/// // 50 nodes, exactly 100 edges
-/// let graph = random.erdos_renyi_gnm(50, 100)
-/// ```
-///
-/// ## Use Cases
-///
-/// - Control exact edge count for testing
-/// - Generate sparse graphs efficiently (m << n²)
-/// - Benchmark algorithms with precise graph sizes
+/// Internal implementation. See `yog/generators` for public API and usage.
 pub fn erdos_renyi_gnm(n: Int, m: Int) -> Graph(Nil, Int) {
   erdos_renyi_gnm_with_type(n, m, model.Undirected)
 }
@@ -190,32 +125,7 @@ fn add_random_edges(
 }
 
 /// Generates a scale-free network using the Barabási-Albert model.
-///
-/// Starts with m₀ nodes in a complete graph, then adds n - m₀ nodes.
-/// Each new node connects to m existing nodes via preferential attachment
-/// (probability proportional to node degree).
-///
-/// **Properties:**
-/// - Power-law degree distribution P(k) ~ k^(-γ)
-/// - Scale-free (no characteristic scale)
-/// - Robust to random failures, vulnerable to targeted attacks
-///
-/// **Time Complexity:** O(nm)
-///
-/// ## Example
-///
-/// ```gleam
-/// // 100 nodes, each new node connects to 3 existing nodes
-/// // Results in ~300 edges
-/// let graph = random.barabasi_albert(100, 3)
-/// ```
-///
-/// ## Use Cases
-///
-/// - Model the internet, citation networks, social networks
-/// - Study robustness and vulnerability
-/// - Test algorithms on scale-free topologies
-/// - Simulate viral spread on networks with hubs
+/// Internal implementation. See `yog/generators` for public API and usage.
 pub fn barabasi_albert(n: Int, m: Int) -> Graph(Nil, Int) {
   barabasi_albert_with_type(n, m, model.Undirected)
 }
@@ -329,35 +239,7 @@ fn select_preferential_targets(
 }
 
 /// Generates a small-world network using the Watts-Strogatz model.
-///
-/// Creates a ring lattice where each node connects to k nearest neighbors,
-/// then rewires each edge with probability p.
-///
-/// **Properties:**
-/// - High clustering coefficient (like regular lattices)
-/// - Short average path length (like random graphs)
-/// - "Small-world" phenomenon: most nodes reachable in few hops
-///
-/// **Parameters:**
-/// - n: Number of nodes
-/// - k: Each node connects to k nearest neighbors (must be even)
-/// - p: Rewiring probability (0 = regular lattice, 1 = random graph)
-///
-/// **Time Complexity:** O(nk)
-///
-/// ## Example
-///
-/// ```gleam
-/// // 100 nodes, each connected to 4 neighbors, 10% rewiring
-/// let graph = random.watts_strogatz(100, 4, 0.1)
-/// ```
-///
-/// ## Use Cases
-///
-/// - Model social networks (friends of friends, but some random connections)
-/// - Neural networks (local connectivity with long-range connections)
-/// - Study information diffusion and epidemic spreading
-/// - Test algorithms on networks with community structure
+/// Internal implementation. See `yog/generators` for public API and usage.
 pub fn watts_strogatz(n: Int, k: Int, p: Float) -> Graph(Nil, Int) {
   watts_strogatz_with_type(n, k, p, model.Undirected)
 }
@@ -421,30 +303,7 @@ fn add_random_edge_not_to(
 }
 
 /// Generates a uniformly random tree on n nodes.
-///
-/// Uses a random walk approach to generate a spanning tree.
-/// Every labeled tree on n vertices has equal probability.
-///
-/// **Properties:**
-/// - Exactly n - 1 edges
-/// - Connected and acyclic
-/// - Random structure (no preferential attachment or locality bias)
-///
-/// **Time Complexity:** O(n²) expected
-///
-/// ## Example
-///
-/// ```gleam
-/// // Random tree with 50 nodes
-/// let tree = random.random_tree(50)
-/// ```
-///
-/// ## Use Cases
-///
-/// - Test tree algorithms (DFS, BFS, LCA, diameter)
-/// - Model hierarchical structures with random branching
-/// - Generate random spanning trees
-/// - Benchmark on tree topologies
+/// Internal implementation. See `yog/generators` for public API and usage.
 pub fn random_tree(n: Int) -> Graph(Nil, Int) {
   random_tree_with_type(n, model.Undirected)
 }

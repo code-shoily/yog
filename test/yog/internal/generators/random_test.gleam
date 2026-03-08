@@ -1,13 +1,13 @@
 import gleam/list
 import gleeunit/should
 import yog/connectivity
-import yog/generators/random
+import yog/generators
 import yog/model
 
 // ============= Erdős-Rényi G(n,p) Tests =============
 
 pub fn erdos_renyi_gnp_basic_test() {
-  let graph = random.erdos_renyi_gnp(10, 0.0)
+  let graph = generators.erdos_renyi_gnp(10, 0.0)
 
   model.all_nodes(graph)
   |> list.length()
@@ -15,7 +15,7 @@ pub fn erdos_renyi_gnp_basic_test() {
 }
 
 pub fn erdos_renyi_gnp_complete_test() {
-  let graph = random.erdos_renyi_gnp(5, 1.0)
+  let graph = generators.erdos_renyi_gnp(5, 1.0)
 
   // With p=1, should be complete
   list.length(model.all_nodes(graph))
@@ -25,7 +25,7 @@ pub fn erdos_renyi_gnp_complete_test() {
 // ============= Erdős-Rényi G(n,m) Tests =============
 
 pub fn erdos_renyi_gnm_basic_test() {
-  let graph = random.erdos_renyi_gnm(10, 15)
+  let graph = generators.erdos_renyi_gnm(10, 15)
 
   model.all_nodes(graph)
   |> list.length()
@@ -35,7 +35,7 @@ pub fn erdos_renyi_gnm_basic_test() {
 // ============= Barabási-Albert Tests =============
 
 pub fn barabasi_albert_basic_test() {
-  let graph = random.barabasi_albert(20, 3)
+  let graph = generators.barabasi_albert(20, 3)
 
   model.all_nodes(graph)
   |> list.length()
@@ -43,7 +43,7 @@ pub fn barabasi_albert_basic_test() {
 }
 
 pub fn barabasi_albert_connected_test() {
-  let graph = random.barabasi_albert(30, 2)
+  let graph = generators.barabasi_albert(30, 2)
 
   // BA graphs are always connected
   let comps = connectivity.strongly_connected_components(graph)
@@ -54,7 +54,7 @@ pub fn barabasi_albert_connected_test() {
 // ============= Watts-Strogatz Tests =============
 
 pub fn watts_strogatz_basic_test() {
-  let graph = random.watts_strogatz(20, 4, 0.0)
+  let graph = generators.watts_strogatz(20, 4, 0.0)
 
   model.all_nodes(graph)
   |> list.length()
@@ -64,7 +64,7 @@ pub fn watts_strogatz_basic_test() {
 // ============= Random Tree Tests =============
 
 pub fn random_tree_basic_test() {
-  let graph = random.random_tree(10)
+  let graph = generators.random_tree(10)
 
   model.all_nodes(graph)
   |> list.length()
@@ -72,7 +72,7 @@ pub fn random_tree_basic_test() {
 }
 
 pub fn random_tree_connected_test() {
-  let graph = random.random_tree(20)
+  let graph = generators.random_tree(20)
 
   // Tree should be connected
   let comps = connectivity.strongly_connected_components(graph)
@@ -86,11 +86,11 @@ pub fn all_generators_respect_node_count_test() {
   let n = 15
 
   let graphs = [
-    random.erdos_renyi_gnp(n, 0.3),
-    random.erdos_renyi_gnm(n, 20),
-    random.barabasi_albert(n, 3),
-    random.watts_strogatz(n, 4, 0.1),
-    random.random_tree(n),
+    generators.erdos_renyi_gnp(n, 0.3),
+    generators.erdos_renyi_gnm(n, 20),
+    generators.barabasi_albert(n, 3),
+    generators.watts_strogatz(n, 4, 0.1),
+    generators.random_tree(n),
   ]
 
   list.all(graphs, fn(g) { list.length(model.all_nodes(g)) == n })
