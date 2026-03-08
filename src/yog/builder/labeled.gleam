@@ -16,6 +16,11 @@
 //// **Correct workflow:** Build completely → Convert → Use IDs for algorithms.
 //// Do NOT modify the resulting graph and expect the builder to track changes.
 ////
+//// > **Need incremental updates?** If you want to add/remove nodes and edges
+//// > incrementally after initial construction, consider using `yog/builder/live`
+//// > instead. The `LiveBuilder` maintains synchronization between labels and
+//// > the graph, allowing efficient O(ΔE) updates rather than rebuilding.
+////
 //// ### Stable ID Assignment (Idempotent)
 ////
 //// Node IDs are assigned deterministically based on first occurrence. Adding the
@@ -348,6 +353,30 @@ pub fn from_unweighted_list(
     let #(src, dst) = edge
     add_unweighted_edge(b, from: src, to: dst)
   })
+}
+
+/// Extracts the label-to-ID registry from the builder.
+///
+/// This is primarily used for migrating to a `LiveBuilder`. The registry
+/// preserves all ID mappings, allowing seamless transition from static to
+/// incremental building.
+///
+/// ## Example
+///
+/// ```gleam
+/// let static = labeled.directed() |> labeled.add_edge("A", "B", 10)
+/// let registry = labeled.to_registry(static)
+/// // Use with live.from_registry(registry)
+/// ```
+pub fn to_registry(builder: Builder(label, e)) -> Dict(label, NodeId) {
+  builder.label_to_id
+}
+
+/// Returns the next available ID from the builder.
+///
+/// Used in conjunction with `to_registry` for migrating to `LiveBuilder`.
+pub fn next_id(builder: Builder(label, e)) -> NodeId {
+  builder.next_id
 }
 
 /// Returns all labels that have been added to the builder.
