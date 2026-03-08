@@ -7,7 +7,7 @@
 ////
 //// ```gleam
 //// import yog
-//// import yog/pathfinding
+//// import yog/pathfinding/dijkstra as pathfinding
 //// import gleam/int
 ////
 //// pub fn main() {
@@ -65,26 +65,26 @@
 ////   - Kruskal's algorithm with Union-Find
 ////   - Prim's algorithm with priority queue
 ////
-//// - **`yog/topological_sort`** - Topological ordering
+//// - **`yog/traversal`** - Topological ordering
 ////   - Kahn's algorithm
 ////   - Lexicographical variant (heap-based)
 ////
-//// - **`yog/components`** - Connected components
+//// - **`yog/connectivity`** - Connected components
 ////   - Tarjan's algorithm for Strongly Connected Components (SCC)
 ////   - Kosaraju's algorithm for SCC (two-pass with transpose)
 ////
 //// - **`yog/connectivity`** - Graph connectivity analysis
 ////   - Tarjan's algorithm for bridges and articulation points
 ////
-//// - **`yog/min_cut`** - Minimum cut algorithms
+//// - **`yog/flow`** - Minimum cut algorithms
 ////   - Stoer-Wagner algorithm for global minimum cut
 ////
-//// - **`yog/eulerian`** - Eulerian paths and circuits
+//// - **`yog/properties`** - Eulerian paths and circuits
 ////   - Detection of Eulerian paths and circuits
 ////   - Hierholzer's algorithm for finding paths
 ////   - Works on both directed and undirected graphs
 ////
-//// - **`yog/bipartite`** - Bipartite graph detection and matching
+//// - **`yog/properties`** - Bipartite graph detection and matching
 ////   - Bipartite detection (2-coloring)
 ////   - Partition extraction (independent sets)
 ////   - Maximum matching (augmenting path algorithm)
@@ -437,25 +437,20 @@ pub fn is_acyclic(graph: Graph(n, e)) -> Bool {
 
 // Re-export traversal operations
 pub fn walk(
-  from start_id: NodeId,
   in graph: Graph(n, e),
+  from start_id: NodeId,
   using order: Order,
 ) -> List(NodeId) {
-  traversal.walk(from: start_id, in: graph, using: order)
+  traversal.walk(graph, from: start_id, using: order)
 }
 
 pub fn walk_until(
-  from start_id: NodeId,
   in graph: Graph(n, e),
+  from start_id: NodeId,
   using order: Order,
   until should_stop: fn(NodeId) -> Bool,
 ) -> List(NodeId) {
-  traversal.walk_until(
-    from: start_id,
-    in: graph,
-    using: order,
-    until: should_stop,
-  )
+  traversal.walk_until(graph, from: start_id, using: order, until: should_stop)
 }
 
 pub fn fold_walk(
@@ -466,7 +461,7 @@ pub fn fold_walk(
   with folder: fn(a, NodeId, WalkMetadata(NodeId)) -> #(WalkControl, a),
 ) -> a {
   traversal.fold_walk(
-    over: graph,
+    graph,
     from: start,
     using: order,
     initial: acc,

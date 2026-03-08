@@ -8,8 +8,8 @@ import gleam/io
 import gleam/option
 import gleeunit
 import gleeunit/should
-import yog/generators/random
-import yog/pathfinding
+import yog/generators/random as generators
+import yog/pathfinding/dijkstra as pathfinding
 
 pub fn main() {
   gleeunit.main()
@@ -21,7 +21,7 @@ pub fn basic_pathfinding_performance_test() {
   io.println("\n=== Basic Performance Test ===")
 
   // Small graph - should be fast
-  let small_graph = random.erdos_renyi_gnp(100, 0.05)
+  let small_graph = generators.erdos_renyi_gnp(100, 0.05)
   io.println("Testing Dijkstra on 100-node graph...")
 
   let result =

@@ -22,12 +22,14 @@ In the world of computer science, this is the literal definition of Graph Theory
 - **Graph Visualization**: Mermaid, DOT (Graphviz), and JSON rendering
 - **Minimum Spanning Tree**: Kruskal's and Prim's algorithms with Union-Find and Priority Queues
 - **Minimum Cut**: Stoer-Wagner algorithm for global min-cut
-- **Topological Sorting**: Kahn's algorithm with lexicographical variant
+- **Directed Acyclic Graphs (DAG)**: Strictly-validated `Dag(n, e)` wrapper bringing O(V+E) DP routines like `longest_path` (Critical Path), LCA, and transitive structures
+- **Topological Sorting**: Kahn's algorithm with lexicographical variant, alongside guaranteed cycle-free DAG-specific sorts
 - **Strongly Connected Components**: Tarjan's and Kosaraju's algorithms
 - **Maximum Clique**: Bron-Kerbosch algorithm for maximal and all maximal cliques
 - **Connectivity**: Bridge and articulation point detection
 - **Eulerian Paths & Circuits**: Detection and finding using Hierholzer's algorithm
 - **Bipartite Graphs**: Detection, maximum matching, and stable marriage (Gale-Shapley)
+- **Minimum Cost Flow (MCF)**: Global optimization using the robust **Network Simplex** algorithm
 - **Disjoint Set (Union-Find)**: With path compression and union by rank
 - **Efficient Data Structures**: Pairing heap for priority queues, two-list queue for BFS
 
@@ -46,7 +48,7 @@ import gleam/int
 import gleam/io
 import gleam/option.{None, Some}
 import yog
-import yog/pathfinding
+import yog/pathfinding/dijkstra
 
 pub fn main() {
   // Create a directed graph
@@ -60,7 +62,7 @@ pub fn main() {
     |> yog.add_edge(from: 1, to: 3, with: 10)
 
   // Find shortest path
-  case pathfinding.shortest_path(
+  case dijkstra.shortest_path(
     in: graph,
     from: 1,
     to: 3,
@@ -139,11 +141,13 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 | **Tarjan's SCC** | Finding strongly connected components | O(V+E) |
 | **Tarjan's Connectivity** | Finding bridges and articulation points | O(V+E) |
 | **Hierholzer** | Eulerian paths/circuits, route planning | O(V+E) |
+| **DAG Longest Path** | Critical path analysis on strictly directed acyclic graphs | O(V+E) |
 | **Topological Sort** | Ordering tasks with dependencies | O(V+E) |
 | **Gale-Shapley** | Stable matching, college admissions, medical residency | O(n²) |
 | **Prim's MST** | Minimum spanning tree (starts from node) | O(E log V) |
-| **Kosaraju's SCC** | Strongly connected components (two-pass) | O(V+E) |
+| **Kosaraju's SCC** | Strongly connected components (two-pass) | O(V + E) |
 | **Bron-Kerbosch** | Maximum and all maximal cliques | O(3^(n/3)) |
+| **Network Simplex** | Global minimum cost flow optimization | O(E) pivots |
 | **Implicit Search** | Pathfinding/Traversal on on-demand graphs | O((V+E) log V) |
 
 ## Performance Characteristics
@@ -154,7 +158,7 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 - **Maximum Flow**: Flat dictionary residuals with O(1) amortized BFS queue operations
 - **Graph Generators**: O(V²) for complete graphs, O(V) or O(VE) for others
 - **Stable Marriage**: O(n²) Gale-Shapley with deterministic proposal ordering
-- **Test Suite**: 589 tests pass in ~2 seconds
+- **Test Suite**: 733 tests pass in ~2 seconds
 
 ## AI Assistance
 

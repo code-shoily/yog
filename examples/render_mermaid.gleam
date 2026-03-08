@@ -1,9 +1,9 @@
 import gleam/int
 import gleam/io
 import gleam/option.{None, Some}
+import yog/io/mermaid
 import yog/model
-import yog/pathfinding
-import yog/render
+import yog/pathfinding/dijkstra
 import yog/transform
 
 pub fn main() {
@@ -20,9 +20,9 @@ pub fn main() {
   // 1. Basic Mermaid output
   io.println("--- Basic Mermaid Output ---")
   let mermaid_basic =
-    render.to_mermaid(
+    mermaid.to_mermaid(
       graph |> transform.map_edges(int.to_string),
-      render.default_options(),
+      mermaid.default_options(),
     )
   io.println("```mermaid")
   io.println(mermaid_basic)
@@ -30,10 +30,10 @@ pub fn main() {
 
   // 2. Mermaid with custom labels and highlighting
   io.println("\n--- Mermaid with Custom Labels & Highlighting ---")
-  case pathfinding.shortest_path(graph, 1, 3, 0, int.add, int.compare) {
+  case dijkstra.shortest_path(graph, 1, 3, 0, int.add, int.compare) {
     Some(path) -> {
       let base_options =
-        render.MermaidOptions(
+        mermaid.MermaidOptions(
           node_label: fn(id, data) {
             data <> " (ID: " <> int.to_string(id) <> ")"
           },
@@ -41,9 +41,9 @@ pub fn main() {
           highlighted_nodes: None,
           highlighted_edges: None,
         )
-      let options = render.path_to_options(path, base_options)
+      let options = mermaid.path_to_options(path, base_options)
       let mermaid_custom =
-        render.to_mermaid(graph |> transform.map_edges(int.to_string), options)
+        mermaid.to_mermaid(graph |> transform.map_edges(int.to_string), options)
       io.println("```mermaid")
       io.println(mermaid_custom)
       io.println("```")

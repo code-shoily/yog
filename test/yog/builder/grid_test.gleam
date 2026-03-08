@@ -200,9 +200,9 @@ pub fn pathfinding_on_grid_test() {
   let path =
     traversal.walk_until(
       from: start,
-      in: graph,
       using: BreadthFirst,
       until: fn(node) { node == goal },
+      in: graph,
     )
 
   // Path should exist

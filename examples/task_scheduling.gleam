@@ -1,7 +1,7 @@
 import gleam/io
 import gleam/string
 import yog/model.{Directed}
-import yog/topological_sort
+import yog/traversal
 
 pub fn main() {
   // Model tasks with dependencies
@@ -18,7 +18,7 @@ pub fn main() {
     |> model.add_edge(from: 3, to: 4, with: Nil)
   // Test before Deploy
 
-  case topological_sort.topological_sort(tasks) {
+  case traversal.topological_sort(tasks) {
     Ok(order) -> {
       // order = [1, 2, 3, 4] - valid execution order
       io.println("Execute tasks in order: " <> string.inspect(order))

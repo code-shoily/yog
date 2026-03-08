@@ -2,12 +2,12 @@ import gleam/dict.{type Dict}
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/order
 import gleam/result
 import gleam/set.{type Set}
 import gleamy/priority_queue
 import yog/internal/queue
 import yog/model.{type Graph, type NodeId}
-import yog/topological_sort
 
 /// Traversal order for graph walking algorithms.
 pub type Order {
@@ -54,7 +54,7 @@ pub type WalkMetadata(nid) {
 /// ```
 pub fn is_cyclic(graph: Graph(n, e)) -> Bool {
   case graph.kind {
-    model.Directed -> result.is_error(topological_sort.topological_sort(graph))
+    model.Directed -> result.is_error(topological_sort(graph))
     model.Undirected ->
       do_has_undirected_cycle(graph, model.all_nodes(graph), set.new())
   }
@@ -143,16 +143,16 @@ fn check_undirected_cycle(
 ///
 /// ```gleam
 /// // BFS traversal
-/// traversal.walk(from: 1, in: graph, using: BreadthFirst)
+/// traversal.walk(graph, from: 1, using: BreadthFirst)
 /// // => [1, 2, 3, 4, 5]
 ///
 /// // DFS traversal
-/// traversal.walk(from: 1, in: graph, using: DepthFirst)
+/// traversal.walk(graph, from: 1, using: DepthFirst)
 /// // => [1, 2, 4, 5, 3]
 /// ```
 pub fn walk(
-  from start_id: NodeId,
   in graph: Graph(n, e),
+  from start_id: NodeId,
   using order: Order,
 ) -> List(NodeId) {
   fold_walk(
@@ -175,15 +175,15 @@ pub fn walk(
 /// ```gleam
 /// // Stop when we find node 5
 /// traversal.walk_until(
+///   graph,
 ///   from: 1,
-///   in: graph,
 ///   using: BreadthFirst,
 ///   until: fn(node) { node == 5 }
 /// )
 /// ```
 pub fn walk_until(
-  from start_id: NodeId,
   in graph: Graph(n, e),
+  from start_id: NodeId,
   using order: Order,
   until should_stop: fn(NodeId) -> Bool,
 ) -> List(NodeId) {
@@ -228,7 +228,7 @@ pub fn walk_until(
 ///
 /// // Find all nodes within distance 3 from start
 /// let nearby = traversal.fold_walk(
-///   over: graph,
+///   graph,
 ///   from: 1,
 ///   using: BreadthFirst,
 ///   initial: dict.new(),
@@ -242,7 +242,7 @@ pub fn walk_until(
 ///
 /// // Stop immediately when target is found (like walk_until)
 /// let path_to_target = traversal.fold_walk(
-///   over: graph,
+///   graph,
 ///   from: start,
 ///   using: BreadthFirst,
 ///   initial: [],
@@ -257,7 +257,7 @@ pub fn walk_until(
 ///
 /// // Build a parent map for path reconstruction
 /// let parents = traversal.fold_walk(
-///   over: graph,
+///   graph,
 ///   from: start,
 ///   using: BreadthFirst,
 ///   initial: dict.new(),
@@ -272,7 +272,7 @@ pub fn walk_until(
 ///
 /// // Count nodes at each depth level
 /// let depth_counts = traversal.fold_walk(
-///   over: graph,
+///   graph,
 ///   from: root,
 ///   using: BreadthFirst,
 ///   initial: dict.new(),
@@ -846,5 +846,174 @@ fn do_implicit_dijkstra(
           }
         }
       }
+  }
+}
+
+/// Performs a topological sort on a directed graph using Kahn's algorithm.
+///
+/// Returns a linear ordering of nodes such that for every directed edge (u, v),
+/// node u comes before node v in the ordering.
+///
+/// Returns `Error(Nil)` if the graph contains a cycle.
+///
+/// **Time Complexity:** O(V + E) where V is vertices and E is edges
+///
+/// ## Example
+///
+/// ```gleam
+/// traversal.topological_sort(graph)
+/// // => Ok([1, 2, 3, 4])  // Valid ordering
+/// // or Error(Nil)         // Cycle detected
+/// ```
+pub fn topological_sort(graph: Graph(n, e)) -> Result(List(NodeId), Nil) {
+  let all_nodes = model.all_nodes(graph)
+
+  let in_degrees =
+    all_nodes
+    |> list.map(fn(id) {
+      let degree =
+        dict.get(graph.in_edges, id)
+        |> result.map(dict.size)
+        |> result.unwrap(0)
+      #(id, degree)
+    })
+    |> dict.from_list()
+
+  let queue =
+    dict.to_list(in_degrees)
+    |> list.filter(fn(pair) { pair.1 == 0 })
+    |> list.map(fn(pair) { pair.0 })
+
+  do_kahn(graph, queue, in_degrees, [], list.length(all_nodes))
+}
+
+/// Performs a topological sort that returns the lexicographically smallest sequence.
+///
+/// Uses a heap-based version of Kahn's algorithm to ensure that when multiple
+/// nodes have in-degree 0, the smallest one (according to `compare_nodes`) is chosen first.
+///
+/// The comparison function operates on **node data**, not node IDs, allowing intuitive
+/// comparisons like `string.compare` for alphabetical ordering.
+///
+/// Returns `Error(Nil)` if the graph contains a cycle.
+///
+/// **Time Complexity:** O(V log V + E) due to heap operations
+///
+/// ## Example
+///
+/// ```gleam
+/// // Get alphabetical ordering by node data
+/// traversal.lexicographical_topological_sort(graph, string.compare)
+/// // => Ok([0, 1, 2])  // Node IDs ordered by their string data
+///
+/// // Custom comparison by priority
+/// traversal.lexicographical_topological_sort(graph, fn(a, b) {
+///   int.compare(a.priority, b.priority)
+/// })
+/// ```
+pub fn lexicographical_topological_sort(
+  graph: Graph(n, e),
+  compare_nodes: fn(n, n) -> order.Order,
+) -> Result(List(NodeId), Nil) {
+  let all_nodes = model.all_nodes(graph)
+
+  let in_degrees =
+    all_nodes
+    |> list.map(fn(id) {
+      let degree =
+        dict.get(graph.in_edges, id)
+        |> result.map(dict.size)
+        |> result.unwrap(0)
+      #(id, degree)
+    })
+    |> dict.from_list()
+
+  let compare_by_data = fn(id_a: NodeId, id_b: NodeId) -> order.Order {
+    case dict.get(graph.nodes, id_a), dict.get(graph.nodes, id_b) {
+      Ok(data_a), Ok(data_b) -> compare_nodes(data_a, data_b)
+      _, _ -> order.Eq
+    }
+  }
+
+  let initial_queue =
+    dict.to_list(in_degrees)
+    |> list.filter(fn(pair) { pair.1 == 0 })
+    |> list.map(fn(pair) { pair.0 })
+    |> list.fold(priority_queue.new(compare_by_data), fn(q, id) {
+      priority_queue.push(q, id)
+    })
+
+  do_lexical_kahn(graph, initial_queue, in_degrees, [], list.length(all_nodes))
+}
+
+fn do_lexical_kahn(graph, q, in_degrees, acc, total_count) {
+  case priority_queue.pop(q) {
+    Error(Nil) -> {
+      case list.length(acc) == total_count {
+        True -> Ok(list.reverse(acc))
+        False -> Error(Nil)
+      }
+    }
+    Ok(#(head, rest_q)) -> {
+      let neighbors = model.successor_ids(graph, head)
+
+      let #(next_q, next_in_degrees) =
+        list.fold(neighbors, #(rest_q, in_degrees), fn(state, neighbor) {
+          let #(current_q, degrees) = state
+          let current_degree = dict.get(degrees, neighbor) |> result.unwrap(0)
+          let new_degree = current_degree - 1
+
+          let new_degrees = dict.insert(degrees, neighbor, new_degree)
+          let updated_q = case new_degree == 0 {
+            True -> priority_queue.push(current_q, neighbor)
+            False -> current_q
+          }
+          #(updated_q, new_degrees)
+        })
+
+      do_lexical_kahn(
+        graph,
+        next_q,
+        next_in_degrees,
+        [head, ..acc],
+        total_count,
+      )
+    }
+  }
+}
+
+fn do_kahn(graph, queue, in_degrees, acc, total_node_count) {
+  case queue {
+    [] -> {
+      case list.length(acc) == total_node_count {
+        True -> Ok(list.reverse(acc))
+        False -> Error(Nil)
+      }
+    }
+    [head, ..tail] -> {
+      let neighbors = model.successor_ids(graph, head)
+
+      let #(next_queue, next_in_degrees) =
+        list.fold(neighbors, #(tail, in_degrees), fn(state, neighbor) {
+          let #(q, degrees) = state
+          let current_degree = dict.get(degrees, neighbor) |> result.unwrap(0)
+          let new_degree = current_degree - 1
+
+          let new_degrees = dict.insert(degrees, neighbor, new_degree)
+          let new_q = case new_degree == 0 {
+            True -> [neighbor, ..q]
+            False -> q
+          }
+          #(new_q, new_degrees)
+        })
+
+      do_kahn(
+        graph,
+        next_queue,
+        next_in_degrees,
+        [head, ..acc],
+        total_node_count,
+      )
+    }
   }
 }

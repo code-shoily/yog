@@ -2,7 +2,7 @@ import gleam/int
 import gleam/io
 import gleam/set
 import yog
-import yog/max_flow
+import yog/flow/max_flow
 
 pub fn main() {
   io.println("=== Network Bandwidth Allocation ===\n")

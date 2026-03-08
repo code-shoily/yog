@@ -21,7 +21,7 @@ pub fn bfs_linear_path_test() {
     |> model.add_edge(from: 1, to: 2, with: 1)
     |> model.add_edge(from: 2, to: 3, with: 1)
 
-  traversal.walk(from: 1, in: graph, using: BreadthFirst)
+  traversal.walk(in: graph, from: 1, using: BreadthFirst)
   |> should.equal([1, 2, 3])
 }
 
@@ -44,7 +44,7 @@ pub fn bfs_tree_test() {
     |> model.add_edge(from: 2, to: 4, with: 1)
     |> model.add_edge(from: 2, to: 5, with: 1)
 
-  let result = traversal.walk(from: 1, in: graph, using: BreadthFirst)
+  let result = traversal.walk(in: graph, from: 1, using: BreadthFirst)
 
   // BFS visits level by level: 1, then {2,3}, then {4,5}
   result
@@ -62,7 +62,7 @@ pub fn bfs_with_cycle_test() {
     |> model.add_edge(from: 2, to: 3, with: 1)
     |> model.add_edge(from: 3, to: 1, with: 1)
 
-  let result = traversal.walk(from: 1, in: graph, using: BreadthFirst)
+  let result = traversal.walk(in: graph, from: 1, using: BreadthFirst)
 
   // Should visit each node exactly once
   result
@@ -76,7 +76,7 @@ pub fn bfs_isolated_node_test() {
     |> model.add_node(1, "Isolated")
     |> model.add_node(2, "Other")
 
-  traversal.walk(from: 1, in: graph, using: BreadthFirst)
+  traversal.walk(in: graph, from: 1, using: BreadthFirst)
   |> should.equal([1])
 }
 
@@ -84,7 +84,7 @@ pub fn bfs_isolated_node_test() {
 pub fn bfs_nonexistent_start_test() {
   let graph = model.new(Directed)
 
-  traversal.walk(from: 99, in: graph, using: BreadthFirst)
+  traversal.walk(in: graph, from: 99, using: BreadthFirst)
   |> should.equal([99])
 }
 
@@ -98,7 +98,7 @@ pub fn bfs_undirected_test() {
     |> model.add_edge(from: 1, to: 2, with: 1)
     |> model.add_edge(from: 2, to: 3, with: 1)
 
-  let result = traversal.walk(from: 2, in: graph, using: BreadthFirst)
+  let result = traversal.walk(in: graph, from: 2, using: BreadthFirst)
 
   // From node 2, BFS should reach both 1 and 3
   result
@@ -117,7 +117,7 @@ pub fn dfs_linear_path_test() {
     |> model.add_edge(from: 1, to: 2, with: 1)
     |> model.add_edge(from: 2, to: 3, with: 1)
 
-  traversal.walk(from: 1, in: graph, using: DepthFirst)
+  traversal.walk(in: graph, from: 1, using: DepthFirst)
   |> should.equal([1, 2, 3])
 }
 
@@ -140,7 +140,7 @@ pub fn dfs_tree_test() {
     |> model.add_edge(from: 2, to: 4, with: 1)
     |> model.add_edge(from: 2, to: 5, with: 1)
 
-  let result = traversal.walk(from: 1, in: graph, using: DepthFirst)
+  let result = traversal.walk(in: graph, from: 1, using: DepthFirst)
 
   // DFS goes deep first: 1 -> 2 -> 4 -> 5 -> 3
   // Note: Order of 2 and 3 depends on insertion order in dict
@@ -160,7 +160,7 @@ pub fn dfs_with_cycle_test() {
     |> model.add_edge(from: 2, to: 3, with: 1)
     |> model.add_edge(from: 3, to: 1, with: 1)
 
-  let result = traversal.walk(from: 1, in: graph, using: DepthFirst)
+  let result = traversal.walk(in: graph, from: 1, using: DepthFirst)
 
   // Should visit each node exactly once
   result
@@ -174,7 +174,7 @@ pub fn dfs_isolated_node_test() {
     |> model.add_node(1, "Isolated")
     |> model.add_node(2, "Other")
 
-  traversal.walk(from: 1, in: graph, using: DepthFirst)
+  traversal.walk(in: graph, from: 1, using: DepthFirst)
   |> should.equal([1])
 }
 
@@ -196,7 +196,7 @@ pub fn dfs_diamond_test() {
     |> model.add_edge(from: 2, to: 4, with: 1)
     |> model.add_edge(from: 3, to: 4, with: 1)
 
-  let result = traversal.walk(from: 1, in: graph, using: DepthFirst)
+  let result = traversal.walk(in: graph, from: 1, using: DepthFirst)
 
   // DFS should visit node 4 only once, even though it has two paths to it
   result
@@ -218,9 +218,12 @@ pub fn walk_until_bfs_stops_at_target_test() {
     |> model.add_edge(from: 3, to: 4, with: 1)
 
   let result =
-    traversal.walk_until(from: 1, in: graph, using: BreadthFirst, until: fn(id) {
-      id == 3
-    })
+    traversal.walk_until(
+      from: 1,
+      using: BreadthFirst,
+      until: fn(id) { id == 3 },
+      in: graph,
+    )
 
   // Should stop when reaching node 3 and include it
   result
@@ -240,9 +243,12 @@ pub fn walk_until_dfs_stops_at_target_test() {
     |> model.add_edge(from: 3, to: 4, with: 1)
 
   let result =
-    traversal.walk_until(from: 1, in: graph, using: DepthFirst, until: fn(id) {
-      id == 3
-    })
+    traversal.walk_until(
+      from: 1,
+      using: DepthFirst,
+      until: fn(id) { id == 3 },
+      in: graph,
+    )
 
   // Should stop when reaching node 3 and include it
   result
@@ -262,9 +268,9 @@ pub fn walk_until_never_stops_test() {
   let result =
     traversal.walk_until(
       from: 1,
-      in: graph,
       using: BreadthFirst,
       until: fn(_id) { False },
+      in: graph,
     )
 
   // Should visit all nodes since predicate never returns True
@@ -281,9 +287,12 @@ pub fn walk_until_stops_at_start_test() {
     |> model.add_edge(from: 1, to: 2, with: 1)
 
   let result =
-    traversal.walk_until(from: 1, in: graph, using: BreadthFirst, until: fn(id) {
-      id == 1
-    })
+    traversal.walk_until(
+      from: 1,
+      using: BreadthFirst,
+      until: fn(id) { id == 1 },
+      in: graph,
+    )
 
   // Should stop immediately and return only the start node
   result
@@ -305,9 +314,12 @@ pub fn walk_until_complex_condition_test() {
     |> model.add_edge(from: 2, to: 5, with: 1)
 
   let result =
-    traversal.walk_until(from: 1, in: graph, using: BreadthFirst, until: fn(id) {
-      id > 3
-    })
+    traversal.walk_until(
+      from: 1,
+      using: BreadthFirst,
+      until: fn(id) { id > 3 },
+      in: graph,
+    )
 
   // Should stop when reaching first node > 3 (which would be 4)
   result
@@ -325,7 +337,7 @@ pub fn traversal_with_self_loop_test() {
     |> model.add_edge(from: 1, to: 1, with: 1)
     |> model.add_edge(from: 1, to: 2, with: 1)
 
-  let result = traversal.walk(from: 1, in: graph, using: BreadthFirst)
+  let result = traversal.walk(in: graph, from: 1, using: BreadthFirst)
 
   // Self-loop should not cause infinite recursion
   result
@@ -342,7 +354,7 @@ pub fn traversal_disconnected_test() {
     |> model.add_edge(from: 1, to: 2, with: 1)
   // Node 3 is disconnected
 
-  let result = traversal.walk(from: 1, in: graph, using: BreadthFirst)
+  let result = traversal.walk(in: graph, from: 1, using: BreadthFirst)
 
   // Should only visit nodes reachable from start
   result
@@ -361,8 +373,8 @@ pub fn bfs_vs_dfs_difference_test() {
     |> model.add_edge(from: 1, to: 3, with: 1)
     |> model.add_edge(from: 2, to: 4, with: 1)
 
-  let bfs_result = traversal.walk(from: 1, in: graph, using: BreadthFirst)
-  let dfs_result = traversal.walk(from: 1, in: graph, using: DepthFirst)
+  let bfs_result = traversal.walk(in: graph, from: 1, using: BreadthFirst)
+  let dfs_result = traversal.walk(in: graph, from: 1, using: DepthFirst)
 
   // BFS: level by level
   bfs_result
@@ -390,7 +402,6 @@ pub fn fold_walk_bfs_distance_limit_test() {
   // Collect only nodes within distance 2
   let result =
     traversal.fold_walk(
-      over: graph,
       from: 1,
       using: BreadthFirst,
       initial: dict.new(),
@@ -400,6 +411,7 @@ pub fn fold_walk_bfs_distance_limit_test() {
           False -> #(Stop, acc)
         }
       },
+      over: graph,
     )
 
   result
@@ -434,7 +446,6 @@ pub fn fold_walk_parent_map_test() {
 
   let parents =
     traversal.fold_walk(
-      over: graph,
       from: 1,
       using: BreadthFirst,
       initial: dict.new(),
@@ -445,6 +456,7 @@ pub fn fold_walk_parent_map_test() {
         }
         #(Continue, new_acc)
       },
+      over: graph,
     )
 
   // Node 1 has no parent (it's the root)
@@ -484,7 +496,6 @@ pub fn fold_walk_depth_count_test() {
 
   let depth_counts =
     traversal.fold_walk(
-      over: graph,
       from: 1,
       using: BreadthFirst,
       initial: dict.new(),
@@ -492,6 +503,7 @@ pub fn fold_walk_depth_count_test() {
         let count = dict.get(acc, meta.depth) |> result.unwrap(0)
         #(Continue, dict.insert(acc, meta.depth, count + 1))
       },
+      over: graph,
     )
 
   // Depth 0: 1 node (root)
@@ -523,11 +535,11 @@ pub fn fold_walk_dfs_test() {
   // Collect nodes in order visited
   let result =
     traversal.fold_walk(
-      over: graph,
       from: 1,
       using: DepthFirst,
       initial: [],
       with: fn(acc, node_id, _meta) { #(Continue, [node_id, ..acc]) },
+      over: graph,
     )
 
   // DFS visits in order: 1, 2, 3
@@ -552,7 +564,6 @@ pub fn fold_walk_stop_control_test() {
   // Stop exploring from node 2 (so nodes 4 and 5 shouldn't be visited)
   let result =
     traversal.fold_walk(
-      over: graph,
       from: 1,
       using: BreadthFirst,
       initial: [],
@@ -562,6 +573,7 @@ pub fn fold_walk_stop_control_test() {
           False -> #(Continue, [node_id, ..acc])
         }
       },
+      over: graph,
     )
 
   // Should visit 1, 2, and 3, but not 4 or 5
@@ -578,11 +590,11 @@ pub fn fold_walk_isolated_node_test() {
 
   let result =
     traversal.fold_walk(
-      over: graph,
       from: 1,
       using: BreadthFirst,
       initial: 0,
       with: fn(acc, _node_id, _meta) { #(Continue, acc + 1) },
+      over: graph,
     )
 
   // Should only visit node 1
@@ -603,11 +615,11 @@ pub fn fold_walk_with_cycle_test() {
 
   let result =
     traversal.fold_walk(
-      over: graph,
       from: 1,
       using: BreadthFirst,
       initial: [],
       with: fn(acc, node_id, _meta) { #(Continue, [node_id, ..acc]) },
+      over: graph,
     )
 
   // Should visit each node exactly once
@@ -625,13 +637,13 @@ pub fn fold_walk_start_metadata_test() {
 
   let result =
     traversal.fold_walk(
-      over: graph,
       from: 1,
       using: BreadthFirst,
       initial: dict.new(),
       with: fn(acc, node_id, meta) {
         #(Continue, dict.insert(acc, node_id, #(meta.depth, meta.parent)))
       },
+      over: graph,
     )
 
   // Start node should have depth 0 and no parent
@@ -660,7 +672,6 @@ pub fn fold_walk_halt_bfs_test() {
   // Halt when we find node 2
   let result =
     traversal.fold_walk(
-      over: graph,
       from: 1,
       using: BreadthFirst,
       initial: [],
@@ -671,6 +682,7 @@ pub fn fold_walk_halt_bfs_test() {
           False -> #(Continue, new_acc)
         }
       },
+      over: graph,
     )
 
   // Should only visit 1 and 2, not 3 or 4
@@ -693,7 +705,6 @@ pub fn fold_walk_halt_dfs_test() {
   // Halt when we find node 3
   let result =
     traversal.fold_walk(
-      over: graph,
       from: 1,
       using: DepthFirst,
       initial: [],
@@ -704,6 +715,7 @@ pub fn fold_walk_halt_dfs_test() {
           False -> #(Continue, new_acc)
         }
       },
+      over: graph,
     )
 
   // Should visit 1, 2, 3 but not 4 (halted at 3)
@@ -726,7 +738,6 @@ pub fn fold_walk_halt_vs_stop_test() {
   // With Stop: visits 1, 2, 3 (skips 4 because we stopped at 2)
   let stop_result =
     traversal.fold_walk(
-      over: graph,
       from: 1,
       using: BreadthFirst,
       initial: [],
@@ -737,6 +748,7 @@ pub fn fold_walk_halt_vs_stop_test() {
           False -> #(Continue, new_acc)
         }
       },
+      over: graph,
     )
 
   stop_result
@@ -745,7 +757,6 @@ pub fn fold_walk_halt_vs_stop_test() {
   // With Halt: visits 1, 2 only (halts entire traversal)
   let halt_result =
     traversal.fold_walk(
-      over: graph,
       from: 1,
       using: BreadthFirst,
       initial: [],
@@ -756,6 +767,7 @@ pub fn fold_walk_halt_vs_stop_test() {
           False -> #(Continue, new_acc)
         }
       },
+      over: graph,
     )
 
   halt_result
@@ -772,7 +784,6 @@ pub fn fold_walk_halt_at_start_test() {
 
   let result =
     traversal.fold_walk(
-      over: graph,
       from: 1,
       using: BreadthFirst,
       initial: [],
@@ -780,6 +791,7 @@ pub fn fold_walk_halt_at_start_test() {
         let new_acc = [node_id, ..acc]
         #(Halt, new_acc)
       },
+      over: graph,
     )
 
   // Should only visit start node

@@ -1,7 +1,7 @@
 import gleam/int
 import gleam/io
 import yog
-import yog/max_flow
+import yog/flow/max_flow
 import yog/model
 
 pub fn main() {

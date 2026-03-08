@@ -1,6 +1,6 @@
 import gleam/list
 import gleeunit/should
-import yog/generators
+import yog/generators/classic as generators
 import yog/model
 
 // Complete graph tests

@@ -1,21 +1,4 @@
-//// Classic graph patterns generator.
-////
-//// This module provides functions to generate well-known graph structures:
-//// - **Complete graphs**: K_n where every node connects to every other
-//// - **Cycles**: C_n nodes forming a ring
-//// - **Paths**: P_n linear chains
-//// - **Stars**: Central hub with spokes
-//// - **Wheels**: Cycle with central hub
-//// - **Bipartite**: Complete bipartite graphs K_{m,n}
-//// - **Trees**: Binary trees, hierarchical structures
-//// - **Grids**: 2D lattices
-//// - **Famous graphs**: Petersen graph
-////
-//// These generators are useful for:
-//// - **Testing**: Create graphs with known properties
-//// - **Benchmarking**: Generate graphs of various sizes
-//// - **Education**: Demonstrate algorithms on well-known structures
-//// - **Prototyping**: Quickly create graph structures
+//// Deterministic graph generators for common graph structures.
 ////
 //// ## Example
 ////
@@ -38,21 +21,17 @@ import gleam/list
 import yog/internal/utils
 import yog/model.{type Graph, type GraphType}
 
-/// Generates a complete graph K_n where every node is connected to every other node.
+/// Generates a complete graph K_n where every node connects to every other.
 ///
 /// In a complete graph with n nodes, there are n(n-1)/2 edges for undirected
-/// graphs and n(n-1) edges for directed graphs.
-///
-/// All edges have unit weight (1).
+/// graphs and n(n-1) edges for directed graphs. All edges have unit weight (1).
 ///
 /// **Time Complexity:** O(n²)
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let k5 = generate.complete(5)
-/// // Creates a complete graph with 5 nodes
-/// // Each node connected to all other 4 nodes
+/// let k5 = classic.complete(5)
 /// ```
 pub fn complete(n: Int) -> Graph(Nil, Int) {
   complete_with_type(n, model.Undirected)
@@ -99,17 +78,14 @@ pub fn complete_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
 /// Generates a cycle graph C_n where nodes form a ring.
 ///
 /// A cycle graph connects n nodes in a circular pattern:
-/// 0 -> 1 -> 2 -> ... -> (n-1) -> 0
-///
-/// All edges have unit weight (1).
+/// 0 -> 1 -> 2 -> ... -> (n-1) -> 0. All edges have unit weight (1).
 ///
 /// **Time Complexity:** O(n)
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let c6 = generate.cycle(6)
-/// // Creates a cycle: 0-1-2-3-4-5-0
+/// let c6 = classic.cycle(6)
 /// ```
 pub fn cycle(n: Int) -> Graph(Nil, Int) {
   cycle_with_type(n, model.Undirected)
@@ -137,18 +113,12 @@ pub fn cycle_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
 
 /// Generates a path graph P_n where nodes form a linear chain.
 ///
-/// A path graph connects n nodes in a line:
-/// 0 - 1 - 2 - ... - (n-1)
-///
-/// All edges have unit weight (1).
-///
 /// **Time Complexity:** O(n)
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let p5 = generate.path(5)
-/// // Creates a path: 0-1-2-3-4
+/// let p5 = classic.path(5)
 /// ```
 pub fn path(n: Int) -> Graph(Nil, Int) {
   path_with_type(n, model.Undirected)
@@ -172,18 +142,14 @@ pub fn path_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
 
 /// Generates a star graph where one central node is connected to all others.
 ///
-/// Node 0 is the center, connected to nodes 1 through n-1.
-/// A star with n nodes has n-1 edges.
-///
-/// All edges have unit weight (1).
+/// Node 0 is the center, connected to nodes 1 through n-1. All edges have unit weight (1).
 ///
 /// **Time Complexity:** O(n)
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let s6 = generate.star(6)
-/// // Center node 0 connected to nodes 1, 2, 3, 4, 5
+/// let s6 = classic.star(6)
 /// ```
 pub fn star(n: Int) -> Graph(Nil, Int) {
   star_with_type(n, model.Undirected)
@@ -208,19 +174,14 @@ pub fn star_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
 /// Generates a wheel graph: a cycle with a central hub.
 ///
 /// A wheel graph is a cycle of n-1 nodes with an additional central node
-/// connected to all nodes in the cycle.
-///
-/// Node 0 is the center, nodes 1 through n-1 form the cycle.
-///
-/// All edges have unit weight (1).
+/// connected to all nodes in the cycle. Node 0 is the center.
 ///
 /// **Time Complexity:** O(n)
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let w6 = generate.wheel(6)
-/// // Center node 0, cycle 1-2-3-4-5-1, center connected to all
+/// let w6 = classic.wheel(6)
 /// ```
 pub fn wheel(n: Int) -> Graph(Nil, Int) {
   wheel_with_type(n, model.Undirected)
@@ -249,22 +210,12 @@ pub fn wheel_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
 
 /// Generates a complete bipartite graph K_{m,n}.
 ///
-/// A complete bipartite graph has two partitions of nodes where every node
-/// in the first partition is connected to every node in the second partition.
-///
-/// Nodes 0 to m-1 form the left partition.
-/// Nodes m to m+n-1 form the right partition.
-///
-/// All edges have unit weight (1).
-///
 /// **Time Complexity:** O(mn)
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let k33 = generate.complete_bipartite(3, 3)
-/// // Nodes 0,1,2 on left, nodes 3,4,5 on right
-/// // All left nodes connected to all right nodes
+/// let k33 = classic.complete_bipartite(3, 3)
 /// ```
 pub fn complete_bipartite(m: Int, n: Int) -> Graph(Nil, Int) {
   complete_bipartite_with_type(m, n, model.Undirected)
@@ -291,15 +242,12 @@ pub fn complete_bipartite_with_type(
 
 /// Generates an empty graph with n nodes and no edges.
 ///
-/// Useful as a starting point for custom graph construction.
-///
 /// **Time Complexity:** O(n)
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let empty = generate.empty(10)
-/// // 10 isolated nodes, no edges
+/// let empty = classic.empty(10)
 /// ```
 pub fn empty(n: Int) -> Graph(Nil, Int) {
   empty_with_type(n, model.Undirected)
@@ -312,26 +260,15 @@ pub fn empty_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
 
 /// Generates a complete binary tree of given depth.
 ///
-/// A complete binary tree where:
-/// - Node 0 is the root
-/// - For node i: left child is 2i+1, right child is 2i+2
-/// - Total nodes: 2^(depth+1) - 1
-///
-/// All edges have unit weight (1).
+/// Node 0 is the root. For node i: left child is 2i+1, right child is 2i+2.
+/// Total nodes: 2^(depth+1) - 1.
 ///
 /// **Time Complexity:** O(2^depth)
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let tree = generate.binary_tree(3)
-/// // Creates a binary tree with 15 nodes (depth 3)
-/// //        0
-/// //      /   \
-/// //     1     2
-/// //    / \   / \
-/// //   3   4 5   6
-/// //  /|\ /|\ ...
+/// let tree = classic.binary_tree(3)
 /// ```
 pub fn binary_tree(depth: Int) -> Graph(Nil, Int) {
   binary_tree_with_type(depth, model.Undirected)
@@ -371,25 +308,14 @@ pub fn binary_tree_with_type(
 /// Generates a 2D grid graph (lattice).
 ///
 /// Creates a grid of rows × cols nodes arranged in a rectangular lattice.
-/// Each internal node has 4 neighbors (up, down, left, right).
-/// Edge nodes have fewer neighbors.
-///
-/// Node IDs are assigned row-major: node_id = row * cols + col
-///
-/// All edges have unit weight (1).
+/// Node IDs are assigned row-major: node_id = row * cols + col.
 ///
 /// **Time Complexity:** O(rows * cols)
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let grid = generate.grid_2d(3, 4)
-/// // Creates a 3×4 grid:
-/// //   0 - 1 - 2 - 3
-/// //   |   |   |   |
-/// //   4 - 5 - 6 - 7
-/// //   |   |   |   |
-/// //   8 - 9 -10 -11
+/// let grid = classic.grid_2d(3, 4)
 /// ```
 pub fn grid_2d(rows: Int, cols: Int) -> Graph(Nil, Int) {
   grid_2d_with_type(rows, cols, model.Undirected)
@@ -429,18 +355,14 @@ pub fn grid_2d_with_type(
 
 /// Generates a Petersen graph.
 ///
-/// The Petersen graph is a famous graph in graph theory, often used as
-/// a counterexample. It has 10 nodes and 15 edges, and is non-planar.
+/// The Petersen graph has 10 nodes and 15 edges.
 ///
-/// All edges have unit weight (1).
-///
-/// **Time Complexity:** O(1) - fixed size
+/// **Time Complexity:** O(1)
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let petersen = generate.petersen()
-/// // Creates the classic Petersen graph with 10 nodes
+/// let petersen = classic.petersen()
 /// ```
 pub fn petersen() -> Graph(Nil, Int) {
   petersen_with_type(model.Undirected)

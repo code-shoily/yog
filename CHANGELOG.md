@@ -5,7 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 2026-03-05 - 2.2.1 (Unreleased)
+## 2026-03-07 - 3.0.0
+
+### Breaking Changes
+
+- **Global Parameter Reordering**: The `graph` argument has been moved to the final position (adhering to the "Data-Last" rule) in all traversal functions to improve pipeline ergonomics. Affected functions include `walk`, `walk_until`, and `fold_walk` in both `yog` and `yog/traversal`.
+- **Module Namespace Consolidation**: Several standalone modules have been moved into category-based groups to simplify the API:
+  - `yog/components` functions are now in `yog/connectivity`.
+  - `yog/min_cut` and `yog/max_flow` are now within the `yog/flow` namespace.
+  - `yog/topological_sort` is now integrated into `yog/traversal`.
+  - `yog/clique`, `yog/bipartite`, and `yog/eulerian` are now within the `yog/properties` namespace.
+- **Top-level Promotion**: Internal submodules have been promoted to top-level category modules, and the former facade modules (e.g., `yog/pathfinding`, `yog/properties`) have been removed. You must now import from the specific algorithm modules:
+  - `import yog/pathfinding/dijkstra` instead of `import yog/pathfinding`
+  - `import yog/properties/eulerian` instead of `import yog/properties`
+  - etc.
+- **Rendering & IO**: The `yog/render` module has been completely split into format-specific modules under `yog/io/`: `mermaid` (currently implemented), `dot` (stubbed for v3.1), and `json` (stubbed for v3.1).
+- **Type Definitions**: Control flow for traversals (e.g., in `fold_walk` and `implicit_fold`) now exclusively uses the explicit `WalkControl` enum variants (`Continue`, `Stop`, `Halt`) for finer control over the traversal.
+
+### Added
+
+- **Frugal DAG Suite** (`yog/dag`): A strictly typed wrapper `Dag(n, e)` for modeling Directed Acyclic Graphs with fast property validation via `dag.from_graph`.
+  - Exposes specialized DAG optimization algorithms in `yog/dag`:
+    - **DAG Builders/Mutators:** Safely construct and alter DAGs post-validation using `add_node`, `remove_node`, `remove_edge`, and a strictly cycle-checked `add_edge` returning `Result(Dag, DagError)`.
+    - `topological_sort`: Safe topological sort that bypasses general cycle checks.
+    - `longest_path`: $O(V+E)$ Dynamic Programming approach for Critical Path tracking in scheduling networks.
+    - `transitive_closure` and `transitive_reduction`: Reachability maps and structural deduplication with custom edge weight merging.
+    - `lowest_common_ancestors`: Efficient common dependency intersections for DAG hierarchies.
+    - `count_reachability`: Computes total ancestors or descendants for all nodes.
+- **Network Simplex solver** (`yog/flow/network_simplex`): A high-performance solver for Minimum Cost Flow (MCF) problems using the simplex method on spanning trees.
+  - Automatically handles multi-source and multi-sink supply/demand networks.
+  - Efficient spanning tree representation for $O(1)$ updates and pivot operations.
+  - Guarantees convergence via **Bland's Rule** for edge selection.
+- **Property Exports**: `is_acyclic` and `is_cyclic` functions are now re-exported from `yog/properties`, making graph trait querying more accessible without importing the `traversal` module.
+
+## 2026-03-07 - 2.2.1
 
 ### Added
 

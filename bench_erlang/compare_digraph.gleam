@@ -11,7 +11,7 @@ import gleam/dict
 import gleam/io
 import gleam/list
 import gleamy/bench
-import yog/components
+import yog/connectivity
 import yog/internal/bench/bench_utils
 import yog/model.{type Graph}
 
@@ -107,7 +107,7 @@ fn yog_to_digraph(graph: Graph(Nil, Int)) -> DigraphHandle {
 
 fn bench_yog_scc(input: #(Graph(Nil, Int), DigraphHandle)) -> Nil {
   let #(yog_graph, _dg) = input
-  let _ = components.strongly_connected_components(yog_graph)
+  let _ = connectivity.strongly_connected_components(yog_graph)
   Nil
 }
 

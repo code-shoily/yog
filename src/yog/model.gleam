@@ -151,7 +151,7 @@ pub fn predecessors(graph: Graph(n, e), id: NodeId) -> List(#(NodeId, e)) {
 }
 
 /// Gets everyone connected to the node, regardless of direction.
-/// Useful for algorithms like finding "connected components."
+/// Useful for algorithms like finding "connected connectivity."
 pub fn neighbors(graph: Graph(n, e), id: NodeId) -> List(#(NodeId, e)) {
   case graph.kind {
     Undirected -> successors(graph, id)
@@ -184,6 +184,32 @@ pub fn all_nodes(graph: Graph(n, e)) -> List(NodeId) {
 /// **Time Complexity:** O(1)
 pub fn order(graph: Graph(n, e)) -> Int {
   dict.size(graph.nodes)
+}
+
+/// Returns the number of nodes in the graph.
+/// Equivalent to `order(graph)`.
+///
+/// **Time Complexity:** O(1)
+pub fn node_count(graph: Graph(n, e)) -> Int {
+  dict.size(graph.nodes)
+}
+
+/// Returns the number of edges in the graph (graph size).
+///
+/// For undirected graphs, each edge is counted once (the pair {u, v}).
+/// For directed graphs, each directed edge (u -> v) is counted once.
+///
+/// **Time Complexity:** O(V)
+pub fn edge_count(graph: Graph(n, e)) -> Int {
+  dict.fold(graph.out_edges, 0, fn(acc, _src, targets) {
+    acc + dict.size(targets)
+  })
+  |> fn(count) {
+    case graph.kind {
+      Directed -> count
+      Undirected -> count / 2
+    }
+  }
 }
 
 /// Returns just the NodeIds of successors (without edge weights).
@@ -259,6 +285,23 @@ pub fn remove_node(graph: Graph(n, e), id: NodeId) -> Graph(n, e) {
     })
 
   Graph(..graph, nodes: new_nodes, out_edges: new_out_cleaned, in_edges: new_in)
+}
+
+/// Removes an edge between `src` and `dst`.
+pub fn remove_edge(
+  graph: Graph(node_data, edge_data),
+  src: NodeId,
+  dst: NodeId,
+) -> Graph(node_data, edge_data) {
+  let new_out = case dict.get(graph.out_edges, src) {
+    Ok(targets) -> dict.insert(graph.out_edges, src, dict.delete(targets, dst))
+    Error(_) -> graph.out_edges
+  }
+  let new_in = case dict.get(graph.in_edges, dst) {
+    Ok(sources) -> dict.insert(graph.in_edges, dst, dict.delete(sources, src))
+    Error(_) -> graph.in_edges
+  }
+  Graph(..graph, out_edges: new_out, in_edges: new_in)
 }
 
 /// Adds an edge, but if an edge already exists between `src` and `dst`,
