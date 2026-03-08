@@ -3,7 +3,7 @@ import gleam/io
 import gleam/option.{None, Some}
 import yog/io/dot
 import yog/model
-import yog/pathfinding
+import yog/pathfinding/dijkstra
 import yog/transform
 
 pub fn main() {
@@ -28,7 +28,7 @@ pub fn main() {
 
   // 2. DOT with highlighted path
   io.println("\n--- DOT with Highlighted Path ---")
-  case pathfinding.shortest_path(graph, 1, 3, 0, int.add, int.compare) {
+  case dijkstra.shortest_path(graph, 1, 3, 0, int.add, int.compare) {
     Some(path) -> {
       let options = dot.path_to_dot_options(path, dot.default_dot_options())
       let dot_highlighted =

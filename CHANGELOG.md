@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `yog/min_cut` and `yog/max_flow` are now within the `yog/flow` namespace.
   - `yog/topological_sort` is now integrated into `yog/traversal`.
   - `yog/clique`, `yog/bipartite`, and `yog/eulerian` are now within the `yog/properties` namespace.
+- **Top-level Promotion**: Internal submodules have been promoted to top-level category modules, and the former facade modules (e.g., `yog/pathfinding`, `yog/properties`) have been removed. You must now import from the specific algorithm modules:
+  - `import yog/pathfinding/dijkstra` instead of `import yog/pathfinding`
+  - `import yog/properties/eulerian` instead of `import yog/properties`
+  - etc.
 - **Rendering & IO**: The `yog/render` module has been completely split into format-specific modules under `yog/io/`: `mermaid` (currently implemented), `dot` (stubbed for v3.1), and `json` (stubbed for v3.1).
 - **Type Definitions**: Control flow for traversals (e.g., in `fold_walk` and `implicit_fold`) now exclusively uses the explicit `WalkControl` enum variants (`Continue`, `Stop`, `Halt`) for finer control over the traversal.
 

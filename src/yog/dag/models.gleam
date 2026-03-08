@@ -1,5 +1,5 @@
 import yog/model.{type Graph}
-import yog/properties
+import yog/properties/cyclicity as properties
 
 pub type DagError {
   CycleDetected

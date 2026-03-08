@@ -1,61 +1,61 @@
 import gleam/io
 import gleam/option.{None, Some}
 import gleam/string
-import yog/model
-import yog/properties
+import yog
+import yog/properties/eulerian as properties
 
 pub fn main() {
-  // The Seven Bridges of Königsberg problem
-  // Nodes represent the four land masses (A, B, C, D)
-  // Edges represent the seven bridges
+  io.println("=== The Seven Bridges of Königsberg ===\n")
+
+  // The historical problem:
+  // Four land masses (nodes) connected by seven bridges (edges)
+  // Can we walk through the city crossing every bridge exactly once?
   let graph =
-    model.new(model.Undirected)
-    |> model.add_node(1, "Island A")
-    |> model.add_node(2, "Bank B")
-    |> model.add_node(3, "Bank C")
-    |> model.add_node(4, "Island D")
+    yog.undirected()
+    |> yog.add_node(1, "Island A")
+    |> yog.add_node(2, "Land B")
+    |> yog.add_node(3, "Land C")
+    |> yog.add_node(4, "Land D")
     // Bridges
-    |> model.add_edge(from: 1, to: 2, with: "b1")
-    |> model.add_edge(from: 1, to: 2, with: "b2")
-    |> model.add_edge(from: 1, to: 3, with: "b3")
-    |> model.add_edge(from: 1, to: 3, with: "b4")
-    |> model.add_edge(from: 1, to: 4, with: "b5")
-    |> model.add_edge(from: 2, to: 4, with: "b6")
-    |> model.add_edge(from: 3, to: 4, with: "b7")
+    |> yog.add_edge(1, 2, Nil)
+    |> yog.add_edge(1, 2, Nil)
+    |> yog.add_edge(1, 3, Nil)
+    |> yog.add_edge(1, 3, Nil)
+    |> yog.add_edge(1, 4, Nil)
+    |> yog.add_edge(2, 4, Nil)
+    |> yog.add_edge(3, 4, Nil)
 
-  io.println("--- Seven Bridges of Königsberg ---")
-
-  // Check if an Eulerian circuit exists (all even degrees)
+  io.println("Graph analysis:")
   case properties.has_eulerian_circuit(graph) {
-    True -> io.println("Eulerian circuit exists!")
-    False -> io.println("No Eulerian circuit exists.")
+    True -> io.println("✓ Eulerian circuit exists")
+    False -> io.println("✗ No Eulerian circuit (too many odd-degree nodes)")
   }
 
-  // Check if an Eulerian path exists (0 or 2 odd degrees)
   case properties.has_eulerian_path(graph) {
     True -> {
-      io.println("Eulerian path exists!")
+      io.println("✓ Eulerian path exists!")
       case properties.find_eulerian_path(graph) {
-        Some(path) -> io.println("Path: " <> string.inspect(path))
+        Some(path) -> io.println(string.inspect(path))
         None -> Nil
       }
     }
-    False -> io.println("No Eulerian path exists either.")
+    False -> io.println("✗ No Eulerian path (more than two odd-degree nodes)")
   }
 
-  // Example of a graph that DOES have a circuit
-  let circuit_graph =
-    model.new(model.Undirected)
-    |> model.add_node(1, "A")
-    |> model.add_node(2, "B")
-    |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: Nil)
-    |> model.add_edge(from: 2, to: 3, with: Nil)
-    |> model.add_edge(from: 3, to: 1, with: Nil)
+  io.println("\nEuler concluded in 1736 that no such walk is possible.")
 
-  io.println("\n--- Simple Triangle ---")
+  // Example where it works (a simple path)
+  let circuit_graph =
+    yog.undirected()
+    |> yog.add_edge(1, 2, Nil)
+    |> yog.add_edge(2, 3, Nil)
+    |> yog.add_edge(3, 1, Nil)
+
   case properties.find_eulerian_circuit(circuit_graph) {
-    Some(circuit) -> io.println("Circuit found: " <> string.inspect(circuit))
-    None -> io.println("No circuit found")
+    Some(circuit) -> {
+      io.println("\nSuccessfully found path for a triangle:")
+      io.println(string.inspect(circuit))
+    }
+    None -> io.println("Error calculating path")
   }
 }

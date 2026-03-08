@@ -5,7 +5,7 @@ import gleeunit/should
 import yog
 import yog/builder/labeled
 import yog/model.{Directed, Undirected}
-import yog/pathfinding
+import yog/pathfinding/dijkstra as pathfinding
 
 pub fn new_creates_empty_builder_test() {
   let builder = labeled.new(Directed)

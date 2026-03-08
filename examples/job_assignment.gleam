@@ -3,7 +3,7 @@ import gleam/io
 import gleam/list
 import gleam/option.{None, Some}
 import yog/model
-import yog/properties
+import yog/properties/bipartite
 
 pub fn main() {
   // Job Assignment Problem: 3 Workers, 3 Tasks
@@ -30,9 +30,9 @@ pub fn main() {
   io.println("--- Bipartite Job Assignment ---")
 
   // Check if it's bipartite first
-  case properties.partition(graph) {
+  case bipartite.partition(graph) {
     Some(partition) -> {
-      let matching = properties.maximum_matching(graph, partition)
+      let matching = bipartite.maximum_matching(graph, partition)
       io.println(
         "Maximum assignments found: " <> int.to_string(list.length(matching)),
       )

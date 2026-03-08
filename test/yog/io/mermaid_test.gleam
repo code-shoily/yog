@@ -4,7 +4,7 @@ import gleam/string
 import gleeunit/should
 import yog/io/mermaid
 import yog/model.{Directed, Undirected}
-import yog/pathfinding
+import yog/pathfinding/utils.{Path}
 
 // ============= Basic Mermaid Generation Tests =============
 
@@ -359,7 +359,7 @@ pub fn highlight_path_test() {
 // ============= Path Conversion Tests =============
 
 pub fn path_to_options_single_node_test() {
-  let path = pathfinding.Path(nodes: [1], total_weight: "0")
+  let path = Path(nodes: [1], total_weight: "0")
   let options = mermaid.path_to_options(path, mermaid.default_options())
 
   options.highlighted_nodes
@@ -370,7 +370,7 @@ pub fn path_to_options_single_node_test() {
 }
 
 pub fn path_to_options_two_nodes_test() {
-  let path = pathfinding.Path(nodes: [1, 2], total_weight: "5")
+  let path = Path(nodes: [1, 2], total_weight: "5")
   let options = mermaid.path_to_options(path, mermaid.default_options())
 
   options.highlighted_nodes
@@ -381,7 +381,7 @@ pub fn path_to_options_two_nodes_test() {
 }
 
 pub fn path_to_options_three_nodes_test() {
-  let path = pathfinding.Path(nodes: [1, 2, 3], total_weight: "15")
+  let path = Path(nodes: [1, 2, 3], total_weight: "15")
   let options = mermaid.path_to_options(path, mermaid.default_options())
 
   options.highlighted_nodes
@@ -392,7 +392,7 @@ pub fn path_to_options_three_nodes_test() {
 }
 
 pub fn path_to_options_preserves_base_labels_test() {
-  let path = pathfinding.Path(nodes: [1, 2], total_weight: "10")
+  let path = Path(nodes: [1, 2], total_weight: "10")
 
   let base =
     mermaid.MermaidOptions(
@@ -426,7 +426,7 @@ pub fn render_with_pathfinding_result_test() {
     |> model.add_edge(from: 2, to: 3, with: "3")
 
   // This would be the result from pathfinding
-  let path = pathfinding.Path(nodes: [1, 2, 3], total_weight: "8")
+  let path = Path(nodes: [1, 2, 3], total_weight: "8")
 
   let options = mermaid.path_to_options(path, mermaid.default_options())
   let output = mermaid.to_mermaid(graph, options)

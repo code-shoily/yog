@@ -3,8 +3,8 @@ import gleam/float
 import gleam/int
 import gleam/list
 import yog
-import yog/internal/generators/classic
-import yog/internal/generators/random
+import yog/generators/classic
+import yog/generators/random
 import yog/internal/utils
 import yog/model.{type Graph}
 

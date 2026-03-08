@@ -3,7 +3,7 @@ import gleam/int
 import gleam/io
 import gleam/list
 import gleam/option
-import yog/properties
+import yog/properties/bipartite
 
 pub fn main() {
   io.println("--- Medical Residency Matching (NRMP Style) ---")
@@ -69,7 +69,7 @@ pub fn main() {
   io.println("")
 
   // Run the Gale-Shapley algorithm
-  let matching = properties.stable_marriage(residents, hospitals)
+  let matching = bipartite.stable_marriage(residents, hospitals)
 
   io.println("=== Stable Matching Results ===")
   io.println("")
@@ -83,7 +83,7 @@ pub fn main() {
 
   list_range(1, 5)
   |> list.each(fn(resident_id) {
-    case properties.get_partner(matching, resident_id) {
+    case bipartite.get_partner(matching, resident_id) {
       option.Some(hospital_id) -> {
         let resident_name = get_name(resident_names, resident_id - 1)
         let hospital_name = get_name(hospital_names, hospital_id - 101)

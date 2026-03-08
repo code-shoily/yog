@@ -186,6 +186,32 @@ pub fn order(graph: Graph(n, e)) -> Int {
   dict.size(graph.nodes)
 }
 
+/// Returns the number of nodes in the graph.
+/// Equivalent to `order(graph)`.
+///
+/// **Time Complexity:** O(1)
+pub fn node_count(graph: Graph(n, e)) -> Int {
+  dict.size(graph.nodes)
+}
+
+/// Returns the number of edges in the graph (graph size).
+///
+/// For undirected graphs, each edge is counted once (the pair {u, v}).
+/// For directed graphs, each directed edge (u -> v) is counted once.
+///
+/// **Time Complexity:** O(V)
+pub fn edge_count(graph: Graph(n, e)) -> Int {
+  dict.fold(graph.out_edges, 0, fn(acc, _src, targets) {
+    acc + dict.size(targets)
+  })
+  |> fn(count) {
+    case graph.kind {
+      Directed -> count
+      Undirected -> count / 2
+    }
+  }
+}
+
 /// Returns just the NodeIds of successors (without edge weights).
 /// Convenient for traversal algorithms that only need the IDs.
 pub fn successor_ids(graph: Graph(n, e), id: NodeId) -> List(NodeId) {

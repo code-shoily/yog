@@ -8,8 +8,8 @@ import gleam/io
 import gleam/option
 import gleeunit
 import gleeunit/should
-import yog/generators
-import yog/pathfinding
+import yog/generators/random as generators
+import yog/pathfinding/dijkstra as pathfinding
 
 pub fn main() {
   gleeunit.main()

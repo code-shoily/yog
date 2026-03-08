@@ -2,7 +2,7 @@ import gleam/int
 import gleam/io
 import gleam/set
 import yog
-import yog/flow
+import yog/flow/max_flow
 
 pub fn main() {
   io.println("=== Network Bandwidth Allocation ===\n")
@@ -44,7 +44,7 @@ pub fn main() {
 
   // Find maximum bandwidth from source to destination
   let result =
-    flow.edmonds_karp(
+    max_flow.edmonds_karp(
       in: network,
       from: 0,
       to: 5,
@@ -62,7 +62,7 @@ pub fn main() {
   )
 
   // Find the minimum cut (bottleneck in the network)
-  let cut = flow.min_cut(result, with_zero: 0, with_compare: int.compare)
+  let cut = max_flow.min_cut(result, with_zero: 0, with_compare: int.compare)
 
   io.println("\n=== Minimum Cut Analysis ===")
   io.println("This identifies the bottleneck that limits network capacity.\n")

@@ -7,7 +7,7 @@
 ////
 //// ```gleam
 //// import yog
-//// import yog/pathfinding
+//// import yog/pathfinding/dijkstra as pathfinding
 //// import gleam/int
 ////
 //// pub fn main() {

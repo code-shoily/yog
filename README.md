@@ -48,7 +48,7 @@ import gleam/int
 import gleam/io
 import gleam/option.{None, Some}
 import yog
-import yog/pathfinding
+import yog/pathfinding/dijkstra
 
 pub fn main() {
   // Create a directed graph
@@ -62,7 +62,7 @@ pub fn main() {
     |> yog.add_edge(from: 1, to: 3, with: 10)
 
   // Find shortest path
-  case pathfinding.shortest_path(
+  case dijkstra.shortest_path(
     in: graph,
     from: 1,
     to: 3,

@@ -8,7 +8,7 @@ import gleam/io
 import gleamy/bench
 import yog/internal/bench/bench_utils
 import yog/model.{type Graph}
-import yog/pathfinding
+import yog/pathfinding/dijkstra as pathfinding
 
 pub fn main() {
   io.println("\n╔════════════════════════════════════════════════════════════╗")

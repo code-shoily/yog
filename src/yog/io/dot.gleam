@@ -4,7 +4,7 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
 import yog/model.{type Graph, type NodeId, Directed, Undirected}
-import yog/pathfinding
+import yog/pathfinding/utils.{type Path}
 
 /// Options for customizing DOT (Graphviz) diagram rendering.
 pub type DotOptions {
@@ -178,7 +178,7 @@ pub fn to_dot(graph: Graph(String, String), options: DotOptions) -> String {
 /// }
 /// ```
 pub fn path_to_dot_options(
-  path: pathfinding.Path(e),
+  path: Path(e),
   base_options: DotOptions,
 ) -> DotOptions {
   let nodes = path.nodes

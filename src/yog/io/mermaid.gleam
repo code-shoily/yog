@@ -4,7 +4,7 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
 import yog/model.{type Graph, type NodeId, Directed, Undirected}
-import yog/pathfinding
+import yog/pathfinding/utils.{type Path}
 
 /// Options for customizing Mermaid diagram rendering.
 pub type MermaidOptions {
@@ -185,7 +185,7 @@ pub fn to_mermaid(
 /// }
 /// ```
 pub fn path_to_options(
-  path: pathfinding.Path(e),
+  path: Path(e),
   base_options: MermaidOptions,
 ) -> MermaidOptions {
   let nodes = path.nodes
