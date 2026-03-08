@@ -5,6 +5,34 @@
 //// builder maintains a mapping from labels to internal integer IDs and
 //// converts to a standard `Graph` when needed.
 ////
+//// ## Important Usage Notes
+////
+//// ### One-Way Conversion
+////
+//// The `to_graph()` function returns a standard `Graph` that is **detached** from
+//// the builder. If you modify the graph after conversion (e.g., via `model.add_node`
+//// or `model.add_edge`), the builder's internal mapping will become out of sync.
+//// 
+//// **Correct workflow:** Build completely → Convert → Use IDs for algorithms.
+//// Do NOT modify the resulting graph and expect the builder to track changes.
+////
+//// ### Stable ID Assignment (Idempotent)
+////
+//// Node IDs are assigned deterministically based on first occurrence. Adding the
+//// same label multiple times will always return the same ID:
+////
+//// ```gleam
+//// let builder =
+////   labeled.directed()
+////   |> labeled.add_edge("A", "B", 10)  // A=0, B=1
+////   |> labeled.add_edge("B", "C", 20)  // C=2 (B still 1)
+////   |> labeled.add_edge("A", "C", 30)  // All IDs stable
+//// ```
+////
+//// This stability means you can reliably call `get_id()` at any point and get
+//// consistent results. It also enables incremental graph building from multiple
+//// sources without worrying about duplicate labels.
+////
 //// ## Example
 ////
 //// ```gleam
@@ -118,6 +146,10 @@ pub fn undirected() -> Builder(label, edge_data) {
 ///
 /// If a node with this label already exists, returns its ID without modification.
 /// If it doesn't exist, creates a new node with the label as its data.
+///
+/// > **Note:** This function is idempotent - calling it multiple times with the
+/// > same label always returns the same ID. This provides stability when building
+/// > graphs incrementally from multiple sources.
 ///
 /// ## Example
 ///
@@ -268,6 +300,11 @@ pub fn get_id(builder: Builder(label, e), label: label) -> Result(NodeId, Nil) {
 ///
 /// The resulting graph uses integer IDs internally and stores the labels
 /// as node data. This graph can be used with all yog algorithms.
+///
+/// > **Warning:** The returned graph is a snapshot. Modifying it directly
+/// > (e.g., via `model.add_node` or `model.add_edge`) will NOT update the
+/// > builder, and `get_id` will return stale information. Complete all
+/// > building operations before converting.
 ///
 /// ## Example
 ///
