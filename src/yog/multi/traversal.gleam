@@ -171,28 +171,87 @@ fn do_dfs(
   used_edges: Set(Int),
   acc: List(NodeId),
 ) -> List(NodeId) {
+  // Entry point: use CPS with identity continuation
+  do_dfs_cps(graph, current, visited_nodes, used_edges, acc, fn(v, _, a) {
+    #(v, a)
+  })
+  |> fn(r) { r.1 }
+}
+
+// CPS version: cont is "what to do after processing this node and all its descendants"
+// All calls are tail-recursive to avoid stack overflow on deep graphs
+fn do_dfs_cps(
+  graph: MultiGraph(n, e),
+  current: NodeId,
+  visited_nodes: Set(NodeId),
+  used_edges: Set(Int),
+  acc: List(NodeId),
+  cont: fn(Set(NodeId), Set(Int), List(NodeId)) -> #(Set(NodeId), List(NodeId)),
+) -> #(Set(NodeId), List(NodeId)) {
   case set.contains(visited_nodes, current) {
-    True -> acc
+    True -> cont(visited_nodes, used_edges, acc)
     False -> {
       let visited2 = set.insert(visited_nodes, current)
       let acc2 = [current, ..acc]
 
-      multi.successors(graph, current)
-      |> list.fold(#(visited2, used_edges, acc2), fn(state, succ) {
-        let #(vn, ue, a) = state
-        let #(dst, eid, _) = succ
-        case set.contains(ue, eid) {
-          True -> state
-          False -> {
-            let ue2 = set.insert(ue, eid)
-            let a2 = do_dfs(graph, dst, vn, ue2, a)
-            // Collect any new visited nodes that came out of the recursive call
-            let vn2 = list.fold(a2, vn, fn(s, id) { set.insert(s, id) })
-            #(vn2, ue2, a2)
-          }
+      // Get successors and process them tail-recursively
+      let successors = multi.successors(graph, current)
+      process_successors_cps(
+        graph,
+        successors,
+        visited2,
+        used_edges,
+        acc2,
+        cont,
+      )
+    }
+  }
+}
+
+// Process successors one at a time, tail-recursively
+// Passes remaining successors as part of the continuation to maintain DFS order
+fn process_successors_cps(
+  graph: MultiGraph(n, e),
+  successors: List(#(NodeId, Int, e)),
+  visited: Set(NodeId),
+  used_edges: Set(Int),
+  acc: List(NodeId),
+  cont: fn(Set(NodeId), Set(Int), List(NodeId)) -> #(Set(NodeId), List(NodeId)),
+) -> #(Set(NodeId), List(NodeId)) {
+  case successors {
+    [] -> {
+      // No more successors to process, continue with parent context
+      cont(visited, used_edges, acc)
+    }
+    [#(dst, eid, _), ..rest] -> {
+      case set.contains(used_edges, eid) {
+        True -> {
+          // Edge already used, skip and continue with rest (tail recursive)
+          process_successors_cps(graph, rest, visited, used_edges, acc, cont)
         }
-      })
-      |> fn(r) { r.2 }
+        False -> {
+          let used2 = set.insert(used_edges, eid)
+          // Process this child (tail recursive), then continue with siblings
+          do_dfs_cps(
+            graph,
+            dst,
+            visited,
+            used2,
+            acc,
+            fn(v_after, ue_after, acc_after) {
+              // After child is done, process remaining siblings
+              process_successors_cps(
+                graph,
+                rest,
+                v_after,
+                ue_after,
+                acc_after,
+                cont,
+              )
+            },
+          )
+        }
+      }
     }
   }
 }

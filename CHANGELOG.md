@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- **Multigraph Module** (`yog/multi/*`): Initial support for parallel edges (multiple edges between same node pair)
+  - `yog/multi/model`: `MultiGraph(n, e)` model with conversion helpers.
+  - `yog/multi/traversal`: BFS/DFS with edge-aware visited tracking
+  - `yog/multi/eulerian`: Hierholzer's algorithm returning `EdgeId` paths for unambiguous parallel edge traversal
+
 ## 3.0.0 - 2026-03-08
 
 ### Breaking Changes

@@ -1,6 +1,7 @@
 import gleam/dict.{type Dict}
 import gleam/list
 import gleam/option.{None, Some}
+import gleam/order
 import gleam/result
 import yog/model.{type Graph, type GraphType, type NodeId, Directed, Undirected}
 
@@ -303,6 +304,60 @@ pub fn to_simple_graph(
       using: combine_fn,
     )
   })
+}
+
+/// Collapses the multigraph by keeping the **minimum** weight among parallel edges.
+///
+/// **Use this for:** Shortest path, MST, and any algorithm where only the best
+/// (lowest cost) edge between two nodes matters.
+///
+/// ## Example
+/// ```gleam
+/// // Dijkstra's on multigraph
+/// graph
+/// |> multi.to_simple_graph_min_edges(int.compare)
+/// |> dijkstra.shortest_path(from: 1, to: 5, ...)
+///
+/// // MST on multigraph  
+/// graph
+/// |> multi.to_simple_graph_min_edges(int.compare)
+/// |> mst.kruskal(with_compare: int.compare)
+/// ```
+pub fn to_simple_graph_min_edges(
+  graph: MultiGraph(n, e),
+  compare: fn(e, e) -> order.Order,
+) -> Graph(n, e) {
+  let min_fn = fn(a, b) {
+    case compare(a, b) {
+      order.Gt -> b
+      _ -> a
+    }
+  }
+  to_simple_graph(graph, min_fn)
+}
+
+/// Collapses the multigraph by **summing** weights of parallel edges.
+///
+/// **Use this for:** Min-cut, max-cut, max-flow, and any algorithm where all
+/// parallel edges contribute additively to the total capacity/cost.
+///
+/// ## Example
+/// ```gleam
+/// // S-T min cut / max flow on multigraph
+/// graph
+/// |> multi.to_simple_graph_sum_edges(int.add)
+/// |> max_flow.edmonds_karp(from: source, to: sink, ...)
+///
+/// // Global min cut on multigraph
+/// graph
+/// |> multi.to_simple_graph_sum_edges(int.add)
+/// |> min_cut.global_min_cut()
+/// ```
+pub fn to_simple_graph_sum_edges(
+  graph: MultiGraph(n, e),
+  add: fn(e, e) -> e,
+) -> Graph(n, e) {
+  to_simple_graph(graph, add)
 }
 
 // ---------------------------------------------------------------------------

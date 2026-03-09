@@ -178,3 +178,121 @@ pub fn to_simple_graph_preserves_nodes_test() {
   let simple = multi.to_simple_graph(g, fn(a, _) { a })
   model.all_nodes(simple) |> list.sort(int.compare) |> should.equal([1, 2])
 }
+
+// ---------------------------------------------------------------------------
+// to_simple_graph_min_edges (for shortest path, MST)
+// ---------------------------------------------------------------------------
+
+pub fn to_simple_graph_min_edges_keeps_minimum_test() {
+  let g = multi.directed() |> multi.add_node(1, Nil) |> multi.add_node(2, Nil)
+  let #(g, _) = multi.add_edge(g, from: 1, to: 2, with: 100)
+  let #(g, _) = multi.add_edge(g, from: 1, to: 2, with: 5)
+  let #(g, _) = multi.add_edge(g, from: 1, to: 2, with: 50)
+
+  let simple = multi.to_simple_graph_min_edges(g, int.compare)
+
+  // Should keep only the minimum weight (5)
+  let succs = model.successors(simple, 1)
+  list.length(succs) |> should.equal(1)
+  let assert Ok(#(_, weight)) = list.first(succs)
+  weight |> should.equal(5)
+}
+
+pub fn to_simple_graph_min_edges_different_directions_test() {
+  // Parallel edges in both directions (directed graph)
+  let g = multi.directed() |> multi.add_node(1, Nil) |> multi.add_node(2, Nil)
+  // 1->2 edges: min should be 3
+  let #(g, _) = multi.add_edge(g, from: 1, to: 2, with: 10)
+  let #(g, _) = multi.add_edge(g, from: 1, to: 2, with: 3)
+  // 2->1 edges: min should be 7
+  let #(g, _) = multi.add_edge(g, from: 2, to: 1, with: 7)
+  let #(g, _) = multi.add_edge(g, from: 2, to: 1, with: 15)
+
+  let simple = multi.to_simple_graph_min_edges(g, int.compare)
+
+  // Check 1->2 direction
+  let succs_1 = model.successors(simple, 1)
+  list.length(succs_1) |> should.equal(1)
+  let assert Ok(#(_, w1)) = list.first(succs_1)
+  w1 |> should.equal(3)
+
+  // Check 2->1 direction
+  let succs_2 = model.successors(simple, 2)
+  list.length(succs_2) |> should.equal(1)
+  let assert Ok(#(_, w2)) = list.first(succs_2)
+  w2 |> should.equal(7)
+}
+
+pub fn to_simple_graph_min_edges_undirected_test() {
+  // For undirected, parallel edges should collapse to single min edge
+  let g = multi.undirected() |> multi.add_node(1, Nil) |> multi.add_node(2, Nil)
+  let #(g, _) = multi.add_edge(g, from: 1, to: 2, with: 20)
+  let #(g, _) = multi.add_edge(g, from: 1, to: 2, with: 8)
+
+  let simple = multi.to_simple_graph_min_edges(g, int.compare)
+
+  // Both directions should have the minimum (8)
+  model.successors(simple, 1) |> list.first() |> should.equal(Ok(#(2, 8)))
+  model.successors(simple, 2) |> list.first() |> should.equal(Ok(#(1, 8)))
+}
+
+// ---------------------------------------------------------------------------
+// to_simple_graph_sum_edges (for min/max cut, flow problems)
+// ---------------------------------------------------------------------------
+
+pub fn to_simple_graph_sum_edges_adds_weights_test() {
+  let g = multi.directed() |> multi.add_node(1, Nil) |> multi.add_node(2, Nil)
+  let #(g, _) = multi.add_edge(g, from: 1, to: 2, with: 10)
+  let #(g, _) = multi.add_edge(g, from: 1, to: 2, with: 5)
+  let #(g, _) = multi.add_edge(g, from: 1, to: 2, with: 3)
+
+  let simple = multi.to_simple_graph_sum_edges(g, int.add)
+
+  // Should sum all edges: 10 + 5 + 3 = 18
+  let succs = model.successors(simple, 1)
+  list.length(succs) |> should.equal(1)
+  let assert Ok(#(_, weight)) = list.first(succs)
+  weight |> should.equal(18)
+}
+
+pub fn to_simple_graph_sum_edges_flow_network_test() {
+  // Simulates a flow network where parallel edges add capacity
+  let g = multi.directed() |> multi.add_node(1, Nil) |> multi.add_node(2, Nil)
+  // Multiple parallel "pipes" from source to sink
+  let #(g, _) = multi.add_edge(g, from: 1, to: 2, with: 100)
+  // Main pipe
+  let #(g, _) = multi.add_edge(g, from: 1, to: 2, with: 50)
+  // Backup pipe
+  let #(g, _) = multi.add_edge(g, from: 1, to: 2, with: 25)
+  // Overflow pipe
+
+  let simple = multi.to_simple_graph_sum_edges(g, int.add)
+
+  // Total capacity: 175
+  let assert Ok(#(_, capacity)) = model.successors(simple, 1) |> list.first()
+  capacity |> should.equal(175)
+}
+
+pub fn to_simple_graph_sum_edges_undirected_test() {
+  // Undirected graph with parallel edges
+  let g = multi.undirected() |> multi.add_node(1, Nil) |> multi.add_node(2, Nil)
+  let #(g, _) = multi.add_edge(g, from: 1, to: 2, with: 10)
+  let #(g, _) = multi.add_edge(g, from: 1, to: 2, with: 20)
+
+  let simple = multi.to_simple_graph_sum_edges(g, int.add)
+
+  // Both directions should have the sum (30)
+  model.successors(simple, 1) |> list.first() |> should.equal(Ok(#(2, 30)))
+  model.successors(simple, 2) |> list.first() |> should.equal(Ok(#(1, 30)))
+}
+
+pub fn to_simple_graph_sum_edges_single_edge_unchanged_test() {
+  // Single edge should remain unchanged
+  let g = multi.directed() |> multi.add_node(1, Nil) |> multi.add_node(2, Nil)
+  let #(g, _) = multi.add_edge(g, from: 1, to: 2, with: 42)
+
+  let simple = multi.to_simple_graph_sum_edges(g, int.add)
+
+  let assert Ok(#(_, weight)) = model.successors(simple, 1) |> list.first()
+  weight |> should.equal(42)
+}
