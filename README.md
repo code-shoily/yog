@@ -87,24 +87,24 @@ We have some real-world projects that use Yog for graph algorithms:
 
 Detailed examples are located in the [examples/](https://github.com/code-shoily/yog/tree/main/examples) directory:
 
-- [Social Network Analysis](examples/social_network_analysis.gleam) - Finding communities using SCCs.
-- [Task Scheduling](examples/task_scheduling.gleam) - Basic topological sorting.
-- [GPS Navigation](examples/gps_navigation.gleam) - Shortest path using A* and heuristics.
-- [Network Cable Layout](examples/network_cable_layout.gleam) - Minimum Spanning Tree using Kruskal's.
-- [Network Bandwidth](examples/network_bandwidth.gleam) - ⭐ Max flow for bandwidth optimization with bottleneck analysis.
-- [Job Matching](examples/job_matching.gleam) - ⭐ Max flow for bipartite matching and assignment problems.
-- [Cave Path Counting](examples/cave_path_counting.gleam) - Custom DFS with backtracking.
-- [Task Ordering](examples/task_ordering.gleam) - Lexicographical topological sort.
-- [Bridges of Königsberg](examples/bridges_of_konigsberg.gleam) - Eulerian circuit and path detection.
-- [Global Minimum Cut](examples/global_min_cut.gleam) - Stoer-Wagner algorithm.
-- [Job Assignment](examples/job_assignment.gleam) - Bipartite maximum matching.
-- [Medical Residency](examples/medical_residency.gleam) - Stable marriage matching (Gale-Shapley algorithm).
-- [City Distance Matrix](examples/city_distance_matrix.gleam) - Floyd-Warshall for all-pairs shortest paths.
-- [Graph Generation Showcase](examples/graph_generation_showcase.gleam) - ⭐ All 9 classic graph patterns with statistics.
-- [DOT rendering](examples/render_dot.gleam) - Exporting graphs to Graphviz format.
-- [Mermaid rendering](examples/render_mermaid.gleam) - Generating Mermaid diagrams.
-- [JSON rendering](examples/render_json.gleam) - Exporting graphs to JSON for web use.
-- [Graph creation](examples/graph_creation.gleam) - Comprehensive guide to 10+ ways of creating graphs.
+- [Social Network Analysis](https://github.com/code-shoily/yog/blob/main/examples/social_network_analysis.gleam) - Finding communities using SCCs.
+- [Task Scheduling](https://github.com/code-shoily/yog/blob/main/examples/task_scheduling.gleam) - Basic topological sorting.
+- [GPS Navigation](https://github.com/code-shoily/yog/blob/main/examples/gps_navigation.gleam) - Shortest path using A* and heuristics.
+- [Network Cable Layout](https://github.com/code-shoily/yog/blob/main/examples/network_cable_layout.gleam) - Minimum Spanning Tree using Kruskal's.
+- [Network Bandwidth](https://github.com/code-shoily/yog/blob/main/examples/network_bandwidth.gleam) - ⭐ Max flow for bandwidth optimization with bottleneck analysis.
+- [Job Matching](https://github.com/code-shoily/yog/blob/main/examples/job_matching.gleam) - ⭐ Max flow for bipartite matching and assignment problems.
+- [Cave Path Counting](https://github.com/code-shoily/yog/blob/main/examples/cave_path_counting.gleam) - Custom DFS with backtracking.
+- [Task Ordering](https://github.com/code-shoily/yog/blob/main/examples/task_ordering.gleam) - Lexicographical topological sort.
+- [Bridges of Königsberg](https://github.com/code-shoily/yog/blob/main/examples/bridges_of_konigsberg.gleam) - Eulerian circuit and path detection.
+- [Global Minimum Cut](https://github.com/code-shoily/yog/blob/main/examples/global_min_cut.gleam) - Stoer-Wagner algorithm.
+- [Job Assignment](https://github.com/code-shoily/yog/blob/main/examples/job_assignment.gleam) - Bipartite maximum matching.
+- [Medical Residency](https://github.com/code-shoily/yog/blob/main/examples/medical_residency.gleam) - Stable marriage matching (Gale-Shapley algorithm).
+- [City Distance Matrix](https://github.com/code-shoily/yog/blob/main/examples/city_distance_matrix.gleam) - Floyd-Warshall for all-pairs shortest paths.
+- [Graph Generation Showcase](https://github.com/code-shoily/yog/blob/main/examples/graph_generation_showcase.gleam) - ⭐ All 9 classic graph patterns with statistics.
+- [DOT rendering](https://github.com/code-shoily/yog/blob/main/examples/render_dot.gleam) - Exporting graphs to Graphviz format.
+- [Mermaid rendering](https://github.com/code-shoily/yog/blob/main/examples/render_mermaid.gleam) - Generating Mermaid diagrams.
+- [JSON rendering](https://github.com/code-shoily/yog/blob/main/examples/render_json.gleam) - Exporting graphs to JSON for web use.
+- [Graph creation](https://github.com/code-shoily/yog/blob/main/examples/graph_creation.gleam) - Comprehensive guide to 10+ ways of creating graphs.
 
 ### Running Examples Locally
 
@@ -129,7 +129,7 @@ gleam run -m yog/internal/examples/network_bandwidth
 Detailed documentation for each algorithm can be found on [HexDocs](https://hexdocs.pm/yog/).
 
 | Algorithm | Use When | Time Complexity |
-| ----------- | ---------- | ---------------- |
+| --------- | -------- | --------------- |
 | **Dijkstra** | Non-negative weights, single shortest path | O((V+E) log V) |
 | **A*** | Non-negative weights + good heuristic | O((V+E) log V) |
 | **Bellman-Ford** | Negative weights OR cycle detection needed | O(VE) |
@@ -150,15 +150,21 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 | **Network Simplex** | Global minimum cost flow optimization | O(E) pivots |
 | **Implicit Search** | Pathfinding/Traversal on on-demand graphs | O((V+E) log V) |
 
-## Performance Characteristics
+## Benchmarking
 
-- **Graph storage**: O(V + E)
-- **Transpose**: O(1) - dramatically faster than typical O(E) implementations
-- **Dijkstra/A***: O(V) for visited set and pairing heap
-- **Maximum Flow**: Flat dictionary residuals with O(1) amortized BFS queue operations
-- **Graph Generators**: O(V²) for complete graphs, O(V) or O(VE) for others
-- **Stable Marriage**: O(n²) Gale-Shapley with deterministic proposal ordering
-- **Test Suite**: 733 tests pass in ~2 seconds
+Yog includes built-in benchmarking utilities using `gleamy/bench`. Run the example benchmark:
+
+```bash
+gleam run -m internal/bench/simple_pathfinding
+```
+
+Or use the provided script to run all benchmarks:
+
+```bash
+./run_benchmarks.sh
+```
+
+For detailed instructions on creating custom benchmarks, interpreting results, and comparing against reference implementations, see the [Benchmarking Guide](BENCHMARKING_GUIDE.md).
 
 ## AI Assistance
 

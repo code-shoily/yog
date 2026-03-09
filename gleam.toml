@@ -1,5 +1,5 @@
 name = "yog"
-version = "3.0.0"
+version = "3.1.0"
 targets = ["erlang", "javascript"]
 description = "A comprehensive graph and pathfinding library for Gleam. Includes common algorithms (Dijkstra, A*, SCC), 2D grid utilities, and visualization tools."
 licences = ["Apache-2.0"]

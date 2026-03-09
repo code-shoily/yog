@@ -5,14 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 3.1.0 - Unreleased
 
 ### Added
 
+- **Centrality Module** (`yog/centrality`): Graph analysis for identifying important nodes
+    - `degree/2`: Local connectivity measure with In/Out/Total modes
+    - `closeness/5` & `harmonic_centrality/5`: Distance-based importance (latter handles disconnected graphs)
+    - `betweenness/5`: Bridge/gatekeeper detection using Brandes' algorithm
+    - `pagerank/2`: Link-quality importance with configurable damping
+    - `eigenvector/3`: Influence based on neighbor centrality (power iteration)
+    - `katz/5` & `alpha_centrality/5`: Attenuated centrality for directed networks
+    - Convenience wrappers: `*_int()`, `*_float()` for common weight types
+
 - **Multigraph Module** (`yog/multi/*`): Initial support for parallel edges (multiple edges between same node pair)
-  - `yog/multi/model`: `MultiGraph(n, e)` model with conversion helpers.
-  - `yog/multi/traversal`: BFS/DFS with edge-aware visited tracking
-  - `yog/multi/eulerian`: Hierholzer's algorithm returning `EdgeId` paths for unambiguous parallel edge traversal
+    - `yog/multi/model`: `MultiGraph(n, e)` model with conversion helpers
+    - `yog/multi/traversal`: BFS/DFS with edge-aware visited tracking
+    - `yog/multi/eulerian`: Hierholzer's algorithm returning `EdgeId` paths for unambiguous parallel edge traversal
 
 ## 3.0.0 - 2026-03-08
 
@@ -35,15 +44,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Convenience Wrappers**: `*_int()` and `*_float()` functions for common weight types:
-  - `dijkstra`: `shortest_path_int`, `shortest_path_float`, `single_source_distances_int`, `single_source_distances_float`
-  - `a_star`: `a_star_int`, `a_star_float`
-  - `bellman_ford`: `bellman_ford_int`, `bellman_ford_float`
-  - `floyd_warshall`: `floyd_warshall_int`, `floyd_warshall_float`
-  - `max_flow`: `edmonds_karp_int`
+    - `dijkstra`: `shortest_path_int`, `shortest_path_float`, `single_source_distances_int`, `single_source_distances_float`
+    - `a_star`: `a_star_int`, `a_star_float`
+    - `bellman_ford`: `bellman_ford_int`, `bellman_ford_float`
+    - `floyd_warshall`: `floyd_warshall_int`, `floyd_warshall_float`
+    - `max_flow`: `edmonds_karp_int`
 - **Live Builder** (`yog/builder/live`): Transaction-style builder for incremental graph construction with `sync()` for O(ΔE) updates
 - **DAG Module** (`yog/dag`): Strict `Dag(n, e)` type with O(V+E) algorithms:
-  - `topological_sort`, `longest_path`, `transitive_closure`, `transitive_reduction`
-  - `lowest_common_ancestors`, `count_reachability`
+    - `topological_sort`, `longest_path`, `transitive_closure`, `transitive_reduction`
+    - `lowest_common_ancestors`, `count_reachability`
 - **Network Simplex** (`yog/flow/network_simplex`): Minimum cost flow solver
 - `is_acyclic`/`is_cyclic` re-exported from `yog/properties`
 
@@ -72,8 +81,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `builder/grid.from_2d_list_with_topology()`: Custom movement patterns
-- Chess-themed topologies: `rook()`, `bishop()`, `queen()`, `knight()`
-- Movement predicates: `avoiding()`, `walkable()`, `always()`
+    - Chess-themed topologies: `rook()`, `bishop()`, `queen()`, `knight()`
+    - Movement predicates: `avoiding()`, `walkable()`, `always()`
 - `model.add_edge_ensured()`: Auto-creates missing nodes
 - `transform.filter_edges()`, `transform.complement()`, `transform.to_directed()`, `transform.to_undirected()`
 
