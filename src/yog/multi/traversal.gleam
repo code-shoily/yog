@@ -147,7 +147,6 @@ fn do_bfs(
   case queue {
     [] -> list.reverse(acc)
     [current, ..rest_queue] -> {
-      // Collect unvisited neighbours reachable via unused edges
       let #(new_nodes, new_edges, next_queue) =
         multi.successors(graph, current)
         |> list.fold(#(visited_nodes, used_edges, rest_queue), fn(state, succ) {
@@ -171,7 +170,6 @@ fn do_dfs(
   used_edges: Set(Int),
   acc: List(NodeId),
 ) -> List(NodeId) {
-  // Entry point: use CPS with identity continuation
   do_dfs_cps(graph, current, visited_nodes, used_edges, acc, fn(v, _, a) {
     #(v, a)
   })
@@ -193,9 +191,8 @@ fn do_dfs_cps(
     False -> {
       let visited2 = set.insert(visited_nodes, current)
       let acc2 = [current, ..acc]
-
-      // Get successors and process them tail-recursively
       let successors = multi.successors(graph, current)
+
       process_successors_cps(
         graph,
         successors,
@@ -220,18 +217,15 @@ fn process_successors_cps(
 ) -> #(Set(NodeId), List(NodeId)) {
   case successors {
     [] -> {
-      // No more successors to process, continue with parent context
       cont(visited, used_edges, acc)
     }
     [#(dst, eid, _), ..rest] -> {
       case set.contains(used_edges, eid) {
         True -> {
-          // Edge already used, skip and continue with rest (tail recursive)
           process_successors_cps(graph, rest, visited, used_edges, acc, cont)
         }
         False -> {
           let used2 = set.insert(used_edges, eid)
-          // Process this child (tail recursive), then continue with siblings
           do_dfs_cps(
             graph,
             dst,
@@ -239,7 +233,6 @@ fn process_successors_cps(
             used2,
             acc,
             fn(v_after, ue_after, acc_after) {
-              // After child is done, process remaining siblings
               process_successors_cps(
                 graph,
                 rest,
@@ -279,7 +272,6 @@ fn do_fold_walk_bfs(
             folder,
           )
         False -> {
-          // Call folder with current node
           let #(control, new_acc) = folder(acc, node_id, metadata)
           let new_visited = set.insert(visited_nodes, node_id)
 
@@ -295,7 +287,6 @@ fn do_fold_walk_bfs(
                 folder,
               )
             Continue -> {
-              // Add successors to queue with updated metadata
               let #(next_queue, new_used_edges) =
                 multi.successors(graph, node_id)
                 |> list.fold(#(rest_queue, used_edges), fn(state, succ) {

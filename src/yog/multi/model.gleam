@@ -288,7 +288,6 @@ pub fn to_simple_graph(
   graph: MultiGraph(n, e),
   combine_fn: fn(e, e) -> e,
 ) -> Graph(n, e) {
-  // Start with a simple graph carrying over node data
   let base =
     dict.fold(graph.nodes, model.new(graph.kind), fn(g, id, data) {
       model.add_node(g, id, data)
@@ -380,7 +379,6 @@ fn do_remove_edge(graph: MultiGraph(n, e), eid: EdgeId) -> MultiGraph(n, e) {
       let new_out = dict.upsert(graph.out_edge_ids, src, remove_id)
       let new_in = dict.upsert(graph.in_edge_ids, dst, remove_id)
 
-      // For undirected, also remove from the reverse index
       let #(new_out2, new_in2) = case graph.kind {
         Directed -> #(new_out, new_in)
         Undirected -> {
