@@ -1,4 +1,22 @@
-# Yog 🌳
+# Yog 
+
+```
+                    ★
+                   /|\
+                  / | \
+                 /  |  \
+                Y   |   O--------G
+               /    |    \      /
+              /     |     \    /
+             /      |      \  /
+            ●-------●-------●
+           / \      |      / \
+          /   \     |     /   \
+         /     \    |    /     \
+        ◆       ◆   |   ◆       ◆
+                   
+        Y  O  G  -  Graph Union
+```
 
 [![Package Version](https://img.shields.io/hexpm/v/yog)](https://hex.pm/packages/yog)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/yog/)
@@ -172,4 +190,4 @@ Parts of this project were developed with the assistance of AI coding tools. All
 
 ---
 
-**Yog** - Graph algorithms for Gleam 🌳
+**Yog** - Graph algorithms for Gleam
