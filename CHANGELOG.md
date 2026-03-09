@@ -7,16 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-## 3.0.0 - 2026-03-07
+## 3.0.0 - 2026-03-08
 
 ### Breaking Changes
 
-- **Data-Last API**: `graph` parameter moved to final position in `walk`, `walk_until`, `fold_walk`
+- **Graph-First API**: `graph` parameter moved to first position in `walk`, `walk_until`, `fold_walk`
 - **Module Reorganization**:
   - `yog/components` → `yog/connectivity`
-  - `yog/min_cut`, `yog/max_flow` → `yog/flow`
+  - `yog/min_cut` → `yog/flow/min_cut`
+  - `yog/max_flow` → `yog/flow/max_flow`
   - `yog/topological_sort` → `yog/traversal`
-  - `yog/clique`, `yog/bipartite`, `yog/eulerian` → `yog/properties`
+  - `yog/clique` → `yog/properties/clique`
+  - `yog/bipartite` → `yog/properties/bipartite`
+  - `yog/eulerian` → `yog/properties/eulerian`
+  - `yog/pathfinding` → `yog/pathfinding/dijkstra`, `yog/pathfinding/a_star`, `yog/pathfinding/bellman_ford`, `yog/pathfinding/floyd_warshall`
   - Facade modules removed; import specific modules (e.g., `yog/pathfinding/dijkstra`)
 - **Rendering**: `yog/render` split into `yog/io/*` (mermaid, dot, json)
 - **Traversal Control**: `fold_walk` and `implicit_fold` now use `WalkControl` enum (`Continue`, `Stop`, `Halt`)
