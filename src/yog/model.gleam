@@ -1,6 +1,7 @@
 import gleam/dict.{type Dict}
 import gleam/list
 import gleam/option.{None, Some}
+import gleam/pair
 import gleam/result
 import gleam/set
 import yog/internal/utils
@@ -17,7 +18,7 @@ pub type GraphType {
   Undirected
 }
 
-/// A graph data structure that can be directed or undirected.
+/// A simple graph data structure that can be directed or undirected.
 ///
 /// - `node_data`: The type of data stored at each node
 /// - `edge_data`: The type of data (usually weight) stored on each edge
@@ -98,7 +99,7 @@ pub fn add_edge(
 /// If `src` or `dst` is not already in the graph, it is created with
 /// the supplied `default` node data before the edge is added. Nodes
 /// that already exist are left unchanged.
-///
+/// 
 /// ## Example
 ///
 /// ```gleam
@@ -114,6 +115,11 @@ pub fn add_edge(
 /// |> model.add_edge_ensured(from: 1, to: 2, with: 5, default: "anon")
 /// // Node 1 is still "Alice", node 2 is "anon"
 /// ```
+/// ## Future Improvements
+///
+/// A future version may support separate defaults for each endpoint
+/// (`default_from` and `default_to`). If you need this feature, please
+/// [open an issue](https://github.com/code-shoily/yog/issues).
 pub fn add_edge_ensured(
   graph: Graph(n, e),
   from src: NodeId,
@@ -155,20 +161,16 @@ pub fn predecessors(graph: Graph(n, e), id: NodeId) -> List(#(NodeId, e)) {
 pub fn neighbors(graph: Graph(n, e), id: NodeId) -> List(#(NodeId, e)) {
   case graph.kind {
     Undirected -> successors(graph, id)
-    // In Undirected, out_edges == in_edges
     Directed -> {
-      let out = successors(graph, id)
-      let in_ = predecessors(graph, id)
-      // Build a set of outgoing IDs for O(log N) membership checks
-      let out_ids = set.from_list(list.map(out, fn(o) { o.0 }))
-      // Combine: add incoming edges not already present in out
-      list.fold(in_, out, fn(acc, incoming) {
-        let #(in_id, _) = incoming
-        case set.contains(out_ids, in_id) {
-          True -> acc
-          False -> [incoming, ..acc]
-        }
-      })
+      let outgoing = successors(graph, id)
+      let incoming = predecessors(graph, id)
+      let out_ids = set.from_list(list.map(outgoing, pair.first))
+
+      use acc, #(in_id, _) as incoming <- list.fold(incoming, outgoing)
+      case set.contains(out_ids, in_id) {
+        True -> acc
+        False -> [incoming, ..acc]
+      }
     }
   }
 }
@@ -191,10 +193,10 @@ pub fn order(graph: Graph(n, e)) -> Int {
 ///
 /// **Time Complexity:** O(1)
 pub fn node_count(graph: Graph(n, e)) -> Int {
-  dict.size(graph.nodes)
+  order(graph)
 }
 
-/// Returns the number of edges in the graph (graph size).
+/// Returns the number of edges in the graph.
 ///
 /// For undirected graphs, each edge is counted once (the pair {u, v}).
 /// For directed graphs, each directed edge (u -> v) is counted once.
@@ -271,23 +273,59 @@ pub fn remove_node(graph: Graph(n, e), id: NodeId) -> Graph(n, e) {
   let new_nodes = dict.delete(graph.nodes, id)
 
   let new_out = dict.delete(graph.out_edges, id)
-  let new_in_cleaned =
-    list.fold(targets, graph.in_edges, fn(acc_in, target) {
-      let #(target_id, _) = target
-      utils.dict_update_inner(acc_in, target_id, id, dict.delete)
-    })
+  let new_in_cleaned = {
+    use acc_in, #(target_id, _) <- list.fold(targets, graph.in_edges)
+    utils.dict_update_inner(acc_in, target_id, id, dict.delete)
+  }
 
   let new_in = dict.delete(new_in_cleaned, id)
-  let new_out_cleaned =
-    list.fold(sources, new_out, fn(acc_out, source) {
-      let #(source_id, _) = source
-      utils.dict_update_inner(acc_out, source_id, id, dict.delete)
-    })
+  let new_out_cleaned = {
+    use acc_out, #(source_id, _) <- list.fold(sources, new_out)
+    utils.dict_update_inner(acc_out, source_id, id, dict.delete)
+  }
 
   Graph(..graph, nodes: new_nodes, out_edges: new_out_cleaned, in_edges: new_in)
 }
 
-/// Removes an edge between `src` and `dst`.
+/// Removes a directed edge from `src` to `dst`.
+///
+/// For **directed graphs**, this removes the single directed edge from `src` to `dst`.
+/// For **undirected graphs**, this only removes the edge in one direction
+/// (from `src` to `dst`). To fully remove an undirected edge, call this
+/// function twice: once with `(src, dst)` and once with `(dst, src)`.
+///
+/// **Time Complexity:** O(1)
+///
+/// ## Example
+///
+/// ```gleam
+/// // Directed graph - removes single directed edge
+/// let graph =
+///   model.new(Directed)
+///   |> model.add_node(1, "A")
+///   |> model.add_node(2, "B")
+///   |> model.add_edge(from: 1, to: 2, with: 10)
+///   |> model.remove_edge(1, 2)
+/// // Edge 1->2 is removed
+/// ```
+///
+/// ```gleam
+/// // Undirected graph - must remove both directions separately
+/// let graph =
+///   model.new(Undirected)
+///   |> model.add_node(1, "A")
+///   |> model.add_node(2, "B")
+///   |> model.add_edge(from: 1, to: 2, with: 10)
+///   |> model.remove_edge(1, 2)  // Removes 1->2
+///   |> model.remove_edge(2, 1)  // Removes 2->1
+/// // Edge between 1 and 2 is fully removed
+/// ```
+///
+/// ## Future Improvements
+///
+/// A future version may automatically remove both directions when called
+/// on an undirected graph. If you need this behavior, please
+/// [open an issue](https://github.com/code-shoily/yog/issues).
 pub fn remove_edge(
   graph: Graph(node_data, edge_data),
   src: NodeId,

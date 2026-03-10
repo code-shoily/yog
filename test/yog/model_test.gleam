@@ -1048,3 +1048,239 @@ pub fn add_edge_ensured_self_loop_test() {
   dict.get(graph.nodes, 1) |> should.equal(Ok("self"))
   model.successors(graph, 1) |> should.equal([#(1, 5)])
 }
+
+// ============= Tests for order() and node_count() =============
+
+pub fn order_empty_graph_test() {
+  let graph = model.new(Directed)
+  model.order(graph) |> should.equal(0)
+}
+
+pub fn order_single_node_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+  model.order(graph) |> should.equal(1)
+}
+
+pub fn order_multiple_nodes_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+  model.order(graph) |> should.equal(3)
+}
+
+pub fn order_with_edges_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+  model.order(graph) |> should.equal(2)
+}
+
+pub fn node_count_same_as_order_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+  model.node_count(graph) |> should.equal(model.order(graph))
+}
+
+pub fn node_count_undirected_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+  model.node_count(graph) |> should.equal(3)
+}
+
+// ============= Tests for edge_count() =============
+
+pub fn edge_count_empty_graph_test() {
+  let graph = model.new(Directed)
+  model.edge_count(graph) |> should.equal(0)
+}
+
+pub fn edge_count_directed_single_edge_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+  model.edge_count(graph) |> should.equal(1)
+}
+
+pub fn edge_count_directed_multiple_edges_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 2, to: 3, with: 20)
+    |> model.add_edge(from: 1, to: 3, with: 30)
+  model.edge_count(graph) |> should.equal(3)
+}
+
+pub fn edge_count_undirected_single_edge_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+  // Undirected edge counts as 1 (not 2 internal entries)
+  model.edge_count(graph) |> should.equal(1)
+}
+
+pub fn edge_count_undirected_multiple_edges_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 2, to: 3, with: 20)
+  model.edge_count(graph) |> should.equal(2)
+}
+
+pub fn edge_count_self_loop_directed_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_edge(from: 1, to: 1, with: 5)
+  model.edge_count(graph) |> should.equal(1)
+}
+
+pub fn edge_count_with_isolated_nodes_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+  // Node 3 is isolated, shouldn't affect edge count
+  model.edge_count(graph) |> should.equal(1)
+  model.order(graph) |> should.equal(3)
+}
+
+pub fn edge_count_bidirectional_directed_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 2, to: 1, with: 20)
+  // Two separate directed edges
+  model.edge_count(graph) |> should.equal(2)
+}
+
+// ============= Tests for remove_edge() =============
+
+pub fn remove_edge_basic_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.remove_edge(1, 2)
+
+  model.successors(graph, 1) |> should.equal([])
+  model.predecessors(graph, 2) |> should.equal([])
+}
+
+pub fn remove_edge_nonexistent_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.remove_edge(1, 99)
+
+  // Original edge should remain
+  model.successors(graph, 1) |> should.equal([#(2, 10)])
+}
+
+pub fn remove_edge_keeps_other_edges_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 1, to: 3, with: 20)
+    |> model.remove_edge(1, 2)
+
+  // Edge to 3 should remain
+  model.successors(graph, 1) |> should.equal([#(3, 20)])
+}
+
+pub fn remove_edge_undirected_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.remove_edge(1, 2)
+    |> model.remove_edge(2, 1)
+
+  // Both directions should be removed when calling remove_edge for each direction
+  model.successors(graph, 1) |> should.equal([])
+  model.successors(graph, 2) |> should.equal([])
+}
+
+pub fn remove_edge_undirected_single_direction_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.remove_edge(1, 2)
+
+  // Only removes the 1->2 direction, 2->1 still exists
+  model.successors(graph, 1) |> should.equal([])
+  // The reverse direction still exists
+  model.successors(graph, 2) |> should.equal([#(1, 10)])
+}
+
+pub fn remove_edge_multiple_incoming_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 3, to: 2, with: 30)
+    |> model.remove_edge(1, 2)
+
+  // Edge from 3 to 2 should remain
+  model.predecessors(graph, 2) |> should.equal([#(3, 30)])
+}
+
+pub fn remove_edge_self_loop_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_edge(from: 1, to: 1, with: 5)
+    |> model.remove_edge(1, 1)
+
+  model.successors(graph, 1) |> should.equal([])
+  model.predecessors(graph, 1) |> should.equal([])
+}
+
+pub fn remove_edge_preserves_nodes_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.remove_edge(1, 2)
+
+  // Nodes should still exist
+  dict.size(graph.nodes) |> should.equal(2)
+  dict.get(graph.nodes, 1) |> should.equal(Ok("A"))
+  dict.get(graph.nodes, 2) |> should.equal(Ok("B"))
+}
