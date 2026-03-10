@@ -114,15 +114,11 @@ pub fn map_nodes(graph: Graph(n, e), with fun: fn(n) -> m) -> Graph(m, e) {
 /// })
 /// ```
 pub fn map_edges(graph: Graph(n, e), with fun: fn(e) -> f) -> Graph(n, f) {
-  let transform_inner = fn(inner_map) {
-    dict.map_values(inner_map, fn(_dst, weight) { fun(weight) })
-  }
+  let transform_inner = dict.map_values(_, fn(_dst, weight) { fun(weight) })
 
-  let transform_outer = fn(outer_map) {
-    dict.map_values(outer_map, fn(_src, inner_map) {
-      transform_inner(inner_map)
-    })
-  }
+  let transform_outer = dict.map_values(_, fn(_src, inner_map) {
+    transform_inner(inner_map)
+  })
 
   Graph(
     ..graph,
@@ -167,11 +163,11 @@ pub fn filter_nodes(
   keeping predicate: fn(n) -> Bool,
 ) -> Graph(n, e) {
   let kept_nodes = dict.filter(graph.nodes, fn(_id, data) { predicate(data) })
-
   let kept_ids = set.from_list(dict.keys(kept_nodes))
 
   let prune_edges = fn(outer_map) {
-    dict.filter(outer_map, fn(src, _) { set.contains(kept_ids, src) })
+    outer_map
+    |> dict.filter(fn(src, _) { set.contains(kept_ids, src) })
     |> dict.map_values(fn(_src, inner_map) {
       dict.filter(inner_map, fn(dst, _) { set.contains(kept_ids, dst) })
     })
@@ -219,7 +215,8 @@ pub fn filter_edges(
   keeping predicate: fn(NodeId, NodeId, e) -> Bool,
 ) -> Graph(n, e) {
   let filter_outer = fn(outer_map) {
-    dict.map_values(outer_map, fn(src, inner_map) {
+    outer_map
+    |> dict.map_values(fn(src, inner_map) {
       dict.filter(inner_map, fn(dst, weight) { predicate(src, dst, weight) })
     })
     |> dict.filter(fn(_src, inner_map) { dict.size(inner_map) > 0 })
@@ -267,32 +264,27 @@ pub fn complement(
   default_weight default_weight: e,
 ) -> Graph(n, e) {
   let node_ids = dict.keys(graph.nodes)
+  let init_graph = Graph(..graph, out_edges: dict.new(), in_edges: dict.new())
 
-  let new_graph =
-    list.fold(
-      node_ids,
-      Graph(..graph, out_edges: dict.new(), in_edges: dict.new()),
-      fn(g, src) {
-        list.fold(node_ids, g, fn(acc, dst) {
-          case src == dst {
-            True -> acc
-            False -> {
-              let has_edge = case dict.get(graph.out_edges, src) {
-                Ok(inner) -> dict.has_key(inner, dst)
-                Error(_) -> False
-              }
-              case has_edge {
-                True -> acc
-                False ->
-                  model.add_edge(acc, from: src, to: dst, with: default_weight)
-              }
-            }
+  node_ids
+  |> list.fold(init_graph, fn(g, src) {
+    list.fold(node_ids, g, fn(acc, dst) {
+      case src == dst {
+        True -> acc
+        False -> {
+          let has_edge = case dict.get(graph.out_edges, src) {
+            Ok(inner) -> dict.has_key(inner, dst)
+            Error(_) -> False
           }
-        })
-      },
-    )
 
-  new_graph
+          case has_edge {
+            True -> acc
+            False -> model.add_edge(acc, src, dst, default_weight)
+          }
+        }
+      }
+    })
+  })
 }
 
 /// Combines two graphs, with the second graph's data taking precedence on conflicts.
