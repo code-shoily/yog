@@ -1,6 +1,6 @@
-# Yog 
+# Yog
 
-```
+```text
                     ★
                    /|\
                   / | \
@@ -9,13 +9,12 @@
                /    |    \      /
               /     |     \    /
              /      |      \  /
-            ●-------●-------●
+            যো------+-------গ
            / \      |      / \
           /   \     |     /   \
          /     \    |    /     \
-        ◆       ◆   |   ◆       ◆
+        ✦       ✦   |   ✦       ✦
                    
-        Y  O  G  -  Graph Union
 ```
 
 [![Package Version](https://img.shields.io/hexpm/v/yog)](https://hex.pm/packages/yog)
