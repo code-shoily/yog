@@ -745,9 +745,11 @@ pub fn successor_ids_consistency_test() {
   let successors =
     model.successors(graph, 1)
     |> list.map(fn(edge) { edge.0 })
+    |> list.sort(int.compare)
 
   // successor_ids should match successors with weights stripped
   successor_ids
+  |> list.sort(int.compare)
   |> should.equal(successors)
 }
 
