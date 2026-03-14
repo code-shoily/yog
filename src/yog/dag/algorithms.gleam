@@ -7,9 +7,25 @@ import yog/model.{type NodeId}
 import yog/pathfinding/utils.{type Path, Path}
 import yog/traversal
 
-/// topological_sort(Dag(n, e)) -> List(NodeId)
-/// Unlike the general version, this version is total (cannot return an Error)
-/// because the DAG type guarantees acyclicity.
+/// Returns a topological ordering of all nodes in the DAG.
+///
+/// Unlike `traversal.topological_sort()` which returns `Result` (since general
+/// graphs may contain cycles), this version is **total** - it always returns
+/// a valid ordering because the `Dag` type guarantees acyclicity.
+///
+/// In a topological ordering, every node appears before all nodes it has edges to.
+/// This is useful for scheduling tasks with dependencies, build systems, etc.
+///
+/// **Time Complexity:** O(V + E)
+///
+/// ## Example
+///
+/// ```gleam
+/// // Given edges: 1->2, 1->3, 2->4, 3->4
+/// // Valid topological sorts include: [1, 2, 3, 4] or [1, 3, 2, 4]
+/// let sorted = dag.algorithms.topological_sort(my_dag)
+/// // sorted == [1, 2, 3, 4]  // or another valid ordering
+/// ```
 pub fn topological_sort(dag: Dag(n, e)) -> List(NodeId) {
   let graph = models.to_graph(dag)
   // We can safely unwrap because the graph is proven to be acyclic.
@@ -17,9 +33,27 @@ pub fn topological_sort(dag: Dag(n, e)) -> List(NodeId) {
   sorted
 }
 
-/// longest_path(Dag(n, Int)) -> List(NodeId)
-/// Goal: Find the Critical Path in O(V+E).
-/// Returns the list of node IDs forming the longest path in the DAG.
+/// Finds the longest path (critical path) in a weighted DAG.
+///
+/// The longest path is the path with maximum total edge weight from any source
+/// node to any sink node. This is the dual of shortest path and is useful for:
+/// - Project scheduling (finding the critical path)
+/// - Dependency chains with durations
+/// - Determining minimum time to complete all tasks
+///
+/// **Time Complexity:** O(V + E) - linear via dynamic programming on the
+/// topologically sorted DAG.
+///
+/// **Note:** For unweighted graphs, this finds the path with most edges.
+/// Weights must be non-negative for meaningful results.
+///
+/// ## Example
+///
+/// ```gleam
+/// // Find the critical path in a project schedule
+/// let critical_path = dag.algorithms.longest_path(project_dag)
+/// // critical_path == [start, task_a, task_b, end]
+/// ```
 pub fn longest_path(dag: Dag(n, Int)) -> List(NodeId) {
   let graph = models.to_graph(dag)
   let sorted_nodes = topological_sort(dag)
@@ -93,10 +127,29 @@ fn reconstruct_path(
   }
 }
 
-/// transitive_closure(Dag(n, e), fn(e, e) -> e) -> Dag(n, e)
-/// Goal: Create a "Reachability Map" where an edge (u, v) exists if v is reachable from u.
-/// Returns a new Dag representing the transitive closure. The `merge_fn` combines edge weights
-/// when an indirect path dominates.
+/// Computes the transitive closure of a DAG.
+///
+/// The transitive closure adds edges between all pairs of nodes where a path
+/// exists in the original graph. If `u` can reach `v` through any path, the
+/// closure will have a direct edge `u -> v`.
+///
+/// The `merge_fn` is used to combine edge weights when multiple paths exist
+/// between the same pair of nodes.
+///
+/// **Use cases:**
+/// - Reachability queries (is A reachable from B?)
+/// - Precomputing path relationships
+/// - Dependency analysis (what indirectly depends on what?)
+///
+/// **Time Complexity:** O(V × E) in the worst case
+///
+/// ## Example
+///
+/// ```gleam
+/// // Original edges: A->B (weight 2), B->C (weight 3)
+/// // Closure adds: A->C (weight 5 = 2+3)
+/// let closure = dag.algorithms.transitive_closure(dag, int.add)
+/// ```
 pub fn transitive_closure(
   dag: Dag(n, e),
   with merge_fn: fn(e, e) -> e,
@@ -164,8 +217,28 @@ pub fn transitive_closure(
   new_dag
 }
 
-/// transitive_reduction(Dag(n, e), fn(e, e) -> e) -> Dag(n, e)
-/// Goal: Remove redundant edges while preserving reachability.
+/// Computes the transitive reduction of a DAG.
+///
+/// The transitive reduction removes all edges that are redundant - i.e., edges
+/// `u -> v` where there exists an indirect path from `u` to `v` through other
+/// nodes. The result has the minimum number of edges while preserving all
+/// reachability relationships.
+///
+/// This is the inverse of transitive closure. It's useful for:
+/// - Simplifying dependency graphs
+/// - Removing implied dependencies
+/// - Creating minimal representations
+///
+/// **Time Complexity:** O(V × E)
+///
+/// ## Example
+///
+/// ```gleam
+/// // Original: A->B, B->C, A->C (A->C is implied by A->B->C)
+/// // Reduction removes: A->C
+/// // Result: A->B, B->C
+/// let minimal = dag.algorithms.transitive_reduction(dag, int.add)
+/// ```
 pub fn transitive_reduction(
   dag: Dag(n, e),
   with merge_fn: fn(e, e) -> e,
@@ -206,18 +279,40 @@ pub fn transitive_reduction(
   new_dag
 }
 
+/// Direction for reachability counting operations.
+///
+/// - `Ancestors` - Count nodes that can reach the given node (predecessors)
+/// - `Descendants` - Count nodes reachable from the given node (successors)
 pub type Direction {
+  /// Count nodes that have paths TO the target (incoming reachability).
   Ancestors
+  /// Count nodes reachable FROM the target (outgoing reachability).
   Descendants
 }
 
-/// shortest_path(Dag(n, Int), NodeId, NodeId) -> Option(Path(e))
-/// Finds the shortest path between two nodes in a DAG using O(V+E) dynamic programming.
-/// 
-/// Unlike Dijkstra's algorithm which works on general graphs in O((V+E) log V),
-/// this leverages the DAG property for linear time complexity.
+/// Finds the shortest path between two specific nodes in a weighted DAG.
+///
+/// Uses dynamic programming on the topologically sorted DAG to find the minimum
+/// weight path from `from` to `to`. Unlike Dijkstra's algorithm which works on
+/// general graphs in O((V+E) log V), this leverages the DAG property for linear
+/// time complexity.
 ///
 /// Returns `None` if no path exists from `from` to `to`.
+///
+/// **Time Complexity:** O(V + E)
+///
+/// ## Example
+///
+/// ```gleam
+/// // Find shortest path in a weighted DAG
+/// case dag.algorithms.shortest_path(my_dag, from: start_node, to: end_node) {
+///   Some(path) -> {
+///     // path.nodes contains the node sequence
+///     // path.total_weight is the path length
+///   }
+///   None -> // No path exists
+/// }
+/// ```
 pub fn shortest_path(
   dag: Dag(n, Int),
   from start: NodeId,
@@ -300,11 +395,27 @@ fn reconstruct_path_backward(
   }
 }
 
-/// count_reachability(Dag(n, e), Direction) -> Dict(NodeId, Int)
-/// Goal: Efficiently count total descendants/ancestors for every node.
+/// Counts the number of ancestors or descendants for every node.
 ///
-/// Uses sets internally to handle diamond patterns efficiently - a node with
-/// multiple paths to the same descendant is only counted once.
+/// For each node, returns how many other nodes are reachable from it
+/// (`Descendants`) or can reach it (`Ancestors`).
+///
+/// Uses dynamic programming on the topologically sorted DAG for efficiency.
+/// Properly handles diamond patterns where a node is reachable through multiple
+/// paths - each node is only counted once.
+///
+/// **Time Complexity:** O(V × E) in the worst case (sparse graphs),
+/// optimized with set operations for common cases.
+///
+/// ## Example
+///
+/// ```gleam
+/// // Given: A->B, A->C, B->D, C->D (diamond pattern)
+/// // D has 3 ancestors (A, B, C)
+/// // A has 3 descendants (B, C, D) - D counted once despite 2 paths
+/// let descendant_counts = dag.algorithms.count_reachability(dag, Descendants)
+/// // dict.get(descendant_counts, a) == Ok(3)
+/// ```
 pub fn count_reachability(
   dag: Dag(n, e),
   direction: Direction,
@@ -356,8 +467,27 @@ pub fn count_reachability(
   dict.map_values(reachability_sets, fn(_, reachable) { set.size(reachable) })
 }
 
-/// lowest_common_ancestors(Dag(n, e), NodeId, NodeId) -> List(NodeId)
-/// Goal: Find the immediate common dependencies of two nodes.
+/// Finds the lowest common ancestors (LCAs) of two nodes.
+///
+/// A common ancestor of nodes A and B is any node that has paths to both A and B.
+/// The "lowest" common ancestors are those that are not ancestors of any other
+/// common ancestor - they are the "closest" shared dependencies.
+///
+/// This is useful for:
+/// - Finding merge bases in version control
+/// - Identifying shared dependencies
+/// - Computing dominators in control flow graphs
+///
+/// **Time Complexity:** O(V × (V + E))
+///
+/// ## Example
+///
+/// ```gleam
+/// // Given: X->A, X->B, Y->A, Z->B
+/// // LCAs of A and B are [X] - the most specific shared ancestor
+/// let lcas = dag.algorithms.lowest_common_ancestors(dag, a, b)
+/// // lcas == [x]
+/// ```
 pub fn lowest_common_ancestors(
   dag: Dag(n, e),
   node_a: NodeId,
@@ -395,7 +525,12 @@ fn get_ancestors_set(dag: Dag(n, e), node: NodeId) -> List(NodeId) {
   list.filter(all_nodes, fn(n) { has_path(dag, n, node) })
 }
 
-/// Helper: does a path exist from `start` to `target`?
+/// Checks if a path exists from `start` to `target` in the DAG.
+///
+/// Performs a simple DFS traversal. Since the graph is a DAG, no cycle
+/// detection is needed.
+///
+/// **Time Complexity:** O(V + E) in the worst case
 fn has_path(dag: Dag(n, e), start: NodeId, target: NodeId) -> Bool {
   let graph = models.to_graph(dag)
 

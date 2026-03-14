@@ -1,16 +1,44 @@
 import yog/model.{type Graph}
 import yog/properties/cyclicity as properties
 
+/// Error type representing why a graph cannot be treated as a DAG.
 pub type DagError {
+  /// Returned when attempting to create a DAG from a graph that contains cycles.
   CycleDetected
 }
 
-/// Opaque wrapper. Users can see the type, but not construct it directly.
+/// An opaque wrapper around a `Graph` that guarantees acyclicity at the type level.
+///
+/// Unlike a regular `Graph`, a `Dag` is statically proven to contain no cycles,
+/// enabling total functions for operations like topological sorting.
+///
+/// ## Construction
+///
+/// Create a `Dag` from an existing graph using `from_graph()`:
+///
+/// ```gleam
+/// import yog/dag/models
+///
+/// case models.from_graph(my_graph) {
+///   Ok(dag) -> // Safe to use DAG-only operations
+///   Error(models.CycleDetected) -> // Handle cyclic graph
+/// }
+/// ```
+///
+/// ## Type Safety
+///
+/// Once constructed, the `Dag` type ensures that all operations preserve acyclicity.
+/// Functions that could potentially create cycles (like `add_edge`) return `Result` types.
 pub opaque type Dag(node_data, edge_data) {
   Dag(graph: Graph(node_data, edge_data))
 }
 
-/// The Guard: Uses `is_acyclic` to validate the graph.
+/// Attempts to create a `Dag` from a regular `Graph`.
+///
+/// Validates that the graph contains no cycles. If validation passes, returns
+/// `Ok(Dag)`; otherwise returns `Error(CycleDetected)`.
+///
+/// **Time Complexity:** O(V + E)
 pub fn from_graph(graph: Graph(n, e)) -> Result(Dag(n, e), DagError) {
   case properties.is_acyclic(graph) {
     True -> Ok(Dag(graph))
@@ -18,22 +46,40 @@ pub fn from_graph(graph: Graph(n, e)) -> Result(Dag(n, e), DagError) {
   }
 }
 
-/// The Exit: Unwraps the Dag back into a standard Graph for general use.
+/// Unwraps a `Dag` back into a regular `Graph`.
+///
+/// This is useful when you need to use operations that work on any graph type,
+/// or when you want to export the DAG to formats that accept general graphs.
 pub fn to_graph(dag: Dag(n, e)) -> Graph(n, e) {
   dag.graph
 }
 
-/// Adds a node to the DAG. This cannot create a cycle, so it is safe and guaranteed to return a Dag.
+/// Adds a node to the DAG.
+///
+/// Adding a node cannot create a cycle, so this operation is infallible and
+/// returns a `Dag` directly.
+///
+/// **Time Complexity:** O(1)
 pub fn add_node(dag: Dag(n, e), id: model.NodeId, data: n) -> Dag(n, e) {
   Dag(model.add_node(dag.graph, id, data))
 }
 
-/// Removes a node from the DAG. This cannot create a cycle, so it is safe and guaranteed to return a Dag.
+/// Removes a node and all its connected edges from the DAG.
+///
+/// Removing nodes/edges cannot create a cycle, so this operation is infallible
+/// and returns a `Dag` directly.
+///
+/// **Time Complexity:** O(V + E) in the worst case (removing all edges of the node).
 pub fn remove_node(dag: Dag(n, e), id: model.NodeId) -> Dag(n, e) {
   Dag(model.remove_node(dag.graph, id))
 }
 
-/// Removes an edge from the DAG. This cannot create a cycle, so it is safe and guaranteed to return a Dag.
+/// Removes an edge from the DAG.
+///
+/// Removing edges cannot create a cycle, so this operation is infallible
+/// and returns a `Dag` directly.
+///
+/// **Time Complexity:** O(1)
 pub fn remove_edge(
   dag: Dag(n, e),
   from src: model.NodeId,
