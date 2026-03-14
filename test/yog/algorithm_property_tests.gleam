@@ -303,10 +303,7 @@ pub fn bridges_increase_components_test() {
         [bridge, ..] -> {
           let #(b_src, b_dst) = bridge
 
-          let without_bridge =
-            graph
-            |> model.remove_edge(b_src, b_dst)
-            |> model.remove_edge(b_dst, b_src)
+          let without_bridge = model.remove_edge(graph, b_src, b_dst)
 
           let split_comp =
             list.length(connectivity.strongly_connected_components(

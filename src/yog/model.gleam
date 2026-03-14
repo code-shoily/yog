@@ -290,9 +290,8 @@ pub fn remove_node(graph: Graph(n, e), id: NodeId) -> Graph(n, e) {
 /// Removes a directed edge from `src` to `dst`.
 ///
 /// For **directed graphs**, this removes the single directed edge from `src` to `dst`.
-/// For **undirected graphs**, this only removes the edge in one direction
-/// (from `src` to `dst`). To fully remove an undirected edge, call this
-/// function twice: once with `(src, dst)` and once with `(dst, src)`.
+/// For **undirected graphs**, this removes the edges in both directions
+/// (from `src` to `dst` and from `dst` to `src`).
 ///
 /// **Time Complexity:** O(1)
 ///
@@ -310,23 +309,29 @@ pub fn remove_node(graph: Graph(n, e), id: NodeId) -> Graph(n, e) {
 /// ```
 ///
 /// ```gleam
-/// // Undirected graph - must remove both directions separately
+/// // Undirected graph - removes both directions
 /// let graph =
 ///   model.new(Undirected)
 ///   |> model.add_node(1, "A")
 ///   |> model.add_node(2, "B")
 ///   |> model.add_edge(from: 1, to: 2, with: 10)
-///   |> model.remove_edge(1, 2)  // Removes 1->2
-///   |> model.remove_edge(2, 1)  // Removes 2->1
+///   |> model.remove_edge(1, 2)
 /// // Edge between 1 and 2 is fully removed
 /// ```
-///
-/// ## Future Improvements
-///
-/// A future version may automatically remove both directions when called
-/// on an undirected graph. If you need this behavior, please
-/// [open an issue](https://github.com/code-shoily/yog/issues).
 pub fn remove_edge(
+  graph: Graph(node_data, edge_data),
+  src: NodeId,
+  dst: NodeId,
+) -> Graph(node_data, edge_data) {
+  let graph = do_remove_directed_edge(graph, src, dst)
+
+  case graph.kind {
+    Directed -> graph
+    Undirected -> do_remove_directed_edge(graph, dst, src)
+  }
+}
+
+fn do_remove_directed_edge(
   graph: Graph(node_data, edge_data),
   src: NodeId,
   dst: NodeId,

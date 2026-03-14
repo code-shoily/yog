@@ -1220,7 +1220,23 @@ pub fn remove_edge_keeps_other_edges_test() {
   model.successors(graph, 1) |> should.equal([#(3, 20)])
 }
 
-pub fn remove_edge_undirected_test() {
+pub fn remove_edge_undirected_both_directions_test() {
+  let graph =
+    model.new(model.Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.remove_edge(1, 2)
+
+  // In an undirected graph, removing an edge should remove it in both directions
+  model.successors(graph, 1)
+  |> should.equal([])
+
+  model.successors(graph, 2)
+  |> should.equal([])
+}
+
+pub fn remove_edge_undirected_single_direction_test() {
   let graph =
     model.new(Undirected)
     |> model.add_node(1, "A")
@@ -1232,20 +1248,6 @@ pub fn remove_edge_undirected_test() {
   // Both directions should be removed when calling remove_edge for each direction
   model.successors(graph, 1) |> should.equal([])
   model.successors(graph, 2) |> should.equal([])
-}
-
-pub fn remove_edge_undirected_single_direction_test() {
-  let graph =
-    model.new(Undirected)
-    |> model.add_node(1, "A")
-    |> model.add_node(2, "B")
-    |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.remove_edge(1, 2)
-
-  // Only removes the 1->2 direction, 2->1 still exists
-  model.successors(graph, 1) |> should.equal([])
-  // The reverse direction still exists
-  model.successors(graph, 2) |> should.equal([#(1, 10)])
 }
 
 pub fn remove_edge_multiple_incoming_test() {

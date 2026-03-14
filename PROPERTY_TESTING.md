@@ -51,9 +51,7 @@ gleam test
 | # | Property | Test Function | Rationale | Status |
 |---|----------|---------------|-----------|--------|
 | 9 | Add/remove edge (directed) | `add_remove_edge_inverse_directed_test()` | Edge operations are inverse for directed graphs | ✅ |
-| 10 | Add/remove edge (undirected) | `add_remove_edge_inverse_undirected_test()` | Documents asymmetric behavior (v3.x) | ✅ ⚠️ |
-
-**Note on Property 10:** Currently documents known asymmetry where `remove_edge` only removes one direction for undirected graphs. Planned fix in v4.0.
+| 10 | Add/remove edge (undirected) | `add_remove_edge_inverse_undirected_test()` | Fully removes both directions (v4.x) | ✅ |
 
 ### Traversals
 
@@ -71,7 +69,7 @@ gleam test
 | 3 | Self-loops (undirected) | `self_loop_undirected_test()` | Node pointing to itself in undirected graph | ✅ |
 | 4 | Multiple edges same pair | `multiple_edges_same_pair_test()` | Duplicate edge insertion replaces weight | ✅ |
 | 5 | Remove nonexistent edge | `remove_nonexistent_edge_test()` | Removing missing edge is no-op | ✅ |
-| 6 | Undirected edge removal asymmetry | `undirected_edge_removal_asymmetry_test()` | Documents v3.x behavior requiring two removals | ✅ ⚠️ |
+| 6 | Undirected edge removal symmetry | `undirected_edge_removal_symmetry_test()` | Removes both source-dst and dst-source edges | ✅ |
 | 7 | Filter all nodes | `filter_all_nodes_test()` | Filtering removes all nodes and edges | ✅ |
 | 8 | Transpose with self-loop | `transpose_with_self_loop_test()` | Self-loops remain after transpose | ✅ |
 | 9 | Isolated nodes | `isolated_node_test()` | Nodes with no incoming/outgoing edges | ✅ |
@@ -133,32 +131,6 @@ undirected_graph_generator()         // Random undirected
 directed_graph_generator()           // Random directed
 graph_generator_custom(kind, n, e)   // Custom size
 ```
-
-## Known Issues
-
-### Undirected Edge Removal Asymmetry
-
-**Status:** Documented, planned fix in v4.0
-
-**Behavior (v3.x):**
-
-```gleam
-graph
-|> model.add_edge(0, 1, 10)    // Adds BOTH 0→1 and 1→0
-|> model.remove_edge(0, 1)     // Removes ONLY 0→1
-```
-
-**Workaround:**
-
-```gleam
-graph
-|> model.remove_edge(0, 1)
-|> model.remove_edge(1, 0)      // Must remove both directions
-```
-
-**Reference:** `model.gleam` lines 293-295, 324-328
-
-## Implementation Details
 
 ### Dependencies
 

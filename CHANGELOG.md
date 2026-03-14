@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 4.0.0 - Unreleased
 
+### Breaking Changes
+
+- **Undirected Edge Removal Symmetry**: Calling `model.remove_edge(graph, src, dst)` on an `Undirected` graph now automatically removes both the `src -> dst` **and** the `dst -> src` references in a single call, rather than previously requiring two distinct calls.
+
 ### Added
 
 - **Testing**: Exhaustive property-based testing using `qcheck` across core algorithms (pathfinding, connectivity, MST) and properties.

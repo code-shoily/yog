@@ -117,10 +117,10 @@ pub fn remove_nonexistent_edge_test() {
 }
 
 // ============================================================================
-// EDGE CASE: Undirected Edge Removal Asymmetry
+// EDGE CASE: Undirected Edge Removal Symmetry
 // ============================================================================
 
-pub fn undirected_edge_removal_asymmetry_test() {
+pub fn undirected_edge_removal_symmetry_test() {
   use #(graph, #(src, dst, weight)) <- qcheck.given(
     qcheck_generators.graph_and_edge_generator(model.Undirected),
   )
@@ -134,28 +134,19 @@ pub fn undirected_edge_removal_asymmetry_test() {
           let with_edge =
             model.add_edge(graph, from: src, to: dst, with: weight)
 
-          // Remove in one direction - docs say this only removes ONE direction
-          let removed_once = model.remove_edge(with_edge, src, dst)
+          // Remove one edge, should implicitly remove both for undirected
+          let removed = model.remove_edge(with_edge, src, dst)
 
-          let forward_after = model.successors(removed_once, src)
-          let backward_after = model.successors(removed_once, dst)
+          let forward_after = model.successors(removed, src)
+          let backward_after = model.successors(removed, dst)
 
-          // Verify the documented behavior: only ONE direction removed
+          // Verify both directions are fully removed
           let forward_gone = list.all(forward_after, fn(pair) { pair.0 != dst })
           assert forward_gone
 
-          // The backward edge STILL EXISTS and points to src
-          let backward_exists =
-            list.any(backward_after, fn(pair) { pair.0 == src })
-          assert backward_exists
-
-          // To fully remove, must call twice (as documented)
-          let fully_removed = model.remove_edge(removed_once, dst, src)
-
-          let verify_backward_gone =
-            model.successors(fully_removed, dst)
-            |> list.all(fn(pair) { pair.0 != src })
-          assert verify_backward_gone
+          let backward_gone =
+            list.all(backward_after, fn(pair) { pair.0 != src })
+          assert backward_gone
         }
       }
     }
