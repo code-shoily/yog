@@ -15,6 +15,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Testing**: Exhaustive property-based testing using `qcheck` across core algorithms (pathfinding, connectivity, MST) and properties.
 
+- **Documentation**: Comprehensive module-level documentation across the entire codebase
+  - Added detailed module docs (`////`) to 9 core modules with algorithm descriptions, use cases, complexity tables, and examples
+  - `connectivity`: Bridge/cut vertex analysis with Tarjan's algorithm, SCC finding
+  - `disjoint_set`: Union-Find with path compression and union by rank
+  - `model`: Core graph structures with dual-index adjacency list design
+  - `mst`: Minimum Spanning Tree algorithms (Kruskal's)
+  - `transform`: Graph functor operations and O(1) transpose
+  - `traversal`: BFS, DFS, topological sort, cycle detection
+  - `io/dot`: Graphviz DOT format export with layout engine guide
+  - `io/json`: JSON export for web APIs and D3.js/Cytoscape integration
+  - `io/mermaid`: Mermaid diagram export for Markdown/GitHub
+  - Added inline Wikipedia links for algorithms:
+    - Tarjan's Bridge-Finding, Tarjan's SCC, Kosaraju's Algorithm
+    - Kruskal's MST, Disjoint-set data structure
+    - BFS/DFS traversal algorithms
+  - Enhanced `dag/` module function documentation with practical examples and use cases
+  - Added `PageRankOptions` and `pagerank` function documentation in `centrality` module
+
 ## 3.1.0 - 2026-03-10
 
 ### Breaking
