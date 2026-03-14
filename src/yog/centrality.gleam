@@ -388,10 +388,71 @@ fn apply_undirected_scaling(
   }
 }
 
+/// Configuration options for the PageRank algorithm.
+///
+/// PageRank models a "random surfer" who follows links with probability
+/// `damping` and jumps to a random page with probability `1 - damping`.
+///
+/// ## Fields
+///
+/// - `damping`: Probability of continuing to follow links (typically 0.85).
+///   Higher values mean the surfer follows more links before random jumping.
+/// - `max_iterations`: Maximum iterations before returning current scores.
+/// - `tolerance`: Convergence threshold. Algorithm stops when the L1 norm
+///   of score changes falls below this value.
+///
+/// ## Default Options
+///
+/// Use `default_pagerank_options()` for standard settings:
+/// - damping: 0.85
+/// - max_iterations: 100
+/// - tolerance: 0.0001
 pub type PageRankOptions {
   PageRankOptions(damping: Float, max_iterations: Int, tolerance: Float)
 }
 
+/// Calculates PageRank centrality for all nodes.
+///
+/// PageRank measures node importance based on the quality and quantity of
+/// incoming links. A node is important if it is linked to by other important
+/// nodes. Originally developed for ranking web pages, it's useful for:
+///
+/// - Ranking nodes in directed networks
+/// - Identifying influential nodes in citation networks
+/// - Finding important entities in knowledge graphs
+/// - Recommendation systems
+///
+/// The algorithm uses a "random surfer" model: with probability `damping`,
+/// the surfer follows a random outgoing link; otherwise, they jump to any
+/// random node. This models both link-following behavior and the possibility
+/// of starting a new browsing session.
+///
+/// **Time Complexity:** O(max_iterations × (V + E))
+///
+/// ## When to Use PageRank
+///
+/// - **Directed graphs** where link direction matters
+/// - When you care about **link quality** (links from important nodes count more)
+/// - Citation networks, web graphs, recommendation systems
+///
+/// For undirected graphs, consider `eigenvector/3` instead.
+///
+/// ## Example
+///
+/// ```gleam
+/// // Use default options (recommended for most cases)
+/// let options = centrality.default_pagerank_options()
+/// let scores = centrality.pagerank(graph, options)
+/// // => dict.from_list([#(1, 0.256), #(2, 0.488), #(3, 0.256)])
+///
+/// // Custom options for faster convergence or different damping
+/// let custom = centrality.PageRankOptions(
+///   damping: 0.9,        // Follow more links before jumping
+///   max_iterations: 50,  // Faster but less precise
+///   tolerance: 0.001,    // Less strict convergence
+/// )
+/// let scores = centrality.pagerank(graph, custom)
+/// ```
 pub fn pagerank(graph: Graph(n, e), options: PageRankOptions) -> Centrality {
   let nodes = model.all_nodes(graph)
   let n = list.length(nodes)
