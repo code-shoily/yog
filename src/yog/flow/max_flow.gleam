@@ -1,7 +1,43 @@
-//// Maximum flow algorithms and min-cut extraction.
+//// Maximum flow algorithms and min-cut extraction for network flow problems.
 ////
-//// This module implements the Edmonds-Karp algorithm for finding the maximum
-//// flow in a network and extracting the corresponding minimum cut.
+//// This module solves the [maximum flow problem](https://en.wikipedia.org/wiki/Maximum_flow_problem):
+//// given a flow network with capacities on edges, find the maximum flow from a source
+//// node to a sink node. By the [max-flow min-cut theorem](https://en.wikipedia.org/wiki/Max-flow_min-cut_theorem),
+//// this equals the capacity of the minimum cut separating source from sink.
+////
+//// ## Algorithm
+////
+//// | Algorithm | Function | Complexity | Best For |
+//// |-----------|----------|------------|----------|
+//// | [Edmonds-Karp](https://en.wikipedia.org/wiki/Edmonds%E2%80%93Karp_algorithm) | `edmonds_karp/8` | O(VE²) | General networks, guaranteed polynomial time |
+////
+//// Edmonds-Karp is a specific implementation of the [Ford-Fulkerson method](https://en.wikipedia.org/wiki/Ford%E2%80%93Fulkerson_algorithm)
+//// that uses BFS to find the shortest augmenting path, guaranteeing polynomial time
+//// complexity regardless of capacities.
+////
+//// ## Key Concepts
+////
+//// - **Flow Network**: Directed graph where edges have capacities (max flow allowed)
+//// - **Source**: Node where flow originates (no incoming flow in net balance)
+//// - **Sink**: Node where flow terminates (no outgoing flow in net balance)
+//// - **Residual Graph**: Shows remaining capacity after current flow assignment
+//// - **Augmenting Path**: Path from source to sink with available capacity
+//// - **Minimum Cut**: Partition separating source from sink with minimum total capacity
+////
+//// ## Use Cases
+////
+//// - **Network routing**: Maximize data throughput in communication networks
+//// - **Transportation**: Optimize goods flow through logistics networks
+//// - **Bipartite matching**: Convert to flow problem for max cardinality matching
+//// - **Image segmentation**: Min-cut/max-flow for foreground/background separation
+//// - **Project selection**: Maximize profit with prerequisite constraints
+////
+//// ## References
+////
+//// - [Wikipedia: Maximum Flow Problem](https://en.wikipedia.org/wiki/Maximum_flow_problem)
+//// - [Wikipedia: Edmonds-Karp Algorithm](https://en.wikipedia.org/wiki/Edmonds%E2%80%93Karp_algorithm)
+//// - [Wikipedia: Max-Flow Min-Cut Theorem](https://en.wikipedia.org/wiki/Max-flow_min-cut_theorem)
+//// - [CP-Algorithms: Maximum Flow](https://cp-algorithms.com/graph/edmonds_karp.html)
 
 import gleam/dict.{type Dict}
 import gleam/int

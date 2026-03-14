@@ -1,15 +1,64 @@
-//// Network Simplex algorithm for minimum cost flow.
+//// Network Simplex algorithm for minimum cost flow optimization.
 ////
-//// > **Note:** This implementation uses list-based data structures for the
-//// > internal spanning tree representation. While algorithmically correct,
-//// > random access and updates are O(n) rather than O(1). For large flow
-//// > networks (1000+ nodes/edges), this may impact performance. Consider
-//// > using alternative approaches for very large-scale problems:
+//// This module solves the [minimum cost flow problem](https://en.wikipedia.org/wiki/Minimum-cost_flow_problem):
+//// find the cheapest way to send a given amount of flow through a network where
+//// edges have both capacities and costs per unit of flow.
+////
+//// ## Algorithm
+////
+//// | Algorithm | Function | Complexity | Best For |
+//// |-----------|----------|------------|----------|
+//// | [Network Simplex](https://en.wikipedia.org/wiki/Network_simplex_algorithm) | `min_cost_flow/5` | O(V²E) practical | Large sparse networks |
+////
+//// The Network Simplex is a specialized version of the [simplex algorithm](https://en.wikipedia.org/wiki/Simplex_algorithm)
+//// for network flow problems. It maintains a spanning tree of basic edges and
+//// iteratively pivots to improve the solution, similar to how the transportation
+//// simplex works for assignment problems.
+////
+//// ## Key Concepts
+////
+//// - **Minimum Cost Flow**: Route flow to satisfy demands at minimum total cost
+//// - **Node Demands**: Supply nodes (negative demand) and demand nodes (positive demand)
+//// - **Edge Costs**: Price per unit of flow on each edge
+//// - **Potentials (π)**: Dual variables for reduced cost computation
+//// - **Reduced Costs**: Modified costs ensuring optimality conditions
+//// - **Spanning Tree**: Basis for the simplex method on networks
+////
+//// ## Problem Formulation
+////
+//// Given:
+//// - Graph G = (V, E) with capacities u(e) and costs c(e)
+//// - Node demands b(v) where Σb(v) = 0 (conservation)
+////
+//// Find flow f(e) that:
+//// - Minimizes: Σ c(e) × f(e)  (total cost)
+//// - Subject to: 0 ≤ f(e) ≤ u(e)  (capacity constraints)
+//// - And: flow conservation at each node
+////
+//// ## Use Cases
+////
+//// - **Transportation planning**: Minimize shipping costs with vehicle capacities
+//// - **Supply chain**: Optimize distribution from warehouses to retailers
+//// - **Telecommunications**: Route calls at minimum cost with link capacities
+//// - **Workforce scheduling**: Assign workers to shifts minimizing total cost
+//// - **Circulation problems**: Fleet management and inventory routing
+////
+//// ## Performance Notes
+////
+//// > This implementation uses list-based data structures for the internal spanning
+//// > tree representation. While algorithmically correct, random access and updates
+//// > are O(n) rather than O(1). For large flow networks (1000+ nodes/edges), this
+//// > may impact performance. Consider using alternative approaches for very
+//// > large-scale problems:
 //// > - Erlang FFI to `:digraph` or optimized C libraries
 //// > - Specialized MCF solvers for production-scale optimization
-//// >
-//// > See [GitHub issue #TODO](https://github.com/code-shoily/yog/issues) for
-//// > potential future optimization to Dict-based arrays.
+////
+//// ## References
+////
+//// - [Wikipedia: Minimum-Cost Flow Problem](https://en.wikipedia.org/wiki/Minimum-cost_flow_problem)
+//// - [Wikipedia: Network Simplex Algorithm](https://en.wikipedia.org/wiki/Network_simplex_algorithm)
+//// - [Network Flows - Ahuja, Magnanti, Orlin](https://www.pearson.com/en-us/subject-catalog/p/network-flows/P200000005792)
+//// - [CP-Algorithms: Min-Cost Flow](https://cp-algorithms.com/graph/min_cost_flow.html)
 
 import gleam/dict
 import gleam/int

@@ -1,4 +1,53 @@
-//// Dijkstra's algorithm for finding shortest paths in graphs with non-negative edge weights.
+//// [Dijkstra's algorithm](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) for 
+//// single-source shortest paths in graphs with non-negative edge weights.
+////
+//// Dijkstra's algorithm finds the shortest path from a source node to all other reachable
+//// nodes in a graph. It works by maintaining a priority queue of nodes to visit,
+//// always expanding the node with the smallest known distance.
+////
+//// ## Algorithm
+////
+//// | Algorithm | Function | Complexity | Best For |
+//// |-----------|----------|------------|----------|
+//// | [Dijkstra](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) (single-target) | `shortest_path/6` | O((V + E) log V) | One-to-one shortest path |
+//// | [Dijkstra](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) (single-source) | `single_source_distances/5` | O((V + E) log V) | One-to-all shortest paths |
+//// | Implicit Dijkstra | `implicit_dijkstra/6` | O((V + E) log V) | Large/infinite graphs |
+////
+//// ## Key Concepts
+////
+//// - **Greedy Strategy**: Always expands the node with minimum tentative distance
+//// - **Priority Queue**: Min-heap ordered by current best distance
+//// - **Relaxation**: Update distances when a shorter path is found
+//// - **Non-Negative Weights**: Required for correctness (use Bellman-Ford for negative weights)
+////
+//// ## Comparison with Other Algorithms
+////
+//// | Algorithm | Handles Negative Weights | Complexity | Use Case |
+//// |-----------|-------------------------|------------|----------|
+//// | Dijkstra | ❌ No | O((V+E) log V) | General shortest paths |
+//// | A* | ❌ No | O((V+E) log V) | When good heuristic available |
+//// | Bellman-Ford | ✅ Yes | O(VE) | Negative weights, cycle detection |
+//// | Floyd-Warshall | ✅ Yes | O(V³) | All-pairs shortest paths |
+////
+//// ## History
+////
+//// Edsger W. Dijkstra published this algorithm in 1959. The original paper described
+//// it for finding the shortest path between two nodes, but it's commonly used for
+//// single-source shortest paths to all nodes.
+////
+//// ## Use Cases
+////
+//// - **Network routing**: OSPF, IS-IS protocols use Dijkstra
+//// - **Map services**: Shortest driving directions
+//// - **Social networks**: Degrees of separation
+//// - **Game development**: Shortest path on weighted grids
+////
+//// ## References
+////
+//// - [Wikipedia: Dijkstra's Algorithm](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm)
+//// - [Dijkstra's Original Paper (1959)](https://link.springer.com/article/10.1007/BF01386390)
+//// - [Red Blob Games: Dijkstra Introduction](https://www.redblobgames.com/pathfinding/a-star/introduction.html)
+//// - [CP-Algorithms: Dijkstra](https://cp-algorithms.com/graph/dijkstra.html)
 
 import gleam/dict.{type Dict}
 import gleam/float

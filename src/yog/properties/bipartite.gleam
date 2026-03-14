@@ -1,7 +1,53 @@
-//// Bipartite graph analysis and matching.
+//// [Bipartite graph](https://en.wikipedia.org/wiki/Bipartite_graph) analysis and matching algorithms.
 ////
 //// A graph is bipartite (2-colorable) if its vertices can be divided into two disjoint sets
 //// such that every edge connects a vertex in one set to a vertex in the other set.
+//// Equivalently, a bipartite graph contains no odd-length cycles.
+////
+//// ## Algorithms
+////
+//// | Problem | Algorithm | Function | Complexity |
+//// |---------|-----------|----------|------------|
+//// | Bipartite check | [BFS 2-coloring](https://en.wikipedia.org/wiki/Bipartite_graph#Testing_bipartiteness) | `is_bipartite/1`, `partition/1` | O(V + E) |
+//// | Maximum matching | [Augmenting paths](https://en.wikipedia.org/wiki/Matching_(graph_theory)) | `maximum_matching/1` | O(VE) |
+//// | Stable matching | [Gale-Shapley](https://en.wikipedia.org/wiki/Gale%E2%80%93Shapley_algorithm) | `stable_matching/2` | O(V²) |
+////
+//// ## Key Concepts
+////
+//// - **Bipartite Graph**: Vertices partitioned into two sets L and R, edges only go between sets
+//// - **2-Coloring**: Adjacent vertices always have different colors (equivalent to bipartite)
+//// - **Matching**: Set of edges without common vertices
+//// - **Maximum Matching**: Matching with largest possible number of edges
+//// - **Perfect Matching**: Every vertex is matched (requires |L| = |R|)
+//// - **Stable Matching**: No unmatched pair prefers each other over current matches
+////
+//// ## Characterizations of Bipartite Graphs
+////
+//// A graph is bipartite if and only if:
+//// - It is 2-colorable
+//// - It contains no odd-length cycles
+//// - Its spectrum is symmetric about 0
+////
+//// ## König's Theorem
+////
+//// In bipartite graphs, the size of the maximum matching equals the size of the
+//// minimum vertex cover. This is a fundamental result that doesn't hold for general graphs.
+////
+//// ## Use Cases
+////
+//// - **Job assignment**: Workers to tasks they can perform
+//// - **Scheduling**: Time slots to events without conflicts
+//// - **Recommendation systems**: Users to items they might like
+//// - **Chemistry**: Matching molecules for reactions
+//// - **Stable marriage**: Matching medical residents to hospitals
+////
+//// ## References
+////
+//// - [Wikipedia: Bipartite Graph](https://en.wikipedia.org/wiki/Bipartite_graph)
+//// - [Wikipedia: Graph Coloring](https://en.wikipedia.org/wiki/Graph_coloring)
+//// - [Wikipedia: Matching](https://en.wikipedia.org/wiki/Matching_(graph_theory))
+//// - [Wikipedia: Gale-Shapley Algorithm](https://en.wikipedia.org/wiki/Gale%E2%80%93Shapley_algorithm)
+//// - [CP-Algorithms: Bipartite Check](https://cp-algorithms.com/graph/bipartite-check.html)
 
 import gleam/dict.{type Dict}
 import gleam/int

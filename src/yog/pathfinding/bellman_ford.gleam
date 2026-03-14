@@ -1,4 +1,68 @@
-//// Bellman-Ford algorithm for finding shortest paths in graphs with negative edge weights.
+//// [Bellman-Ford algorithm](https://en.wikipedia.org/wiki/Bellman%E2%80%93Ford_algorithm) for 
+//// single-source shortest paths with support for negative edge weights.
+////
+//// The Bellman-Ford algorithm finds shortest paths from a source node to all other nodes,
+//// even when edges have negative weights. It can also detect negative cycles reachable
+//// from the source, which make shortest paths undefined.
+////
+//// ## Algorithm
+////
+//// | Algorithm | Function | Complexity | Best For |
+//// |-----------|----------|------------|----------|
+//// | [Bellman-Ford](https://en.wikipedia.org/wiki/Bellman%E2%80%93Ford_algorithm) | `bellman_ford/6` | O(VE) | Negative weights, cycle detection |
+//// | SPFA (Queue-optimized) | `bellman_ford/6` | O(E) average | Sparse graphs with few negative edges |
+//// | Implicit Bellman-Ford | `implicit_bellman_ford/6` | O(VE) | Implicit/large graphs |
+////
+//// ## Key Concepts
+////
+//// - **Relaxation**: Repeatedly improve distance estimates (V-1 passes)
+//// - **Negative Cycle**: Cycle with total negative weight (no shortest path exists)
+//// - **Shortest Path Tree**: Tree of shortest paths from source to all nodes
+////
+//// ## Why V-1 Relaxation Passes?
+////
+//// In a graph with V nodes, any shortest path has at most V-1 edges.
+//// Each pass of Bellman-Ford relaxes all edges, propagating shortest
+//// path information one hop further each time.
+////
+//// ## Comparison with Dijkstra
+////
+//// | Feature | Bellman-Ford | Dijkstra |
+//// |---------|--------------|----------|
+//// | Negative weights | ✅ Yes | ❌ No |
+//// | Negative cycle detection | ✅ Yes | ❌ N/A |
+//// | Time complexity | O(VE) | O((V+E) log V) |
+//// | Data structure | Simple loops | Priority queue |
+////
+//// ## When to Use Bellman-Ford
+////
+//// **Use Bellman-Ford when:**
+//// - Edge weights may be negative
+//// - You need to detect negative cycles
+//// - The graph is small or sparse enough for O(VE)
+////
+//// **Use Dijkstra when:**
+//// - All edge weights are non-negative
+//// - You need better performance
+////
+//// ## Use Cases
+////
+//// - **Currency arbitrage**: Detecting negative cycles in exchange rates
+//// - **Financial modeling**: Cost calculations with credits/penalties
+//// - **Chemical reactions**: Energy changes with positive and negative values
+//// - **Constraint solving**: Difference constraints systems
+////
+//// ## History
+////
+//// Published independently by Richard Bellman (1958) and Lester Ford Jr. (1956).
+//// The algorithm is a classic example of dynamic programming.
+////
+//// ## References
+////
+//// - [Wikipedia: Bellman-Ford Algorithm](https://en.wikipedia.org/wiki/Bellman%E2%80%93Ford_algorithm)
+//// - [Wikipedia: Shortest Path Faster Algorithm (SPFA)](https://en.wikipedia.org/wiki/Shortest_Path_Faster_Algorithm)
+//// - [CP-Algorithms: Bellman-Ford](https://cp-algorithms.com/graph/bellman_ford.html)
+//// - [CS 170: Bellman-Ford Lecture](https://cs170.org/lecture-notes/)
 
 import gleam/dict.{type Dict}
 import gleam/float

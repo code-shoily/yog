@@ -1,6 +1,61 @@
-//// Clique finding algorithms using the Bron-Kerbosch algorithm.
+//// [Clique](https://en.wikipedia.org/wiki/Clique_(graph_theory)) finding algorithms using the 
+//// [Bron-Kerbosch algorithm](https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm).
 ////
-//// A clique is a subset of nodes where every pair of nodes is connected.
+//// A clique is a subset of nodes where every pair of nodes is connected by an edge.
+//// Cliques represent tightly-knit communities or fully-connected subgraphs.
+////
+//// ## Algorithms
+////
+//// | Problem | Algorithm | Function | Complexity |
+//// |---------|-----------|----------|------------|
+//// | Maximum clique | [Bron-Kerbosch with pivot](https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm#With_pivoting) | `max_clique/1` | O(3^(n/3)) |
+//// | All maximal cliques | [Bron-Kerbosch](https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm) | `all_maximal_cliques/1` | O(3^(n/3)) |
+//// | k-Cliques | Bron-Kerbosch with pruning | `k_cliques/2` | O(3^(n/3)) |
+////
+//// ## Key Concepts
+////
+//// - **Clique**: Complete subgraph - every pair of vertices is adjacent
+//// - **Maximal Clique**: Cannot be extended by adding another vertex
+//// - **Maximum Clique**: Largest clique in the graph (NP-hard to find)
+//// - **Clique Number**: Size of the maximum clique, denoted ω(G)
+//// - **Clique Cover**: Partition of vertices into cliques
+////
+//// ## The Bron-Kerbosch Algorithm
+////
+//// A backtracking algorithm that recursively explores potential cliques using
+//// three sets:
+//// - **R**: Current clique being built
+//// - **P**: Candidates that can extend R (connected to all in R)
+//// - **X**: Excluded vertices (already processed)
+////
+//// **Pivoting optimization**: Choose a pivot vertex to reduce recursive calls,
+//// achieving the worst-case optimal O(3^(n/3)) bound.
+////
+//// ## Complexity Notes
+////
+//// Finding the maximum clique is NP-hard. The O(3^(n/3)) bound is tight - there
+//// exist graphs with exactly 3^(n/3) maximal cliques (Moon-Moser graphs).
+////
+//// ## Related Problems
+////
+//// - **Independent Set**: Clique in the complement graph
+//// - **Vertex Cover**: Related via complement to independent set
+//// - **Graph Coloring**: Lower bounded by clique number
+////
+//// ## Use Cases
+////
+//// - **Social network analysis**: Finding tightly-knit friend groups
+//// - **Bioinformatics**: Protein interaction clusters
+//// - **Finance**: Detecting collusion rings in trading
+//// - **Recommendation**: Finding groups with similar preferences
+//// - **Compiler optimization**: Register allocation (interference graphs)
+////
+//// ## References
+////
+//// - [Wikipedia: Clique](https://en.wikipedia.org/wiki/Clique_(graph_theory))
+//// - [Wikipedia: Bron-Kerbosch Algorithm](https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm)
+//// - [Moon-Moser Theorem (Clique Enumeration)](https://en.wikipedia.org/wiki/Moon%E2%80%93Moser_theorem)
+//// - [CP-Algorithms: Finding Cliques](https://cp-algorithms.com/graph/search_for_connected_components.html)
 
 import gleam/dict.{type Dict}
 import gleam/list

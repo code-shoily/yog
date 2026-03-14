@@ -1,4 +1,45 @@
-//// Stoer-Wagner algorithm for global minimum cut.
+//// Global minimum cut algorithms for undirected graphs.
+////
+//// This module finds the [global minimum cut](https://en.wikipedia.org/wiki/Minimum_cut)
+//// in an undirected weighted graph - the partition of nodes into two non-empty sets
+//// that minimizes the total weight of edges crossing between the sets.
+////
+//// ## Algorithm
+////
+//// | Algorithm | Function | Complexity | Best For |
+//// |-----------|----------|------------|----------|
+//// | [Stoer-Wagner](https://en.wikipedia.org/wiki/Stoer%E2%80%93Wagner_algorithm) | `global_min_cut/1` | O(V³) | Dense undirected graphs |
+////
+//// The Stoer-Wagner algorithm uses [Maximum Adjacency Search (MAS)](https://en.wikipedia.org/wiki/Maximum_adjacency_search)
+//// to iteratively identify minimum s-t cuts and contract nodes, similar to how
+//// Prim's algorithm builds a minimum spanning tree but selecting by maximum edge weight.
+////
+//// ## Key Concepts
+////
+//// - **Global Min-Cut**: The minimum cut over all possible partitions of the graph
+//// - **s-t Cut**: A cut that separates specific nodes s and t
+//// - **Maximum Adjacency Search**: Orders vertices by strength of connection to current set
+//// - **Node Contraction**: Merging two nodes while preserving edge weights
+////
+//// ## Comparison with s-t Min-Cut
+////
+//// For finding a cut between specific source and sink nodes, use `max_flow` instead:
+//// - `max_flow.edmonds_karp/8` + `extract_min_cut/1`: O(VE²), for directed graphs
+//// - `min_cut.global_min_cut/1`: O(V³), for undirected graphs, finds best cut globally
+////
+//// ## Use Cases
+////
+//// - **Network reliability**: Identify weakest points in communication networks
+//// - **Image segmentation**: Separate foreground from background in computer vision
+//// - **Clustering**: Graph partitioning for community detection
+//// - **VLSI design**: Circuit partitioning to minimize wire crossings
+////
+//// ## References
+////
+//// - [Wikipedia: Minimum Cut](https://en.wikipedia.org/wiki/Minimum_cut)
+//// - [Wikipedia: Stoer-Wagner Algorithm](https://en.wikipedia.org/wiki/Stoer%E2%80%93Wagner_algorithm)
+//// - [Wikipedia: Maximum Adjacency Search](https://en.wikipedia.org/wiki/Maximum_adjacency_search)
+//// - [CP-Algorithms: Stoer-Wagner](https://cp-algorithms.com/graph/stoer_wagner.html)
 
 import gleam/dict
 import gleam/int

@@ -1,4 +1,69 @@
-//// Floyd-Warshall algorithm for all-pairs shortest paths.
+//// [Floyd-Warshall algorithm](https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm) 
+//// for all-pairs shortest paths in weighted graphs.
+////
+//// The Floyd-Warshall algorithm finds the shortest paths between all pairs of nodes
+//// in a single execution. It uses dynamic programming to iteratively improve shortest
+//// path estimates by considering each node as a potential intermediate vertex.
+////
+//// ## Algorithm
+////
+//// | Algorithm | Function | Complexity | Best For |
+//// |-----------|----------|------------|----------|
+//// | [Floyd-Warshall](https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm) | `floyd_warshall/4` | O(V³) | Dense graphs, all-pairs paths |
+////
+//// ## Key Concepts
+////
+//// - **Dynamic Programming**: Builds solution from smaller subproblems
+//// - **K-Intermediate Nodes**: After k iterations, paths use only nodes {1,...,k} as intermediates
+//// - **Path Reconstruction**: Predecessor matrix allows full path recovery
+//// - **Transitive Closure**: Can be adapted for reachability (boolean weights)
+////
+//// ## The DP Recurrence
+////
+//// ```
+//// dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+//// ```
+////
+//// For each intermediate node k, check if going through k improves the path from i to j.
+////
+//// ## Comparison with Running Dijkstra V Times
+////
+//// | Approach | Complexity | Best For |
+//// |----------|------------|----------|
+//// | Floyd-Warshall | O(V³) | Dense graphs (E ≈ V²) |
+//// | V × Dijkstra | O(V(V+E) log V) | Sparse graphs |
+//// | Johnson's | O(V² log V + VE) | Sparse graphs with negative weights |
+////
+//// **Rule of thumb**: Use Floyd-Warshall when E > V × log V (fairly dense)
+////
+//// ## Negative Cycles
+////
+//// The algorithm can detect negative cycles: after completion, if any node has
+//// dist[node][node] < 0, a negative cycle exists.
+////
+//// ## Variants
+////
+//// - **Transitive Closure**: Use boolean OR instead of min-plus (Warshall's algorithm)
+//// - **Successor Matrix**: Track next hop for path reconstruction
+////
+//// ## Use Cases
+////
+//// - **All-pairs routing**: Precompute distances for fast lookup
+//// - **Transitive closure**: Reachability queries in databases
+//// - **Centrality metrics**: Closeness and betweenness calculations
+//// - **Graph analysis**: Detecting negative cycles
+////
+//// ## History
+////
+//// Published independently by Robert Floyd (1962), Stephen Warshall (1962),
+//// and Bernard Roy (1959). Floyd's version included path reconstruction.
+////
+//// ## References
+////
+//// - [Wikipedia: Floyd-Warshall Algorithm](https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm)
+//// - [Wikipedia: Warshall's Algorithm (Transitive Closure)](https://en.wikipedia.org/wiki/Transitive_closure#Computing_the_transitive_closure)
+//// - [CP-Algorithms: Floyd-Warshall](https://cp-algorithms.com/graph/all-pair-shortest-path-floyd-warshall.html)
+//// - [MIT 6.006: Dynamic Programming](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/)
 
 import gleam/dict.{type Dict}
 import gleam/float

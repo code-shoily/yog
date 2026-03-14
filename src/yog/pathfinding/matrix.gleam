@@ -1,4 +1,51 @@
 //// Optimized distance matrix computation for subsets of nodes.
+////
+//// This module provides an auto-selecting algorithm for computing shortest path
+//// distances between specified "points of interest" (POIs) in a graph. It chooses
+//// between Floyd-Warshall and multiple Dijkstra runs based on POI density.
+////
+//// ## Algorithm Selection
+////
+//// | Algorithm | When Selected | Complexity |
+//// |-----------|---------------|------------|
+//// | [Floyd-Warshall](https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm) | Many POIs (> V/3) | O(V³) then filter |
+//// | [Dijkstra](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) × P | Few POIs (≤ V/3) | O(P × (V + E) log V) |
+////
+//// ## Heuristic
+////
+//// The crossover point is P > V/3 where P is the number of points of interest:
+//// - **Dense POIs**: Floyd-Warshall computes all-pairs once, then filter
+//// - **Sparse POIs**: Run Dijkstra from each POI individually
+////
+//// This heuristic balances the O(V³) Floyd-Warshall against the O(P(V+E) log V)
+//// cost of multiple Dijkstra runs.
+////
+//// ## Use Cases
+////
+//// - **Game AI**: Pathfinding between key locations (not all nodes)
+//// - **Logistics**: Distance matrix for delivery stops
+//// - **Facility location**: Distances between candidate sites
+//// - **Network analysis**: Selected node pairwise distances
+////
+//// ## Example
+////
+//// ```gleam
+//// // Compute distances only between important waypoints
+//// let pois = [start, waypoint_a, waypoint_b, goal]
+//// let distances = matrix.distance_matrix(
+////   in: graph,
+////   between: pois,
+////   with_zero: 0,
+////   with_add: int.add,
+////   with_compare: int.compare,
+//// )
+//// // Result contains only 4×4 = 16 distances, not full V×V matrix
+//// ```
+////
+//// ## References
+////
+//// - See `yog/pathfinding/floyd_warshall` for all-pairs algorithm details
+//// - See `yog/pathfinding/dijkstra` for single-source algorithm details
 
 import gleam/dict.{type Dict}
 import gleam/list
