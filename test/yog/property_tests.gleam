@@ -11,7 +11,8 @@ import gleam/list
 import gleam/set
 import gleeunit
 import qcheck
-import yog/model.{type Graph, type GraphType, type NodeId}
+import yog/model.{type Graph, type NodeId}
+import yog/qcheck_generators
 import yog/transform
 import yog/traversal
 
@@ -23,91 +24,16 @@ pub fn main() {
 // GENERATORS
 // ============================================================================
 
-/// Generate a random GraphType (Directed or Undirected)
-fn graph_type_generator() {
-  use is_directed <- qcheck.map(qcheck.bool())
-  case is_directed {
-    True -> model.Directed
-    False -> model.Undirected
-  }
-}
-
-/// Generate a random graph with Int node data and Int edge weights
-/// - Nodes: 0 to max_nodes-1
-/// - Edges: Random connections with positive weights
 fn graph_generator() {
-  use kind <- qcheck.bind(graph_type_generator())
-  use num_nodes <- qcheck.bind(qcheck.bounded_int(0, 15))
-  use num_edges <- qcheck.bind(qcheck.bounded_int(0, 30))
-
-  graph_generator_custom(kind, num_nodes, num_edges)
+  qcheck_generators.graph_generator()
 }
 
-/// Generate a graph with specific parameters
-fn graph_generator_custom(
-  kind: GraphType,
-  num_nodes: Int,
-  num_edges: Int,
-) -> qcheck.Generator(Graph(Int, Int)) {
-  use edges <- qcheck.map(qcheck.fixed_length_list_from(
-    edge_triple_generator(num_nodes),
-    num_edges,
-  ))
-
-  // Build graph: add nodes first, then edges
-  let graph = model.new(kind)
-
-  let graph = case num_nodes {
-    0 -> graph
-    _ -> {
-      list.range(0, num_nodes - 1)
-      |> list.fold(graph, fn(g, node_id) { model.add_node(g, node_id, node_id) })
-    }
-  }
-
-  edges
-  |> list.fold(graph, fn(g, edge) {
-    let #(src, dst, weight) = edge
-    model.add_edge(g, from: src, to: dst, with: weight)
-  })
-}
-
-/// Generate an undirected graph
 fn undirected_graph_generator() {
-  use num_nodes <- qcheck.bind(qcheck.bounded_int(0, 15))
-  use num_edges <- qcheck.bind(qcheck.bounded_int(0, 30))
-
-  graph_generator_custom(model.Undirected, num_nodes, num_edges)
+  qcheck_generators.undirected_graph_generator()
 }
 
-/// Generate a directed graph
 fn directed_graph_generator() {
-  use num_nodes <- qcheck.bind(qcheck.bounded_int(0, 15))
-  use num_edges <- qcheck.bind(qcheck.bounded_int(0, 30))
-
-  graph_generator_custom(model.Directed, num_nodes, num_edges)
-}
-
-/// Generate an edge triple #(src, dst, weight)
-fn edge_triple_generator(max_node_id: Int) {
-  case max_node_id {
-    0 -> qcheck.return(#(0, 0, 1))
-    _ -> {
-      use src <- qcheck.bind(qcheck.bounded_int(0, max_node_id - 1))
-      use dst <- qcheck.bind(qcheck.bounded_int(0, max_node_id - 1))
-      use weight <- qcheck.map(qcheck.bounded_int(1, 100))
-      #(src, dst, weight)
-    }
-  }
-}
-
-/// Generate a traversal order (BFS or DFS)
-fn traversal_order_generator() {
-  use is_bfs <- qcheck.map(qcheck.bool())
-  case is_bfs {
-    True -> traversal.BreadthFirst
-    False -> traversal.DepthFirst
-  }
+  qcheck_generators.directed_graph_generator()
 }
 
 // ============================================================================
@@ -122,14 +48,14 @@ fn graphs_equal(g1: Graph(n, e), g2: Graph(n, e)) -> Bool {
   && g1.in_edges == g2.in_edges
 }
 
-/// Get all edges from a graph as a list of tuples
-fn get_all_edges(graph: Graph(n, e)) -> List(#(NodeId, NodeId, e)) {
-  dict.fold(graph.out_edges, [], fn(acc, src, targets) {
-    dict.fold(targets, acc, fn(edge_acc, dst, weight) {
-      [#(src, dst, weight), ..edge_acc]
-    })
-  })
-}
+// Get all edges from a graph as a list of tuples
+// fn get_all_edges(graph: Graph(n, e)) -> List(#(NodeId, NodeId, e)) {
+//   dict.fold(graph.out_edges, [], fn(acc, src, targets) {
+//     dict.fold(targets, acc, fn(edge_acc, dst, weight) {
+//       [#(src, dst, weight), ..edge_acc]
+//     })
+//   })
+// }
 
 /// Count edges manually by iterating through out_edges
 fn count_edges_manual(graph: Graph(n, e)) -> Int {
@@ -206,53 +132,61 @@ pub fn undirected_symmetry_test() {
 // PROPERTY 4: Add/Remove Edge are Inverses
 // ============================================================================
 // Adding and then removing an edge should make it disappear
-// Using example-based tests instead of full PBT for performance
+// Using full PBT.
 
 pub fn add_remove_edge_inverse_directed_test() {
-  let graph =
-    model.new(model.Directed)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
+  use #(graph, #(src, dst, weight)) <- qcheck.given(
+    qcheck_generators.graph_and_edge_generator(model.Directed),
+  )
 
-  let with_edge = model.add_edge(graph, from: 0, to: 1, with: 10)
+  case model.order(graph) {
+    0 -> Nil
+    _ -> {
+      let with_edge = model.add_edge(graph, from: src, to: dst, with: weight)
 
-  let edge_exists =
-    model.successors(with_edge, 0)
-    |> list.any(fn(pair) { pair.0 == 1 })
-  assert edge_exists
+      let edge_exists =
+        model.successors(with_edge, src)
+        |> list.any(fn(pair) { pair.0 == dst })
+      assert edge_exists
 
-  let removed = model.remove_edge(with_edge, 0, 1)
+      let removed = model.remove_edge(with_edge, src, dst)
 
-  let edge_gone =
-    model.successors(removed, 0)
-    |> list.all(fn(pair) { pair.0 != 1 })
-  assert edge_gone
+      let edge_gone =
+        model.successors(removed, src)
+        |> list.all(fn(pair) { pair.0 != dst })
+      assert edge_gone
+    }
+  }
 }
 
 pub fn add_remove_edge_inverse_undirected_test() {
-  let graph =
-    model.new(model.Undirected)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
+  use #(graph, #(src, dst, weight)) <- qcheck.given(
+    qcheck_generators.graph_and_edge_generator(model.Undirected),
+  )
 
-  let with_edge = model.add_edge(graph, from: 0, to: 1, with: 10)
+  case model.order(graph) {
+    0 -> Nil
+    _ -> {
+      let with_edge = model.add_edge(graph, from: src, to: dst, with: weight)
 
-  // Both directions should exist
-  let forward_exists =
-    model.successors(with_edge, 0)
-    |> list.any(fn(pair) { pair.0 == 1 })
-  let backward_exists =
-    model.successors(with_edge, 1)
-    |> list.any(fn(pair) { pair.0 == 0 })
-  assert forward_exists && backward_exists
+      // Both directions should exist
+      let forward_exists =
+        model.successors(with_edge, src)
+        |> list.any(fn(pair) { pair.0 == dst })
+      let backward_exists =
+        model.successors(with_edge, dst)
+        |> list.any(fn(pair) { pair.0 == src })
+      assert forward_exists && backward_exists
 
-  // Remove one direction
-  let removed = model.remove_edge(with_edge, 0, 1)
+      // Remove one direction
+      let removed = model.remove_edge(with_edge, src, dst)
 
-  let forward_gone =
-    model.successors(removed, 0)
-    |> list.all(fn(pair) { pair.0 != 1 })
-  assert forward_gone
+      let forward_gone =
+        model.successors(removed, src)
+        |> list.all(fn(pair) { pair.0 != dst })
+      assert forward_gone
+    }
+  }
 }
 
 // ============================================================================
@@ -421,43 +355,38 @@ pub fn to_undirected_creates_symmetry_test() {
 // PROPERTY 10: BFS/DFS Visit Each Node at Most Once
 // ============================================================================
 // Traversal should never visit the same node twice
-// Using example-based tests for specific graph structures
+// Using full PBT.
 
 pub fn traversal_no_duplicates_bfs_test() {
-  // Simple linear graph: 0 -> 1 -> 2
-  let graph =
-    model.new(model.Directed)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
-    |> model.add_node(2, 2)
-    |> model.add_edge(from: 0, to: 1, with: 1)
-    |> model.add_edge(from: 1, to: 2, with: 1)
+  use graph <- qcheck.given(qcheck_generators.graph_generator())
 
-  let visited = traversal.walk(graph, from: 0, using: traversal.BreadthFirst)
+  case model.order(graph) {
+    0 -> Nil
+    _ -> {
+      let visited =
+        traversal.walk(graph, from: 0, using: traversal.BreadthFirst)
 
-  let unique_count = set.size(set.from_list(visited))
-  let total_count = list.length(visited)
+      let unique_count = set.size(set.from_list(visited))
+      let total_count = list.length(visited)
 
-  assert unique_count == total_count
+      assert unique_count == total_count
+    }
+  }
 }
 
 pub fn traversal_no_duplicates_dfs_test() {
-  // Graph with cycle: 0 -> 1 -> 2 -> 0
-  let graph =
-    model.new(model.Directed)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
-    |> model.add_node(2, 2)
-    |> model.add_edge(from: 0, to: 1, with: 1)
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 0, with: 1)
+  use graph <- qcheck.given(qcheck_generators.graph_generator())
 
-  let visited = traversal.walk(graph, from: 0, using: traversal.DepthFirst)
+  case model.order(graph) {
+    0 -> Nil
+    _ -> {
+      let visited = traversal.walk(graph, from: 0, using: traversal.DepthFirst)
 
-  let unique_count = set.size(set.from_list(visited))
-  let total_count = list.length(visited)
+      let unique_count = set.size(set.from_list(visited))
+      let total_count = list.length(visited)
 
-  // Should visit each node exactly once despite cycle
-  assert unique_count == total_count
-  assert total_count == 3
+      // Should visit each node exactly once despite cycles
+      assert unique_count == total_count
+    }
+  }
 }

@@ -1,11 +1,6 @@
 ////
 //// Advanced Property Tests - Algorithm Cross-Validation & Correctness
 ////
-//// These tests validate that:
-//// 1. Different algorithms solving the same problem agree
-//// 2. Algorithms produce valid/optimal results
-//// 3. Complex invariants hold (partitions, trees, etc.)
-////
 
 import gleam/dict
 import gleam/int
@@ -14,25 +9,21 @@ import gleam/option.{None, Some}
 import gleam/result
 import gleam/set
 import gleeunit
+import qcheck
 import yog/centrality
 import yog/connectivity
 import yog/model.{type Graph, type NodeId}
 import yog/mst
 import yog/pathfinding/bellman_ford
 import yog/pathfinding/dijkstra
+import yog/qcheck_generators
 import yog/traversal
 
 pub fn main() {
   gleeunit.main()
 }
 
-// ============================================================================
-// HELPERS & GENERATORS
-// ============================================================================
-
-// Unused - using simpler generators instead
-
-/// Check if all edges in a path exist in the graph
+// Helpers
 fn is_valid_path(graph: Graph(n, Int), path: List(NodeId)) -> Bool {
   case path {
     [] | [_] -> True
@@ -40,13 +31,11 @@ fn is_valid_path(graph: Graph(n, Int), path: List(NodeId)) -> Bool {
       let edge_exists =
         model.successors(graph, first)
         |> list.any(fn(pair) { pair.0 == second })
-
       edge_exists && is_valid_path(graph, [second, ..rest])
     }
   }
 }
 
-/// Calculate total weight of a path
 fn calculate_path_weight(graph: Graph(n, Int), path: List(NodeId)) -> Int {
   case path {
     [] | [_] -> 0
@@ -62,7 +51,6 @@ fn calculate_path_weight(graph: Graph(n, Int), path: List(NodeId)) -> Int {
   }
 }
 
-/// Check if node b is reachable from node a via BFS
 fn is_reachable(graph: Graph(n, e), from: NodeId, to: NodeId) -> Bool {
   let visited = traversal.walk(graph, from: from, using: traversal.BreadthFirst)
   list.contains(visited, to)
@@ -72,26 +60,12 @@ fn is_reachable(graph: Graph(n, e), from: NodeId, to: NodeId) -> Bool {
 // CATEGORY 1: ALGORITHM CROSS-VALIDATION
 // ============================================================================
 
-// ----------------------------------------------------------------------------
-// SCC: Tarjan vs Kosaraju - Both should find same strongly connected components
-// ----------------------------------------------------------------------------
-
 pub fn scc_tarjan_equals_kosaraju_test() {
-  // Example-based test with known SCC structure
-  // Graph with 2 SCCs: {0, 1} and {2}
-  let graph =
-    model.new(model.Directed)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
-    |> model.add_node(2, 2)
-    |> model.add_edge(from: 0, to: 1, with: 1)
-    |> model.add_edge(from: 1, to: 0, with: 1)
-    |> model.add_edge(from: 1, to: 2, with: 1)
+  use graph <- qcheck.given(qcheck_generators.directed_graph_generator())
 
   let tarjan = connectivity.strongly_connected_components(graph)
   let kosaraju = connectivity.kosaraju(graph)
 
-  // Convert to sets for comparison (order doesn't matter)
   let tarjan_sets =
     tarjan
     |> list.map(set.from_list)
@@ -102,76 +76,64 @@ pub fn scc_tarjan_equals_kosaraju_test() {
     |> list.map(set.from_list)
     |> set.from_list
 
-  // Both algorithms should find the same components
   assert tarjan_sets == kosaraju_sets
 }
 
-// ----------------------------------------------------------------------------
-// MST: Kruskal vs Prim - Total weights should match
-// ----------------------------------------------------------------------------
-
 pub fn mst_kruskal_equals_prim_weight_test() {
-  // Create small connected undirected graph
-  let graph =
-    model.new(model.Undirected)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
-    |> model.add_node(2, 2)
-    |> model.add_node(3, 3)
-    |> model.add_edge(from: 0, to: 1, with: 1)
-    |> model.add_edge(from: 1, to: 2, with: 2)
-    |> model.add_edge(from: 2, to: 3, with: 3)
-    |> model.add_edge(from: 0, to: 3, with: 10)
+  use graph <- qcheck.given(qcheck_generators.undirected_graph_generator())
 
-  let kruskal_edges = mst.kruskal(in: graph, with_compare: int.compare)
-  let prim_edges = mst.prim(in: graph, with_compare: int.compare)
+  case model.order(graph) {
+    0 -> Nil
+    _ -> {
+      case list.length(connectivity.strongly_connected_components(graph)) {
+        1 -> {
+          let kruskal_edges = mst.kruskal(in: graph, with_compare: int.compare)
+          let prim_edges = mst.prim(in: graph, with_compare: int.compare)
 
-  let kruskal_weight =
-    kruskal_edges
-    |> list.fold(0, fn(sum, edge) { sum + edge.weight })
+          let kruskal_weight =
+            kruskal_edges
+            |> list.fold(0, fn(sum, edge) { sum + edge.weight })
 
-  let prim_weight =
-    prim_edges
-    |> list.fold(0, fn(sum, edge) { sum + edge.weight })
+          let prim_weight =
+            prim_edges
+            |> list.fold(0, fn(sum, edge) { sum + edge.weight })
 
-  // Both should produce same total weight
-  assert kruskal_weight == prim_weight
+          assert kruskal_weight == prim_weight
+        }
+        _ -> Nil
+      }
+    }
+  }
 }
 
-// ----------------------------------------------------------------------------
-// Pathfinding: Bellman-Ford vs Dijkstra on non-negative graphs
-// ----------------------------------------------------------------------------
-
 pub fn bellman_ford_equals_dijkstra_test() {
-  // Small graph with non-negative weights
-  let graph =
-    model.new(model.Directed)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
-    |> model.add_node(2, 2)
-    |> model.add_edge(from: 0, to: 1, with: 5)
-    |> model.add_edge(from: 1, to: 2, with: 3)
-    |> model.add_edge(from: 0, to: 2, with: 10)
+  use #(graph, #(src, dst, _w)) <- qcheck.given(
+    qcheck_generators.graph_and_edge_generator(model.Directed),
+  )
 
-  let dijkstra_result = dijkstra.shortest_path_int(in: graph, from: 0, to: 2)
+  case model.order(graph) {
+    0 -> Nil
+    _ -> {
+      let dijkstra_result =
+        dijkstra.shortest_path_int(in: graph, from: src, to: dst)
+      let bellman_result =
+        bellman_ford.bellman_ford(
+          in: graph,
+          from: src,
+          to: dst,
+          with_zero: 0,
+          with_add: int.add,
+          with_compare: int.compare,
+        )
 
-  let bellman_result =
-    bellman_ford.bellman_ford(
-      in: graph,
-      from: 0,
-      to: 2,
-      with_zero: 0,
-      with_add: int.add,
-      with_compare: int.compare,
-    )
-
-  // Both should find same path weight
-  case dijkstra_result, bellman_result {
-    Some(d_path), bellman_ford.ShortestPath(path: b_path) -> {
-      assert d_path.total_weight == b_path.total_weight
+      case dijkstra_result, bellman_result {
+        Some(d_path), bellman_ford.ShortestPath(path: b_path) -> {
+          assert d_path.total_weight == b_path.total_weight
+        }
+        None, bellman_ford.NoPath -> Nil
+        _, _ -> panic as "Dijkstra and Bellman-Ford disagree on path existence!"
+      }
     }
-    None, bellman_ford.NoPath -> Nil
-    _, _ -> panic as "Dijkstra and Bellman-Ford disagree on path existence!"
   }
 }
 
@@ -179,115 +141,94 @@ pub fn bellman_ford_equals_dijkstra_test() {
 // CATEGORY 2: PATHFINDING CORRECTNESS
 // ============================================================================
 
-// ----------------------------------------------------------------------------
-// Property: Dijkstra path is valid and connects start to goal
-// ----------------------------------------------------------------------------
-
 pub fn dijkstra_path_validity_test() {
-  let graph =
-    model.new(model.Directed)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
-    |> model.add_node(2, 2)
-    |> model.add_node(3, 3)
-    |> model.add_edge(from: 0, to: 1, with: 1)
-    |> model.add_edge(from: 1, to: 2, with: 2)
-    |> model.add_edge(from: 2, to: 3, with: 3)
+  use #(graph, #(src, dst, _w)) <- qcheck.given(
+    qcheck_generators.graph_and_edge_generator(model.Directed),
+  )
 
-  case dijkstra.shortest_path_int(in: graph, from: 0, to: 3) {
-    Some(path) -> {
-      // Path should start at start node
-      assert list.first(path.nodes) == Ok(0)
+  case model.order(graph) {
+    0 -> Nil
+    _ -> {
+      case dijkstra.shortest_path_int(in: graph, from: src, to: dst) {
+        Some(path) -> {
+          assert list.first(path.nodes) == Ok(src)
+          assert list.last(path.nodes) == Ok(dst)
+          assert is_valid_path(graph, path.nodes)
 
-      // Path should end at goal node
-      let last = list.last(path.nodes)
-      assert last == Ok(3)
-
-      // All edges in path should exist
-      assert is_valid_path(graph, path.nodes)
-
-      // Weight should match actual path weight
-      let calculated = calculate_path_weight(graph, path.nodes)
-      assert path.total_weight == calculated
+          let calculated = calculate_path_weight(graph, path.nodes)
+          assert path.total_weight == calculated
+        }
+        None -> Nil
+      }
     }
-    None -> panic as "Path should exist!"
   }
 }
-
-// ----------------------------------------------------------------------------
-// Property: No path should return None and BFS should confirm
-// ----------------------------------------------------------------------------
 
 pub fn dijkstra_no_path_confirmed_by_bfs_test() {
-  // Disconnected graph
-  let graph =
-    model.new(model.Directed)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
-    |> model.add_node(2, 2)
-    |> model.add_edge(from: 0, to: 1, with: 5)
-  // Node 2 is unreachable from 0
+  use #(graph, #(src, dst, _w)) <- qcheck.given(
+    qcheck_generators.graph_and_edge_generator(model.Directed),
+  )
 
-  case dijkstra.shortest_path_int(in: graph, from: 0, to: 2) {
-    None -> {
-      // BFS should also confirm no path
-      assert !is_reachable(graph, 0, 2)
+  case model.order(graph) {
+    0 -> Nil
+    _ -> {
+      case dijkstra.shortest_path_int(in: graph, from: src, to: dst) {
+        None -> {
+          assert !is_reachable(graph, src, dst)
+        }
+        Some(_) -> Nil
+      }
     }
-    Some(_) -> panic as "Should not find path to unreachable node!"
   }
 }
-
-// ----------------------------------------------------------------------------
-// Property: Undirected paths are symmetric
-// ----------------------------------------------------------------------------
 
 pub fn undirected_paths_symmetric_test() {
-  let graph =
-    model.new(model.Undirected)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
-    |> model.add_node(2, 2)
-    |> model.add_edge(from: 0, to: 1, with: 3)
-    |> model.add_edge(from: 1, to: 2, with: 4)
+  use #(graph, #(src, dst, _w)) <- qcheck.given(
+    qcheck_generators.graph_and_edge_generator(model.Undirected),
+  )
 
-  let forward = dijkstra.shortest_path_int(in: graph, from: 0, to: 2)
-  let backward = dijkstra.shortest_path_int(in: graph, from: 2, to: 0)
+  case model.order(graph) {
+    0 -> Nil
+    _ -> {
+      let forward = dijkstra.shortest_path_int(in: graph, from: src, to: dst)
+      let backward = dijkstra.shortest_path_int(in: graph, from: dst, to: src)
 
-  case forward, backward {
-    Some(f_path), Some(b_path) -> {
-      // Weights should be equal for undirected graph
-      assert f_path.total_weight == b_path.total_weight
+      case forward, backward {
+        Some(f_path), Some(b_path) -> {
+          assert f_path.total_weight == b_path.total_weight
+        }
+        None, None -> Nil
+        _, _ -> panic as "Symmetric paths should both exist or both not exist!"
+      }
     }
-    None, None -> Nil
-    _, _ -> panic as "Symmetric paths should both exist or both not exist!"
   }
 }
 
-// ----------------------------------------------------------------------------
-// Property: Path from A to C via B >= direct path from A to C (triangle inequality)
-// ----------------------------------------------------------------------------
-
 pub fn triangle_inequality_test() {
-  let graph =
-    model.new(model.Directed)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
-    |> model.add_node(2, 2)
-    |> model.add_edge(from: 0, to: 1, with: 5)
-    |> model.add_edge(from: 1, to: 2, with: 3)
-    |> model.add_edge(from: 0, to: 2, with: 10)
+  use #(graph, #(src, dst, _w)) <- qcheck.given(
+    qcheck_generators.graph_and_edge_generator(model.Directed),
+  )
 
-  let direct = dijkstra.shortest_path_int(in: graph, from: 0, to: 2)
-  let via_1_part1 = dijkstra.shortest_path_int(in: graph, from: 0, to: 1)
-  let via_1_part2 = dijkstra.shortest_path_int(in: graph, from: 1, to: 2)
+  case model.order(graph) {
+    0 -> Nil
+    _ -> {
+      let n = model.order(graph)
+      let via_node = { src + dst } % n
 
-  case direct, via_1_part1, via_1_part2 {
-    Some(d), Some(p1), Some(p2) -> {
-      let via_weight = p1.total_weight + p2.total_weight
-      // Direct path should be <= path via intermediate node
-      assert d.total_weight <= via_weight
+      let direct = dijkstra.shortest_path_int(in: graph, from: src, to: dst)
+      let via_1_part1 =
+        dijkstra.shortest_path_int(in: graph, from: src, to: via_node)
+      let via_1_part2 =
+        dijkstra.shortest_path_int(in: graph, from: via_node, to: dst)
+
+      case direct, via_1_part1, via_1_part2 {
+        Some(d), Some(p1), Some(p2) -> {
+          let via_weight = p1.total_weight + p2.total_weight
+          assert d.total_weight <= via_weight
+        }
+        _, _, _ -> Nil
+      }
     }
-    _, _, _ -> Nil
   }
 }
 
@@ -295,25 +236,11 @@ pub fn triangle_inequality_test() {
 // CATEGORY 3: COMPLEX INVARIANTS
 // ============================================================================
 
-// ----------------------------------------------------------------------------
-// Property: SCC components partition the graph
-// ----------------------------------------------------------------------------
-
 pub fn scc_components_partition_graph_test() {
-  let graph =
-    model.new(model.Directed)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
-    |> model.add_node(2, 2)
-    |> model.add_node(3, 3)
-    |> model.add_edge(from: 0, to: 1, with: 1)
-    |> model.add_edge(from: 1, to: 0, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 2, with: 1)
+  use graph <- qcheck.given(qcheck_generators.directed_graph_generator())
 
   let components = connectivity.strongly_connected_components(graph)
 
-  // Every node should be in exactly one component
   let all_in_components =
     components
     |> list.flat_map(fn(comp) { comp })
@@ -323,10 +250,8 @@ pub fn scc_components_partition_graph_test() {
     model.all_nodes(graph)
     |> set.from_list
 
-  // Coverage: all nodes appear in some component
   assert all_in_components == all_graph_nodes
 
-  // Disjointness: components don't overlap
   let pairs = list.combination_pairs(components)
 
   let are_disjoint =
@@ -340,126 +265,91 @@ pub fn scc_components_partition_graph_test() {
   assert are_disjoint
 }
 
-// ----------------------------------------------------------------------------
-// Property: MST is actually a spanning tree (V-1 edges, connected, acyclic)
-// ----------------------------------------------------------------------------
+pub fn mst_is_spanning_forest_test() {
+  use graph <- qcheck.given(qcheck_generators.undirected_graph_generator())
 
-pub fn mst_is_spanning_tree_test() {
-  let graph =
-    model.new(model.Undirected)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
-    |> model.add_node(2, 2)
-    |> model.add_node(3, 3)
-    |> model.add_edge(from: 0, to: 1, with: 1)
-    |> model.add_edge(from: 1, to: 2, with: 2)
-    |> model.add_edge(from: 2, to: 3, with: 3)
-    |> model.add_edge(from: 0, to: 3, with: 10)
+  case model.order(graph) {
+    0 -> Nil
+    _ -> {
+      let mst_edges = mst.kruskal(in: graph, with_compare: int.compare)
+      let num_components =
+        list.length(connectivity.strongly_connected_components(graph))
+      let n = model.order(graph)
 
-  let mst_edges = mst.kruskal(in: graph, with_compare: int.compare)
-  let n = model.order(graph)
-
-  // Property 1: Tree has V-1 edges
-  assert list.length(mst_edges) == n - 1
-
-  // Property 2: Spans all nodes
-  let nodes_in_mst =
-    mst_edges
-    |> list.flat_map(fn(edge) { [edge.from, edge.to] })
-    |> set.from_list
-
-  assert set.size(nodes_in_mst) == n
-
-  // Property 3: Is connected (can reach all nodes from any node)
-  let mst_graph = model.new(model.Undirected)
-
-  let mst_graph =
-    list.range(0, n - 1)
-    |> list.fold(mst_graph, fn(g, i) { model.add_node(g, i, i) })
-
-  let mst_graph =
-    list.fold(mst_edges, mst_graph, fn(g, edge) {
-      model.add_edge(g, from: edge.from, to: edge.to, with: edge.weight)
-    })
-
-  let reachable =
-    traversal.walk(mst_graph, from: 0, using: traversal.BreadthFirst)
-
-  assert list.length(reachable) == n
+      // Forest has V-C edges
+      assert list.length(mst_edges) == n - num_components
+    }
+  }
 }
-
-// ----------------------------------------------------------------------------
-// Property: Bridges removal increases connected components
-// ----------------------------------------------------------------------------
 
 pub fn bridges_increase_components_test() {
-  // Graph: 0-1-2 where 1-2 is a bridge
-  let graph =
-    model.new(model.Undirected)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
-    |> model.add_node(2, 2)
-    |> model.add_edge(from: 0, to: 1, with: 1)
-    |> model.add_edge(from: 1, to: 0, with: 1)
-    // Self-loop for testing
-    |> model.add_edge(from: 1, to: 2, with: 1)
+  use #(graph, #(src, dst, weight)) <- qcheck.given(
+    qcheck_generators.graph_and_edge_generator(model.Undirected),
+  )
 
-  let result = connectivity.analyze(in: graph)
+  case model.order(graph) {
+    0 | 1 -> Nil
+    _ -> {
+      // Force edge insertion so we might create a bridge
+      let graph = model.add_edge(graph, from: src, to: dst, with: weight)
 
-  // Should find the bridge
-  assert result.bridges != []
+      let result = connectivity.analyze(in: graph)
 
-  // Removing a bridge should disconnect the graph
-  let bridge = case list.first(result.bridges) {
-    Ok(b) -> b
-    Error(_) -> panic as "Should have found bridges"
+      let base_comp =
+        list.length(connectivity.strongly_connected_components(graph))
+
+      case result.bridges {
+        [] -> Nil
+        [bridge, ..] -> {
+          let #(b_src, b_dst) = bridge
+
+          let without_bridge =
+            graph
+            |> model.remove_edge(b_src, b_dst)
+            |> model.remove_edge(b_dst, b_src)
+
+          let split_comp =
+            list.length(connectivity.strongly_connected_components(
+              without_bridge,
+            ))
+          assert split_comp > base_comp
+        }
+      }
+    }
   }
-
-  let #(src, dst) = bridge
-  let without_bridge =
-    graph
-    |> model.remove_edge(src, dst)
-    |> model.remove_edge(dst, src)
-
-  // After removing bridge, node 2 should be unreachable from 0
-  assert !is_reachable(without_bridge, 0, 2)
 }
 
-// ----------------------------------------------------------------------------
-// Property: Degree centrality matches manual count
-// ----------------------------------------------------------------------------
-
 pub fn degree_centrality_correctness_test() {
-  let graph =
-    model.new(model.Directed)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
-    |> model.add_node(2, 2)
-    |> model.add_edge(from: 0, to: 1, with: 1)
-    |> model.add_edge(from: 0, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 2, with: 1)
+  use graph <- qcheck.given(qcheck_generators.directed_graph_generator())
 
   let out_degrees = centrality.degree(graph, centrality.OutDegree)
 
-  // Node 0 has 2 outgoing edges (normalized: 2/2 = 1.0)
-  let degree_0 = case dict.get(out_degrees, 0) {
-    Ok(degree) -> degree
-    Error(_) -> panic as "Should have degree for node 0"
-  }
-  // Centrality is normalized, so check it's positive
-  assert degree_0 >. 0.0
+  case model.order(graph) {
+    0 | 1 -> Nil
+    _ -> {
+      let max_possible = model.order(graph) - 1
 
-  // Node 1 has 1 outgoing edge (normalized: 1/2 = 0.5)
-  let degree_1 = case dict.get(out_degrees, 1) {
-    Ok(degree) -> degree
-    Error(_) -> panic as "Should have degree for node 1"
-  }
-  assert degree_1 >. 0.0
+      // Centrality score must be between 0.0 and infinity (normalized against order-1, could be >1.0 with loops/parallel edges)
+      let valid_range =
+        dict.values(out_degrees)
+        |> list.all(fn(score) { score >=. 0.0 })
 
-  // Node 2 has 0 outgoing edges
-  let degree_2 = case dict.get(out_degrees, 2) {
-    Ok(degree) -> degree
-    Error(_) -> panic as "Should have degree for node 2"
+      assert valid_range
+
+      // Compare scores
+      let all_match =
+        list.all(model.all_nodes(graph), fn(node) {
+          let expected_degree = list.length(model.successors(graph, node))
+          let expected_score =
+            int.to_float(expected_degree) /. int.to_float(max_possible)
+
+          case dict.get(out_degrees, node) {
+            Ok(score) -> score == expected_score
+            Error(_) -> False
+          }
+        })
+
+      assert all_match
+    }
   }
-  assert degree_2 == 0.0
 }

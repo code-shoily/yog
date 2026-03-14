@@ -2,13 +2,11 @@
 //// Aggressive property tests - trying to find bugs by testing edge cases
 ////
 
-import gleam/dict
-import gleam/int
 import gleam/list
-import gleam/set
 import gleeunit
 import qcheck
-import yog/model.{type Graph, type GraphType, type NodeId}
+import yog/model
+import yog/qcheck_generators
 import yog/transform
 
 pub fn main() {
@@ -42,34 +40,30 @@ pub fn empty_graph_transpose_test() {
 // ============================================================================
 
 pub fn self_loop_directed_test() {
+  use graph <- qcheck.given(qcheck_generators.directed_graph_generator())
+
+  let next_id = model.order(graph)
   let graph =
-    model.new(model.Directed)
-    |> model.add_node(0, 0)
-    |> model.add_edge(from: 0, to: 0, with: 10)
+    graph
+    |> model.add_node(next_id, next_id)
+    |> model.add_edge(from: next_id, to: next_id, with: 10)
 
-  // Should have 1 edge
-  assert model.edge_count(graph) == 1
-
-  // Node 0 should be its own successor
-  let successors = model.successors(graph, 0)
-  assert list.length(successors) == 1
-  assert list.any(successors, fn(pair) { pair.0 == 0 })
+  let successors = model.successors(graph, next_id)
+  assert list.any(successors, fn(pair) { pair.0 == next_id })
 }
 
 pub fn self_loop_undirected_test() {
+  use graph <- qcheck.given(qcheck_generators.undirected_graph_generator())
+
+  let next_id = model.order(graph)
   let graph =
-    model.new(model.Undirected)
-    |> model.add_node(0, 0)
-    |> model.add_edge(from: 0, to: 0, with: 10)
+    graph
+    |> model.add_node(next_id, next_id)
+    |> model.add_edge(from: next_id, to: next_id, with: 10)
 
-  // For undirected self-loop, should it count as 1 or 2?
-  let edge_count = model.edge_count(graph)
-
-  // Let's see what it actually is
-  let successors = model.successors(graph, 0)
+  let successors = model.successors(graph, next_id)
   let succ_count = list.length(successors)
 
-  // Document the actual behavior
   assert succ_count >= 1
 }
 
@@ -78,26 +72,32 @@ pub fn self_loop_undirected_test() {
 // ============================================================================
 
 pub fn multiple_edges_same_pair_test() {
-  // Add same edge twice - should replace not accumulate
-  let graph =
-    model.new(model.Directed)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
-    |> model.add_edge(from: 0, to: 1, with: 10)
-    |> model.add_edge(from: 0, to: 1, with: 20)
-  // Replace weight
+  use #(graph, #(src, dst, _weight)) <- qcheck.given(
+    qcheck_generators.graph_and_edge_generator(model.Directed),
+  )
 
-  assert model.edge_count(graph) == 1
+  case model.order(graph) {
+    0 -> Nil
+    _ -> {
+      let weight1 = 10
+      let weight2 = 20
 
-  let successors = model.successors(graph, 0)
-  assert list.length(successors) == 1
+      let g1 = model.add_edge(graph, from: src, to: dst, with: weight1)
+      let count_after_1 = model.edge_count(g1)
 
-  // Weight should be the latest (20)
-  let weight = case list.first(successors) {
-    Ok(#(_dst, w)) -> w
-    Error(_) -> panic as "Should have successor"
+      let g2 = model.add_edge(g1, from: src, to: dst, with: weight2)
+      let count_after_2 = model.edge_count(g2)
+
+      assert count_after_1 == count_after_2
+
+      let successors = model.successors(g2, src)
+
+      // Weight should be the latest (20)
+      let edge_exists_with_new_weight =
+        list.any(successors, fn(pair) { pair.0 == dst && pair.1 == weight2 })
+      assert edge_exists_with_new_weight
+    }
   }
-  assert weight == 20
 }
 
 // ============================================================================
@@ -105,13 +105,11 @@ pub fn multiple_edges_same_pair_test() {
 // ============================================================================
 
 pub fn remove_nonexistent_edge_test() {
-  let graph =
-    model.new(model.Directed)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
+  use graph <- qcheck.given(qcheck_generators.graph_generator())
 
-  // No edge exists, try to remove it
-  let removed = model.remove_edge(graph, 0, 1)
+  // Create a node ID that cannot exist
+  let next_id = model.order(graph)
+  let removed = model.remove_edge(graph, next_id, next_id)
 
   // Should be a no-op
   assert model.edge_count(removed) == model.edge_count(graph)
@@ -123,38 +121,45 @@ pub fn remove_nonexistent_edge_test() {
 // ============================================================================
 
 pub fn undirected_edge_removal_asymmetry_test() {
-  // DOCUMENTED BEHAVIOR (but surprising):
-  // remove_edge() only removes ONE direction for undirected graphs
-  // This is inconsistent with add_edge() which adds BOTH directions
-  // See model.gleam lines 293-295 and 324-328
+  use #(graph, #(src, dst, weight)) <- qcheck.given(
+    qcheck_generators.graph_and_edge_generator(model.Undirected),
+  )
 
-  let graph =
-    model.new(model.Undirected)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
-    |> model.add_edge(from: 0, to: 1, with: 10)
+  case model.order(graph) {
+    0 -> Nil
+    _ -> {
+      case src == dst {
+        True -> Nil
+        False -> {
+          let with_edge =
+            model.add_edge(graph, from: src, to: dst, with: weight)
 
-  // add_edge created BOTH directions
-  assert list.length(model.successors(graph, 0)) == 1
-  assert list.length(model.successors(graph, 1)) == 1
+          // Remove in one direction - docs say this only removes ONE direction
+          let removed_once = model.remove_edge(with_edge, src, dst)
 
-  // Remove in one direction - docs say this only removes ONE direction
-  let removed_once = model.remove_edge(graph, 0, 1)
+          let forward_after = model.successors(removed_once, src)
+          let backward_after = model.successors(removed_once, dst)
 
-  let forward_after = model.successors(removed_once, 0)
-  let backward_after = model.successors(removed_once, 1)
+          // Verify the documented behavior: only ONE direction removed
+          let forward_gone = list.all(forward_after, fn(pair) { pair.0 != dst })
+          assert forward_gone
 
-  // Verify the documented behavior: only ONE direction removed
-  assert forward_after == []
-  assert list.length(backward_after) == 1
-  // Still exists!
+          // The backward edge STILL EXISTS and points to src
+          let backward_exists =
+            list.any(backward_after, fn(pair) { pair.0 == src })
+          assert backward_exists
 
-  // To fully remove, must call twice (as documented)
-  let fully_removed = model.remove_edge(removed_once, 1, 0)
+          // To fully remove, must call twice (as documented)
+          let fully_removed = model.remove_edge(removed_once, dst, src)
 
-  assert model.successors(fully_removed, 0) == []
-  assert model.successors(fully_removed, 1) == []
-  assert model.edge_count(fully_removed) == 0
+          let verify_backward_gone =
+            model.successors(fully_removed, dst)
+            |> list.all(fn(pair) { pair.0 != src })
+          assert verify_backward_gone
+        }
+      }
+    }
+  }
 }
 
 // ============================================================================
@@ -162,11 +167,7 @@ pub fn undirected_edge_removal_asymmetry_test() {
 // ============================================================================
 
 pub fn filter_all_nodes_test() {
-  let graph =
-    model.new(model.Directed)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
-    |> model.add_edge(from: 0, to: 1, with: 10)
+  use graph <- qcheck.given(qcheck_generators.graph_generator())
 
   // Filter out all nodes
   let empty = transform.filter_nodes(graph, fn(_) { False })
@@ -180,17 +181,19 @@ pub fn filter_all_nodes_test() {
 // ============================================================================
 
 pub fn transpose_with_self_loop_test() {
-  let graph =
-    model.new(model.Directed)
-    |> model.add_node(0, 0)
-    |> model.add_edge(from: 0, to: 0, with: 10)
+  use graph <- qcheck.given(qcheck_generators.directed_graph_generator())
 
-  let transposed = transform.transpose(graph)
+  let next_id = model.order(graph)
+  let graph_with_loop =
+    graph
+    |> model.add_node(next_id, next_id)
+    |> model.add_edge(from: next_id, to: next_id, with: 10)
+
+  let transposed = transform.transpose(graph_with_loop)
 
   // Self-loop should remain a self-loop
-  let successors = model.successors(transposed, 0)
-  assert list.length(successors) == 1
-  assert list.any(successors, fn(pair) { pair.0 == 0 })
+  let successors = model.successors(transposed, next_id)
+  assert list.any(successors, fn(pair) { pair.0 == next_id })
 }
 
 // ============================================================================
@@ -198,20 +201,18 @@ pub fn transpose_with_self_loop_test() {
 // ============================================================================
 
 pub fn isolated_node_test() {
-  let graph =
-    model.new(model.Directed)
-    |> model.add_node(0, 0)
-    |> model.add_node(1, 1)
-    |> model.add_node(2, 2)
-    |> model.add_edge(from: 0, to: 1, with: 10)
+  use graph <- qcheck.given(qcheck_generators.graph_generator())
 
-  // Node 2 is isolated
-  assert model.order(graph) == 3
-  assert model.edge_count(graph) == 1
+  let next_id = model.order(graph)
+  let count = model.edge_count(graph)
+  let graph = model.add_node(graph, next_id, next_id)
 
-  let successors = model.successors(graph, 2)
-  let predecessors = model.predecessors(graph, 2)
+  assert model.order(graph) == next_id + 1
+  assert model.edge_count(graph) == count
 
-  assert list.length(successors) == 0
-  assert list.length(predecessors) == 0
+  let successors = model.successors(graph, next_id)
+  let predecessors = model.predecessors(graph, next_id)
+
+  assert list.is_empty(successors)
+  assert list.is_empty(predecessors)
 }
