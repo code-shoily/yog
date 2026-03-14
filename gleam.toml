@@ -19,6 +19,7 @@ gleamy_bench = ">= 0.6.0 and < 1.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
+qcheck = ">= 1.0.0 and < 2.0.0"
 
 [javascript]
 typescript_declarations = true
