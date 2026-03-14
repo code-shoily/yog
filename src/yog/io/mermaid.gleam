@@ -1,3 +1,51 @@
+//// Mermaid diagram export for Markdown-compatible graph visualization.
+////
+//// This module exports graphs to [Mermaid](https://mermaid.js.org/) syntax,
+//// allowing you to embed graphs directly in Markdown documents, GitHub READMEs,
+//// Notion pages, and other platforms that support Mermaid rendering.
+////
+//// ## Quick Start
+////
+//// ```gleam
+//// import yog/io/mermaid
+////
+//// let diagram = mermaid.to_string(my_graph)
+//// // Paste into Markdown:
+//// // ```mermaid
+//// // graph TD
+//// //   1 --> 2
+//// // ```
+//// ```
+////
+//// ## Output Formats
+////
+//// - `to_string/1`: Simple flowchart (graph TD/LR)
+//// - `to_string_with_options/2`: Customized with labels, highlighting
+////
+//// ## Supported Platforms
+////
+//// | Platform | Mermaid Support |
+//// |----------|-----------------|
+//// | GitHub | ✅ Native in Markdown |
+//// | GitLab | ✅ Native in Markdown |
+//// | Notion | ✅ Native block |
+//// | Obsidian | ✅ With plugin |
+//// | VS Code | ✅ With extension |
+//// | MkDocs | ✅ With plugin |
+////
+//// ## Customization
+////
+//// Use `MermaidOptions` to:
+//// - Add custom node labels
+//// - Display edge weights
+//// - Highlight specific nodes or paths
+//// - Style important elements
+////
+//// ## References
+////
+//// - [Mermaid Syntax](https://mermaid.js.org/syntax/flowchart.html)
+//// - [GitHub Mermaid Docs](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams)
+
 import gleam/dict
 import gleam/int
 import gleam/list

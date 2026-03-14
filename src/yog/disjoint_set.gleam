@@ -1,3 +1,38 @@
+//// Disjoint Set Union (Union-Find) data structure for efficient set operations.
+////
+//// The disjoint-set data structure maintains a partition of elements into disjoint (non-overlapping)
+//// sets. It provides near-constant time operations to add elements, find which set an element
+//// belongs to, and merge two sets together.
+////
+//// ## Key Operations
+////
+//// | Operation | Function | Complexity |
+//// |-----------|----------|------------|
+//// | Make Set | `add/2` | O(1) |
+//// | Find | `find/2` | O(α(n)) amortized |
+//// | Union | `union/3` | O(α(n)) amortized |
+////
+//// Where α(n) is the [inverse Ackermann function](https://en.wikipedia.org/wiki/Ackermann_function#Inverse),
+//// which grows so slowly that it is effectively a small constant (≤ 4) for all practical inputs.
+////
+//// ## Optimizations
+////
+//// This implementation uses two key optimizations:
+//// - **Path Compression**: Flattens the tree structure during find operations, making future queries faster
+//// - **Union by Rank**: Attaches the shorter tree under the taller tree to minimize tree height
+////
+//// ## Use Cases
+////
+//// - [Kruskal's MST algorithm](https://en.wikipedia.org/wiki/Kruskal%27s_algorithm) - detecting cycles
+//// - Connected components in dynamic graphs
+//// - Equivalence relations and partitioning
+//// - Percolation theory and network reliability
+////
+//// ## References
+////
+//// - [Wikipedia: Disjoint-set data structure](https://en.wikipedia.org/wiki/Disjoint-set_data_structure)
+//// - [CP-Algorithms: Disjoint Set Union](https://cp-algorithms.com/data_structures/disjoint_set_union.html)
+
 import gleam/dict.{type Dict}
 import gleam/list
 import gleam/option.{None, Some}

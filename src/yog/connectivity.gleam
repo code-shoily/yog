@@ -1,3 +1,33 @@
+//// Graph connectivity analysis - finding bridges, articulation points, and strongly connected components.
+////
+//// This module provides algorithms for analyzing the connectivity structure of graphs,
+//// identifying critical components whose removal would disconnect the graph.
+////
+//// ## Algorithms
+////
+//// | Algorithm | Function | Use Case |
+//// |-----------|----------|----------|
+//// | [Tarjan's Bridge-Finding](https://en.wikipedia.org/wiki/Bridge_(graph_theory)) | `analyze/1` | Find bridges and articulation points |
+//// | [Tarjan's SCC](https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm) | `strongly_connected_components/1` | Find SCCs in one pass |
+//// | [Kosaraju's Algorithm](https://en.wikipedia.org/wiki/Kosaraju%27s_algorithm) | `kosaraju/1` | Find SCCs using two DFS passes |
+////
+//// ## Bridges vs Articulation Points
+////
+//// - **Bridge** (cut edge): An edge whose removal increases the number of connected components.
+////   In a network, this represents a single point of failure.
+//// - **Articulation Point** (cut vertex): A node whose removal increases the number of connected
+////   components. These are critical nodes in the network.
+////
+//// ## Strongly Connected Components
+////
+//// A **strongly connected component** (SCC) is a maximal subgraph where every node is reachable
+//// from every other node. SCCs form a DAG when collapsed, useful for:
+//// - Identifying cycles in dependency graphs
+//// - Finding groups of mutually reachable web pages
+//// - Analyzing feedback loops in systems
+////
+//// All algorithms run in **O(V + E)** linear time.
+
 import gleam/dict.{type Dict}
 import gleam/int
 import gleam/list

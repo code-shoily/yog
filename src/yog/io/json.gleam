@@ -1,3 +1,48 @@
+//// JSON format export for graph data exchange.
+////
+//// This module exports graphs to JSON format, suitable for:
+//// - Interoperability with web applications
+//// - Storage in document databases (MongoDB, CouchDB)
+//// - Visualization libraries (D3.js, Cytoscape.js, vis.js)
+//// - API responses and data exchange
+////
+//// ## Output Format
+////
+//// The default output format is:
+//// ```json
+//// {
+////   "nodes": [
+////     { "id": 1, "label": "Node A" },
+////     { "id": 2, "label": "Node B" }
+////   ],
+////   "edges": [
+////     { "source": 1, "target": 2, "weight": "5" }
+////   ]
+//// }
+//// ```
+////
+//// ## Customization
+////
+//// Use `JsonOptions` with custom `node_mapper` and `edge_mapper` functions
+//// to control the exact JSON structure. This allows integration with any
+//// schema required by your frontend or external system.
+////
+//// ## Example: D3.js Integration
+////
+//// ```gleam
+//// import yog/io/json
+////
+//// // Export for D3.js force simulation
+//// let json_string = json.to_string(graph)
+//// // Use in JavaScript: d3.forceSimulation(JSON.parse(json_string).nodes)
+//// ```
+////
+//// ## References
+////
+//// - [JSON Specification](https://www.json.org/)
+//// - [D3.js Graph Visualization](https://d3js.org/d3-force)
+//// - [Cytoscape.js](https://js.cytoscape.org/)
+
 import gleam/dict
 import gleam/function
 import gleam/json

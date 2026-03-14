@@ -1,3 +1,34 @@
+//// Minimum Spanning Tree (MST) algorithms for finding optimal network connections.
+////
+//// A [Minimum Spanning Tree](https://en.wikipedia.org/wiki/Minimum_spanning_tree) connects all nodes
+//// in a weighted undirected graph with the minimum possible total edge weight. MSTs have
+//// applications in network design, clustering, and optimization problems.
+////
+//// ## Available Algorithms
+////
+//// | Algorithm | Function | Best For |
+//// |-----------|----------|----------|
+//// | [Kruskal's](https://en.wikipedia.org/wiki/Kruskal%27s_algorithm) | `kruskal/2` | Sparse graphs, edge lists |
+////
+//// ## Properties of MSTs
+////
+//// - Connects all nodes with exactly `V - 1` edges (for a graph with V nodes)
+//// - Contains no cycles
+//// - Minimizes the sum of edge weights
+//// - May not be unique if multiple edges have the same weight
+////
+//// ## Example Use Cases
+////
+//// - **Network Design**: Minimizing cable length to connect buildings
+//// - **Cluster Analysis**: Hierarchical clustering via MST
+//// - **Approximation**: Traveling Salesman Problem approximations
+//// - **Image Segmentation**: Computer vision applications
+////
+//// ## References
+////
+//// - [Wikipedia: Minimum Spanning Tree](https://en.wikipedia.org/wiki/Minimum_spanning_tree)
+//// - [CP-Algorithms: MST](https://cp-algorithms.com/graph/mst_kruskal.html)
+
 import gleam/dict
 import gleam/list
 import gleam/order.{type Order}

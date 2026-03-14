@@ -1,3 +1,38 @@
+//// Core graph data structures and basic operations for the yog library.
+////
+//// This module defines the fundamental `Graph` type and provides all basic operations
+//// for creating and manipulating graphs. The graph uses an adjacency list representation
+//// with dual indexing (both outgoing and incoming edges) for efficient traversal in both
+//// directions.
+////
+//// ## Graph Types
+////
+//// - **Directed Graph**: Edges have a direction (one-way relationships)
+//// - **Undirected Graph**: Edges are bidirectional (mutual relationships)
+////
+//// ## Type Parameters
+////
+//// - `node_data`: The type of data stored at each node (e.g., `String`, `City`, `Task`)
+//// - `edge_data`: The type of data stored on edges, typically weights (e.g., `Int`, `Float`)
+////
+//// ## Quick Start
+////
+//// ```gleam
+//// import yog/model
+////
+//// let graph =
+////   model.new(model.Undirected)
+////   |> model.add_node(1, "Alice")
+////   |> model.add_node(2, "Bob")
+////   |> model.add_edge(from: 1, to: 2, with: 10)  // weight = 10
+//// ```
+////
+//// ## Design Notes
+////
+//// The dual-map representation enables O(1) edge existence checks and O(1) transpose
+//// operations, at the cost of increased memory usage and slightly more complex edge
+//// updates.
+
 import gleam/dict.{type Dict}
 import gleam/list
 import gleam/option.{None, Some}

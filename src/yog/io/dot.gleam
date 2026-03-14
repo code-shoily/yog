@@ -1,3 +1,47 @@
+//// DOT (Graphviz) format export for visualizing graphs.
+////
+//// This module exports graphs to the [DOT language](https://graphviz.org/doc/info/lang.html),
+//// which is the native format for [Graphviz](https://graphviz.org/) - a powerful open-source
+//// graph visualization tool. The exported files can be rendered to PNG, SVG, PDF, and other
+//// formats using the `dot`, `neato`, `circo`, or other Graphviz layout engines.
+////
+//// ## Quick Start
+////
+//// ```gleam
+//// import yog/io/dot
+////
+//// // Export with default styling
+//// let dot_string = dot.to_string(my_graph)
+////
+//// // Write to file and render with Graphviz CLI
+//// // $ dot -Tpng output.dot -o graph.png
+//// ```
+////
+//// ## Customization
+////
+//// Use `DotOptions` to customize:
+//// - Node labels and shapes
+//// - Edge labels and styles
+//// - Highlight specific nodes or paths
+//// - Graph direction (LR, TB, etc.)
+////
+//// ## Rendering Options
+////
+//// | Engine | Best For |
+//// |--------|----------|
+//// | `dot` | Hierarchical layouts (DAGs, trees) |
+//// | `neato` | Spring-based layouts (undirected) |
+//// | `circo` | Circular layouts |
+//// | `fdp` | Force-directed layouts |
+//// | `sfdp` | Large graphs |
+////
+//// ## References
+////
+//// - [Graphviz Documentation](https://graphviz.org/documentation/)
+//// - [DOT Language Guide](https://graphviz.org/doc/info/lang.html)
+//// - [Node Shapes](https://graphviz.org/doc/info/shapes.html)
+//// - [Arrow Styles](https://graphviz.org/doc/info/arrows.html)
+
 import gleam/dict
 import gleam/int
 import gleam/list

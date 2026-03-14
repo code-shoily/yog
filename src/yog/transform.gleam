@@ -1,3 +1,38 @@
+//// Graph transformations and mappings - functor operations on graphs.
+////
+//// This module provides operations that transform graphs while preserving their structure.
+//// These are useful for adapting graph data types, creating derived graphs, and
+//// preparing graphs for specific algorithms.
+////
+//// ## Available Transformations
+////
+//// | Transformation | Function | Complexity | Use Case |
+//// |----------------|----------|------------|----------|
+//// | Transpose | `transpose/1` | O(1) | Reverse edge directions |
+//// | Map Nodes | `map_nodes/2` | O(V) | Transform node data |
+//// | Map Edges | `map_edges/2` | O(E) | Transform edge weights |
+//// | Filter Nodes | `filter_nodes/2` | O(V) | Subgraph extraction |
+//// | Filter Edges | `filter_edges/2` | O(E) | Remove unwanted edges |
+////
+//// ## The O(1) Transpose Operation
+////
+//// Due to yog's dual-map representation (storing both outgoing and incoming edges),
+//// transposing a graph is a single pointer swap - dramatically faster than O(E)
+//// implementations in traditional adjacency list libraries.
+////
+//// ## Functor Laws
+////
+//// The mapping operations satisfy functor laws:
+//// - Identity: `map_nodes(g, fn(x) { x }) == g`
+//// - Composition: `map_nodes(map_nodes(g, f), h) == map_nodes(g, fn(x) { h(f(x)) })`
+////
+//// ## Use Cases
+////
+//// - **Kosaraju's Algorithm**: Requires transposed graph for SCC finding
+//// - **Type Conversion**: Changing node/edge data types for algorithm requirements
+//// - **Subgraph Extraction**: Working with portions of large graphs
+//// - **Weight Normalization**: Preprocessing edge weights
+
 import gleam/dict
 import gleam/list
 import gleam/result

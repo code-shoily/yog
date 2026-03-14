@@ -1,3 +1,40 @@
+//// Graph traversal algorithms - systematic exploration of graph structure.
+////
+//// This module provides fundamental graph traversal algorithms for visiting nodes
+//// in a specific order. Traversals are the foundation for most graph algorithms
+//// including pathfinding, connectivity analysis, and cycle detection.
+////
+//// ## Traversal Orders
+////
+//// | Order | Strategy | Best For |
+//// |-------|----------|----------|
+//// | [BFS](https://en.wikipedia.org/wiki/Breadth-first_search) | Level-by-level | Shortest path (unweighted), finding neighbors |
+//// | [DFS](https://en.wikipedia.org/wiki/Depth-first_search) | Deep exploration | Cycle detection, topological sort, connectivity |
+////
+//// ## Core Functions
+////
+//// - `bfs/2` / `dfs/2`: Simple traversals returning visited nodes in order
+//// - `walk/4`: Generic traversal with custom fold function
+//// - `topological_sort/1`: Ordering for DAGs (uses DFS internally)
+//// - `is_acyclic/1`: Cycle detection via Kahn's algorithm
+////
+//// ## Walk Control
+////
+//// The `fold_walk` function provides fine-grained control:
+//// - `Continue`: Explore this node's neighbors normally
+//// - `Stop`: Skip this node's neighbors but continue traversal
+//// - `Halt`: Stop the entire traversal immediately
+////
+//// ## Time Complexity
+////
+//// All traversals run in **O(V + E)** linear time, visiting each node and edge
+//// at most once.
+////
+//// ## References
+////
+//// - [Wikipedia: Graph Traversal](https://en.wikipedia.org/wiki/Graph_traversal)
+//// - [CP-Algorithms: DFS/BFS](https://cp-algorithms.com/graph/breadth-first-search.html)
+
 import gleam/dict.{type Dict}
 import gleam/int
 import gleam/list
