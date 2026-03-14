@@ -49,6 +49,7 @@ In the world of computer science, this is the literal definition of Graph Theory
 - **Minimum Cost Flow (MCF)**: Global optimization using the robust **Network Simplex** algorithm
 - **Disjoint Set (Union-Find)**: With path compression and union by rank
 - **Efficient Data Structures**: Pairing heap for priority queues, two-list queue for BFS
+- **Property-Based Testing**: Exhaustively tested across core graph operations and invariants using `qcheck`
 
 ## Installation
 
