@@ -1,21 +1,54 @@
 //// Deterministic graph generators for common graph structures.
 ////
-//// ## Example
+//// Deterministic generators produce identical graphs given the same parameters,
+//// useful for testing algorithms, benchmarking, and creating known structures.
+////
+//// ## Available Generators
+////
+//// | Generator | Graph Type | Complexity | Edges |
+//// |-----------|------------|------------|-------|
+//// | `complete` | K_n | O(n²) | n(n-1)/2 |
+//// | `cycle` | C_n | O(n) | n |
+//// | `path` | P_n | O(n) | n-1 |
+//// | `star` | S_n | O(n) | n-1 |
+//// | `wheel` | W_n | O(n) | 2(n-1) |
+//// | `grid_2d` | Lattice | O(mn) | (m-1)n + m(n-1) |
+//// | `complete_bipartite` | K_{m,n} | O(mn) | mn |
+//// | `binary_tree` | Tree | O(2^d) | 2^(d+1) - 2 |
+//// | `petersen` | Petersen | O(1) | 15 |
+//// | `empty` | Isolated | O(n) | 0 |
+////
+//// ## Quick Start
 ////
 //// ```gleam
 //// import yog/generators/classic
+//// import yog/model
 ////
 //// pub fn main() {
-////   // Generate a cycle graph with 5 nodes
-////   let cycle = classic.cycle(5)
-////
-////   // Generate a complete graph with 4 nodes
-////   let complete = classic.complete(4)
-////
-////   // Generate a binary tree of depth 3
-////   let tree = classic.binary_tree(3)
+////   // Classic structures
+////   let cycle = classic.cycle(5)                    // C5 cycle graph
+////   let complete = classic.complete(4)              // K4 complete graph
+////   let grid = classic.grid_2d(3, 4)                // 3x4 lattice mesh
+////   let tree = classic.binary_tree(3)               // Depth-3 binary tree
+////   let bipartite = classic.complete_bipartite(3, 4) // K_{3,4}
+////   let petersen = classic.petersen()               // Famous Petersen graph
 //// }
 //// ```
+////
+//// ## Use Cases
+////
+//// - **Algorithm testing**: Verify correctness on known structures
+//// - **Benchmarking**: Compare performance across standard graphs
+//// - **Network modeling**: Represent specific topologies (star, grid, tree)
+//// - **Graph theory**: Study properties of well-known graphs
+////
+//// ## References
+////
+//// - [Wikipedia: Graph Generators](https://en.wikipedia.org/wiki/Graph_theory#Graph_generators)
+//// - [Complete Graph](https://en.wikipedia.org/wiki/Complete_graph)
+//// - [Cycle Graph](https://en.wikipedia.org/wiki/Cycle_graph)
+//// - [Petersen Graph](https://en.wikipedia.org/wiki/Petersen_graph)
+//// - [NetworkX Generators](https://networkx.org/documentation/stable/reference/generators.html)
 
 import gleam/list
 import yog/internal/utils
@@ -32,7 +65,14 @@ import yog/model.{type Graph, type GraphType}
 ///
 /// ```gleam
 /// let k5 = classic.complete(5)
+/// // K5 has 5 nodes and 10 edges
 /// ```
+///
+/// ## Use Cases
+///
+/// - Testing algorithms on dense graphs
+/// - Maximum connectivity scenarios
+/// - Clique detection benchmarks
 pub fn complete(n: Int) -> Graph(Nil, Int) {
   complete_with_type(n, model.Undirected)
 }
@@ -78,7 +118,9 @@ pub fn complete_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
 /// Generates a cycle graph C_n where nodes form a ring.
 ///
 /// A cycle graph connects n nodes in a circular pattern:
-/// 0 -> 1 -> 2 -> ... -> (n-1) -> 0. All edges have unit weight (1).
+/// 0 -> 1 -> 2 -> ... -> (n-1) -> 0. Each node has degree 2.
+///
+/// Returns an empty graph if n < 3 (cycles require at least 3 nodes).
 ///
 /// **Time Complexity:** O(n)
 ///
@@ -86,7 +128,14 @@ pub fn complete_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
 ///
 /// ```gleam
 /// let c6 = classic.cycle(6)
+/// // C6: 0-1-2-3-4-5-0 (a hexagon)
 /// ```
+///
+/// ## Use Cases
+///
+/// - Ring network topologies
+/// - Circular dependency testing
+/// - Hamiltonian cycle benchmarks
 pub fn cycle(n: Int) -> Graph(Nil, Int) {
   cycle_with_type(n, model.Undirected)
 }
@@ -173,8 +222,10 @@ pub fn star_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
 
 /// Generates a wheel graph: a cycle with a central hub.
 ///
-/// A wheel graph is a cycle of n-1 nodes with an additional central node
-/// connected to all nodes in the cycle. Node 0 is the center.
+/// A wheel graph combines a star and a cycle: node 0 is the hub,
+/// and nodes 1..(n-1) form a cycle.
+///
+/// Returns an empty graph if n < 4 (wheels require at least 4 nodes).
 ///
 /// **Time Complexity:** O(n)
 ///
@@ -182,7 +233,14 @@ pub fn star_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
 ///
 /// ```gleam
 /// let w6 = classic.wheel(6)
+/// // W6: hub 0 connected to cycle 1-2-3-4-5-1
 /// ```
+///
+/// ## Use Cases
+///
+/// - Hybrid network topologies
+/// - Fault-tolerant network design
+/// - Routing algorithm benchmarks
 pub fn wheel(n: Int) -> Graph(Nil, Int) {
   wheel_with_type(n, model.Undirected)
 }
@@ -210,13 +268,24 @@ pub fn wheel_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
 
 /// Generates a complete bipartite graph K_{m,n}.
 ///
+/// A complete bipartite graph has two disjoint sets of nodes (left and right partitions),
+/// where every node in the left partition connects to every node in the right partition.
+/// Left partition: nodes 0..(m-1), Right partition: nodes m..(m+n-1).
+///
 /// **Time Complexity:** O(mn)
 ///
 /// ## Example
 ///
 /// ```gleam
 /// let k33 = classic.complete_bipartite(3, 3)
+/// // K_{3,3}: 3 nodes in each partition, 9 edges
 /// ```
+///
+/// ## Use Cases
+///
+/// - Matching problems (job assignment, pairing)
+/// - Bipartite graph algorithms
+/// - Network flow modeling
 pub fn complete_bipartite(m: Int, n: Int) -> Graph(Nil, Int) {
   complete_bipartite_with_type(m, n, model.Undirected)
 }
@@ -261,7 +330,7 @@ pub fn empty_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
 /// Generates a complete binary tree of given depth.
 ///
 /// Node 0 is the root. For node i: left child is 2i+1, right child is 2i+2.
-/// Total nodes: 2^(depth+1) - 1.
+/// Total nodes: 2^(depth+1) - 1. All edges have unit weight (1).
 ///
 /// **Time Complexity:** O(2^depth)
 ///
@@ -269,7 +338,15 @@ pub fn empty_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
 ///
 /// ```gleam
 /// let tree = classic.binary_tree(3)
+/// // Complete binary tree with depth 3, total 15 nodes
 /// ```
+///
+/// ## Use Cases
+///
+/// - Hierarchical structures
+/// - Binary search tree modeling
+/// - Heap data structure visualization
+/// - Tournament brackets
 pub fn binary_tree(depth: Int) -> Graph(Nil, Int) {
   binary_tree_with_type(depth, model.Undirected)
 }
@@ -307,8 +384,9 @@ pub fn binary_tree_with_type(
 
 /// Generates a 2D grid graph (lattice).
 ///
-/// Creates a grid of rows × cols nodes arranged in a rectangular lattice.
-/// Node IDs are assigned row-major: node_id = row * cols + col.
+/// Creates a rectangular grid where each node is connected to its
+/// orthogonal neighbors (up, down, left, right). Nodes are numbered
+/// row by row: node at (r, c) has ID = r * cols + c.
 ///
 /// **Time Complexity:** O(rows * cols)
 ///
@@ -316,7 +394,20 @@ pub fn binary_tree_with_type(
 ///
 /// ```gleam
 /// let grid = classic.grid_2d(3, 4)
+/// // 3x4 grid with 12 nodes
+/// // Node numbering: 0-1-2-3
+/// //                 | | | |
+/// //                 4-5-6-7
+/// //                 | | | |
+/// //                 8-9-10-11
 /// ```
+///
+/// ## Use Cases
+///
+/// - Mesh network topologies
+/// - Spatial/grid-based algorithms
+/// - Image processing graph models
+/// - Game board representations
 pub fn grid_2d(rows: Int, cols: Int) -> Graph(Nil, Int) {
   grid_2d_with_type(rows, cols, model.Undirected)
 }
@@ -353,9 +444,11 @@ pub fn grid_2d_with_type(
   })
 }
 
-/// Generates a Petersen graph.
+/// Generates the Petersen graph.
 ///
-/// The Petersen graph has 10 nodes and 15 edges.
+/// The [Petersen graph](https://en.wikipedia.org/wiki/Petersen_graph) is a famous
+/// undirected graph with 10 nodes and 15 edges. It is often used as a counterexample
+/// in graph theory due to its unique properties.
 ///
 /// **Time Complexity:** O(1)
 ///
@@ -363,7 +456,21 @@ pub fn grid_2d_with_type(
 ///
 /// ```gleam
 /// let petersen = classic.petersen()
+/// // 10 nodes, 15 edges
 /// ```
+///
+/// ## Properties
+///
+/// - 3-regular (every node has degree 3)
+/// - Diameter 2
+/// - Not planar
+/// - Not Hamiltonian
+///
+/// ## Use Cases
+///
+/// - Graph theory counterexamples
+/// - Algorithm testing
+/// - Theoretical research
 pub fn petersen() -> Graph(Nil, Int) {
   petersen_with_type(model.Undirected)
 }

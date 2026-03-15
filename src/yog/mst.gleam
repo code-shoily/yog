@@ -112,6 +112,10 @@ fn do_kruskal(
 ///
 /// **Time Complexity:** O(E log V) where E is the number of edges and V is the number of vertices
 ///
+/// **Disconnected Graphs:** For disconnected graphs, Prim's only returns edges
+/// for the connected component containing the starting node (the first node in the graph).
+/// Use Kruskal's if you need a minimum spanning forest that covers all components.
+///
 /// ## Example
 ///
 /// ```gleam

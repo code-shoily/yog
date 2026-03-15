@@ -1,4 +1,72 @@
 //// Stochastic graph generators for random graph models.
+////
+//// Random generators use randomness to model real-world networks with properties
+//// like scale-free distributions, small-world effects, and community structure.
+////
+//// ## Available Generators
+////
+//// | Generator | Model | Complexity | Key Property |
+//// |-----------|-------|------------|--------------|
+//// | `erdos_renyi_gnp` | G(n, p) | O(n²) | Each edge with probability p |
+//// | `erdos_renyi_gnm` | G(n, m) | O(m) | Exactly m random edges |
+//// | `barabasi_albert` | Preferential | O(nm) | Scale-free (power-law degrees) |
+//// | `watts_strogatz` | Small-world | O(nk) | High clustering + short paths |
+//// | `random_tree` | Uniform tree | O(n²) | Uniformly random spanning tree |
+////
+//// ## Quick Start
+////
+//// ```gleam
+//// import yog/generators/random
+//// import yog/model
+////
+//// pub fn main() {
+////   // Random network models
+////   let sparse = random.erdos_renyi_gnp(100, 0.05)      // Sparse random (p=5%)
+////   let exact = random.erdos_renyi_gnm(50, 100)         // Exactly 100 edges
+////   let scale_free = random.barabasi_albert(1000, 3)    // Scale-free network
+////   let small_world = random.watts_strogatz(100, 6, 0.1) // Small-world (10% rewire)
+////   let tree = random.random_tree(50)                   // Random spanning tree
+//// }
+//// ```
+////
+//// ## Network Models Explained
+////
+//// ### Erdős-Rényi G(n, p)
+//// - Each possible edge included independently with probability p
+//// - Expected edges: p × n(n-1)/2 (undirected) or p × n(n-1) (directed)
+//// - Phase transition at p = 1/n (giant component emerges)
+//// - **Use for**: Random network modeling, percolation studies
+////
+//// ### Erdős-Rényi G(n, m)
+//// - Exactly m edges added uniformly at random
+//// - Uniform distribution over all graphs with n nodes and m edges
+//// - **Use for**: Fixed edge count requirements, specific density testing
+////
+//// ### Barabási-Albert (Preferential Attachment)
+//// - Starts with m₀ nodes, adds nodes connecting to m existing nodes
+//// - New nodes prefer high-degree nodes ("rich get richer")
+//// - Power-law degree distribution: P(k) ~ k^(-3)
+//// - **Use for**: Social networks, citation networks, web graphs
+////
+//// ### Watts-Strogatz (Small-World)
+//// - Starts with ring lattice (high clustering)
+//// - Rewires edges with probability p (creates shortcuts)
+//// - Balances local clustering with global connectivity
+//// - **Use for**: Social networks, neural networks, epidemic modeling
+////
+//// ### Random Tree
+//// - Builds tree by connecting new nodes to random existing nodes
+//// - Produces uniform distribution over all labeled trees
+//// - **Use for**: Spanning trees, hierarchical structures
+////
+//// ## References
+////
+//// - [Erdős-Rényi Model](https://en.wikipedia.org/wiki/Erd%C5%91s%E2%80%93R%C3%A9nyi_model)
+//// - [Barabási-Albert Model](https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model)
+//// - [Watts-Strogatz Model](https://en.wikipedia.org/wiki/Watts%E2%80%93Strogatz_model)
+//// - [Scale-Free Networks](https://en.wikipedia.org/wiki/Scale-free_network)
+//// - [Small-World Network](https://en.wikipedia.org/wiki/Small-world_network)
+//// - [NetworkX Random Graphs](https://networkx.org/documentation/stable/reference/generators.html#random-graphs)
 
 import gleam/float
 import gleam/int
@@ -10,14 +78,30 @@ import yog/model.{type Graph, type GraphType}
 /// Generates a random graph using the Erdős-Rényi G(n, p) model.
 ///
 /// Each possible edge is included independently with probability p.
+/// For undirected graphs, each unordered pair is considered once.
 ///
 /// **Time Complexity:** O(n²)
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let graph = random.erdos_renyi_gnp(50, 0.1)
+/// // Sparse random graph
+/// let sparse = random.erdos_renyi_gnp(100, 0.05)
+///
+/// // Dense random graph
+/// let dense = random.erdos_renyi_gnp(50, 0.8)
 /// ```
+///
+/// ## Properties
+///
+/// - Expected number of edges: p × n(n-1)/2 (undirected) or p × n(n-1) (directed)
+/// - Phase transition at p = 1/n (giant component emerges)
+///
+/// ## Use Cases
+///
+/// - Random network modeling
+/// - Percolation studies
+/// - Average-case algorithm analysis
 pub fn erdos_renyi_gnp(n: Int, p: Float) -> Graph(Nil, Int) {
   erdos_renyi_gnp_with_type(n, p, model.Undirected)
 }
@@ -66,15 +150,28 @@ pub fn erdos_renyi_gnp_with_type(
 
 /// Generates a random graph using the Erdős-Rényi G(n, m) model.
 ///
-/// Exactly m edges are added uniformly at random.
+/// Unlike G(n, p) which includes each edge independently with probability p,
+/// G(n, m) guarantees exactly m edges in the resulting graph.
 ///
 /// **Time Complexity:** O(m) expected
 ///
 /// ## Example
 ///
 /// ```gleam
+/// // Random graph with 50 nodes and exactly 100 edges
 /// let graph = random.erdos_renyi_gnm(50, 100)
 /// ```
+///
+/// ## Properties
+///
+/// - Exactly m edges (unlike G(n,p) which has expected m edges)
+/// - Uniform distribution over all graphs with n nodes and m edges
+///
+/// ## Use Cases
+///
+/// - Fixed edge count requirements
+/// - Random graph benchmarking
+/// - Testing with specific densities
 pub fn erdos_renyi_gnm(n: Int, m: Int) -> Graph(Nil, Int) {
   erdos_renyi_gnm_with_type(n, m, model.Undirected)
 }
@@ -143,15 +240,29 @@ fn add_random_edges(
 
 /// Generates a scale-free network using the Barabási-Albert model.
 ///
-/// Starts with m₀ nodes in a complete graph, then adds nodes using preferential attachment.
+/// Creates a random graph with a power-law degree distribution (scale-free).
+/// New nodes preferentially attach to existing high-degree nodes ("rich get richer").
 ///
 /// **Time Complexity:** O(nm)
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let graph = random.barabasi_albert(100, 3)
+/// // Scale-free network with 1000 nodes, each connecting to 3 existing nodes
+/// let graph = random.barabasi_albert(1000, 3)
 /// ```
+///
+/// ## Properties
+///
+/// - Power-law degree distribution: P(k) ~ k^(-3)
+/// - Hub nodes with very high degree
+/// - Small-world properties
+///
+/// ## Use Cases
+///
+/// - Social network modeling
+/// - Citation network analysis
+/// - Web graph simulation
 pub fn barabasi_albert(n: Int, m: Int) -> Graph(Nil, Int) {
   barabasi_albert_with_type(n, m, model.Undirected)
 }
@@ -266,16 +377,30 @@ fn select_preferential_targets(
 
 /// Generates a small-world network using the Watts-Strogatz model.
 ///
-/// Creates a ring lattice where each node connects to k nearest neighbors,
-/// then rewires with probability p.
+/// Generates a graph with both high clustering (like regular lattices)
+/// and short path lengths (like random graphs). Starts with a ring
+/// lattice and rewires edges with probability p.
 ///
 /// **Time Complexity:** O(nk)
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let graph = random.watts_strogatz(100, 4, 0.1)
+/// // Small-world network: 100 nodes, 6 neighbors each, 10% rewiring
+/// let graph = random.watts_strogatz(100, 6, 0.1)
 /// ```
+///
+/// ## Properties
+///
+/// - High clustering coefficient
+/// - Short average path length
+/// - p=0: regular lattice, p=1: random graph
+///
+/// ## Use Cases
+///
+/// - Social network modeling (six degrees of separation)
+/// - Neural network topology
+/// - Epidemic spread modeling
 pub fn watts_strogatz(n: Int, k: Int, p: Float) -> Graph(Nil, Int) {
   watts_strogatz_with_type(n, k, p, model.Undirected)
 }
@@ -340,13 +465,32 @@ fn add_random_edge_not_to(
 
 /// Generates a uniformly random tree on n nodes.
 ///
+/// Creates a tree by starting with node 0 and repeatedly connecting
+/// new nodes to random nodes already in the tree. This produces a
+/// uniform distribution over all labeled trees.
+///
 /// **Time Complexity:** O(n²) expected
 ///
 /// ## Example
 ///
 /// ```gleam
 /// let tree = random.random_tree(50)
+/// // Random tree with 50 nodes, 49 edges
 /// ```
+///
+/// ## Properties
+///
+/// - Exactly n-1 edges (tree property)
+/// - Connected
+/// - Acyclic
+/// - Uniform distribution over all labeled trees
+///
+/// ## Use Cases
+///
+/// - Random spanning tree generation
+/// - Tree algorithm testing
+/// - Network topology generation
+/// - Phylogenetic tree simulation
 pub fn random_tree(n: Int) -> Graph(Nil, Int) {
   random_tree_with_type(n, model.Undirected)
 }

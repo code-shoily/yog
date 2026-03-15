@@ -27,6 +27,12 @@
 //// - Analyzing feedback loops in systems
 ////
 //// All algorithms run in **O(V + E)** linear time.
+////
+//// ## References
+////
+//// - [Wikipedia: Strongly Connected Components](https://en.wikipedia.org/wiki/Strongly_connected_component)
+//// - [Wikipedia: Biconnected Component](https://en.wikipedia.org/wiki/Biconnected_component)
+//// - [CP-Algorithms: Finding Bridges](https://cp-algorithms.com/graph/bridge-searching.html)
 
 import gleam/dict.{type Dict}
 import gleam/int

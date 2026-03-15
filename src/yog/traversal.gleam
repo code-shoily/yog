@@ -34,6 +34,7 @@
 ////
 //// - [Wikipedia: Graph Traversal](https://en.wikipedia.org/wiki/Graph_traversal)
 //// - [CP-Algorithms: DFS/BFS](https://cp-algorithms.com/graph/breadth-first-search.html)
+//// - [Wikipedia: Topological Sorting](https://en.wikipedia.org/wiki/Topological_sorting)
 
 import gleam/dict.{type Dict}
 import gleam/int
