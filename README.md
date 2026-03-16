@@ -22,7 +22,7 @@
 
 A graph algorithm library for Gleam, providing implementations of classic graph algorithms with a functional API.
 
-🔷 **[F# Port](https://github.com/code-shoily/yog-fsharp)** - Also available for F# with similar functional APIs
+🔷 **[F# Port](https://github.com/code-shoily/yog-fsharp)** - Also available for F# with similar functional APIs | 📊 **[Gleam vs F# Comparison](GLEAM_FSHARP_COMPARISON.md)** - Detailed feature comparison
 
 ## Features
 
