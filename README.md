@@ -22,11 +22,7 @@
 
 A graph algorithm library for Gleam, providing implementations of classic graph algorithms with a functional API.
 
-## Why Yog?
-
-In many Indic languages, **Yog** (pronounced like "yoke") translates to "Union," "Addition," or "Connection." It stems from the ancient root *yuj*, meaning to join or to fasten together.
-
-In the world of computer science, this is the literal definition of Graph Theory. A graph is nothing more than the union of independent points through purposeful connections.
+🔷 **[F# Port](https://github.com/code-shoily/yog-fsharp)** - Also available for F# with similar functional APIs
 
 ## Features
 
