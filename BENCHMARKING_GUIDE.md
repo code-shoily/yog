@@ -281,7 +281,25 @@ io.println("Complexity: O(E log V) vs O(VE)\n")
 ### Module not found
 
 - File must be in `test/bench/`
-- Run: `gleam run -m internal/bench/filename`
+- Run: `gleam run -m bench/filename`
+
+## Why `bench_erlang/` (and not in `test/bench`)?
+
+The `bench_erlang/` directory at the project root contains benchmarks that compare Yog with Erlang's `:digraph` module using FFI (Foreign Function Interface). These files can't live in `src/` because:
+
+### The Multi-Target Problem
+
+Yog supports both **Erlang** and **JavaScript** targets (`targets = ["erlang", "javascript"]` in `gleam.toml`). When you run `gleam build --target javascript`, Gleam compiles everything in `src/` - and Erlang FFI code doesn't exist in JavaScript, causing compilation to fail.
+
+### The Solution
+
+Keep target-specific benchmarks **outside** `test/`:
+
+- ✅ `test/` compiles on all targets (Erlang + JS)
+- ✅ `bench_erlang/` preserves powerful Erlang comparisons
+- ✅ Files keep `.gleam` extension (IDE support, syntax highlighting)
+- ✅ Gleam ignores them (only compiles `test/`)
+- ✅ Copy when needed: `cp bench_erlang/compare_digraph_acyclic.gleam test/bench/`
 
 ### Future: `bench_javascript/`?
 

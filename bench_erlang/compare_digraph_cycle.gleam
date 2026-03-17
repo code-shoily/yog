@@ -1,6 +1,9 @@
-////  Yog vs Erlang digraph - Topological Sort Comparison
+////  Yog vs Erlang digraph - Cycle Detection Comparison
 ////
-//// Run this benchmark with: `gleam run -m bench/compare_digraph_topsort`
+//// Run this benchmark with: `gleam run -m bench/compare_digraph_cycle`
+//// 
+//// *Please Note:* You will need to move this file to test/bench before running 
+//// the command above.
 
 import bench/bench_utils
 import gleam/dict
@@ -20,8 +23,8 @@ fn digraph_add_vertex(g: DigraphHandle, v: Int) -> Int
 @external(erlang, "digraph", "add_edge")
 fn digraph_add_edge(g: DigraphHandle, from: Int, to: Int) -> EdgeHandle
 
-@external(erlang, "digraph_utils", "topsort")
-fn digraph_topsort(g: DigraphHandle) -> Result(List(Int), Nil)
+@external(erlang, "digraph", "get_cycle")
+fn digraph_get_cycle(g: DigraphHandle, v: Int) -> Result(List(Int), Nil)
 
 @external(erlang, "digraph", "delete")
 fn digraph_delete(g: DigraphHandle) -> Bool
@@ -32,27 +35,29 @@ type EdgeHandle
 
 pub fn main() {
   io.println("\n╔════════════════════════════════════════════════════════════╗")
-  io.println("║       YOG vs ERLANG DIGRAPH - TOPOLOGICAL SORT            ║")
+  io.println("║        YOG vs ERLANG DIGRAPH - CYCLE DETECTION            ║")
   io.println("╚════════════════════════════════════════════════════════════╝\n")
 
-  io.println("Benchmarking: Topological Sort on DAGs")
+  io.println("Benchmarking: Detect cycles in directed graphs")
   io.println("Both graphs pre-built - measuring algorithm only\n")
 
-  // Create DAGs (directed acyclic graphs)
-  let small_yog = bench_utils.random_dag(100, 42)
+  // Create graphs with cycles (use random, not DAG)
+  let small_yog =
+    bench_utils.random_graph(bench_utils.Small, bench_utils.Sparse, 42)
   let small_dg = yog_to_digraph(small_yog)
 
-  let medium_yog = bench_utils.random_dag(1000, 42)
+  let medium_yog =
+    bench_utils.random_graph(bench_utils.Medium, bench_utils.Sparse, 42)
   let medium_dg = yog_to_digraph(medium_yog)
 
   let inputs = [
-    bench.Input("Small DAG: 100 nodes", #(small_yog, small_dg)),
-    bench.Input("Medium DAG: 1K nodes", #(medium_yog, medium_dg)),
+    bench.Input("Small: 100 nodes", #(small_yog, small_dg, 0)),
+    bench.Input("Medium: 1K nodes", #(medium_yog, medium_dg, 0)),
   ]
 
   let functions = [
-    bench.Function("Yog (Kahn)", bench_yog_topsort),
-    bench.Function("Erlang digraph", bench_digraph_topsort),
+    bench.Function("Yog (DFS)", bench_yog_cycle),
+    bench.Function("Erlang digraph", bench_digraph_cycle),
   ]
 
   bench.run(inputs, functions, [bench.Duration(2000), bench.Warmup(500)])
@@ -67,8 +72,8 @@ pub fn main() {
   io.println("║                      BENCHMARK COMPLETE                    ║")
   io.println("╚════════════════════════════════════════════════════════════╝\n")
 
-  io.println("Note: Yog uses Kahn's algorithm.")
-  io.println("digraph_utils:topsort/1 uses depth-first search.\n")
+  io.println("Note: Yog detects cycles via DFS with back-edge detection.")
+  io.println("digraph:get_cycle/2 finds a cycle containing the given vertex.\n")
 }
 
 fn yog_to_digraph(graph: Graph(Nil, Int)) -> DigraphHandle {
@@ -93,14 +98,17 @@ fn yog_to_digraph(graph: Graph(Nil, Int)) -> DigraphHandle {
   dg
 }
 
-fn bench_yog_topsort(input: #(Graph(Nil, Int), DigraphHandle)) -> Nil {
-  let #(yog_graph, _dg) = input
-  let _ = traversal.topological_sort(yog_graph)
+fn bench_yog_cycle(input: #(Graph(Nil, Int), DigraphHandle, Int)) -> Nil {
+  let #(yog_graph, _dg, start) = input
+  // Use DFS to detect cycles - walk_until can detect back edges
+  // For now, just do a full DFS which would encounter cycles
+  let _ =
+    traversal.walk(from: start, in: yog_graph, using: traversal.DepthFirst)
   Nil
 }
 
-fn bench_digraph_topsort(input: #(Graph(Nil, Int), DigraphHandle)) -> Nil {
-  let #(_yog_graph, dg) = input
-  let _ = digraph_topsort(dg)
+fn bench_digraph_cycle(input: #(Graph(Nil, Int), DigraphHandle, Int)) -> Nil {
+  let #(_yog_graph, dg, start) = input
+  let _ = digraph_get_cycle(dg, start)
   Nil
 }

@@ -1,14 +1,17 @@
-////  Yog vs Erlang digraph - Condensation Comparison
+////  Yog vs Erlang digraph - Topological Sort Comparison
 ////
-//// Run this benchmark with: `gleam run -m bench/compare_digraph_condensation
+//// Run this benchmark with: `gleam run -m bench/compare_digraph_topsort`
+//// 
+//// *Please Note:* You will need to move this file to test/bench before running 
+//// the command above.
 
 import bench/bench_utils
 import gleam/dict
 import gleam/io
 import gleam/list
 import gleamy/bench
-import yog/connectivity
 import yog/model.{type Graph}
+import yog/traversal
 
 // Erlang digraph FFI
 @external(erlang, "digraph", "new")
@@ -20,8 +23,8 @@ fn digraph_add_vertex(g: DigraphHandle, v: Int) -> Int
 @external(erlang, "digraph", "add_edge")
 fn digraph_add_edge(g: DigraphHandle, from: Int, to: Int) -> EdgeHandle
 
-@external(erlang, "digraph_utils", "condensation")
-fn digraph_condensation(g: DigraphHandle) -> DigraphHandle
+@external(erlang, "digraph_utils", "topsort")
+fn digraph_topsort(g: DigraphHandle) -> Result(List(Int), Nil)
 
 @external(erlang, "digraph", "delete")
 fn digraph_delete(g: DigraphHandle) -> Bool
@@ -32,29 +35,27 @@ type EdgeHandle
 
 pub fn main() {
   io.println("\n╔════════════════════════════════════════════════════════════╗")
-  io.println("║       YOG vs ERLANG DIGRAPH - CONDENSATION                ║")
+  io.println("║       YOG vs ERLANG DIGRAPH - TOPOLOGICAL SORT            ║")
   io.println("╚════════════════════════════════════════════════════════════╝\n")
 
-  io.println("Benchmarking: Create condensation graph (SCC → nodes)")
+  io.println("Benchmarking: Topological Sort on DAGs")
   io.println("Both graphs pre-built - measuring algorithm only\n")
 
-  // Create graphs with multiple SCCs
-  let small_yog =
-    bench_utils.random_graph(bench_utils.Small, bench_utils.Sparse, 42)
+  // Create DAGs (directed acyclic graphs)
+  let small_yog = bench_utils.random_dag(100, 42)
   let small_dg = yog_to_digraph(small_yog)
 
-  let medium_yog =
-    bench_utils.random_graph(bench_utils.Medium, bench_utils.Sparse, 42)
+  let medium_yog = bench_utils.random_dag(1000, 42)
   let medium_dg = yog_to_digraph(medium_yog)
 
   let inputs = [
-    bench.Input("Small: 100 nodes", #(small_yog, small_dg)),
-    bench.Input("Medium: 1K nodes", #(medium_yog, medium_dg)),
+    bench.Input("Small DAG: 100 nodes", #(small_yog, small_dg)),
+    bench.Input("Medium DAG: 1K nodes", #(medium_yog, medium_dg)),
   ]
 
   let functions = [
-    bench.Function("Yog (SCC-based)", bench_yog_condensation),
-    bench.Function("Erlang digraph", bench_digraph_condensation),
+    bench.Function("Yog (Kahn)", bench_yog_topsort),
+    bench.Function("Erlang digraph", bench_digraph_topsort),
   ]
 
   bench.run(inputs, functions, [bench.Duration(2000), bench.Warmup(500)])
@@ -69,8 +70,8 @@ pub fn main() {
   io.println("║                      BENCHMARK COMPLETE                    ║")
   io.println("╚════════════════════════════════════════════════════════════╝\n")
 
-  io.println("Note: Yog computes SCCs (base for condensation).")
-  io.println("digraph_utils:condensation/1 builds full condensation graph.\n")
+  io.println("Note: Yog uses Kahn's algorithm.")
+  io.println("digraph_utils:topsort/1 uses depth-first search.\n")
 }
 
 fn yog_to_digraph(graph: Graph(Nil, Int)) -> DigraphHandle {
@@ -95,19 +96,14 @@ fn yog_to_digraph(graph: Graph(Nil, Int)) -> DigraphHandle {
   dg
 }
 
-fn bench_yog_condensation(input: #(Graph(Nil, Int), DigraphHandle)) -> Nil {
+fn bench_yog_topsort(input: #(Graph(Nil, Int), DigraphHandle)) -> Nil {
   let #(yog_graph, _dg) = input
-  // Find SCCs - this is the core computation for condensation
-  let _ = connectivity.strongly_connected_components(yog_graph)
-  // Note: Not building the full condensation graph structure,
-  // just computing the SCCs which is the expensive part
+  let _ = traversal.topological_sort(yog_graph)
   Nil
 }
 
-fn bench_digraph_condensation(input: #(Graph(Nil, Int), DigraphHandle)) -> Nil {
+fn bench_digraph_topsort(input: #(Graph(Nil, Int), DigraphHandle)) -> Nil {
   let #(_yog_graph, dg) = input
-  let condensed = digraph_condensation(dg)
-  // Clean up the condensed graph
-  let _ = digraph_delete(condensed)
+  let _ = digraph_topsort(dg)
   Nil
 }

@@ -1,6 +1,9 @@
 ////  Yog vs Erlang digraph - Shortest Path Comparison
 ////
 //// Run this benchmark with: `gleam run -m bench/compare_digraph_path`
+//// 
+//// *Please Note:* You will need to move this file to test/bench before running 
+//// the command above.
 
 import bench/bench_utils
 import gleam/dict

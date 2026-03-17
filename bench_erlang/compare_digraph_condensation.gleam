@@ -1,14 +1,17 @@
-////  Yog vs Erlang digraph - Cycle Detection Comparison
+////  Yog vs Erlang digraph - Condensation Comparison
 ////
-//// Run this benchmark with: `gleam run -m bench/compare_digraph_cycle`
+//// Run this benchmark with: `gleam run -m bench/compare_digraph_condensation
+//// 
+//// *Please Note:* You will need to move this file to test/bench before running 
+//// the command above.
 
 import bench/bench_utils
 import gleam/dict
 import gleam/io
 import gleam/list
 import gleamy/bench
+import yog/connectivity
 import yog/model.{type Graph}
-import yog/traversal
 
 // Erlang digraph FFI
 @external(erlang, "digraph", "new")
@@ -20,8 +23,8 @@ fn digraph_add_vertex(g: DigraphHandle, v: Int) -> Int
 @external(erlang, "digraph", "add_edge")
 fn digraph_add_edge(g: DigraphHandle, from: Int, to: Int) -> EdgeHandle
 
-@external(erlang, "digraph", "get_cycle")
-fn digraph_get_cycle(g: DigraphHandle, v: Int) -> Result(List(Int), Nil)
+@external(erlang, "digraph_utils", "condensation")
+fn digraph_condensation(g: DigraphHandle) -> DigraphHandle
 
 @external(erlang, "digraph", "delete")
 fn digraph_delete(g: DigraphHandle) -> Bool
@@ -32,13 +35,13 @@ type EdgeHandle
 
 pub fn main() {
   io.println("\n╔════════════════════════════════════════════════════════════╗")
-  io.println("║        YOG vs ERLANG DIGRAPH - CYCLE DETECTION            ║")
+  io.println("║       YOG vs ERLANG DIGRAPH - CONDENSATION                ║")
   io.println("╚════════════════════════════════════════════════════════════╝\n")
 
-  io.println("Benchmarking: Detect cycles in directed graphs")
+  io.println("Benchmarking: Create condensation graph (SCC → nodes)")
   io.println("Both graphs pre-built - measuring algorithm only\n")
 
-  // Create graphs with cycles (use random, not DAG)
+  // Create graphs with multiple SCCs
   let small_yog =
     bench_utils.random_graph(bench_utils.Small, bench_utils.Sparse, 42)
   let small_dg = yog_to_digraph(small_yog)
@@ -48,13 +51,13 @@ pub fn main() {
   let medium_dg = yog_to_digraph(medium_yog)
 
   let inputs = [
-    bench.Input("Small: 100 nodes", #(small_yog, small_dg, 0)),
-    bench.Input("Medium: 1K nodes", #(medium_yog, medium_dg, 0)),
+    bench.Input("Small: 100 nodes", #(small_yog, small_dg)),
+    bench.Input("Medium: 1K nodes", #(medium_yog, medium_dg)),
   ]
 
   let functions = [
-    bench.Function("Yog (DFS)", bench_yog_cycle),
-    bench.Function("Erlang digraph", bench_digraph_cycle),
+    bench.Function("Yog (SCC-based)", bench_yog_condensation),
+    bench.Function("Erlang digraph", bench_digraph_condensation),
   ]
 
   bench.run(inputs, functions, [bench.Duration(2000), bench.Warmup(500)])
@@ -69,8 +72,8 @@ pub fn main() {
   io.println("║                      BENCHMARK COMPLETE                    ║")
   io.println("╚════════════════════════════════════════════════════════════╝\n")
 
-  io.println("Note: Yog detects cycles via DFS with back-edge detection.")
-  io.println("digraph:get_cycle/2 finds a cycle containing the given vertex.\n")
+  io.println("Note: Yog computes SCCs (base for condensation).")
+  io.println("digraph_utils:condensation/1 builds full condensation graph.\n")
 }
 
 fn yog_to_digraph(graph: Graph(Nil, Int)) -> DigraphHandle {
@@ -95,17 +98,19 @@ fn yog_to_digraph(graph: Graph(Nil, Int)) -> DigraphHandle {
   dg
 }
 
-fn bench_yog_cycle(input: #(Graph(Nil, Int), DigraphHandle, Int)) -> Nil {
-  let #(yog_graph, _dg, start) = input
-  // Use DFS to detect cycles - walk_until can detect back edges
-  // For now, just do a full DFS which would encounter cycles
-  let _ =
-    traversal.walk(from: start, in: yog_graph, using: traversal.DepthFirst)
+fn bench_yog_condensation(input: #(Graph(Nil, Int), DigraphHandle)) -> Nil {
+  let #(yog_graph, _dg) = input
+  // Find SCCs - this is the core computation for condensation
+  let _ = connectivity.strongly_connected_components(yog_graph)
+  // Note: Not building the full condensation graph structure,
+  // just computing the SCCs which is the expensive part
   Nil
 }
 
-fn bench_digraph_cycle(input: #(Graph(Nil, Int), DigraphHandle, Int)) -> Nil {
-  let #(_yog_graph, dg, start) = input
-  let _ = digraph_get_cycle(dg, start)
+fn bench_digraph_condensation(input: #(Graph(Nil, Int), DigraphHandle)) -> Nil {
+  let #(_yog_graph, dg) = input
+  let condensed = digraph_condensation(dg)
+  // Clean up the condensed graph
+  let _ = digraph_delete(condensed)
   Nil
 }

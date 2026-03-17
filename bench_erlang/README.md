@@ -18,19 +18,22 @@ These benchmarks use Erlang's `:digraph` module via FFI, which is only available
 
 ## Running a Benchmark
 
-1. Copy the benchmark to `src/yog/internal/bench/`:
+1. Copy the benchmark to `test/bench/`:
+
    ```bash
-   cp bench_erlang/compare_digraph_acyclic.gleam src/yog/internal/bench/
+   cp bench_erlang/compare_digraph_acyclic.gleam test/bench/
    ```
 
 2. Run it:
+
    ```bash
-   gleam run -m internal/bench/compare_digraph_acyclic
+   gleam run -m test/compare_digraph_acyclic
    ```
 
 3. Clean up when done:
+
    ```bash
-   rm src/yog/internal/bench/compare_digraph_acyclic.gleam
+   rm test/bench/compare_digraph_acyclic.gleam
    ```
 
 ## Note
