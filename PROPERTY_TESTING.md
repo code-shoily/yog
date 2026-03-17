@@ -5,7 +5,7 @@ Property-based testing for Yog graph algorithms using `qcheck` v1.0.4.
 ## Test Statistics
 
 | Metric | Count |
-|--------|-------|
+| -------- | ------- |
 | Total tests | 950 |
 | Property tests | 34 |
 | Basic properties | 12 |
@@ -20,18 +20,18 @@ gleam test
 
 ## Test Files
 
-| File | Lines | Purpose |
-|------|-------|---------|
-| `test/yog/property_tests.gleam` | 462 | Basic structural properties |
-| `test/yog/aggressive_property_tests.gleam` | 216 | Edge cases and boundary conditions |
-| `test/yog/algorithm_property_tests.gleam` | 466 | Algorithm correctness and cross-validation |
+| File | Purpose |
+| ------ | --------- |
+| `test/yog/property_tests.gleam` | Basic structural properties |
+| `test/yog/aggressive_property_tests.gleam` | Edge cases and boundary conditions |
+| `test/yog/algorithm_property_tests.gleam` | Algorithm correctness and cross-validation |
 
 ## Category 1: Structural Properties
 
 ### Graph Transformations
 
 | # | Property | Test Function | Rationale | Status |
-|---|----------|---------------|-----------|--------|
+| --- | ---------- | --------------- | ----------- | -------- |
 | 1 | Transpose is involutive: `transpose(transpose(G)) = G` | `transpose_involutive_test()` | Validates O(1) transpose implementation used by SCC algorithms | ✅ |
 | 2 | Edge count consistency | `edge_count_consistency_test()` | Ensures graph statistics match actual edge storage | ✅ |
 | 3 | Undirected graphs are symmetric | `undirected_symmetry_test()` | For undirected graphs, every edge appears in both directions | ✅ |
@@ -40,7 +40,7 @@ gleam test
 ### Data Transformations
 
 | # | Property | Test Function | Rationale | Status |
-|---|----------|---------------|-----------|--------|
+| --- | ---------- | --------------- | ----------- | -------- |
 | 5 | `map_nodes` preserves structure | `map_nodes_preserves_structure_test()` | Node transformations don't alter graph topology | ✅ |
 | 6 | `map_edges` preserves structure | `map_edges_preserves_structure_test()` | Edge transformations don't alter graph topology | ✅ |
 | 7 | `filter_nodes` removes incident edges | `filter_nodes_removes_incident_edges_test()` | No dangling edge references after node removal | ✅ |
@@ -49,21 +49,21 @@ gleam test
 ### Operations
 
 | # | Property | Test Function | Rationale | Status |
-|---|----------|---------------|-----------|--------|
+| --- | ---------- | --------------- | ----------- | -------- |
 | 9 | Add/remove edge (directed) | `add_remove_edge_inverse_directed_test()` | Edge operations are inverse for directed graphs | ✅ |
 | 10 | Add/remove edge (undirected) | `add_remove_edge_inverse_undirected_test()` | Fully removes both directions (v4.x) | ✅ |
 
 ### Traversals
 
 | # | Property | Test Function | Rationale | Status |
-|---|----------|---------------|-----------|--------|
+| --- | ---------- | --------------- | ----------- | -------- |
 | 11 | BFS produces no duplicates | `traversal_no_duplicates_bfs_test()` | Breadth-first search visits each node once | ✅ |
 | 12 | DFS produces no duplicates | `traversal_no_duplicates_dfs_test()` | Depth-first search visits each node once, even with cycles | ✅ |
 
 ## Category 2: Edge Cases
 
 | # | Case | Test Function | Rationale | Status |
-|---|------|---------------|-----------|--------|
+| --- | ------ | --------------- | ----------- | -------- |
 | 1 | Empty graphs | `empty_graph_edge_count_test()`, `empty_graph_transpose_test()` | Operations on graphs with no nodes/edges | ✅ |
 | 2 | Self-loops (directed) | `self_loop_directed_test()` | Node pointing to itself in directed graph | ✅ |
 | 3 | Self-loops (undirected) | `self_loop_undirected_test()` | Node pointing to itself in undirected graph | ✅ |
@@ -79,7 +79,7 @@ gleam test
 ### Cross-Validation
 
 | # | Property | Test Function | Rationale | Status |
-|---|----------|---------------|-----------|--------|
+| --- | ---------- | --------------- | ----------- | -------- |
 | 1 | Tarjan SCC = Kosaraju SCC | `scc_tarjan_equals_kosaraju_test()` | Different SCC algorithms produce same components | ✅ |
 | 2 | Kruskal MST weight = Prim MST weight | `mst_kruskal_equals_prim_weight_test()` | Different MST algorithms produce same total weight | ✅ |
 | 3 | Bellman-Ford = Dijkstra (non-negative) | `bellman_ford_equals_dijkstra_test()` | Algorithms agree on non-negative weighted graphs | ✅ |
@@ -87,7 +87,7 @@ gleam test
 ### Pathfinding Correctness
 
 | # | Property | Test Function | Rationale | Status |
-|---|----------|---------------|-----------|--------|
+| --- | ---------- | --------------- | ----------- | -------- |
 | 4 | Dijkstra path validity | `dijkstra_path_validity_test()` | Path starts/ends correctly, edges exist, weight accurate | ✅ |
 | 5 | No-path detection | `dijkstra_no_path_confirmed_by_bfs_test()` | Dijkstra None confirmed by BFS unreachability | ✅ |
 | 6 | Undirected path symmetry | `undirected_path_symmetry_test()` | Path weight A→B equals B→A in undirected graphs | ✅ |
@@ -96,7 +96,7 @@ gleam test
 ### Complex Invariants
 
 | # | Property | Test Function | Rationale | Status |
-|---|----------|---------------|-----------|--------|
+| --- | ---------- | --------------- | ----------- | -------- |
 | 8 | SCC components partition graph | `scc_partition_test()` | Components are disjoint and cover all nodes | ✅ |
 | 9 | MST is spanning tree | `mst_spanning_tree_test()` | MST reaches all nodes in connected graph | ✅ |
 | 10 | Bridge removal disconnects graph | `bridge_removal_test()` | Removing bridge increases connected components | ✅ |
@@ -110,14 +110,14 @@ gleam test
 
 Two complementary strategies are used:
 
-**1. Property-Based Testing (PBT)**
+#### Property-Based Testing (PBT)
 
 - Random graph generation via `qcheck`
 - ~100 test cases per property
 - Graph sizes: 0-15 nodes, 0-30 edges
 - Best for: Structural properties, transformations
 
-**2. Example-Based Testing**
+#### Example-Based Testing
 
 - Specific graph configurations
 - Deterministic, fast execution
@@ -143,11 +143,10 @@ qcheck = ">= 1.0.0 and < 2.0.0"
 
 - Test framework: `gleeunit`
 - Property library: `qcheck` v1.0.4
-- Test timeout: 120s default
 - Shrinking: Automatic (qcheck)
 
 ## References
 
-- qcheck documentation: https://hexdocs.pm/qcheck/
-- QuickCheck paper: https://www.cs.tufts.edu/~nr/cs257/archive/john-hughes/quick.pdf
-- Property-Based Testing: https://hypothesis.works/articles/what-is-property-based-testing/
+- qcheck documentation: <https://hexdocs.pm/qcheck/>
+- QuickCheck paper: <https://www.cs.tufts.edu/~nr/cs257/archive/john-hughes/quick.pdf>
+- Property-Based Testing: <https://hypothesis.works/articles/what-is-property-based-testing/>
