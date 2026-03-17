@@ -1,12 +1,12 @@
 ////  Simple Pathfinding Benchmark
 ////
 //// Compares Dijkstra's algorithm across different graph sizes
-//// Run with: gleam run -m internal/bench/simple_pathfinding
+//// Run with: `gleam run -m bench/simple_pathfinding`
 
+import bench/bench_utils
 import gleam/int
 import gleam/io
 import gleamy/bench
-import yog/internal/bench/bench_utils
 import yog/model.{type Graph}
 import yog/pathfinding/dijkstra as pathfinding
 

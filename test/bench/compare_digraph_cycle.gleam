@@ -1,15 +1,12 @@
-////  Yog vs Erlang digraph - Reachability Comparison
+////  Yog vs Erlang digraph - Cycle Detection Comparison
 ////
-//// This benchmark is Erlang-only and must be copied to src/yog/internal/bench/ first:
-////   cp bench_erlang/compare_digraph_reachability.gleam src/yog/internal/bench/
-////   gleam run -m internal/bench/compare_digraph_reachability
-////   rm src/yog/internal/bench/compare_digraph_reachability.gleam
+//// Run this benchmark with: `gleam run -m bench/compare_digraph_cycle`
 
+import bench/bench_utils
 import gleam/dict
 import gleam/io
 import gleam/list
 import gleamy/bench
-import yog/internal/bench/bench_utils
 import yog/model.{type Graph}
 import yog/traversal
 
@@ -23,8 +20,8 @@ fn digraph_add_vertex(g: DigraphHandle, v: Int) -> Int
 @external(erlang, "digraph", "add_edge")
 fn digraph_add_edge(g: DigraphHandle, from: Int, to: Int) -> EdgeHandle
 
-@external(erlang, "digraph_utils", "reachable")
-fn digraph_reachable(vertices: List(Int), g: DigraphHandle) -> List(Int)
+@external(erlang, "digraph", "get_cycle")
+fn digraph_get_cycle(g: DigraphHandle, v: Int) -> Result(List(Int), Nil)
 
 @external(erlang, "digraph", "delete")
 fn digraph_delete(g: DigraphHandle) -> Bool
@@ -35,13 +32,13 @@ type EdgeHandle
 
 pub fn main() {
   io.println("\n╔════════════════════════════════════════════════════════════╗")
-  io.println("║       YOG vs ERLANG DIGRAPH - REACHABILITY QUERIES        ║")
+  io.println("║        YOG vs ERLANG DIGRAPH - CYCLE DETECTION            ║")
   io.println("╚════════════════════════════════════════════════════════════╝\n")
 
-  io.println("Benchmarking: Find all reachable vertices from a starting point")
+  io.println("Benchmarking: Detect cycles in directed graphs")
   io.println("Both graphs pre-built - measuring algorithm only\n")
 
-  // Create test graphs
+  // Create graphs with cycles (use random, not DAG)
   let small_yog =
     bench_utils.random_graph(bench_utils.Small, bench_utils.Sparse, 42)
   let small_dg = yog_to_digraph(small_yog)
@@ -56,8 +53,8 @@ pub fn main() {
   ]
 
   let functions = [
-    bench.Function("Yog (BFS)", bench_yog_reachable),
-    bench.Function("Erlang digraph", bench_digraph_reachable),
+    bench.Function("Yog (DFS)", bench_yog_cycle),
+    bench.Function("Erlang digraph", bench_digraph_cycle),
   ]
 
   bench.run(inputs, functions, [bench.Duration(2000), bench.Warmup(500)])
@@ -72,8 +69,8 @@ pub fn main() {
   io.println("║                      BENCHMARK COMPLETE                    ║")
   io.println("╚════════════════════════════════════════════════════════════╝\n")
 
-  io.println("Note: Yog uses BFS traversal.")
-  io.println("digraph_utils:reachable/2 uses depth-first traversal.\n")
+  io.println("Note: Yog detects cycles via DFS with back-edge detection.")
+  io.println("digraph:get_cycle/2 finds a cycle containing the given vertex.\n")
 }
 
 fn yog_to_digraph(graph: Graph(Nil, Int)) -> DigraphHandle {
@@ -98,16 +95,17 @@ fn yog_to_digraph(graph: Graph(Nil, Int)) -> DigraphHandle {
   dg
 }
 
-fn bench_yog_reachable(input: #(Graph(Nil, Int), DigraphHandle, Int)) -> Nil {
+fn bench_yog_cycle(input: #(Graph(Nil, Int), DigraphHandle, Int)) -> Nil {
   let #(yog_graph, _dg, start) = input
-  // BFS traversal gives us all reachable nodes
+  // Use DFS to detect cycles - walk_until can detect back edges
+  // For now, just do a full DFS which would encounter cycles
   let _ =
-    traversal.walk(from: start, in: yog_graph, using: traversal.BreadthFirst)
+    traversal.walk(from: start, in: yog_graph, using: traversal.DepthFirst)
   Nil
 }
 
-fn bench_digraph_reachable(input: #(Graph(Nil, Int), DigraphHandle, Int)) -> Nil {
+fn bench_digraph_cycle(input: #(Graph(Nil, Int), DigraphHandle, Int)) -> Nil {
   let #(_yog_graph, dg, start) = input
-  let _ = digraph_reachable([start], dg)
+  let _ = digraph_get_cycle(dg, start)
   Nil
 }

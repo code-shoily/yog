@@ -1,19 +1,15 @@
-////  Yog vs Erlang digraph Comparison Benchmark
+////  Yog vs Erlang digraph - Shortest Path Comparison
 ////
-//// Compares Yog's SCC implementation against Erlang's built-in digraph
-////
-//// This benchmark is Erlang-only and must be copied to src/yog/internal/bench/ first:
-////   cp bench_erlang/compare_digraph.gleam src/yog/internal/bench/
-////   gleam run -m internal/bench/compare_digraph
-////   rm src/yog/internal/bench/compare_digraph.gleam
+//// Run this benchmark with: `gleam run -m bench/compare_digraph_path`
 
+import bench/bench_utils
 import gleam/dict
+import gleam/int
 import gleam/io
 import gleam/list
 import gleamy/bench
-import yog/connectivity
-import yog/internal/bench/bench_utils
 import yog/model.{type Graph}
+import yog/pathfinding/dijkstra as pathfinding
 
 // Erlang digraph FFI
 @external(erlang, "digraph", "new")
@@ -25,8 +21,12 @@ fn digraph_add_vertex(g: DigraphHandle, v: Int) -> Int
 @external(erlang, "digraph", "add_edge")
 fn digraph_add_edge(g: DigraphHandle, from: Int, to: Int) -> EdgeHandle
 
-@external(erlang, "digraph_utils", "strong_components")
-fn digraph_strong_components(g: DigraphHandle) -> List(List(Int))
+@external(erlang, "digraph", "get_short_path")
+fn digraph_get_short_path(
+  g: DigraphHandle,
+  from: Int,
+  to: Int,
+) -> Result(List(Int), Nil)
 
 @external(erlang, "digraph", "delete")
 fn digraph_delete(g: DigraphHandle) -> Bool
@@ -37,14 +37,13 @@ type EdgeHandle
 
 pub fn main() {
   io.println("\n╔════════════════════════════════════════════════════════════╗")
-  io.println("║         YOG vs ERLANG DIGRAPH - SCC COMPARISON            ║")
+  io.println("║        YOG vs ERLANG DIGRAPH - SHORTEST PATH              ║")
   io.println("╚════════════════════════════════════════════════════════════╝\n")
 
-  io.println("Benchmarking: Strongly Connected Components")
-  io.println("Comparing: Yog (Tarjan) vs Erlang digraph")
+  io.println("Benchmarking: Shortest Path (unweighted)")
   io.println("Both graphs pre-built - measuring algorithm only\n")
 
-  // Create test graphs - convert to both representations
+  // Create test graphs
   let small_yog =
     bench_utils.random_graph(bench_utils.Small, bench_utils.Sparse, 42)
   let small_dg = yog_to_digraph(small_yog)
@@ -53,15 +52,14 @@ pub fn main() {
     bench_utils.random_graph(bench_utils.Medium, bench_utils.Sparse, 42)
   let medium_dg = yog_to_digraph(medium_yog)
 
-  // Pass both representations to each benchmark
   let inputs = [
-    bench.Input("Small: 100 nodes", #(small_yog, small_dg)),
-    bench.Input("Medium: 1K nodes", #(medium_yog, medium_dg)),
+    bench.Input("Small: 100 nodes", #(small_yog, small_dg, 0, 99)),
+    bench.Input("Medium: 1K nodes", #(medium_yog, medium_dg, 0, 999)),
   ]
 
   let functions = [
-    bench.Function("Yog (Tarjan)", bench_yog_scc),
-    bench.Function("Erlang digraph", bench_digraph_scc),
+    bench.Function("Yog (Dijkstra)", bench_yog_path),
+    bench.Function("Erlang digraph (BFS)", bench_digraph_path),
   ]
 
   bench.run(inputs, functions, [bench.Duration(2000), bench.Warmup(500)])
@@ -76,21 +74,19 @@ pub fn main() {
   io.println("║                      BENCHMARK COMPLETE                    ║")
   io.println("╚════════════════════════════════════════════════════════════╝\n")
 
-  io.println("Note: Both use Tarjan's algorithm (single-pass).")
-  io.println("Graphs pre-built - only measuring SCC computation.\n")
+  io.println("Note: Yog uses Dijkstra's algorithm (O((V+E) log V)).")
+  io.println("digraph:get_short_path/3 uses BFS (O(V+E)).")
+  io.println("BFS is optimal for unweighted graphs.\n")
 }
 
-// Convert Yog graph to digraph (done once, outside benchmark)
 fn yog_to_digraph(graph: Graph(Nil, Int)) -> DigraphHandle {
   let dg = digraph_new()
 
-  // Add vertices
   let nodes = model.all_nodes(graph)
   list.each(nodes, fn(node) {
     let _ = digraph_add_vertex(dg, node)
   })
 
-  // Add edges
   let _ = case graph {
     model.Graph(out_edges: out_edges, ..) -> {
       dict.fold(out_edges, Nil, fn(_, from, to_map) {
@@ -105,14 +101,22 @@ fn yog_to_digraph(graph: Graph(Nil, Int)) -> DigraphHandle {
   dg
 }
 
-fn bench_yog_scc(input: #(Graph(Nil, Int), DigraphHandle)) -> Nil {
-  let #(yog_graph, _dg) = input
-  let _ = connectivity.strongly_connected_components(yog_graph)
+fn bench_yog_path(input: #(Graph(Nil, Int), DigraphHandle, Int, Int)) -> Nil {
+  let #(yog_graph, _dg, from, to) = input
+  let _ =
+    pathfinding.shortest_path(
+      in: yog_graph,
+      from: from,
+      to: to,
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
   Nil
 }
 
-fn bench_digraph_scc(input: #(Graph(Nil, Int), DigraphHandle)) -> Nil {
-  let #(_yog_graph, dg) = input
-  let _ = digraph_strong_components(dg)
+fn bench_digraph_path(input: #(Graph(Nil, Int), DigraphHandle, Int, Int)) -> Nil {
+  let #(_yog_graph, dg, from, to) = input
+  let _ = digraph_get_short_path(dg, from, to)
   Nil
 }

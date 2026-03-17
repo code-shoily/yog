@@ -7,15 +7,15 @@ Comprehensive guide to benchmarking Yog graph algorithms.
 ### Run the Example
 
 ```bash
-gleam run -m internal/bench/simple_pathfinding
+gleam run -m bench/simple_pathfinding
 ```
 
 ### Create Your Own
 
 ```bash
-cp src/yog/internal/bench/simple_pathfinding.gleam src/yog/internal/bench/my_benchmark.gleam
+cp test/bench/simple_pathfinding.gleam test/bench/my_benchmark.gleam
 # Edit my_benchmark.gleam
-gleam run -m internal/bench/my_benchmark
+gleam run -m bench/my_benchmark
 ```
 
 ### Basic Template
@@ -147,7 +147,7 @@ bench.run(inputs, functions, [bench.Duration(2000)])
 
 Benchmarks display a table with these metrics:
 
-```
+```shell
 Input               Function       IPS           Min           Max           P99
 Small: 100 nodes    Dijkstra    3906736.16     0.0001       56.02          0.001
 Medium: 1K nodes    Dijkstra        557.99     1.4301        5.42          4.20
@@ -170,13 +170,11 @@ Medium: 1K nodes    Dijkstra        557.99     1.4301        5.42          4.20
 ### Expected Performance
 
 | Algorithm | Complexity | 100 nodes | 1K nodes | 10K nodes |
-|-----------|-----------|-----------|----------|-----------|
+| ----------- | ----------- | ----------- | ---------- | ----------- |
 | BFS/DFS | O(V+E) | ~100μs | ~1ms | ~10ms |
 | Dijkstra | O((V+E) log V) | ~200μs | ~2-3ms | ~30-40ms |
 | Bellman-Ford | O(VE) | ~500μs | ~50ms | ~5s |
 | Floyd-Warshall | O(V³) | ~10ms | ~10s | Too slow |
-
-*Rough estimates for sparse graphs*
 
 ## Best Practices
 
@@ -247,7 +245,7 @@ io.println("Complexity: O(E log V) vs O(VE)\n")
 ## Algorithm Complexity Reference
 
 | Algorithm | Time | Space | Max Practical Size |
-|-----------|------|-------|--------------------|
+| ----------- | ------ | ------- | -------------------- |
 | BFS/DFS | O(V+E) | O(V) | 100K+ nodes |
 | Dijkstra | O((V+E) log V) | O(V) | 100K+ nodes |
 | A* | O((V+E) log V) | O(V) | 100K+ nodes |
@@ -263,57 +261,32 @@ io.println("Complexity: O(E log V) vs O(VE)\n")
 ## Troubleshooting
 
 ### Benchmark takes forever
+
 - Reduce graph size
 - Lower `Duration` parameter
 - Check algorithm complexity vs graph size
 
 ### Out of memory
+
 - Use smaller graphs
 - Avoid `Dense` with `Large` or `XLarge`
 - Check algorithm space complexity
 
 ### Inconsistent results
+
 - Increase `Duration` and `Warmup`
 - Close other applications
 - Run multiple times
 
 ### Module not found
-- File must be in `src/yog/internal/bench/`
+
+- File must be in `test/bench/`
 - Run: `gleam run -m internal/bench/filename`
-
-## Why `internal/bench`?
-
-Benchmarks are in `src/yog/internal/bench/` to:
-- Keep them out of Yog's public API
-- Prevent pollution of user imports/autocomplete
-- Still allow individual execution: `gleam run -m internal/bench/...`
-
-This follows Gleam best practices for internal tooling.
-
-## Why `bench_erlang/` (and not in `src/`)?
-
-The `bench_erlang/` directory at the project root contains benchmarks that compare Yog with Erlang's `:digraph` module using FFI (Foreign Function Interface). These files can't live in `src/` because:
-
-### The Multi-Target Problem
-
-Yog supports both **Erlang** and **JavaScript** targets (`targets = ["erlang", "javascript"]` in `gleam.toml`). When you run `gleam build --target javascript`, Gleam compiles everything in `src/` - and Erlang FFI code doesn't exist in JavaScript, causing compilation to fail.
-
-### Why Not Just Remove JS Support?
-
-We wanted Yog to be usable in both ecosystems. JavaScript developers deserve good graph libraries too!
-
-### The Solution
-
-Keep target-specific benchmarks **outside** `src/`:
-- ✅ `src/` compiles on all targets (Erlang + JS)
-- ✅ `bench_erlang/` preserves powerful Erlang comparisons
-- ✅ Files keep `.gleam` extension (IDE support, syntax highlighting)
-- ✅ Gleam ignores them (only compiles `src/`)
-- ✅ Copy when needed: `cp bench_erlang/compare_digraph_acyclic.gleam src/yog/internal/bench/`
 
 ### Future: `bench_javascript/`?
 
 Following this pattern, we could add `bench_javascript/` for comparing Yog against popular JS libraries like:
+
 - **graphology** - Comprehensive graph library
 - **graphlib** - Used by Mermaid, D3, Dagre
 - **js-graph-algorithms** - Pure algorithm implementations
@@ -328,4 +301,4 @@ This structure lets us maintain comprehensive, target-specific benchmarks while 
 
 ---
 
-**Happy Benchmarking! 📊**
+### **Happy Benchmarking! 📊**

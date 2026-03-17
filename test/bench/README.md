@@ -6,11 +6,12 @@ Internal benchmarking suite for Yog graph algorithms.
 
 ```bash
 # Run the example
-gleam run -m internal/bench/simple_pathfinding
+gleam run -m bench/simple_pathfinding
 
 # Create your own
-cp src/yog/internal/bench/simple_pathfinding.gleam src/yog/internal/bench/my_benchmark.gleam
-gleam run -m internal/bench/my_benchmark
+cp test/bench/simple_pathfinding.gleam test/bench/my_benchmark.gleam
+# Update as needed
+gleam run -m bench/my_benchmark
 ```
 
 ## Files
@@ -18,30 +19,10 @@ gleam run -m internal/bench/my_benchmark
 - **`simple_pathfinding.gleam`** - Working example (use as template)
 - **`bench_utils.gleam`** - Graph generators and utilities
 
-### Erlang-Only Benchmarks
-
-The `bench_erlang/` directory at the project root contains benchmarks that compare Yog algorithms with Erlang's `:digraph` module. These benchmarks are only compatible with the Erlang target and won't compile for JavaScript.
-
-To run these benchmarks:
-1. Copy the desired benchmark file from `bench_erlang/` to `src/yog/internal/bench/`
-2. Run the benchmark with `gleam run -m internal/bench/compare_digraph_<name>`
-3. Delete the copied file when done (to keep the codebase JS-compatible)
-
-Example:
-```bash
-# Copy the benchmark
-cp bench_erlang/compare_digraph_acyclic.gleam src/yog/internal/bench/
-
-# Run it
-gleam run -m internal/bench/compare_digraph_acyclic
-
-# Clean up
-rm src/yog/internal/bench/compare_digraph_acyclic.gleam
-```
-
 ## Documentation
 
 See **`BENCHMARKING_GUIDE.md`** in the project root for:
+
 - Complete templates
 - Graph generator API
 - Best practices
@@ -51,17 +32,20 @@ See **`BENCHMARKING_GUIDE.md`** in the project root for:
 ## Quick Reference
 
 ### Graph Sizes
+
 - `bench_utils.Small` = 100 nodes
 - `bench_utils.Medium` = 1,000 nodes
 - `bench_utils.Large` = 10,000 nodes
 - `bench_utils.XLarge` = 100,000 nodes
 
 ### Graph Densities
+
 - `bench_utils.Sparse` = ~1% edges
 - `bench_utils.MediumDensity` = ~5% edges
 - `bench_utils.Dense` = ~20% edges
 
 ### Graph Generators
+
 ```gleam
 import yog/internal/bench/bench_utils
 
@@ -76,6 +60,7 @@ bench_utils.bipartite_graph(left, right)
 ```
 
 ### Basic Template
+
 ```gleam
 import gleam/int
 import gleamy/bench

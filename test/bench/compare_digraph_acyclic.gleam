@@ -5,11 +5,11 @@
 ////   gleam run -m internal/bench/compare_digraph_acyclic
 ////   rm src/yog/internal/bench/compare_digraph_acyclic.gleam
 
+import bench/bench_utils
 import gleam/dict
 import gleam/io
 import gleam/list
 import gleamy/bench
-import yog/internal/bench/bench_utils
 import yog/model.{type Graph}
 import yog/traversal
 
