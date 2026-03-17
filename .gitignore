@@ -1,7 +1,12 @@
 *.beam
 *.ez
+.env
+.env.*
 /build
+/packages/
 erl_crash.dump
-src/yog/internal/examples
-src/internal/bench
-src/playground
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+test/playground
