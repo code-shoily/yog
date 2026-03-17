@@ -32,7 +32,7 @@ MODULE_PATH="$1"
 ERLANG_MODULE="${MODULE_PATH//\//@}"
 
 echo "Building project..."
-/home/mafinar/.local/share/mise/installs/gleam/1.14.0/gleam build --target erlang
+gleam build --target erlang
 
 echo ""
 echo "Running tests for: $ERLANG_MODULE"
@@ -44,6 +44,6 @@ for dir in build/dev/erlang/*/ebin; do
   PA_FLAGS+=(-pa "$dir")
 done
 
-/home/mafinar/.local/share/mise/installs/erlang/28.3/bin/erl "${PA_FLAGS[@]}" \
-    -eval "eunit:test('${ERLANG_MODULE}', [verbose]), init:stop()" \
-    -noshell
+erl "${PA_FLAGS[@]}" \
+  -eval "eunit:test('${ERLANG_MODULE}', [verbose]), init:stop()" \
+  -noshell
