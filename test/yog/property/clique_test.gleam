@@ -2,7 +2,7 @@ import gleam/list
 import gleam/set
 import gleeunit/should
 import yog/model.{Undirected}
-import yog/properties/clique
+import yog/property/clique
 
 // Test finding max clique in a triangle (3-clique)
 pub fn max_clique_triangle_test() {

@@ -2,7 +2,7 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleeunit/should
 import yog
-import yog/properties/eulerian
+import yog/property/eulerian
 
 // ============= Eulerian Circuit Tests (Undirected) =============
 

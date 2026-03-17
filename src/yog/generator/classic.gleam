@@ -21,7 +21,7 @@
 //// ## Quick Start
 ////
 //// ```gleam
-//// import yog/generators/classic
+//// import yog/generator/classic
 //// import yog/model
 ////
 //// pub fn main() {

@@ -1,5 +1,5 @@
 import yog/model.{type Graph}
-import yog/properties/cyclicity as properties
+import yog/property/cyclicity as properties
 
 /// Error type representing why a graph cannot be treated as a DAG.
 pub type DagError {

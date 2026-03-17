@@ -1,6 +1,6 @@
 import gleam/int
 import gleam/io
-import yog/generators/random as generators
+import yog/generator/random as generators
 import yog/model
 
 pub fn main() {

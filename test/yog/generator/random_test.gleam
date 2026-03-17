@@ -1,7 +1,7 @@
 import gleam/list
 import gleeunit/should
 import yog/connectivity
-import yog/generators/random as generators
+import yog/generator/random as generators
 import yog/model
 
 // ============= Erdős-Rényi G(n,p) Tests =============

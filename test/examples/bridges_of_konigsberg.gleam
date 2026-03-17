@@ -2,7 +2,7 @@ import gleam/io
 import gleam/option.{None, Some}
 import gleam/string
 import yog
-import yog/properties/eulerian as properties
+import yog/property/eulerian as properties
 
 pub fn main() {
   io.println("=== The Seven Bridges of Königsberg ===\n")

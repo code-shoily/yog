@@ -79,12 +79,12 @@
 //// - **`yog/flow`** - Minimum cut algorithms
 ////   - Stoer-Wagner algorithm for global minimum cut
 ////
-//// - **`yog/properties`** - Eulerian paths and circuits
+//// - **`yog/property`** - Eulerian paths and circuits
 ////   - Detection of Eulerian paths and circuits
 ////   - Hierholzer's algorithm for finding paths
 ////   - Works on both directed and undirected graphs
 ////
-//// - **`yog/properties`** - Bipartite graph detection and matching
+//// - **`yog/property`** - Bipartite graph detection and matching
 ////   - Bipartite detection (2-coloring)
 ////   - Partition extraction (independent sets)
 ////   - Maximum matching (augmenting path algorithm)

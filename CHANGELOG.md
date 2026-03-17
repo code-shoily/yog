@@ -5,7 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 4.0.0 - Unreleased
+## 4.1.0 - UNRELEASED
+
+### Breaking Changes
+
+- **Module Naming Convention**: Renamed plural directories to singular for consistency with Gleam conventions:
+  - `yog/properties/*` → `yog/property/*`
+  - `yog/generators/*` → `yog/generator/*`
+
+### Added
+
+- **F# Comparison**: Added `GLEAM_FSHARP_COMPARISON.md` documenting feature parity, API differences, and migration guidance between the Gleam and F# implementations of Yog.
+
+### Changed
+
+- **Project Structure Reorganization**:
+  - Moved `examples/` → `test/examples/` for simpler execution without symlink hacks
+  - Moved `bench/` → `test/bench/` to consolidate test-related code
+
+## 4.0.0 - 2026-03-14
 
 ### Breaking Changes
 
@@ -15,7 +33,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Testing**: Exhaustive property-based testing using `qcheck` across core algorithms (pathfinding, connectivity, MST) and properties.
 
-- **Documentation**: Added comprehensive module-level docs to 22 modules including algorithm references with Wikipedia links, complexity tables, and usage examples. Modules: `connectivity`, `disjoint_set`, `model`, `mst`, `transform`, `traversal`, `io/*`, `flow/*`, `pathfinding/*`, `properties/*`, `dag`, `centrality`.
+- **Documentation**: Added comprehensive module-level docs to 22 modules including algorithm references with Wikipedia links, complexity tables, and usage examples. Modules: `connectivity`, `disjoint_set`, `model`, `mst`, `transform`, `traversal`, `io/*`, `flow/*`, `pathfinding/*`, `property/*`, `dag`, `centrality`.
+
+- **F# Comparison**: Added `GLEAM_FSHARP_COMPARISON.md` documenting feature parity, API differences, and migration guidance between the Gleam and F# implementations of Yog.
+
+### Changed
+
+- **Project Structure Reorganization**:
+  - Moved `examples/` → `test/examples/` for simpler execution without symlink hacks
+  - Moved `bench/` → `test/bench/` to consolidate test-related code
 
 ## 3.1.0 - 2026-03-10
 
@@ -49,9 +75,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `yog/min_cut` → `yog/flow/min_cut`
   - `yog/max_flow` → `yog/flow/max_flow`
   - `yog/topological_sort` → `yog/traversal`
-  - `yog/clique` → `yog/properties/clique`
-  - `yog/bipartite` → `yog/properties/bipartite`
-  - `yog/eulerian` → `yog/properties/eulerian`
+  - `yog/clique` → `yog/property/clique`
+  - `yog/bipartite` → `yog/property/bipartite`
+  - `yog/eulerian` → `yog/property/eulerian`
   - `yog/pathfinding` → `yog/pathfinding/dijkstra`, `yog/pathfinding/a_star`, `yog/pathfinding/bellman_ford`, `yog/pathfinding/floyd_warshall`
   - Facade modules removed; import specific modules (e.g., `yog/pathfinding/dijkstra`)
 - **Rendering**: `yog/render` split into `yog/io/*` (mermaid, dot, json)
@@ -70,7 +96,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `topological_sort`, `longest_path`, `transitive_closure`, `transitive_reduction`
   - `lowest_common_ancestors`, `count_reachability`
 - **Network Simplex** (`yog/flow/network_simplex`): Minimum cost flow solver
-- `is_acyclic`/`is_cyclic` re-exported from `yog/properties`
+- `is_acyclic`/`is_cyclic` re-exported from `yog/property`
 
 ## 2.2.1 - 2026-03-07
 
@@ -146,7 +172,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Max Flow (`yog/max_flow`): Edmonds-Karp algorithm
-- Graph Generators (`yog/generators`): Complete, cycle, path, star, wheel, bipartite, random graphs (Erdős-Rényi, Barabási-Albert, Watts-Strogatz)
+- Graph Generators (`yog/generator`): Complete, cycle, path, star, wheel, bipartite, random graphs (Erdős-Rényi, Barabási-Albert, Watts-Strogatz)
 - Stable Marriage (`yog/bipartite`): Gale-Shapley algorithm
 
 ## 1.2.0 - 2026-02-26

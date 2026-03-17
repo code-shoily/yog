@@ -3,7 +3,7 @@ import gleam/io
 import gleam/list
 import gleam/option.{None, Some}
 import yog/model
-import yog/properties/bipartite
+import yog/property/bipartite
 
 pub fn main() {
   // Job Assignment Problem: 3 Workers, 3 Tasks

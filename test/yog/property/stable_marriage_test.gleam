@@ -3,7 +3,7 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleam/set
 import gleeunit/should
-import yog/properties/bipartite
+import yog/property/bipartite
 
 // Classic stable marriage problem - 3 men, 3 women
 pub fn classic_three_couples_test() {

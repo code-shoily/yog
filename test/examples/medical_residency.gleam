@@ -3,7 +3,7 @@ import gleam/int
 import gleam/io
 import gleam/list
 import gleam/option
-import yog/properties/bipartite
+import yog/property/bipartite
 
 pub fn main() {
   io.println("--- Medical Residency Matching (NRMP Style) ---")
