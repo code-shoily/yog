@@ -99,44 +99,36 @@ We have some real-world projects that use Yog for graph algorithms:
 - [Lustre Graph Generator](https://github.com/code-shoily/lustre_graph_generator) ([Demo](https://code-shoily.github.io/lustre_graph_generator/)) - Showcases graph generation, topological sort and shortest distance feature of Yog.
 - [Advent of Code Solutions](https://github.com/code-shoily/aocgl/blob/main/wiki/tags/graph.md) - Multiple AoC puzzles solved using Yog's graph capabilities.
 
-Detailed examples are located in the [examples/](https://github.com/code-shoily/yog/tree/main/examples) directory:
+Detailed examples are located in the [test/examples/](https://github.com/code-shoily/yog/tree/main/test/examples) directory:
 
-- [Social Network Analysis](https://github.com/code-shoily/yog/blob/main/examples/social_network_analysis.gleam) - Finding communities using SCCs.
-- [Task Scheduling](https://github.com/code-shoily/yog/blob/main/examples/task_scheduling.gleam) - Basic topological sorting.
-- [GPS Navigation](https://github.com/code-shoily/yog/blob/main/examples/gps_navigation.gleam) - Shortest path using A* and heuristics.
-- [Network Cable Layout](https://github.com/code-shoily/yog/blob/main/examples/network_cable_layout.gleam) - Minimum Spanning Tree using Kruskal's.
-- [Network Bandwidth](https://github.com/code-shoily/yog/blob/main/examples/network_bandwidth.gleam) - ⭐ Max flow for bandwidth optimization with bottleneck analysis.
-- [Job Matching](https://github.com/code-shoily/yog/blob/main/examples/job_matching.gleam) - ⭐ Max flow for bipartite matching and assignment problems.
-- [Cave Path Counting](https://github.com/code-shoily/yog/blob/main/examples/cave_path_counting.gleam) - Custom DFS with backtracking.
-- [Task Ordering](https://github.com/code-shoily/yog/blob/main/examples/task_ordering.gleam) - Lexicographical topological sort.
-- [Bridges of Königsberg](https://github.com/code-shoily/yog/blob/main/examples/bridges_of_konigsberg.gleam) - Eulerian circuit and path detection.
-- [Global Minimum Cut](https://github.com/code-shoily/yog/blob/main/examples/global_min_cut.gleam) - Stoer-Wagner algorithm.
-- [Job Assignment](https://github.com/code-shoily/yog/blob/main/examples/job_assignment.gleam) - Bipartite maximum matching.
-- [Medical Residency](https://github.com/code-shoily/yog/blob/main/examples/medical_residency.gleam) - Stable marriage matching (Gale-Shapley algorithm).
-- [City Distance Matrix](https://github.com/code-shoily/yog/blob/main/examples/city_distance_matrix.gleam) - Floyd-Warshall for all-pairs shortest paths.
-- [Graph Generation Showcase](https://github.com/code-shoily/yog/blob/main/examples/graph_generation_showcase.gleam) - ⭐ All 9 classic graph patterns with statistics.
-- [DOT rendering](https://github.com/code-shoily/yog/blob/main/examples/render_dot.gleam) - Exporting graphs to Graphviz format.
-- [Mermaid rendering](https://github.com/code-shoily/yog/blob/main/examples/render_mermaid.gleam) - Generating Mermaid diagrams.
-- [JSON rendering](https://github.com/code-shoily/yog/blob/main/examples/render_json.gleam) - Exporting graphs to JSON for web use.
-- [Graph creation](https://github.com/code-shoily/yog/blob/main/examples/graph_creation.gleam) - Comprehensive guide to 10+ ways of creating graphs.
+- [Social Network Analysis](https://github.com/code-shoily/yog/blob/main/test/examples/social_network_analysis.gleam) - Finding communities using SCCs.
+- [Task Scheduling](https://github.com/code-shoily/yog/blob/main/test/examples/task_scheduling.gleam) - Basic topological sorting.
+- [GPS Navigation](https://github.com/code-shoily/yog/blob/main/test/examples/gps_navigation.gleam) - Shortest path using A* and heuristics.
+- [Network Cable Layout](https://github.com/code-shoily/yog/blob/main/test/examples/network_cable_layout.gleam) - Minimum Spanning Tree using Kruskal's.
+- [Network Bandwidth](https://github.com/code-shoily/yog/blob/main/test/examples/network_bandwidth.gleam) - ⭐ Max flow for bandwidth optimization with bottleneck analysis.
+- [Job Matching](https://github.com/code-shoily/yog/blob/main/test/examples/job_matching.gleam) - ⭐ Max flow for bipartite matching and assignment problems.
+- [Cave Path Counting](https://github.com/code-shoily/yog/blob/main/test/examples/cave_path_counting.gleam) - Custom DFS with backtracking.
+- [Task Ordering](https://github.com/code-shoily/yog/blob/main/test/examples/task_ordering.gleam) - Lexicographical topological sort.
+- [Bridges of Königsberg](https://github.com/code-shoily/yog/blob/main/test/examples/bridges_of_konigsberg.gleam) - Eulerian circuit and path detection.
+- [Global Minimum Cut](https://github.com/code-shoily/yog/blob/main/test/examples/global_min_cut.gleam) - Stoer-Wagner algorithm.
+- [Job Assignment](https://github.com/code-shoily/yog/blob/main/test/examples/job_assignment.gleam) - Bipartite maximum matching.
+- [Medical Residency](https://github.com/code-shoily/yog/blob/main/test/examples/medical_residency.gleam) - Stable marriage matching (Gale-Shapley algorithm).
+- [City Distance Matrix](https://github.com/code-shoily/yog/blob/main/test/examples/city_distance_matrix.gleam) - Floyd-Warshall for all-pairs shortest paths.
+- [Graph Generation Showcase](https://github.com/code-shoily/yog/blob/main/test/examples/graph_generation_showcase.gleam) - ⭐ All 9 classic graph patterns with statistics.
+- [DOT rendering](https://github.com/code-shoily/yog/blob/main/test/examples/render_dot.gleam) - Exporting graphs to Graphviz format.
+- [Mermaid rendering](https://github.com/code-shoily/yog/blob/main/test/examples/render_mermaid.gleam) - Generating Mermaid diagrams.
+- [JSON rendering](https://github.com/code-shoily/yog/blob/main/test/examples/render_json.gleam) - Exporting graphs to JSON for web use.
+- [Graph creation](https://github.com/code-shoily/yog/blob/main/test/examples/graph_creation.gleam) - Comprehensive guide to 10+ ways of creating graphs.
 
 ### Running Examples Locally
 
-The examples live in the `examples/` directory. To run them with `gleam run`, create a one-time symlink that makes Gleam's module system aware of them:
+The examples live in the `test/examples/` directory and can be run directly:
 
 ```sh
-ln -sf "$(pwd)/examples" src/yog/internal/examples
-```
-
-Then run any example by its module name:
-
-```sh
-gleam run -m yog/internal/examples/gps_navigation
-gleam run -m yog/internal/examples/network_bandwidth
+gleam run -m examples/gps_navigation
+gleam run -m examples/network_bandwidth
 # etc.
 ```
-
-> The symlink is listed in `.gitignore` and is not committed to the repository, so it won't affect CI or other contributors' environments.
 
 ## Algorithm Selection Guide
 
@@ -169,13 +161,7 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 Yog includes built-in benchmarking utilities using `gleamy/bench`. Run the example benchmark:
 
 ```bash
-gleam run -m internal/bench/simple_pathfinding
-```
-
-Or use the provided script to run all benchmarks:
-
-```bash
-./run_benchmarks.sh
+gleam run -m bench/simple_pathfinding
 ```
 
 For detailed instructions on creating custom benchmarks, interpreting results, and comparing against reference implementations, see the [Benchmarking Guide](BENCHMARKING_GUIDE.md).

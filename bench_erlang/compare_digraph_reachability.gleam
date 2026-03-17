@@ -1,15 +1,15 @@
 ////  Yog vs Erlang digraph - Reachability Comparison
 ////
-//// This benchmark is Erlang-only and must be copied to src/yog/internal/bench/ first:
-////   cp bench_erlang/compare_digraph_reachability.gleam src/yog/internal/bench/
-////   gleam run -m internal/bench/compare_digraph_reachability
-////   rm src/yog/internal/bench/compare_digraph_reachability.gleam
+//// Run this benchmark with: `gleam run -m bench/compare_digraph_reachability`
+//// 
+//// *Please Note:* You will need to move this file to test/bench before running 
+//// the command above.
 
+import bench/bench_utils
 import gleam/dict
 import gleam/io
 import gleam/list
 import gleamy/bench
-import yog/internal/bench/bench_utils
 import yog/model.{type Graph}
 import yog/traversal
 
