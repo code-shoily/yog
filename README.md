@@ -161,13 +161,7 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 Yog includes built-in benchmarking utilities using `gleamy/bench`. Run the example benchmark:
 
 ```bash
-gleam run -m internal/bench/simple_pathfinding
-```
-
-Or use the provided script to run all benchmarks:
-
-```bash
-./run_benchmarks.sh
+gleam run -m bench/simple_pathfinding
 ```
 
 For detailed instructions on creating custom benchmarks, interpreting results, and comparing against reference implementations, see the [Benchmarking Guide](BENCHMARKING_GUIDE.md).
