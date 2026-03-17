@@ -5,7 +5,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## Quick Summary
 
 | Aspect | Gleam | F# |
-|--------|-------|-----|
+| -------- | ------- | ----- |
 | **Repository** | [code-shoily/yog](https://github.com/code-shoily/yog) | [code-shoily/yog-fsharp](https://github.com/code-shoily/yog-fsharp) |
 | **Language** | Gleam (BEAM/Erlang VM) | F# (.NET) |
 | **Package** | [hex.pm/packages/yog](https://hex.pm/packages/yog) | [nuget.org/packages/Yog.FSharp](https://www.nuget.org/packages/Yog.FSharp/) |
@@ -17,7 +17,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## Core Data Structures
 
 | Feature | Gleam | F# | Notes |
-|---------|-------|-----|-------|
+| --------- | ------- | ----- | ------- |
 | **Graph<'n, 'e>** | ✅ | ✅ | Directed/Undirected with generic node/edge data |
 | **MultiGraph** | ✅ | ✅ | Parallel edges between nodes |
 | **DAG (Directed Acyclic Graph)** | ✅ | ✅ | Type-safe wrapper with cycle prevention |
@@ -26,7 +26,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## Pathfinding Algorithms
 
 | Algorithm | Gleam | F# | Complexity |
-|-----------|-------|-----|------------|
+| ----------- | ------- | ----- | ------------ |
 | **Dijkstra** | ✅ | ✅ | O((V+E) log V) |
 | **A\*** | ✅ | ✅ | O((V+E) log V) |
 | **Bellman-Ford** | ✅ | ✅ | O(VE) |
@@ -39,7 +39,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## Graph Traversal
 
 | Algorithm | Gleam | F# | Notes |
-|-----------|-------|-----|-------|
+| ----------- | ------- | ----- | ------- |
 | **BFS** | ✅ | ✅ | Breadth-first search |
 | **DFS** | ✅ | ✅ | Depth-first search |
 | **Early Termination** | ✅ | ✅ | Stop on goal found |
@@ -52,7 +52,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## Flow & Optimization
 
 | Algorithm | Gleam | F# | Status |
-|-----------|-------|-----|--------|
+| ----------- | ------- | ----- | -------- |
 | **Edmonds-Karp** (Max Flow) | ✅ | ✅ | Both fully functional |
 | **Min Cut from Max Flow** | ✅ | ✅ | Both fully functional |
 | **Stoer-Wagner** (Global Min Cut) | ✅ | ✅ | Both fully functional |
@@ -63,7 +63,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ### Network Simplex Details
 
 | Component | Gleam | F# |
-|-----------|-------|-----|
+| ----------- | ------- | ----- |
 | Initial state setup | ✅ | ✅ |
 | Demand validation | ✅ | ✅ |
 | Entering edge selection | ✅ | ✅ |
@@ -79,7 +79,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## Graph Properties & Analysis
 
 | Feature | Gleam | F# | Notes |
-|---------|-------|-----|-------|
+| --------- | ------- | ----- | ------- |
 | **Connectivity** | ✅ | ✅ | |
 | - Bridges | ✅ | ✅ | Tarjan's algorithm |
 | - Articulation Points | ✅ | ✅ | Tarjan's algorithm |
@@ -95,7 +95,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## Centrality Measures
 
 | Measure | Gleam | F# | Notes |
-|---------|-------|-----|-------|
+| --------- | ------- | ----- | ------- |
 | **Degree Centrality** | ✅ | ✅ | |
 | **Betweenness Centrality** | ✅ | ✅ | Int & Float variants |
 | **Closeness Centrality** | ✅ | ✅ | Int & Float variants |
@@ -110,7 +110,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## Minimum Spanning Trees
 
 | Algorithm | Gleam | F# | Notes |
-|-----------|-------|-----|-------|
+| ----------- | ------- | ----- | ------- |
 | **Kruskal's MST** | ✅ | ✅ | O(E log E) |
 | **Prim's MST** | ✅ | ✅ | O(E log V) |
 
@@ -121,7 +121,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ### Classic Deterministic Graphs
 
 | Generator | Gleam | F# | Description |
-|-----------|-------|-----|-------------|
+| ----------- | ------- | ----- | ------------- |
 | **Complete (K_n)** | ✅ | ✅ | Every node connected |
 | **Cycle (C_n)** | ✅ | ✅ | Ring structure |
 | **Path (P_n)** | ✅ | ✅ | Linear chain |
@@ -138,7 +138,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ### Random Network Models
 
 | Generator | Gleam | F# | Description |
-|-----------|-------|-----|-------------|
+| ----------- | ------- | ----- | ------------- |
 | **Erdős-Rényi G(n,p)** | ✅ | ✅ | Edge probability p |
 | **Erdős-Rényi G(n,m)** | ✅ | ✅ | Exactly m edges |
 | **Barabási-Albert** | ✅ | ✅ | Scale-free networks |
@@ -150,7 +150,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## Graph Builders
 
 | Builder | Gleam | F# | Use Case |
-|---------|-------|-----|----------|
+| --------- | ------- | ----- | ---------- |
 | **Labeled Builder** | ✅ | ✅ | Use custom labels instead of IDs |
 | **Live Builder** | ✅ | ✅ | Interactive construction |
 | **Grid Builder** | ✅ | ✅ | Lattice/grid graphs |
@@ -160,7 +160,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## Graph Transformations
 
 | Operation | Gleam | F# | Notes |
-|-----------|-------|-----|-------|
+| ----------- | ------- | ----- | ------- |
 | **Transpose** | ✅ | ✅ | O(1) edge reversal |
 | **Map Nodes** | ✅ | ✅ | Transform node data |
 | **Map Edges** | ✅ | ✅ | Transform edge data |
@@ -175,7 +175,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## Visualization & I/O
 
 | Format | Gleam | F# | Purpose |
-|--------|-------|-----|---------|
+| -------- | ------- | ----- | --------- |
 | **DOT (Graphviz)** | ✅ | ✅ | Professional visualization |
 | **JSON** | ✅ | ✅ | Web APIs, data interchange |
 | **Mermaid** | ✅ | ✅ | Markdown diagrams |
@@ -189,7 +189,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## DAG-Specific Algorithms
 
 | Feature | Gleam | F# | Notes |
-|---------|-------|-----|-------|
+| --------- | ------- | ----- | ------- |
 | **Type-safe DAG wrapper** | ✅ | ✅ | Prevents cycles at compile time |
 | **Longest Path** | ✅ | ✅ | Critical path analysis |
 | **Topological Sort** | ✅ | ✅ | Guaranteed success on DAG |
@@ -201,7 +201,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## MultiGraph Support
 
 | Feature | Gleam | F# | Notes |
-|---------|-------|-----|-------|
+| --------- | ------- | ----- | ------- |
 | **Parallel Edges** | ✅ | ✅ | Multiple edges between nodes |
 | **Edge IDs** | ✅ | ✅ | Unique identification |
 | **Eulerian for MultiGraphs** | ✅ | ✅ | Specialized implementation |
@@ -212,7 +212,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## Performance Optimizations
 
 | Feature | Gleam | F# |
-|---------|-------|-----|
+| --------- | ------- | ----- |
 | **Pairing Heap (Priority Queue)** | ✅ | ❌ |
 | **Two-List Queue (BFS)** | ✅ | ❌ |
 | **Mutable Arrays for Hot Paths** | Limited | ✅ |
@@ -223,7 +223,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## Testing & Quality
 
 | Aspect | Gleam | F# |
-|--------|-------|-----|
+| -------- | ------- | ----- |
 | **Unit Tests** | ✅ Extensive | ✅ Extensive |
 | **Property-Based Tests** | ✅ qcheck | ✅ FsCheck |
 | **Example Count** | 25+ | 37+ |
@@ -233,7 +233,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## Platform & Ecosystem
 
 | Aspect | Gleam | F# |
-|--------|-------|-----|
+| -------- | ------- | ----- |
 | **Runtime** | BEAM/Erlang VM | .NET CLR |
 | **Target Platforms** | Erlang, JavaScript | Windows, Linux, macOS |
 | **Concurrency Model** | Actor model (OTP) | async/await, Tasks |
@@ -243,6 +243,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## Unique Features
 
 ### Gleam Only
+
 - ✅ **Complete Network Simplex** - Full min cost flow implementation (930 LOC)
 - ✅ **Edge Contraction** - Graph transformation
 - ✅ **Pairing Heap** - Custom priority queue for pathfinding
@@ -250,6 +251,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 - ✅ **Production Ready** - Stable 0.6.0 release
 
 ### F# Only
+
 - ✅ **GraphML Export/Import** - XML graph format for Gephi, yEd, Cytoscape
 - ✅ **GDF Export** - Gephi lightweight format
 - ✅ **More Examples** (37 vs 25)
@@ -258,13 +260,17 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## Migration Guide
 
 ### F# → Gleam
+
 **Straightforward migration**, but note:
+
 - ✅ Network Simplex works correctly in Gleam
 - ✅ All core algorithms present and tested
 - ❌ No GraphML/GDF support yet (coming soon)
 
 ### Gleam → F#
+
 **Mostly straightforward**, but watch for:
+
 - ⚠️ Network Simplex is incomplete in F# (use Gleam or wait for update)
 - ✅ All other algorithms are functionally equivalent
 - ✅ F# has additional export formats (GraphML, GDF)
@@ -272,7 +278,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## Version History
 
 | Version | Gleam | F# |
-|---------|-------|-----|
+| --------- | ------- | ----- |
 | **Latest** | 0.6.0 | 0.5.0 |
 | **First Release** | 2024 | 2025 |
 | **Stability** | Stable | Pre-release |
@@ -280,6 +286,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## Recommendations
 
 ### Choose Gleam If:
+
 - ✅ Building BEAM/Erlang applications or microservices
 - ✅ Need **min cost flow** (Network Simplex) in production
 - ✅ Want battle-tested, stable code (0.6.0+)
@@ -288,6 +295,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 - ✅ Using Phoenix, Nerves, or other BEAM ecosystem tools
 
 ### Choose F# If:
+
 - ✅ Working in **.NET ecosystem**
 - ✅ Need **GraphML/GDF** export for Gephi/yEd integration
 - ✅ Want seamless C# interop
@@ -298,6 +306,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 ## Roadmap
 
 ### Gleam Planned
+
 - [ ] **GraphML Export/Import** - Add XML-based graph format support
 - [ ] **GDF Export** - Add Gephi lightweight format
 - [ ] More examples to match F# (target: 35+)
@@ -305,11 +314,13 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 - [ ] Additional random graph models
 
 ### F# Planned
+
 - [ ] **Complete Network Simplex** - Port full pivot logic from Gleam
 - [ ] Edge contraction transformation
 - [ ] Custom data structures (Pairing Heap, Two-List Queue)
 
 ### Both
+
 - [ ] Additional centrality measures
 - [ ] Graph isomorphism detection
 - [ ] Community detection algorithms
@@ -334,6 +345,7 @@ Both implementations are **high-quality, feature-rich graph libraries** with exc
 ### Key Differentiators
 
 **Gleam Strengths:**
+
 - ✅ Complete Network Simplex (production-ready min cost flow)
 - ✅ Edge contraction
 - ✅ Battle-tested on BEAM VM
@@ -341,11 +353,13 @@ Both implementations are **high-quality, feature-rich graph libraries** with exc
 - ✅ Custom optimized data structures
 
 **F# Strengths:**
+
 - ✅ GraphML/GDF export formats
 - ✅ More examples (37 vs 25)
 - ✅ .NET ecosystem integration
 
 **Recommended Use:**
+
 - **Production min cost flow problems**: Choose Gleam
 - **Gephi/yEd visualization workflows**: Choose F# (or wait for Gleam support)
 - **Platform-specific**: BEAM → Gleam, .NET → F#
