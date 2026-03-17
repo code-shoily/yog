@@ -9,4 +9,5 @@ erl_crash.dump
 *.swo
 .DS_Store
 Thumbs.db
+/.vscode/
 test/playground
