@@ -37,3 +37,10 @@ pub fn dict_update_inner(
     Error(_) -> outer
   }
 }
+
+/// Halts a process immediately.
+/// Useful for exploratory programming and fix those
+/// annoying pauses before terminal exits.
+@external(erlang, "erlang", "halt")
+@external(javascript, "node:process", "exit")
+pub fn exit(status: Int) -> Nil
