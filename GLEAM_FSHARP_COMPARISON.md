@@ -267,7 +267,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 - ✅ All core algorithms present and tested
 - ❌ No GraphML/GDF support yet (coming soon)
 
-### Gleam → F#
+### Gleam →  
 
 **Mostly straightforward**, but watch for:
 
@@ -285,7 +285,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 
 ## Recommendations
 
-### Choose Gleam If:
+### Choose Gleam If
 
 - ✅ Building BEAM/Erlang applications or microservices
 - ✅ Need **min cost flow** (Network Simplex) in production
@@ -294,7 +294,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 - ✅ Building fault-tolerant, distributed systems
 - ✅ Using Phoenix, Nerves, or other BEAM ecosystem tools
 
-### Choose F# If:
+### Choose F# If
 
 - ✅ Working in **.NET ecosystem**
 - ✅ Need **GraphML/GDF** export for Gephi/yEd integration
