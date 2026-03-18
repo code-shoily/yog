@@ -24,15 +24,13 @@ fn assert_float_close(actual: Float, expected: Float) -> Nil {
 pub fn degree_undirected_star_test() {
   // Star graph: node 1 connected to 2, 3, 4
   // 1 has degree 3 (max), others have degree 1
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, "center")
     |> model.add_node(2, "leaf")
     |> model.add_node(3, "leaf")
     |> model.add_node(4, "leaf")
-  let assert Ok(g) = model.add_edge(g, from: 1, to: 2, with: 1)
-  let assert Ok(g) = model.add_edge(g, from: 1, to: 3, with: 1)
-  let assert Ok(g) = model.add_edge(g, from: 1, to: 4, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(1, 4, 1)])
 
   let scores = centrality.degree(g, centrality.TotalDegree)
 
@@ -47,18 +45,20 @@ pub fn degree_undirected_star_test() {
 pub fn degree_undirected_complete_graph_test() {
   // Complete graph K4: every node connected to every other node
   // Each node has degree 3, max possible is 3
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_node(4, Nil)
-  let assert Ok(g) = model.add_edge(g, from: 1, to: 2, with: 1)
-  let assert Ok(g) = model.add_edge(g, from: 1, to: 3, with: 1)
-  let assert Ok(g) = model.add_edge(g, from: 1, to: 4, with: 1)
-  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
-  let assert Ok(g) = model.add_edge(g, from: 2, to: 4, with: 1)
-  let assert Ok(g) = model.add_edge(g, from: 3, to: 4, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(1, 3, 1),
+      #(1, 4, 1),
+      #(2, 3, 1),
+      #(2, 4, 1),
+      #(3, 4, 1),
+    ])
 
   let scores = centrality.degree(g, centrality.TotalDegree)
 
@@ -72,15 +72,13 @@ pub fn degree_undirected_complete_graph_test() {
 pub fn degree_undirected_path_test() {
   // Path graph: 1-2-3-4
   // Endpoints have degree 1, middle nodes have degree 2
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_node(4, Nil)
-  let assert Ok(g) = model.add_edge(g, from: 1, to: 2, with: 1)
-  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
-  let assert Ok(g) = model.add_edge(g, from: 3, to: 4, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 4, 1)])
 
   let scores = centrality.degree(g, centrality.TotalDegree)
 
@@ -134,14 +132,12 @@ pub fn degree_directed_out_degree_test() {
   // Node 1: out-degree 2
   // Node 2: out-degree 1
   // Node 3: out-degree 0
-  let g =
+  let assert Ok(g) =
     model.new(model.Directed)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
-  let assert Ok(g) = model.add_edge(g, from: 1, to: 2, with: 1)
-  let assert Ok(g) = model.add_edge(g, from: 1, to: 3, with: 1)
-  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(2, 3, 1)])
 
   let scores = centrality.degree(g, centrality.OutDegree)
 
@@ -161,14 +157,12 @@ pub fn degree_directed_in_degree_test() {
   // Node 1: in-degree 0
   // Node 2: in-degree 1
   // Node 3: in-degree 2
-  let g =
+  let assert Ok(g) =
     model.new(model.Directed)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
-  let assert Ok(g) = model.add_edge(g, from: 1, to: 2, with: 1)
-  let assert Ok(g) = model.add_edge(g, from: 1, to: 3, with: 1)
-  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(2, 3, 1)])
 
   let scores = centrality.degree(g, centrality.InDegree)
 
@@ -188,14 +182,12 @@ pub fn degree_directed_total_degree_test() {
   // Node 1: in 0 + out 2 = 2
   // Node 2: in 1 + out 1 = 2
   // Node 3: in 2 + out 0 = 2
-  let g =
+  let assert Ok(g) =
     model.new(model.Directed)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
-  let assert Ok(g) = model.add_edge(g, from: 1, to: 2, with: 1)
-  let assert Ok(g) = model.add_edge(g, from: 1, to: 3, with: 1)
-  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(2, 3, 1)])
 
   let scores = centrality.degree(g, centrality.TotalDegree)
 

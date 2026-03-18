@@ -13,9 +13,7 @@ pub fn has_eulerian_circuit_triangle_test() {
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 1, with: 1)
+    |> yog.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 1, 1)])
 
   eulerian.has_eulerian_circuit(graph)
   |> should.be_true()
@@ -29,10 +27,7 @@ pub fn has_eulerian_circuit_square_test() {
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 4, to: 1, with: 1)
+    |> yog.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 4, 1), #(4, 1, 1)])
 
   eulerian.has_eulerian_circuit(graph)
   |> should.be_true()
@@ -45,8 +40,7 @@ pub fn has_eulerian_circuit_line_fails_test() {
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
+    |> yog.add_edges([#(1, 2, 1), #(2, 3, 1)])
 
   eulerian.has_eulerian_circuit(graph)
   |> should.be_false()
@@ -60,9 +54,7 @@ pub fn has_eulerian_circuit_star_fails_test() {
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 4, with: 1)
+    |> yog.add_edges([#(1, 2, 1), #(1, 3, 1), #(1, 4, 1)])
 
   eulerian.has_eulerian_circuit(graph)
   |> should.be_false()
@@ -78,12 +70,14 @@ pub fn has_eulerian_circuit_disconnected_fails_test() {
     |> yog.add_node(4, Nil)
     |> yog.add_node(5, Nil)
     |> yog.add_node(6, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 1, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 4, to: 5, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 5, to: 6, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 6, to: 4, with: 1)
+    |> yog.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 1, 1),
+      #(4, 5, 1),
+      #(5, 6, 1),
+      #(6, 4, 1),
+    ])
 
   eulerian.has_eulerian_circuit(graph)
   |> should.be_false()
@@ -105,8 +99,7 @@ pub fn has_eulerian_path_line_test() {
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
+    |> yog.add_edges([#(1, 2, 1), #(2, 3, 1)])
 
   eulerian.has_eulerian_path(graph)
   |> should.be_true()
@@ -119,9 +112,7 @@ pub fn has_eulerian_path_triangle_test() {
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 1, with: 1)
+    |> yog.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 1, 1)])
 
   eulerian.has_eulerian_path(graph)
   |> should.be_true()
@@ -135,9 +126,7 @@ pub fn has_eulerian_path_star_fails_test() {
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 4, with: 1)
+    |> yog.add_edges([#(1, 2, 1), #(1, 3, 1), #(1, 4, 1)])
 
   eulerian.has_eulerian_path(graph)
   |> should.be_false()
@@ -152,11 +141,13 @@ pub fn has_eulerian_path_house_test() {
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 4, to: 1, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 4, with: 1)
+    |> yog.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 4, 1),
+      #(4, 1, 1),
+      #(2, 4, 1),
+    ])
 
   eulerian.has_eulerian_path(graph)
   |> should.be_true()
@@ -170,9 +161,7 @@ pub fn find_eulerian_circuit_triangle_test() {
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 1, with: 1)
+    |> yog.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 1, 1)])
 
   case eulerian.find_eulerian_circuit(graph) {
     None -> should.fail()
@@ -197,10 +186,7 @@ pub fn find_eulerian_circuit_square_test() {
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 4, to: 1, with: 1)
+    |> yog.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 4, 1), #(4, 1, 1)])
 
   case eulerian.find_eulerian_circuit(graph) {
     None -> should.fail()
@@ -224,8 +210,7 @@ pub fn find_eulerian_circuit_line_fails_test() {
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
+    |> yog.add_edges([#(1, 2, 1), #(2, 3, 1)])
 
   eulerian.find_eulerian_circuit(graph)
   |> should.equal(None)
@@ -239,8 +224,7 @@ pub fn find_eulerian_path_line_test() {
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
+    |> yog.add_edges([#(1, 2, 1), #(2, 3, 1)])
 
   case eulerian.find_eulerian_path(graph) {
     None -> should.fail()
@@ -268,9 +252,7 @@ pub fn find_eulerian_path_triangle_returns_circuit_test() {
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 1, with: 1)
+    |> yog.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 1, 1)])
 
   case eulerian.find_eulerian_path(graph) {
     None -> should.fail()
@@ -289,9 +271,7 @@ pub fn find_eulerian_path_star_fails_test() {
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 4, with: 1)
+    |> yog.add_edges([#(1, 2, 1), #(1, 3, 1), #(1, 4, 1)])
 
   eulerian.find_eulerian_path(graph)
   |> should.equal(None)
@@ -306,9 +286,7 @@ pub fn has_eulerian_circuit_directed_cycle_test() {
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 1, with: 1)
+    |> yog.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 1, 1)])
 
   eulerian.has_eulerian_circuit(graph)
   |> should.be_true()
@@ -321,8 +299,7 @@ pub fn has_eulerian_circuit_directed_unbalanced_fails_test() {
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
+    |> yog.add_edges([#(1, 2, 1), #(2, 3, 1)])
 
   eulerian.has_eulerian_circuit(graph)
   |> should.be_false()
@@ -338,8 +315,7 @@ pub fn has_eulerian_path_directed_line_test() {
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
+    |> yog.add_edges([#(1, 2, 1), #(2, 3, 1)])
 
   eulerian.has_eulerian_path(graph)
   |> should.be_true()
@@ -351,9 +327,7 @@ pub fn find_eulerian_circuit_directed_cycle_test() {
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 1, with: 1)
+    |> yog.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 1, 1)])
 
   case eulerian.find_eulerian_circuit(graph) {
     None -> should.fail()
@@ -376,8 +350,7 @@ pub fn find_eulerian_path_directed_line_test() {
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
+    |> yog.add_edges([#(1, 2, 1), #(2, 3, 1)])
 
   case eulerian.find_eulerian_path(graph) {
     None -> should.fail()
@@ -409,12 +382,14 @@ pub fn eulerian_circuit_k4_minus_edge_test() {
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 4, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 4, with: 1)
-  // Missing: 3-4
+    |> yog.add_edges([
+      #(1, 2, 1),
+      #(1, 3, 1),
+      #(1, 4, 1),
+      #(2, 3, 1),
+      #(2, 4, 1),
+      // Missing: 3-4
+    ])
 
   // Degrees: 1=3(odd), 2=3(odd), 3=2(even), 4=2(even)
   // This should have Eulerian path but not circuit

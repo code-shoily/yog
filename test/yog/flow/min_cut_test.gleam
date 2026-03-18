@@ -34,9 +34,11 @@ pub fn min_cut_triangle_test() {
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 1, with: 1)
+    |> yog.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 1, 1),
+    ])
 
   let result = min_cut.global_min_cut(in: graph)
 
@@ -54,10 +56,12 @@ pub fn min_cut_square_test() {
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 4, to: 1, with: 1)
+    |> yog.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 4, 1),
+      #(4, 1, 1),
+    ])
 
   let result = min_cut.global_min_cut(in: graph)
 
@@ -74,11 +78,13 @@ pub fn min_cut_square_with_diagonal_test() {
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 4, to: 1, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 3, with: 1)
+    |> yog.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 4, 1),
+      #(4, 1, 1),
+      #(1, 3, 1),
+    ])
 
   let result = min_cut.global_min_cut(in: graph)
 
@@ -98,9 +104,11 @@ pub fn min_cut_weighted_path_test() {
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 10)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 4, with: 10)
+    |> yog.add_edges([
+      #(1, 2, 10),
+      #(2, 3, 1),
+      #(3, 4, 10),
+    ])
 
   let result = min_cut.global_min_cut(in: graph)
 
@@ -121,16 +129,18 @@ pub fn min_cut_bottleneck_test() {
     |> yog.add_node(4, Nil)
     |> yog.add_node(5, Nil)
     |> yog.add_node(6, Nil)
-    // Left triangle
-    |> yog.add_edge(from: 1, to: 2, with: 10)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 10)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 1, with: 10)
-  // Right triangle
-  let assert Ok(graph) = yog.add_edge(graph, from: 4, to: 5, with: 10)
-  let assert Ok(graph) = yog.add_edge(graph, from: 5, to: 6, with: 10)
-  let assert Ok(graph) = yog.add_edge(graph, from: 6, to: 4, with: 10)
-  // Bridge
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 4, with: 1)
+    |> yog.add_edges([
+      // Left triangle
+      #(1, 2, 10),
+      #(2, 3, 10),
+      #(3, 1, 10),
+      // Right triangle
+      #(4, 5, 10),
+      #(5, 6, 10),
+      #(6, 4, 10),
+      // Bridge
+      #(3, 4, 1),
+    ])
 
   let result = min_cut.global_min_cut(in: graph)
 
@@ -155,12 +165,14 @@ pub fn min_cut_k4_test() {
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 4, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 4, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 4, with: 1)
+    |> yog.add_edges([
+      #(1, 2, 1),
+      #(1, 3, 1),
+      #(1, 4, 1),
+      #(2, 3, 1),
+      #(2, 4, 1),
+      #(3, 4, 1),
+    ])
 
   let result = min_cut.global_min_cut(in: graph)
 
@@ -183,11 +195,12 @@ pub fn min_cut_parallel_edges_test() {
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 5)
-  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 2, with: 3)
-  // Parallel edge
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 4, with: 1)
+    |> yog.add_edges([
+      #(1, 2, 5),
+      #(1, 2, 3),
+      #(2, 3, 1),
+      #(3, 4, 1),
+    ])
 
   let result = min_cut.global_min_cut(in: graph)
 
@@ -205,10 +218,12 @@ pub fn min_cut_star_graph_test() {
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
     |> yog.add_node(5, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 4, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 5, with: 1)
+    |> yog.add_edges([
+      #(1, 2, 1),
+      #(1, 3, 1),
+      #(1, 4, 1),
+      #(1, 5, 1),
+    ])
 
   let result = min_cut.global_min_cut(in: graph)
 
@@ -238,18 +253,20 @@ pub fn min_cut_aoc_style_test() {
     |> yog.add_node(4, Nil)
     |> yog.add_node(5, Nil)
     |> yog.add_node(6, Nil)
-    // Cluster 1 (densely connected with heavy edges)
-    |> yog.add_edge(from: 1, to: 2, with: 10)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 10)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 1, with: 10)
-  // Cluster 2 (densely connected with heavy edges)
-  let assert Ok(graph) = yog.add_edge(graph, from: 4, to: 5, with: 10)
-  let assert Ok(graph) = yog.add_edge(graph, from: 5, to: 6, with: 10)
-  let assert Ok(graph) = yog.add_edge(graph, from: 6, to: 4, with: 10)
-  // Three light bridges between clusters (the minimum cut)
-  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 4, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 5, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 6, with: 1)
+    |> yog.add_edges([
+      // Cluster 1 (densely connected with heavy edges)
+      #(1, 2, 10),
+      #(2, 3, 10),
+      #(3, 1, 10),
+      // Cluster 2 (densely connected with heavy edges)
+      #(4, 5, 10),
+      #(5, 6, 10),
+      #(6, 4, 10),
+      // Three light bridges between clusters (the minimum cut)
+      #(1, 4, 1),
+      #(2, 5, 1),
+      #(3, 6, 1),
+    ])
 
   let result = min_cut.global_min_cut(in: graph)
 
@@ -299,10 +316,11 @@ pub fn min_cut_self_loop_test() {
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 1, with: 100)
-  // Self-loop
+    |> yog.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(1, 1, 100),
+    ])
 
   let result = min_cut.global_min_cut(in: graph)
 

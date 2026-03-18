@@ -13,8 +13,7 @@ pub fn topo_sort_linear_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1)])
 
   let result = topo.topological_sort(graph)
 
@@ -53,8 +52,7 @@ pub fn topo_sort_two_independent_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+    |> model.add_edges([#(1, 3, 1), #(2, 3, 1)])
 
   let result = topo.topological_sort(graph)
 
@@ -80,8 +78,7 @@ pub fn topo_sort_fork_test() {
     |> model.add_node(1, "Root")
     |> model.add_node(2, "Left")
     |> model.add_node(3, "Right")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1)])
 
   let result = topo.topological_sort(graph)
 
@@ -109,8 +106,7 @@ pub fn topo_sort_join_test() {
     |> model.add_node(1, "Left")
     |> model.add_node(2, "Right")
     |> model.add_node(3, "Bottom")
-    |> model.add_edge(from: 1, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+    |> model.add_edges([#(1, 3, 1), #(2, 3, 1)])
 
   let result = topo.topological_sort(graph)
 
@@ -144,10 +140,7 @@ pub fn topo_sort_diamond_test() {
     |> model.add_node(2, "Left")
     |> model.add_node(3, "Right")
     |> model.add_node(4, "Bottom")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(2, 4, 1), #(3, 4, 1)])
 
   let result = topo.topological_sort(graph)
 
@@ -188,9 +181,7 @@ pub fn topo_sort_cycle_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 1, 1)])
 
   let result = topo.topological_sort(graph)
 
@@ -219,11 +210,8 @@ pub fn topo_sort_partial_cycle_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 2, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 2, 1), #(1, 4, 1)])
   // 2-3 cycle
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 1)
 
   let result = topo.topological_sort(graph)
 
@@ -237,8 +225,7 @@ pub fn topo_sort_two_node_cycle_test() {
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 1, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 1, 1)])
 
   let result = topo.topological_sort(graph)
 
@@ -257,9 +244,8 @@ pub fn topo_sort_disconnected_test() {
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     // Component 1: 1->2
-    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(3, 4, 1)])
   // Component 2: 3->4
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
 
   let result = topo.topological_sort(graph)
 
@@ -294,11 +280,13 @@ pub fn topo_sort_long_chain_test() {
     |> model.add_node(4, "4")
     |> model.add_node(5, "5")
     |> model.add_node(6, "6")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 6, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 4, 1),
+      #(4, 5, 1),
+      #(5, 6, 1),
+    ])
 
   let result = topo.topological_sort(graph)
 
@@ -317,12 +305,14 @@ pub fn topo_sort_tree_test() {
     |> model.add_node(5, "LR")
     |> model.add_node(6, "RL")
     |> model.add_node(7, "RR")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 6, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 7, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(1, 3, 1),
+      #(2, 4, 1),
+      #(2, 5, 1),
+      #(3, 6, 1),
+      #(3, 7, 1),
+    ])
 
   let result = topo.topological_sort(graph)
 
@@ -375,8 +365,7 @@ pub fn lexi_topo_sort_basic_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1)])
 
   let result = topo.lexicographical_topological_sort(graph, string.compare)
 
@@ -393,8 +382,7 @@ pub fn lexi_topo_sort_fork_test() {
     |> model.add_node(1, "Root")
     |> model.add_node(2, "A")
     |> model.add_node(3, "B")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1)])
 
   let result = topo.lexicographical_topological_sort(graph, string.compare)
 
@@ -411,8 +399,7 @@ pub fn lexi_topo_sort_join_test() {
     |> model.add_node(2, "A")
     |> model.add_node(3, "B")
     |> model.add_node(1, "C")
-    |> model.add_edge(from: 2, to: 1, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 1)
+    |> model.add_edges([#(2, 1, 1), #(3, 1, 1)])
 
   let result = topo.lexicographical_topological_sort(graph, string.compare)
 
@@ -429,10 +416,7 @@ pub fn lexi_topo_sort_diamond_test() {
     |> model.add_node(3, "Right")
     |> model.add_node(2, "Left")
     |> model.add_node(4, "Bottom")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(2, 4, 1), #(3, 4, 1)])
 
   let result = topo.lexicographical_topological_sort(graph, string.compare)
 
@@ -449,8 +433,7 @@ pub fn lexi_topo_sort_cycle_test() {
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 1, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 1, 1)])
 
   let result = topo.lexicographical_topological_sort(graph, string.compare)
 
@@ -468,10 +451,7 @@ pub fn lexi_topo_sort_multiple_valid_test() {
     |> model.add_node(2, "B")
     |> model.add_node(4, "D")
     // Add edges to connect them
-    |> model.add_edge(from: 1, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
+    |> model.add_edges([#(1, 5, 1), #(2, 5, 1), #(3, 5, 1), #(4, 5, 1)])
 
   // All point to 5, so 5 must be last
   let result = topo.lexicographical_topological_sort(graph, string.compare)
@@ -492,15 +472,18 @@ pub fn topo_sort_tasks_test() {
     |> model.add_node(3, "Dress")
     |> model.add_node(4, "Eat breakfast")
     |> model.add_node(5, "Leave house")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  // Wake before shower
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  // Shower before dress
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 5, with: 1)
-  // Dress before leave
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
-  // Eat before leave
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      // Wake before shower
+      #(2, 3, 1),
+      // Shower before dress
+      #(3, 5, 1),
+      // Dress before leave
+      #(4, 5, 1),
+      // Eat before leave
+      #(1, 4, 1),
+      // Wake before eat
+    ])
 
   // Wake before eat
   let result = topo.topological_sort(graph)
@@ -546,14 +529,16 @@ pub fn topo_sort_build_deps_test() {
     |> model.add_node(3, "utils.o")
     |> model.add_node(4, "utils.c")
     |> model.add_node(5, "app")
-    |> model.add_edge(from: 2, to: 1, with: 1)
-  // main.c -> main.o
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 3, with: 1)
-  // utils.c -> utils.o
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 5, with: 1)
-  // main.o -> app
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 5, with: 1)
-  // utils.o -> app
+    |> model.add_edges([
+      #(2, 1, 1),
+      // main.c -> main.o
+      #(4, 3, 1),
+      // utils.c -> utils.o
+      #(1, 5, 1),
+      // main.o -> app
+      #(3, 5, 1),
+      // utils.o -> app
+    ])
   let result = topo.topological_sort(graph)
 
   case result {

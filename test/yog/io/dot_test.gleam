@@ -106,9 +106,7 @@ pub fn undirected_no_duplicate_edges_dot_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: "5")
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: "3")
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: "1")
+    |> model.add_edges([#(1, 2, "5"), #(2, 3, "3"), #(1, 3, "1")])
 
   let output = dot.to_dot(graph, dot.default_dot_options())
 
@@ -141,9 +139,7 @@ pub fn multiple_edges_dot_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: "5")
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: "10")
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: "15")
+    |> model.add_edges([#(1, 2, "5"), #(2, 3, "10"), #(1, 3, "15")])
 
   let output = dot.to_dot(graph, dot.default_dot_options())
 
@@ -270,8 +266,7 @@ pub fn highlight_edges_dot_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: "5")
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: "10")
+    |> model.add_edges([#(1, 2, "5"), #(2, 3, "10")])
 
   let options =
     dot.DotOptions(
@@ -330,8 +325,7 @@ pub fn render_dot_with_pathfinding_result_test() {
     |> model.add_node(1, "Start")
     |> model.add_node(2, "Middle")
     |> model.add_node(3, "End")
-    |> model.add_edge(from: 1, to: 2, with: "5")
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: "3")
+    |> model.add_edges([#(1, 2, "5"), #(2, 3, "3")])
 
   let path = Path(nodes: [1, 2, 3], total_weight: "8")
 

@@ -1,5 +1,6 @@
 import gleeunit/should
 import yog
+import yog/model
 
 pub fn ergonomics_pipeline_test() {
   // Should be able to use the entire pipeline from the yog module
@@ -8,8 +9,7 @@ pub fn ergonomics_pipeline_test() {
     |> yog.add_node(1, "A")
     |> yog.add_node(2, "B")
     |> yog.add_node(3, "C")
-    |> yog.add_edge(from: 1, to: 2, with: 10)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 20)
+    |> yog.add_edges([#(1, 2, 10), #(2, 3, 20)])
 
   let graph = yog.transpose(graph)
   // Re-exported from transform
@@ -36,10 +36,7 @@ pub fn transform_reexport_test() {
 }
 
 pub fn traversal_fold_reexport_test() {
-  let graph = yog.directed()
-  let graph = yog.add_node(graph, 1, Nil)
-  let graph = yog.add_node(graph, 2, Nil)
-  let assert Ok(graph) = yog.add_edge(graph, 1, 2, 5)
+  let graph = yog.from_edges(model.Directed, [#(1, 2, 5)])
 
   // Re-exported fold_walk and constants
   let count =

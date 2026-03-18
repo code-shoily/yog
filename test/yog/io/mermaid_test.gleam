@@ -287,8 +287,7 @@ pub fn highlight_edges_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: "5")
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: "10")
+    |> model.add_edges([#(1, 2, "5"), #(2, 3, "10")])
 
   let options =
     mermaid.MermaidOptions(
@@ -317,8 +316,7 @@ pub fn highlight_path_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: "5")
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: "10")
+    |> model.add_edges([#(1, 2, "5"), #(2, 3, "10")])
 
   let options =
     mermaid.MermaidOptions(

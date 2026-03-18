@@ -111,15 +111,13 @@ pub fn add_simple_edge_test() {
 }
 
 pub fn add_simple_edge_multiple_test() {
-  let graph =
+  let assert Ok(graph) =
     yog.directed()
     |> yog.add_node(1, "A")
     |> yog.add_node(2, "B")
     |> yog.add_node(3, "C")
     |> yog.add_node(4, "D")
-  let assert Ok(graph) = yog.add_simple_edge(graph, from: 1, to: 2)
-  let assert Ok(graph) = yog.add_simple_edge(graph, from: 2, to: 3)
-  let assert Ok(graph) = yog.add_simple_edge(graph, from: 3, to: 4)
+    |> yog.add_simple_edges([#(1, 2), #(2, 3), #(3, 4)])
 
   // All edges should have weight 1
   yog.successors(graph, 1)

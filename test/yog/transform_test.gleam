@@ -46,9 +46,7 @@ pub fn transpose_multiple_edges_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 10)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 20)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 30)
+    |> model.add_edges([#(1, 2, 10), #(2, 3, 20), #(1, 3, 30)])
 
   let transposed = transform.transpose(graph)
 
@@ -69,9 +67,7 @@ pub fn transpose_cycle_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 2)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 3)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 2), #(3, 1, 3)])
 
   let transposed = transform.transpose(graph)
 
@@ -228,9 +224,7 @@ pub fn map_edges_transforms_all_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 10)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 20)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 30)
+    |> model.add_edges([#(1, 2, 10), #(2, 3, 20), #(1, 3, 30)])
 
   let mapped = transform.map_edges(graph, fn(w) { w * 2 })
 
@@ -398,9 +392,7 @@ pub fn filter_nodes_prunes_edges_test() {
     |> model.add_node(1, "keep")
     |> model.add_node(2, "remove")
     |> model.add_node(3, "keep")
-    |> model.add_edge(from: 1, to: 2, with: 10)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 20)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 30)
+    |> model.add_edges([#(1, 2, 10), #(2, 3, 20), #(1, 3, 30)])
 
   let filtered = transform.filter_nodes(graph, fn(s) { s == "keep" })
 
@@ -425,10 +417,12 @@ pub fn filter_nodes_complex_pruning_test() {
     |> model.add_node(2, 2)
     |> model.add_node(3, 3)
     |> model.add_node(4, 4)
-    |> model.add_edge(from: 1, to: 2, with: "a")
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: "b")
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: "c")
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: "d")
+    |> model.add_edges([
+      #(1, 2, "a"),
+      #(2, 3, "b"),
+      #(3, 4, "c"),
+      #(1, 4, "d"),
+    ])
 
   // Keep only even-numbered nodes
   let filtered = transform.filter_nodes(graph, fn(n) { n % 2 == 0 })
@@ -474,11 +468,11 @@ pub fn merge_empty_graphs_test() {
 }
 
 pub fn merge_with_empty_test() {
-  let g1 =
+  let assert Ok(g1) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-  let assert Ok(g1) = model.add_edge(g1, from: 1, to: 2, with: 10)
+    |> model.add_edge(from: 1, to: 2, with: 10)
 
   let g2 = model.new(Directed)
 
@@ -595,16 +589,14 @@ pub fn merge_combines_edges_from_same_node_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 10)
-  let assert Ok(g1) = model.add_edge(g1, from: 1, to: 3, with: 15)
+    |> model.add_edges([#(1, 2, 10), #(1, 3, 15)])
 
   let assert Ok(g2) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(4, "D")
     |> model.add_node(5, "E")
-    |> model.add_edge(from: 1, to: 4, with: 20)
-  let assert Ok(g2) = model.add_edge(g2, from: 1, to: 5, with: 25)
+    |> model.add_edges([#(1, 4, 20), #(1, 5, 25)])
 
   let merged = transform.merge(g1, g2)
 
@@ -638,8 +630,7 @@ pub fn map_then_filter_test() {
     |> model.add_node(1, 5)
     |> model.add_node(2, 10)
     |> model.add_node(3, 15)
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 2)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 2)])
 
   let result =
     graph
@@ -716,8 +707,7 @@ pub fn subgraph_single_node_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 10)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 20)
+    |> model.add_edges([#(1, 2, 10), #(2, 3, 20)])
 
   let sub = transform.subgraph(graph, keeping: [2])
 
@@ -738,8 +728,7 @@ pub fn subgraph_two_connected_nodes_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 10)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 20)
+    |> model.add_edges([#(1, 2, 10), #(2, 3, 20)])
 
   let sub = transform.subgraph(graph, keeping: [2, 3])
 
@@ -761,8 +750,7 @@ pub fn subgraph_all_nodes_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 10)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 20)
+    |> model.add_edges([#(1, 2, 10), #(2, 3, 20)])
 
   let sub = transform.subgraph(graph, keeping: [1, 2, 3])
 
@@ -784,9 +772,7 @@ pub fn subgraph_removes_edges_outside_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 10)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 20)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 30)
+    |> model.add_edges([#(1, 2, 10), #(2, 3, 20), #(3, 4, 30)])
 
   let sub = transform.subgraph(graph, keeping: [2, 3])
 
@@ -813,10 +799,7 @@ pub fn subgraph_with_cycle_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 10)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 20)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 2, with: 25)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 30)
+    |> model.add_edges([#(1, 2, 10), #(2, 3, 20), #(3, 2, 25), #(3, 4, 30)])
 
   let sub = transform.subgraph(graph, keeping: [2, 3])
 
@@ -834,8 +817,7 @@ pub fn subgraph_undirected_graph_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 10)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 20)
+    |> model.add_edges([#(1, 2, 10), #(2, 3, 20)])
 
   let sub = transform.subgraph(graph, keeping: [1, 2])
 
@@ -893,11 +875,13 @@ pub fn subgraph_complex_graph_test() {
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_node(5, "E")
-    |> model.add_edge(from: 1, to: 2, with: 12)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 13)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 24)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 34)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 45)
+    |> model.add_edges([
+      #(1, 2, 12),
+      #(1, 3, 13),
+      #(2, 4, 24),
+      #(3, 4, 34),
+      #(4, 5, 45),
+    ])
 
   let sub = transform.subgraph(graph, keeping: [1, 2, 3, 4])
 
@@ -928,8 +912,7 @@ pub fn contract_simple_directed_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 10)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 20)
+    |> model.add_edges([#(1, 2, 10), #(2, 3, 20)])
 
   let contracted =
     transform.contract(in: graph, merge: 1, with: 2, combine_weights: int.add)
@@ -952,8 +935,7 @@ pub fn contract_simple_undirected_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 10)
+    |> model.add_edges([#(1, 2, 5), #(2, 3, 10)])
 
   let contracted =
     transform.contract(in: graph, merge: 1, with: 2, combine_weights: int.add)
@@ -980,8 +962,7 @@ pub fn contract_combining_weights_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 3, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 10)
+    |> model.add_edges([#(1, 3, 5), #(2, 3, 10)])
 
   let contracted =
     transform.contract(in: graph, merge: 1, with: 2, combine_weights: int.add)
@@ -998,10 +979,12 @@ pub fn contract_both_incoming_and_outgoing_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 3, to: 1, with: 30)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 2, with: 32)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 14)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 24)
+    |> model.add_edges([
+      #(3, 1, 30),
+      #(3, 2, 32),
+      #(1, 4, 14),
+      #(2, 4, 24),
+    ])
 
   let contracted =
     transform.contract(in: graph, merge: 1, with: 2, combine_weights: int.add)
@@ -1024,8 +1007,7 @@ pub fn contract_removes_self_loops_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 12)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 23)
+    |> model.add_edges([#(1, 2, 12), #(2, 3, 23)])
 
   let contracted =
     transform.contract(in: graph, merge: 1, with: 2, combine_weights: int.add)
@@ -1066,9 +1048,7 @@ pub fn contract_triangle_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 12)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 23)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 13)
+    |> model.add_edges([#(1, 2, 12), #(1, 3, 13), #(2, 3, 23)])
 
   let contracted =
     transform.contract(in: graph, merge: 1, with: 2, combine_weights: int.add)
@@ -1092,8 +1072,7 @@ pub fn contract_max_combine_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 3, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 10)
+    |> model.add_edges([#(1, 3, 5), #(2, 3, 10)])
 
   let contracted =
     transform.contract(in: graph, merge: 1, with: 2, combine_weights: int.max)
@@ -1111,11 +1090,13 @@ pub fn contract_complex_graph_test() {
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_node(5, "E")
-    |> model.add_edge(from: 1, to: 3, with: 13)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 23)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 24)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 5, with: 35)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 45)
+    |> model.add_edges([
+      #(1, 3, 13),
+      #(2, 3, 23),
+      #(2, 4, 24),
+      #(3, 5, 35),
+      #(4, 5, 45),
+    ])
 
   let contracted =
     transform.contract(in: graph, merge: 1, with: 2, combine_weights: int.add)
@@ -1146,9 +1127,7 @@ pub fn filter_edges_by_weight_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 15)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 3)
+    |> model.add_edges([#(1, 2, 5), #(1, 3, 15), #(2, 3, 3)])
 
   let heavy = transform.filter_edges(graph, fn(_src, _dst, w) { w >= 10 })
 
@@ -1169,8 +1148,7 @@ pub fn filter_edges_remove_self_loops_test() {
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge(from: 1, to: 1, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 2, with: 10)
+    |> model.add_edges([#(1, 1, 5), #(1, 2, 10)])
 
   let no_loops = transform.filter_edges(graph, fn(src, dst, _w) { src != dst })
 
@@ -1205,8 +1183,7 @@ pub fn filter_edges_undirected_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 15)
+    |> model.add_edges([#(1, 2, 5), #(1, 3, 15)])
 
   let heavy = transform.filter_edges(graph, fn(_s, _d, w) { w >= 10 })
 
@@ -1225,9 +1202,7 @@ pub fn complement_triangle_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(1, 3, 1)])
 
   let comp = transform.complement(graph, default_weight: 1)
 
@@ -1244,8 +1219,7 @@ pub fn complement_path_graph_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1)])
 
   let comp = transform.complement(graph, default_weight: 99)
 
@@ -1307,11 +1281,11 @@ pub fn to_directed_changes_kind_test() {
 }
 
 pub fn to_directed_already_directed_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 2, with: 5)
+    |> model.add_edge(from: 1, to: 2, with: 5)
 
   let result = transform.to_directed(graph)
   result.kind |> should.equal(Directed)
@@ -1342,8 +1316,7 @@ pub fn to_undirected_resolves_conflicts_test() {
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge(from: 1, to: 2, with: 10)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 1, with: 20)
+    |> model.add_edges([#(1, 2, 10), #(2, 1, 20)])
 
   let min_undirected = transform.to_undirected(graph, resolve: int.min)
 
@@ -1359,11 +1332,11 @@ pub fn to_undirected_resolves_conflicts_test() {
 }
 
 pub fn to_undirected_already_undirected_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 2, with: 5)
+    |> model.add_edge(from: 1, to: 2, with: 5)
 
   let result = transform.to_undirected(graph, resolve: int.min)
   result.kind |> should.equal(Undirected)

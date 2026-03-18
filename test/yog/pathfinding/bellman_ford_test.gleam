@@ -16,8 +16,7 @@ pub fn bellman_ford_basic_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 10)
+    |> model.add_edges([#(1, 2, 5), #(2, 3, 10)])
 
   let result =
     bellman_ford.bellman_ford(
@@ -42,8 +41,7 @@ pub fn bellman_ford_negative_weights_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 10)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: -5)
+    |> model.add_edges([#(1, 2, 10), #(2, 3, -5)])
 
   let result =
     bellman_ford.bellman_ford(
@@ -69,10 +67,7 @@ pub fn bellman_ford_negative_optimal_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 4, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 2, with: 2)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 2)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: -10)
+    |> model.add_edges([#(1, 4, 5), #(1, 2, 2), #(2, 3, 2), #(3, 4, -10)])
 
   let result =
     bellman_ford.bellman_ford(
@@ -98,9 +93,7 @@ pub fn bellman_ford_negative_cycle_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 2)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: -5)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 2), #(3, 1, -5)])
 
   let result =
     bellman_ford.bellman_ford(
@@ -125,12 +118,14 @@ pub fn bellman_ford_negative_cycle_elsewhere_test() {
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_node(5, "E")
-    // Negative cycle: 2->3->4->2 (unreachable from 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 2, with: -5)
-  // Path from 1 to 5 (doesn't touch the cycle)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 5, with: 10)
+    |> model.add_edges([
+      // Negative cycle: 2->3->4->2 (unreachable from 1)
+      #(2, 3, 1),
+      #(3, 4, 1),
+      #(4, 2, -5),
+      // Path from 1 to 5 (doesn't touch the cycle)
+      #(1, 5, 10),
+    ])
 
   let result =
     bellman_ford.bellman_ford(
@@ -156,7 +151,7 @@ pub fn bellman_ford_no_path_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 5)
+    |> model.add_edges([#(1, 2, 5)])
 
   let result =
     bellman_ford.bellman_ford(
@@ -201,8 +196,7 @@ pub fn bellman_ford_zero_weights_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 0)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 0)
+    |> model.add_edges([#(1, 2, 0), #(2, 3, 0)])
 
   let result =
     bellman_ford.bellman_ford(
@@ -228,11 +222,13 @@ pub fn bellman_ford_mixed_weights_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 4)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 2)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 3)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 2, with: -6)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 5)
+    |> model.add_edges([
+      #(1, 2, 4),
+      #(1, 3, 2),
+      #(2, 4, 3),
+      #(3, 2, -6),
+      #(3, 4, 5),
+    ])
 
   let result =
     bellman_ford.bellman_ford(
@@ -257,8 +253,7 @@ pub fn bellman_ford_negative_self_loop_test() {
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge(from: 1, to: 1, with: -1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 2, with: 5)
+    |> model.add_edges([#(1, 1, -1), #(1, 2, 5)])
 
   let result =
     bellman_ford.bellman_ford(
@@ -280,8 +275,7 @@ pub fn bellman_ford_positive_self_loop_test() {
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge(from: 1, to: 1, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 2, with: 10)
+    |> model.add_edges([#(1, 1, 5), #(1, 2, 10)])
 
   let result =
     bellman_ford.bellman_ford(
@@ -307,10 +301,7 @@ pub fn bellman_ford_diamond_negative_test() {
     |> model.add_node(2, "Left")
     |> model.add_node(3, "Right")
     |> model.add_node(4, "Bottom")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 4)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 2)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: -3)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 4), #(2, 4, 2), #(3, 4, -3)])
 
   let result =
     bellman_ford.bellman_ford(
@@ -336,8 +327,7 @@ pub fn bellman_ford_float_negative_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 2.5)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: -1.5)
+    |> model.add_edges([#(1, 2, 2.5), #(2, 3, -1.5)])
 
   let result =
     bellman_ford.bellman_ford(
@@ -652,11 +642,13 @@ pub fn bellman_ford_vs_dijkstra_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 4)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 2)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(1, 3, 4),
+      #(2, 3, 2),
+      #(2, 4, 5),
+      #(3, 4, 1),
+    ])
 
   let bellman_result =
     bellman_ford.bellman_ford(

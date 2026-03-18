@@ -12,10 +12,12 @@ pub fn simple_network_simplex_test() {
     |> yog.add_node(2, 0)
     |> yog.add_node(3, -10)
     // Demand (negative)
-    |> yog.add_edge(from: 1, to: 2, with: #(5, 2))
-  // #(capacity, cost)
-  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 3, with: #(10, 5))
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: #(5, 1))
+    |> yog.add_edges([
+      #(1, 2, #(5, 2)),
+      // #(capacity, cost)
+      #(1, 3, #(10, 5)),
+      #(2, 3, #(5, 1)),
+    ])
 
   let get_demand = fn(d: Int) { d }
   let get_capacity = fn(e: #(Int, Int)) { e.0 }

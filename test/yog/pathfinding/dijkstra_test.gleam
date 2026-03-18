@@ -18,8 +18,7 @@ pub fn shortest_path_linear_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 10)
+    |> model.add_edges([#(1, 2, 5), #(2, 3, 10)])
 
   let result =
     dijkstra.shortest_path(
@@ -41,7 +40,7 @@ pub fn shortest_path_direct_test() {
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edges([#(1, 2, 10)])
 
   let result =
     dijkstra.shortest_path(
@@ -84,7 +83,7 @@ pub fn shortest_path_no_path_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 5)
+    |> model.add_edges([#(1, 2, 5)])
   // No edge to node 3
 
   let result =
@@ -155,9 +154,7 @@ pub fn shortest_path_two_paths_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 10)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 20)
+    |> model.add_edges([#(1, 2, 5), #(2, 3, 10), #(1, 3, 20)])
 
   let result =
     dijkstra.shortest_path(
@@ -183,9 +180,7 @@ pub fn shortest_path_direct_shorter_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 3, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 2, with: 2)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 10)
+    |> model.add_edges([#(1, 3, 5), #(1, 2, 2), #(2, 3, 10)])
 
   let result =
     dijkstra.shortest_path(
@@ -219,10 +214,7 @@ pub fn shortest_path_diamond_test() {
     |> model.add_node(2, "Left")
     |> model.add_node(3, "Right")
     |> model.add_node(4, "Bottom")
-    |> model.add_edge(from: 1, to: 2, with: 2)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 3)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 4)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 5)
+    |> model.add_edges([#(1, 2, 2), #(1, 3, 3), #(2, 4, 4), #(3, 4, 5)])
 
   let result =
     dijkstra.shortest_path(
@@ -251,16 +243,18 @@ pub fn shortest_path_grid_test() {
     |> model.add_node(4, "D")
     |> model.add_node(5, "E")
     |> model.add_node(6, "F")
-    // Row 1
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  // Row 2
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 6, with: 1)
-  // Columns
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 10)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 6, with: 10)
+    |> model.add_edges([
+      // Row 1
+      #(1, 2, 1),
+      #(2, 3, 1),
+      // Row 2
+      #(4, 5, 1),
+      #(5, 6, 1),
+      // Columns
+      #(1, 4, 10),
+      #(2, 5, 1),
+      #(3, 6, 10),
+    ])
 
   let result =
     dijkstra.shortest_path(
@@ -284,9 +278,7 @@ pub fn shortest_path_with_cycle_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 1, 1)])
   // Cycle: 1->2->3->1
 
   let result =
@@ -312,8 +304,7 @@ pub fn shortest_path_undirected_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 10)
+    |> model.add_edges([#(1, 2, 5), #(2, 3, 10)])
 
   // In undirected graph, can go backwards
   let result =
@@ -338,9 +329,7 @@ pub fn shortest_path_float_weights_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1.5)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 2.5)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 5.0)
+    |> model.add_edges([#(1, 2, 1.5), #(2, 3, 2.5), #(1, 3, 5.0)])
 
   let result =
     dijkstra.shortest_path(
@@ -374,8 +363,7 @@ pub fn shortest_path_zero_weights_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 0)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 0)
+    |> model.add_edges([#(1, 2, 0), #(2, 3, 0)])
 
   let result =
     dijkstra.shortest_path(
@@ -435,8 +423,7 @@ pub fn shortest_path_with_self_loop_test() {
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge(from: 1, to: 1, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 2, with: 10)
+    |> model.add_edges([#(1, 1, 5), #(1, 2, 10)])
 
   let result =
     dijkstra.shortest_path(
@@ -473,11 +460,13 @@ pub fn shortest_path_classic_dijkstra_test() {
     |> model.add_node(3, "B")
     |> model.add_node(4, "C")
     |> model.add_node(5, "Goal")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 2)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 4)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 5, with: 9)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 5, with: 2)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(1, 3, 2),
+      #(1, 4, 4),
+      #(2, 5, 9),
+      #(3, 5, 2),
+    ])
 
   let result =
     dijkstra.shortest_path(
@@ -505,11 +494,13 @@ pub fn shortest_path_long_chain_test() {
     |> model.add_node(4, "4")
     |> model.add_node(5, "5")
     |> model.add_node(6, "6")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 6, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 4, 1),
+      #(4, 5, 1),
+      #(5, 6, 1),
+    ])
 
   let result =
     dijkstra.shortest_path(
@@ -533,8 +524,7 @@ pub fn shortest_path_disconnected_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(3, 4, 1)])
   // Two disconnected components: {1,2} and {3,4}
 
   let result =
@@ -561,9 +551,7 @@ pub fn single_source_distances_basic_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 3)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 10)
+    |> model.add_edges([#(1, 2, 5), #(2, 3, 3), #(1, 4, 10)])
 
   let distances =
     dijkstra.single_source_distances(
@@ -600,8 +588,7 @@ pub fn single_source_distances_unreachable_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 10)
+    |> model.add_edges([#(1, 2, 5), #(3, 4, 10)])
 
   let distances =
     dijkstra.single_source_distances(
@@ -638,9 +625,7 @@ pub fn single_source_distances_complete_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 4)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 2)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 4), #(2, 3, 2)])
 
   let distances =
     dijkstra.single_source_distances(
@@ -700,9 +685,7 @@ pub fn single_source_distances_with_cycles_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 1, 1)])
 
   let distances =
     dijkstra.single_source_distances(
@@ -734,8 +717,7 @@ pub fn single_source_distances_undirected_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 3)
+    |> model.add_edges([#(1, 2, 5), #(2, 3, 3)])
 
   let distances =
     dijkstra.single_source_distances(
@@ -767,8 +749,7 @@ pub fn single_source_distances_float_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1.5)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 2.5)
+    |> model.add_edges([#(1, 2, 1.5), #(2, 3, 2.5)])
 
   let distances =
     dijkstra.single_source_distances(
@@ -827,9 +808,7 @@ pub fn single_source_distances_find_closest_test() {
     |> model.add_node(2, "A")
     |> model.add_node(3, "B")
     |> model.add_node(4, "C")
-    |> model.add_edge(from: 1, to: 2, with: 10)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 20)
+    |> model.add_edges([#(1, 2, 10), #(1, 3, 5), #(3, 4, 20)])
 
   let distances =
     dijkstra.single_source_distances(
@@ -893,9 +872,7 @@ pub fn single_source_distances_vs_shortest_path_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 3)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 10)
+    |> model.add_edges([#(1, 2, 5), #(2, 3, 3), #(1, 4, 10)])
 
   let distances =
     dijkstra.single_source_distances(

@@ -17,8 +17,7 @@ pub fn astar_zero_heuristic_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 10)
+    |> model.add_edges([#(1, 2, 5), #(2, 3, 10)])
 
   let zero_heuristic = fn(_from: Int, _to: Int) -> Int { 0 }
 
@@ -47,14 +46,16 @@ pub fn astar_manhattan_distance_test() {
     |> model.add_node(4, "0,1")
     |> model.add_node(5, "1,1")
     |> model.add_node(6, "2,1")
-    // Grid connections (each edge cost 1)
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 6, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 6, with: 1)
+    |> model.add_edges([
+      // Grid connections (each edge cost 1)
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(1, 4, 1),
+      #(2, 5, 1),
+      #(3, 6, 1),
+      #(4, 5, 1),
+      #(5, 6, 1),
+    ])
 
   // Manhattan distance heuristic
   // Node positions: 1=(0,0), 2=(1,0), 3=(2,0), 4=(0,1), 5=(1,1), 6=(2,1)
@@ -103,10 +104,7 @@ pub fn astar_better_than_greedy_test() {
     |> model.add_node(2, "A")
     |> model.add_node(3, "B")
     |> model.add_node(4, "Goal")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 2)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 100)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 2), #(2, 4, 100), #(3, 4, 1)])
 
   // Heuristic that prefers node 2 initially
   let h = fn(from: Int, to: Int) -> Int {
@@ -165,7 +163,7 @@ pub fn astar_no_path_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 5)
+    |> model.add_edges([#(1, 2, 5)])
 
   let h = fn(_: Int, _: Int) -> Int { 0 }
 
@@ -193,12 +191,14 @@ pub fn astar_admissible_heuristic_test() {
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_node(5, "E")
-    // Multiple paths from 1 to 5
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 5, with: 10)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 3)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 2)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
+    |> model.add_edges([
+      // Multiple paths from 1 to 5
+      #(1, 2, 1),
+      #(2, 5, 10),
+      #(1, 3, 3),
+      #(3, 4, 2),
+      #(4, 5, 1),
+    ])
 
   // Admissible heuristic (never overestimates)
   let h = fn(from: Int, to: Int) -> Int {
@@ -235,10 +235,7 @@ pub fn astar_diamond_test() {
     |> model.add_node(2, "Left")
     |> model.add_node(3, "Right")
     |> model.add_node(4, "Bottom")
-    |> model.add_edge(from: 1, to: 2, with: 2)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 3)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 4)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 5)
+    |> model.add_edges([#(1, 2, 2), #(1, 3, 3), #(2, 4, 4), #(3, 4, 5)])
 
   let h = fn(from: Int, to: Int) -> Int {
     case from, to {
@@ -271,9 +268,7 @@ pub fn astar_with_cycle_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 1, 1)])
 
   let h = fn(_: Int, _: Int) -> Int { 0 }
 
@@ -300,10 +295,7 @@ pub fn astar_perfect_heuristic_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 10)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 4, 1), #(1, 4, 10)])
 
   // Perfect heuristic (exact remaining distance)
   let h = fn(from: Int, to: Int) -> Int {
@@ -337,9 +329,7 @@ pub fn astar_consistent_heuristic_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 20)
+    |> model.add_edges([#(1, 2, 5), #(2, 3, 5), #(1, 3, 20)])
 
   // Consistent heuristic satisfies h(x) <= cost(x,y) + h(y)
   let h = fn(from: Int, to: Int) -> Int {
@@ -672,9 +662,7 @@ pub fn astar_float_weights_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1.5)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 2.5)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 5.0)
+    |> model.add_edges([#(1, 2, 1.5), #(2, 3, 2.5), #(1, 3, 5.0)])
 
   let h = fn(from: Int, to: Int) -> Float {
     case from, to {
@@ -710,8 +698,7 @@ pub fn astar_undirected_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 10)
+    |> model.add_edges([#(1, 2, 5), #(2, 3, 10)])
 
   let h = fn(_: Int, _: Int) -> Int { 0 }
 
@@ -738,12 +725,14 @@ pub fn astar_vs_dijkstra_test() {
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_node(5, "E")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 4)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 2)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 2)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(1, 3, 4),
+      #(2, 3, 2),
+      #(2, 4, 5),
+      #(3, 4, 1),
+      #(4, 5, 2),
+    ])
 
   let h = fn(_: Int, _: Int) -> Int { 1 }
 

@@ -477,8 +477,7 @@ fn do_add_directed_edge(
 ///   |> model.add_node(1, "A")
 ///   |> model.add_node(2, "B")
 ///   |> model.add_node(3, "C")
-///   |> model.add_edge(from: 1, to: 2, with: 10)
-/// let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 20)
+///   |> model.add_edges([#(1, 2, 10), #(2, 3, 20)])
 ///
 /// let graph = model.remove_node(graph, 2)
 /// // Node 2 is removed, along with edges 1->2 and 2->3

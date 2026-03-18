@@ -38,8 +38,7 @@ pub fn scc_two_separate_nodes_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1)])
 
   let result = connectivity.strongly_connected_components(graph)
 
@@ -55,9 +54,7 @@ pub fn scc_simple_cycle_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 1, 1)])
 
   let result = connectivity.strongly_connected_components(graph)
 
@@ -110,8 +107,7 @@ pub fn scc_two_node_cycle_test() {
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 1, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 1, 1)])
 
   let result = connectivity.strongly_connected_components(graph)
 
@@ -137,12 +133,7 @@ pub fn scc_two_separate_cycles_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    // Cycle 1: 1->2->1
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 1, with: 1)
-  // Cycle 2: 3->4->3
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 1, 1), #(3, 4, 1), #(4, 3, 1)])
 
   let result = connectivity.strongly_connected_components(graph)
 
@@ -163,12 +154,7 @@ pub fn scc_mixed_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    // Cycle: 1->2->3->1
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 1)
-  // Non-cycle node: 4
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 1, 1), #(3, 4, 1)])
 
   let result = connectivity.strongly_connected_components(graph)
 
@@ -193,12 +179,14 @@ pub fn scc_kosaraju_example_test() {
     |> model.add_node(3, "3")
     |> model.add_node(4, "4")
     |> model.add_node(5, "5")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 4, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 1, 1),
+      #(3, 4, 1),
+      #(4, 5, 1),
+      #(5, 4, 1),
+    ])
 
   let result = connectivity.strongly_connected_components(graph)
 
@@ -219,12 +207,13 @@ pub fn scc_diamond_with_cycle_test() {
     |> model.add_node(2, "Left")
     |> model.add_node(3, "Right")
     |> model.add_node(4, "Bottom")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 2, with: 1)
-  // Cycle: 2->4->2
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(1, 3, 1),
+      #(2, 4, 1),
+      #(3, 4, 1),
+      #(4, 2, 1),
+    ])
 
   let result = connectivity.strongly_connected_components(graph)
 
@@ -244,13 +233,14 @@ pub fn scc_complete_graph_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    // All edges in both directions
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 1, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 2, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 1, 1),
+      #(1, 3, 1),
+      #(3, 1, 1),
+      #(2, 3, 1),
+      #(3, 2, 1),
+    ])
 
   let result = connectivity.strongly_connected_components(graph)
 
@@ -279,19 +269,16 @@ pub fn scc_chain_of_cycles_test() {
     |> model.add_node(4, "4")
     |> model.add_node(5, "5")
     |> model.add_node(6, "6")
-    // Cycle 1: 1<->2
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 1, with: 1)
-  // Connection: 2->3
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  // Cycle 2: 3<->4
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 3, with: 1)
-  // Connection: 4->5
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
-  // Cycle 3: 5<->6
-  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 6, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 6, to: 5, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 1, 1),
+      #(2, 3, 1),
+      #(3, 4, 1),
+      #(4, 3, 1),
+      #(4, 5, 1),
+      #(5, 6, 1),
+      #(6, 5, 1),
+    ])
 
   let result = connectivity.strongly_connected_components(graph)
 
@@ -315,16 +302,15 @@ pub fn scc_large_and_small_test() {
     |> model.add_node(5, "5")
     |> model.add_node(6, "6")
     |> model.add_node(7, "7")
-    // Large cycle: 1->2->3->4->1
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 1, with: 1)
-  // Small cycle: 5<->6
-  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 6, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 6, to: 5, with: 1)
-  // Single node
-  let assert Ok(graph) = model.add_edge(graph, from: 7, to: 1, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 4, 1),
+      #(4, 1, 1),
+      #(5, 6, 1),
+      #(6, 5, 1),
+      #(7, 1, 1),
+    ])
 
   let result = connectivity.strongly_connected_components(graph)
 
@@ -346,10 +332,7 @@ pub fn scc_tree_no_cycles_test() {
     |> model.add_node(3, "R")
     |> model.add_node(4, "LL")
     |> model.add_node(5, "LR")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 5, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(2, 4, 1), #(2, 5, 1)])
 
   let result = connectivity.strongly_connected_components(graph)
 
@@ -371,9 +354,7 @@ pub fn scc_all_self_loops_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 1, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 3, with: 1)
+    |> model.add_edges([#(1, 1, 1), #(2, 2, 1), #(3, 3, 1)])
 
   let result = connectivity.strongly_connected_components(graph)
 
@@ -397,15 +378,16 @@ pub fn scc_single_large_cycle_test() {
     |> model.add_node(6, "6")
     |> model.add_node(7, "7")
     |> model.add_node(8, "8")
-    // Cycle: 1->2->3->4->5->6->7->8->1
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 6, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 6, to: 7, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 7, to: 8, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 8, to: 1, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 4, 1),
+      #(4, 5, 1),
+      #(5, 6, 1),
+      #(6, 7, 1),
+      #(7, 8, 1),
+      #(8, 1, 1),
+    ])
 
   let result = connectivity.strongly_connected_components(graph)
 
@@ -431,15 +413,15 @@ pub fn scc_nested_cycles_test() {
     |> model.add_node(3, "3")
     |> model.add_node(4, "4")
     |> model.add_node(5, "5")
-    // Outer cycle: 1->2->3->4->5->1
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 1, with: 1)
-  // Inner shortcuts
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 5, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 4, 1),
+      #(4, 5, 1),
+      #(5, 1, 1),
+      #(2, 4, 1),
+      #(3, 5, 1),
+    ])
 
   let result = connectivity.strongly_connected_components(graph)
 
@@ -467,14 +449,13 @@ pub fn scc_disconnected_subgraphs_test() {
     |> model.add_node(3, "B1")
     |> model.add_node(4, "B2")
     |> model.add_node(5, "C1")
-    // Subgraph A: 1<->2
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 1, with: 1)
-  // Subgraph B: 3<->4
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 3, with: 1)
-  // Subgraph C: 5 (isolated with self-loop)
-  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 5, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 1, 1),
+      #(3, 4, 1),
+      #(4, 3, 1),
+      #(5, 5, 1),
+    ])
 
   let result = connectivity.strongly_connected_components(graph)
 
@@ -499,15 +480,16 @@ pub fn scc_call_graph_test() {
     |> model.add_node(4, "funcC")
     |> model.add_node(5, "helper")
     // main calls funcA
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  // Mutual recursion: funcA <-> funcB
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 2, with: 1)
-  // funcB calls funcC
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  // funcC calls helper
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
-
+    |> model.add_simple_edges([
+      #(1, 2),
+      #(2, 3),
+      // Mutual recursion: funcA <-> funcB
+      #(3, 2),
+      // funcB calls funcC
+      #(3, 4),
+      // funcC calls helper
+      #(4, 5),
+    ])
   let result = connectivity.strongly_connected_components(graph)
 
   // Should have 4 SCCs: {main}, {funcA,funcB}, {funcC}, {helper}
@@ -528,19 +510,17 @@ pub fn scc_web_pages_test() {
     |> model.add_node(3, "contact")
     |> model.add_node(4, "blog")
     |> model.add_node(5, "archive")
-    // index links to everything
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 1)
-  // about and contact link to each other
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 2, with: 1)
-  // blog and archive link to each other
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 4, with: 1)
-  // Everything links back to index
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 1, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 1, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(1, 3, 1),
+      #(1, 4, 1),
+      #(2, 3, 1),
+      #(3, 2, 1),
+      #(4, 5, 1),
+      #(5, 4, 1),
+      #(2, 1, 1),
+      #(4, 1, 1),
+    ])
 
   let result = connectivity.strongly_connected_components(graph)
 
@@ -569,11 +549,7 @@ pub fn scc_package_deps_test() {
     |> model.add_node(3, "libB")
     |> model.add_node(4, "core")
     // app depends on libA and libB
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
-  // Both libs depend on core
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(2, 4, 1), #(3, 4, 1)])
 
   let result = connectivity.strongly_connected_components(graph)
 
@@ -616,9 +592,7 @@ pub fn kosaraju_simple_cycle_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 1, 1)])
 
   let result = connectivity.kosaraju(graph)
 
@@ -651,12 +625,7 @@ pub fn kosaraju_two_separate_cycles_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    // Cycle 1: 1->2->1
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 1, with: 1)
-  // Cycle 2: 3->4->3
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 1, 1), #(3, 4, 1), #(4, 3, 1)])
 
   let result = connectivity.kosaraju(graph)
 
@@ -677,12 +646,14 @@ pub fn kosaraju_classic_example_test() {
     |> model.add_node(3, "3")
     |> model.add_node(4, "4")
     |> model.add_node(5, "5")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 4, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 1, 1),
+      #(3, 4, 1),
+      #(4, 5, 1),
+      #(5, 4, 1),
+    ])
 
   let result = connectivity.kosaraju(graph)
 
@@ -701,13 +672,14 @@ pub fn kosaraju_complete_graph_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    // All edges in both directions
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 1, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 2, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 1, 1),
+      #(1, 3, 1),
+      #(3, 1, 1),
+      #(2, 3, 1),
+      #(3, 2, 1),
+    ])
 
   let result = connectivity.kosaraju(graph)
 
@@ -733,19 +705,16 @@ pub fn kosaraju_chain_of_cycles_test() {
     |> model.add_node(4, "4")
     |> model.add_node(5, "5")
     |> model.add_node(6, "6")
-    // Cycle 1: 1<->2
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 1, with: 1)
-  // Connection: 2->3
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  // Cycle 2: 3<->4
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 3, with: 1)
-  // Connection: 4->5
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
-  // Cycle 3: 5<->6
-  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 6, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 6, to: 5, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 1, 1),
+      #(2, 3, 1),
+      #(3, 4, 1),
+      #(4, 3, 1),
+      #(4, 5, 1),
+      #(5, 6, 1),
+      #(6, 5, 1),
+    ])
 
   let result = connectivity.kosaraju(graph)
 
@@ -766,10 +735,7 @@ pub fn kosaraju_tree_no_cycles_test() {
     |> model.add_node(3, "R")
     |> model.add_node(4, "LL")
     |> model.add_node(5, "LR")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 5, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(2, 4, 1), #(2, 5, 1)])
 
   let result = connectivity.kosaraju(graph)
 
@@ -793,15 +759,16 @@ pub fn kosaraju_single_large_cycle_test() {
     |> model.add_node(6, "6")
     |> model.add_node(7, "7")
     |> model.add_node(8, "8")
-    // Cycle: 1->2->3->4->5->6->7->8->1
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 6, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 6, to: 7, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 7, to: 8, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 8, to: 1, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 4, 1),
+      #(4, 5, 1),
+      #(5, 6, 1),
+      #(6, 7, 1),
+      #(7, 8, 1),
+      #(8, 1, 1),
+    ])
 
   let result = connectivity.kosaraju(graph)
 
@@ -827,12 +794,14 @@ pub fn tarjan_vs_kosaraju_test() {
     |> model.add_node(3, "3")
     |> model.add_node(4, "4")
     |> model.add_node(5, "5")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 4, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 1, 1),
+      #(3, 4, 1),
+      #(4, 5, 1),
+      #(5, 4, 1),
+    ])
 
   let tarjan_result = connectivity.strongly_connected_components(graph)
   let kosaraju_result = connectivity.kosaraju(graph)
@@ -911,9 +880,7 @@ pub fn connectivity_linear_chain_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 4, 1)])
 
   let result = connectivity.analyze(in: graph)
 
@@ -954,9 +921,7 @@ pub fn connectivity_triangle_no_bridges_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 1, 1)])
 
   let result = connectivity.analyze(in: graph)
 
@@ -982,16 +947,15 @@ pub fn connectivity_bridge_between_triangles_test() {
     |> model.add_node(4, "D")
     |> model.add_node(5, "E")
     |> model.add_node(6, "F")
-    // First triangle
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 1)
-  // Second triangle
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 6, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 6, to: 4, with: 1)
-  // Bridge connecting the triangles
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 6, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 1, 1),
+      #(4, 5, 1),
+      #(5, 6, 1),
+      #(6, 4, 1),
+      #(3, 6, 1),
+    ])
 
   let result = connectivity.analyze(in: graph)
 
@@ -1034,10 +998,7 @@ pub fn connectivity_star_graph_test() {
     |> model.add_node(3, "B")
     |> model.add_node(4, "C")
     |> model.add_node(5, "D")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 5, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(1, 4, 1), #(1, 5, 1)])
 
   let result = connectivity.analyze(in: graph)
 
@@ -1069,10 +1030,7 @@ pub fn connectivity_diamond_test() {
     |> model.add_node(2, "Left")
     |> model.add_node(3, "Right")
     |> model.add_node(4, "Bottom")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(2, 4, 1), #(3, 4, 1)])
 
   let result = connectivity.analyze(in: graph)
 
@@ -1105,14 +1063,16 @@ pub fn connectivity_complex_graph_test() {
     |> model.add_node(6, "F")
     |> model.add_node(7, "G")
     |> model.add_node(8, "H")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 6, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 7, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 7, to: 8, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(2, 4, 1),
+      #(3, 5, 1),
+      #(4, 5, 1),
+      #(5, 6, 1),
+      #(5, 7, 1),
+      #(7, 8, 1),
+    ])
 
   let result = connectivity.analyze(in: graph)
 
@@ -1168,9 +1128,7 @@ pub fn connectivity_disconnected_components_test() {
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_node(5, "E")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(3, 4, 1), #(4, 5, 1)])
 
   let result = connectivity.analyze(in: graph)
 
@@ -1216,8 +1174,7 @@ pub fn connectivity_self_loop_test() {
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge(from: 1, to: 1, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 2, with: 1)
+    |> model.add_edges([#(1, 1, 1), #(1, 2, 1)])
 
   let result = connectivity.analyze(in: graph)
 
@@ -1244,10 +1201,7 @@ pub fn connectivity_parallel_edges_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 2, with: 2)
-  // Duplicate edge with different weight
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 2, 2), #(2, 3, 1)])
 
   let result = connectivity.analyze(in: graph)
 
@@ -1283,12 +1237,14 @@ pub fn connectivity_complete_graph_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(1, 3, 1),
+      #(1, 4, 1),
+      #(2, 3, 1),
+      #(2, 4, 1),
+      #(3, 4, 1),
+    ])
 
   let result = connectivity.analyze(in: graph)
 
@@ -1312,12 +1268,13 @@ pub fn connectivity_square_with_diagonal_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 3, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 1)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 1)
-  // Diagonal
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 4, 1),
+      #(4, 3, 1),
+      #(3, 1, 1),
+      #(1, 4, 1),
+    ])
 
   let result = connectivity.analyze(in: graph)
 
