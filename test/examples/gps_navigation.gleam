@@ -15,11 +15,11 @@ pub fn main() {
     |> yog.add_node(3, #(2, 8))
     // Park
     |> yog.add_node(4, #(10, 10))
-    // Office
-    |> yog.add_edge(from: 1, to: 2, with: 10)
-    |> yog.add_edge(from: 2, to: 3, with: 15)
-    |> yog.add_edge(from: 3, to: 4, with: 20)
-    |> yog.add_edge(from: 2, to: 4, with: 25)
+  // Office
+  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 2, with: 10)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 15)
+  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 4, with: 20)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 4, with: 25)
 
   // Use A* with Euclidean-style distance heuristic
   let heuristic = fn(from: Int, to: Int) {

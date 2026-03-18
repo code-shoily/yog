@@ -82,7 +82,7 @@ pub fn update_node_test() {
 
 // Test adding a directed edge
 pub fn add_directed_edge_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
@@ -111,13 +111,13 @@ pub fn add_directed_edge_test() {
 
 // Test adding multiple directed edges from one node
 pub fn add_multiple_outgoing_edges_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
     |> model.add_node(3, "Node C")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 1, to: 3, with: 20)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 20)
 
   // Node 1 should have two outgoing edges
   let out_edges =
@@ -140,13 +140,13 @@ pub fn add_multiple_outgoing_edges_test() {
 
 // Test adding multiple directed edges to one node
 pub fn add_multiple_incoming_edges_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
     |> model.add_node(3, "Node C")
     |> model.add_edge(from: 1, to: 3, with: 10)
-    |> model.add_edge(from: 2, to: 3, with: 20)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 20)
 
   // Node 3 should have two incoming edges
   let in_edges =
@@ -169,7 +169,7 @@ pub fn add_multiple_incoming_edges_test() {
 
 // Test undirected edge creates bidirectional edges
 pub fn add_undirected_edge_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
@@ -196,12 +196,12 @@ pub fn add_undirected_edge_test() {
 
 // Test updating an edge (adding same edge replaces weight)
 pub fn update_edge_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 1, to: 2, with: 25)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 2, with: 25)
 
   graph.out_edges
   |> dict.get(1)
@@ -210,7 +210,7 @@ pub fn update_edge_test() {
 
 // Test graph with different data types - String edge weights
 pub fn graph_with_string_edges_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, 100)
     |> model.add_node(2, 200)
@@ -232,17 +232,17 @@ pub fn graph_with_string_edges_test() {
 
 // Test complex directed graph
 pub fn complex_directed_graph_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_edge(from: 1, to: 2, with: 1.0)
-    |> model.add_edge(from: 1, to: 3, with: 2.0)
-    |> model.add_edge(from: 2, to: 3, with: 1.5)
-    |> model.add_edge(from: 3, to: 4, with: 3.0)
-    |> model.add_edge(from: 2, to: 4, with: 2.5)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 2.0)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1.5)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 3.0)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 2.5)
 
   graph.nodes
   |> dict.size()
@@ -278,7 +278,7 @@ pub fn complex_directed_graph_test() {
 
 // Test self-loop
 pub fn self_loop_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_edge(from: 1, to: 1, with: 5)
@@ -316,7 +316,7 @@ pub fn successors_nonexistent_node_test() {
 
 // Test successors with single outgoing edge
 pub fn successors_single_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
@@ -330,15 +330,15 @@ pub fn successors_single_test() {
 
 // Test successors with multiple outgoing edges
 pub fn successors_multiple_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
     |> model.add_node(3, "Node C")
     |> model.add_node(4, "Node D")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 1, to: 3, with: 20)
-    |> model.add_edge(from: 1, to: 4, with: 30)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 20)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 30)
 
   let result = model.successors(graph, 1)
 
@@ -380,7 +380,7 @@ pub fn predecessors_nonexistent_node_test() {
 
 // Test predecessors with single incoming edge
 pub fn predecessors_single_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
@@ -394,15 +394,15 @@ pub fn predecessors_single_test() {
 
 // Test predecessors with multiple incoming edges
 pub fn predecessors_multiple_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
     |> model.add_node(3, "Node C")
     |> model.add_node(4, "Node D")
     |> model.add_edge(from: 1, to: 4, with: 10)
-    |> model.add_edge(from: 2, to: 4, with: 20)
-    |> model.add_edge(from: 3, to: 4, with: 30)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 20)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 30)
 
   let result = model.predecessors(graph, 4)
 
@@ -423,13 +423,13 @@ pub fn predecessors_multiple_test() {
 
 // Test neighbors on undirected graph (should equal successors)
 pub fn neighbors_undirected_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
     |> model.add_node(3, "Node C")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 1, to: 3, with: 20)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 20)
 
   let neighbors = model.neighbors(graph, 1)
   let successors = model.successors(graph, 1)
@@ -444,13 +444,13 @@ pub fn neighbors_undirected_test() {
 
 // Test neighbors on directed graph with only outgoing edges
 pub fn neighbors_directed_outgoing_only_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
     |> model.add_node(3, "Node C")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 1, to: 3, with: 20)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 20)
 
   let neighbors = model.neighbors(graph, 1)
 
@@ -466,13 +466,13 @@ pub fn neighbors_directed_outgoing_only_test() {
 
 // Test neighbors on directed graph with only incoming edges
 pub fn neighbors_directed_incoming_only_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
     |> model.add_node(3, "Node C")
     |> model.add_edge(from: 2, to: 1, with: 10)
-    |> model.add_edge(from: 3, to: 1, with: 20)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 20)
 
   let neighbors = model.neighbors(graph, 1)
 
@@ -488,15 +488,15 @@ pub fn neighbors_directed_incoming_only_test() {
 
 // Test neighbors on directed graph with both incoming and outgoing edges
 pub fn neighbors_directed_both_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
     |> model.add_node(3, "Node C")
     |> model.add_node(4, "Node D")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 1, to: 3, with: 20)
-    |> model.add_edge(from: 4, to: 1, with: 30)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 20)
+  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 1, with: 30)
 
   let neighbors = model.neighbors(graph, 1)
 
@@ -515,12 +515,12 @@ pub fn neighbors_directed_both_test() {
 
 // Test neighbors with bidirectional edges (should deduplicate)
 pub fn neighbors_directed_bidirectional_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 2, to: 1, with: 20)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 1, with: 20)
 
   let neighbors = model.neighbors(graph, 1)
 
@@ -570,14 +570,14 @@ pub fn all_nodes_no_edges_test() {
 
 // Test all_nodes on directed graph with edges
 pub fn all_nodes_directed_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
     |> model.add_node(3, "Node C")
     |> model.add_node(4, "Node D")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 2, to: 3, with: 20)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 20)
 
   let result = model.all_nodes(graph)
 
@@ -601,7 +601,7 @@ pub fn all_nodes_directed_test() {
 
 // Test all_nodes on undirected graph
 pub fn all_nodes_undirected_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
@@ -626,7 +626,7 @@ pub fn all_nodes_undirected_test() {
 
 // Test all_nodes with self-loop
 pub fn all_nodes_self_loop_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_edge(from: 1, to: 1, with: 5)
@@ -639,12 +639,12 @@ pub fn all_nodes_self_loop_test() {
 
 // Test all_nodes returns unique values (no duplicates)
 pub fn all_nodes_unique_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 2, to: 1, with: 20)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 1, with: 20)
 
   let result = model.all_nodes(graph)
 
@@ -682,7 +682,7 @@ pub fn successor_ids_nonexistent_node_test() {
 
 // Test successor_ids with single successor
 pub fn successor_ids_single_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
@@ -694,15 +694,15 @@ pub fn successor_ids_single_test() {
 
 // Test successor_ids with multiple successors
 pub fn successor_ids_multiple_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
     |> model.add_node(3, "Node C")
     |> model.add_node(4, "Node D")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 1, to: 3, with: 20)
-    |> model.add_edge(from: 1, to: 4, with: 30)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 20)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 30)
 
   let result = model.successor_ids(graph, 1)
 
@@ -722,7 +722,7 @@ pub fn successor_ids_multiple_test() {
 
 // Test successor_ids with self-loop
 pub fn successor_ids_self_loop_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_edge(from: 1, to: 1, with: 5)
@@ -733,13 +733,13 @@ pub fn successor_ids_self_loop_test() {
 
 // Test successor_ids is equivalent to successors without weights
 pub fn successor_ids_consistency_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
     |> model.add_node(3, "Node C")
     |> model.add_edge(from: 1, to: 2, with: 100)
-    |> model.add_edge(from: 1, to: 3, with: 200)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 200)
 
   let successor_ids = model.successor_ids(graph, 1)
   let successors =
@@ -775,13 +775,13 @@ pub fn remove_node_basic_test() {
 }
 
 pub fn remove_node_with_outgoing_edges_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 2, to: 3, with: 20)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 20)
 
   let graph = model.remove_node(graph, 2)
 
@@ -795,13 +795,13 @@ pub fn remove_node_with_outgoing_edges_test() {
 }
 
 pub fn remove_node_with_incoming_edges_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 3, to: 2, with: 30)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 2, with: 30)
 
   let graph = model.remove_node(graph, 2)
 
@@ -814,13 +814,13 @@ pub fn remove_node_with_incoming_edges_test() {
 }
 
 pub fn remove_node_with_both_edges_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 2, to: 3, with: 20)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 20)
 
   let graph = model.remove_node(graph, 2)
 
@@ -836,13 +836,13 @@ pub fn remove_node_with_both_edges_test() {
 }
 
 pub fn remove_node_undirected_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 2, to: 3, with: 20)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 20)
 
   let graph = model.remove_node(graph, 2)
 
@@ -855,7 +855,7 @@ pub fn remove_node_undirected_test() {
 }
 
 pub fn remove_node_isolated_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -873,7 +873,7 @@ pub fn remove_node_isolated_test() {
 }
 
 pub fn remove_node_self_loop_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -895,44 +895,49 @@ pub fn add_edge_with_combine_new_edge_test() {
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge_with_combine(from: 1, to: 2, with: 10, using: int.add)
+  let graph =
+    model.add_edge_with_combine(graph, from: 1, to: 2, with: 10, using: int.add)
 
   model.successors(graph, 1)
   |> should.equal([#(2, 10)])
 }
 
 pub fn add_edge_with_combine_existing_edge_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge_with_combine(from: 1, to: 2, with: 5, using: int.add)
+  let graph =
+    model.add_edge_with_combine(graph, from: 1, to: 2, with: 5, using: int.add)
 
   model.successors(graph, 1)
   |> should.equal([#(2, 15)])
 }
 
 pub fn add_edge_with_combine_multiple_times_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge_with_combine(from: 1, to: 2, with: 5, using: int.add)
-    |> model.add_edge_with_combine(from: 1, to: 2, with: 3, using: int.add)
+  let graph =
+    model.add_edge_with_combine(graph, from: 1, to: 2, with: 5, using: int.add)
+  let graph =
+    model.add_edge_with_combine(graph, from: 1, to: 2, with: 3, using: int.add)
 
   model.successors(graph, 1)
   |> should.equal([#(2, 18)])
 }
 
 pub fn add_edge_with_combine_undirected_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge_with_combine(from: 1, to: 2, with: 5, using: int.add)
+  let graph =
+    model.add_edge_with_combine(graph, from: 1, to: 2, with: 5, using: int.add)
 
   // Both directions should be updated
   model.successors(graph, 1)
@@ -945,14 +950,16 @@ pub fn add_edge_with_combine_undirected_test() {
 }
 
 pub fn add_edge_with_combine_different_edges_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge_with_combine(from: 1, to: 3, with: 20, using: int.add)
-    |> model.add_edge_with_combine(from: 1, to: 2, with: 5, using: int.add)
+  let graph =
+    model.add_edge_with_combine(graph, from: 1, to: 3, with: 20, using: int.add)
+  let graph =
+    model.add_edge_with_combine(graph, from: 1, to: 2, with: 5, using: int.add)
 
   let edges = model.successors(graph, 1)
   list.length(edges)
@@ -968,23 +975,24 @@ pub fn add_edge_with_combine_different_edges_test() {
 }
 
 pub fn add_edge_with_combine_max_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge_with_combine(from: 1, to: 2, with: 15, using: int.max)
+  let graph =
+    model.add_edge_with_combine(graph, from: 1, to: 2, with: 15, using: int.max)
 
   model.successors(graph, 1)
   |> should.equal([#(2, 15)])
 }
 
-// ============= Tests for add_edge_ensured() =============
+// ============= Tests for add_edge_ensure() =============
 
-pub fn add_edge_ensured_creates_both_missing_nodes_test() {
+pub fn add_edge_ensure_creates_both_missing_nodes_test() {
   let graph =
     model.new(Directed)
-    |> model.add_edge_ensured(from: 1, to: 2, with: 10, default: "anon")
+    |> model.add_edge_ensure(from: 1, to: 2, with: 10, default: "anon")
 
   // Both nodes should exist with default data
   dict.get(graph.nodes, 1)
@@ -998,11 +1006,11 @@ pub fn add_edge_ensured_creates_both_missing_nodes_test() {
   |> should.equal([#(2, 10)])
 }
 
-pub fn add_edge_ensured_preserves_existing_nodes_test() {
+pub fn add_edge_ensure_preserves_existing_nodes_test() {
   let graph =
     model.new(Directed)
     |> model.add_node(1, "Alice")
-    |> model.add_edge_ensured(from: 1, to: 2, with: 5, default: "anon")
+    |> model.add_edge_ensure(from: 1, to: 2, with: 5, default: "anon")
 
   // Node 1 keeps its original data
   dict.get(graph.nodes, 1)
@@ -1013,12 +1021,12 @@ pub fn add_edge_ensured_preserves_existing_nodes_test() {
   |> should.equal(Ok("anon"))
 }
 
-pub fn add_edge_ensured_both_nodes_exist_test() {
+pub fn add_edge_ensure_both_nodes_exist_test() {
   let graph =
     model.new(Directed)
     |> model.add_node(1, "Alice")
     |> model.add_node(2, "Bob")
-    |> model.add_edge_ensured(from: 1, to: 2, with: 7, default: "anon")
+    |> model.add_edge_ensure(from: 1, to: 2, with: 7, default: "anon")
 
   // Neither should be overwritten
   dict.get(graph.nodes, 1) |> should.equal(Ok("Alice"))
@@ -1028,10 +1036,10 @@ pub fn add_edge_ensured_both_nodes_exist_test() {
   |> should.equal([#(2, 7)])
 }
 
-pub fn add_edge_ensured_undirected_test() {
+pub fn add_edge_ensure_undirected_test() {
   let graph =
     model.new(Undirected)
-    |> model.add_edge_ensured(from: 1, to: 2, with: 10, default: "x")
+    |> model.add_edge_ensure(from: 1, to: 2, with: 10, default: "x")
 
   // Both directions
   model.successors(graph, 1) |> should.equal([#(2, 10)])
@@ -1042,21 +1050,21 @@ pub fn add_edge_ensured_undirected_test() {
   dict.get(graph.nodes, 2) |> should.equal(Ok("x"))
 }
 
-pub fn add_edge_ensured_self_loop_test() {
+pub fn add_edge_ensure_self_loop_test() {
   let graph =
     model.new(Directed)
-    |> model.add_edge_ensured(from: 1, to: 1, with: 5, default: "self")
+    |> model.add_edge_ensure(from: 1, to: 1, with: 5, default: "self")
 
   dict.get(graph.nodes, 1) |> should.equal(Ok("self"))
   model.successors(graph, 1) |> should.equal([#(1, 5)])
 }
 
-// ============= Tests for add_edge_ensured_with() =============
+// ============= Tests for add_edge_with() =============
 
-pub fn add_edge_ensured_with_creates_both_missing_nodes_test() {
+pub fn add_edge_with_creates_both_missing_nodes_test() {
   let graph =
     model.new(Directed)
-    |> model.add_edge_ensured_with(from: 1, to: 2, with: 10, by: int.to_string)
+    |> model.add_edge_with(from: 1, to: 2, with: 10, by: int.to_string)
 
   // Both nodes should exist with data derived from their IDs
   dict.get(graph.nodes, 1)
@@ -1070,11 +1078,11 @@ pub fn add_edge_ensured_with_creates_both_missing_nodes_test() {
   |> should.equal([#(2, 10)])
 }
 
-pub fn add_edge_ensured_with_preserves_existing_nodes_test() {
+pub fn add_edge_with_preserves_existing_nodes_test() {
   let graph =
     model.new(Directed)
     |> model.add_node(1, "Alice")
-    |> model.add_edge_ensured_with(from: 1, to: 2, with: 5, by: fn(n) {
+    |> model.add_edge_with(from: 1, to: 2, with: 5, by: fn(n) {
       "Node:" <> int.to_string(n)
     })
 
@@ -1087,14 +1095,12 @@ pub fn add_edge_ensured_with_preserves_existing_nodes_test() {
   |> should.equal(Ok("Node:2"))
 }
 
-pub fn add_edge_ensured_with_both_nodes_exist_test() {
+pub fn add_edge_with_both_nodes_exist_test() {
   let graph =
     model.new(Directed)
     |> model.add_node(1, "Alice")
     |> model.add_node(2, "Bob")
-    |> model.add_edge_ensured_with(from: 1, to: 2, with: 7, by: fn(_) {
-      "ignored"
-    })
+    |> model.add_edge_with(from: 1, to: 2, with: 7, by: fn(_) { "ignored" })
 
   // Neither should be overwritten
   dict.get(graph.nodes, 1) |> should.equal(Ok("Alice"))
@@ -1104,12 +1110,10 @@ pub fn add_edge_ensured_with_both_nodes_exist_test() {
   |> should.equal([#(2, 7)])
 }
 
-pub fn add_edge_ensured_with_undirected_test() {
+pub fn add_edge_with_undirected_test() {
   let graph =
     model.new(Undirected)
-    |> model.add_edge_ensured_with(from: 1, to: 2, with: 10, by: fn(n) {
-      n * 10
-    })
+    |> model.add_edge_with(from: 1, to: 2, with: 10, by: fn(n) { n * 10 })
 
   // Both directions
   model.successors(graph, 1) |> should.equal([#(2, 10)])
@@ -1120,28 +1124,26 @@ pub fn add_edge_ensured_with_undirected_test() {
   dict.get(graph.nodes, 2) |> should.equal(Ok(20))
 }
 
-pub fn add_edge_ensured_with_self_loop_test() {
+pub fn add_edge_with_self_loop_test() {
   let graph =
     model.new(Directed)
-    |> model.add_edge_ensured_with(from: 1, to: 1, with: 5, by: fn(n) {
-      n + 100
-    })
+    |> model.add_edge_with(from: 1, to: 1, with: 5, by: fn(n) { n + 100 })
 
   dict.get(graph.nodes, 1) |> should.equal(Ok(101))
   model.successors(graph, 1) |> should.equal([#(1, 5)])
 }
 
-pub fn add_edge_ensured_with_identity_function_test() {
+pub fn add_edge_with_identity_function_test() {
   // Using identity function (node data = node ID)
   let graph =
     model.new(Directed)
-    |> model.add_edge_ensured_with(from: 42, to: 99, with: 1, by: fn(x) { x })
+    |> model.add_edge_with(from: 42, to: 99, with: 1, by: fn(x) { x })
 
   dict.get(graph.nodes, 42) |> should.equal(Ok(42))
   dict.get(graph.nodes, 99) |> should.equal(Ok(99))
 }
 
-pub fn add_edge_ensured_with_db_lookup_simulation_test() {
+pub fn add_edge_with_db_lookup_simulation_test() {
   // Simulating a database lookup scenario
   let db = dict.from_list([#(1, "User:Alice"), #(2, "User:Bob")])
   let get_from_db = fn(id) {
@@ -1153,14 +1155,14 @@ pub fn add_edge_ensured_with_db_lookup_simulation_test() {
 
   let graph =
     model.new(Directed)
-    |> model.add_edge_ensured_with(from: 1, to: 2, with: 10, by: get_from_db)
+    |> model.add_edge_with(from: 1, to: 2, with: 10, by: get_from_db)
 
   // Both nodes fetched from "database"
   dict.get(graph.nodes, 1) |> should.equal(Ok("User:Alice"))
   dict.get(graph.nodes, 2) |> should.equal(Ok("User:Bob"))
 }
 
-pub fn add_edge_ensured_with_partial_db_lookup_test() {
+pub fn add_edge_with_partial_db_lookup_test() {
   // One node exists, other needs to be "fetched"
   let db = dict.from_list([#(2, "User:Bob")])
   let get_from_db = fn(id) {
@@ -1173,7 +1175,7 @@ pub fn add_edge_ensured_with_partial_db_lookup_test() {
   let graph =
     model.new(Directed)
     |> model.add_node(1, "Custom:Alice")
-    |> model.add_edge_ensured_with(from: 1, to: 2, with: 10, by: get_from_db)
+    |> model.add_edge_with(from: 1, to: 2, with: 10, by: get_from_db)
 
   // Node 1 keeps custom data, node 2 is fetched from DB
   dict.get(graph.nodes, 1) |> should.equal(Ok("Custom:Alice"))
@@ -1204,7 +1206,7 @@ pub fn order_multiple_nodes_test() {
 }
 
 pub fn order_with_edges_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -1237,7 +1239,7 @@ pub fn edge_count_empty_graph_test() {
 }
 
 pub fn edge_count_directed_single_edge_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -1246,19 +1248,19 @@ pub fn edge_count_directed_single_edge_test() {
 }
 
 pub fn edge_count_directed_multiple_edges_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 2, to: 3, with: 20)
-    |> model.add_edge(from: 1, to: 3, with: 30)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 20)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 30)
   model.edge_count(graph) |> should.equal(3)
 }
 
 pub fn edge_count_undirected_single_edge_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -1268,18 +1270,18 @@ pub fn edge_count_undirected_single_edge_test() {
 }
 
 pub fn edge_count_undirected_multiple_edges_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 2, to: 3, with: 20)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 20)
   model.edge_count(graph) |> should.equal(2)
 }
 
 pub fn edge_count_self_loop_directed_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_edge(from: 1, to: 1, with: 5)
@@ -1287,7 +1289,7 @@ pub fn edge_count_self_loop_directed_test() {
 }
 
 pub fn edge_count_with_isolated_nodes_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -1299,12 +1301,12 @@ pub fn edge_count_with_isolated_nodes_test() {
 }
 
 pub fn edge_count_bidirectional_directed_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 2, to: 1, with: 20)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 1, with: 20)
   // Two separate directed edges
   model.edge_count(graph) |> should.equal(2)
 }
@@ -1312,50 +1314,54 @@ pub fn edge_count_bidirectional_directed_test() {
 // ============= Tests for remove_edge() =============
 
 pub fn remove_edge_basic_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.remove_edge(1, 2)
+
+  let graph = model.remove_edge(graph, 1, 2)
 
   model.successors(graph, 1) |> should.equal([])
   model.predecessors(graph, 2) |> should.equal([])
 }
 
 pub fn remove_edge_nonexistent_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.remove_edge(1, 99)
+
+  let graph = model.remove_edge(graph, 1, 99)
 
   // Original edge should remain
   model.successors(graph, 1) |> should.equal([#(2, 10)])
 }
 
 pub fn remove_edge_keeps_other_edges_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 1, to: 3, with: 20)
-    |> model.remove_edge(1, 2)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 20)
+
+  let graph = model.remove_edge(graph, 1, 2)
 
   // Edge to 3 should remain
   model.successors(graph, 1) |> should.equal([#(3, 20)])
 }
 
 pub fn remove_edge_undirected_both_directions_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(model.Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.remove_edge(1, 2)
+
+  let graph = model.remove_edge(graph, 1, 2)
 
   // In an undirected graph, removing an edge should remove it in both directions
   model.successors(graph, 1)
@@ -1366,11 +1372,14 @@ pub fn remove_edge_undirected_both_directions_test() {
 }
 
 pub fn remove_edge_undirected_single_direction_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 2, with: 10)
+
+  let graph =
+    graph
     |> model.remove_edge(1, 2)
     |> model.remove_edge(2, 1)
 
@@ -1380,37 +1389,40 @@ pub fn remove_edge_undirected_single_direction_test() {
 }
 
 pub fn remove_edge_multiple_incoming_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 3, to: 2, with: 30)
-    |> model.remove_edge(1, 2)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 2, with: 30)
+
+  let graph = model.remove_edge(graph, 1, 2)
 
   // Edge from 3 to 2 should remain
   model.predecessors(graph, 2) |> should.equal([#(3, 30)])
 }
 
 pub fn remove_edge_self_loop_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_edge(from: 1, to: 1, with: 5)
-    |> model.remove_edge(1, 1)
+
+  let graph = model.remove_edge(graph, 1, 1)
 
   model.successors(graph, 1) |> should.equal([])
   model.predecessors(graph, 1) |> should.equal([])
 }
 
 pub fn remove_edge_preserves_nodes_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.remove_edge(1, 2)
+
+  let graph = model.remove_edge(graph, 1, 2)
 
   // Nodes should still exist
   dict.size(graph.nodes) |> should.equal(2)

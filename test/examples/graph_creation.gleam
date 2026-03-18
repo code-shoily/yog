@@ -14,8 +14,8 @@ pub fn main() {
     |> yog.add_node(1, "Node A")
     |> yog.add_node(2, "Node B")
     |> yog.add_node(3, "Node C")
-    |> yog.add_edge(from: 1, to: 2, with: 10)
-    |> yog.add_edge(from: 2, to: 3, with: 5)
+  let assert Ok(graph1) = yog.add_edge(graph1, from: 1, to: 2, with: 10)
+  let assert Ok(graph1) = yog.add_edge(graph1, from: 2, to: 3, with: 5)
 
   io.println(
     "  Built graph with "
@@ -61,10 +61,9 @@ pub fn main() {
 
   // Method 5: Simple edges (weight = 1)
   io.println("\n5. Simple Edges (default weight 1)")
-  let graph5 =
-    yog.directed()
-    |> yog.add_simple_edge(from: 1, to: 2)
-    |> yog.add_simple_edge(from: 2, to: 3)
+  let graph5 = yog.directed()
+  let assert Ok(graph5) = yog.add_simple_edge(graph5, from: 1, to: 2)
+  let assert Ok(graph5) = yog.add_simple_edge(graph5, from: 2, to: 3)
 
   io.println(
     "  Created graph with "
@@ -135,9 +134,8 @@ pub fn main() {
 
   // Method 10: Undirected graphs
   io.println("\n10. Undirected Graphs (all methods work)")
-  let graph10 =
-    yog.undirected()
-    |> yog.add_edge(from: 1, to: 2, with: 5)
+  let graph10 = yog.undirected()
+  let assert Ok(graph10) = yog.add_edge(graph10, from: 1, to: 2, with: 5)
 
   io.println(
     "  Created undirected graph (edges work both ways) with "

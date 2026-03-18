@@ -11,26 +11,25 @@ pub fn main() {
   // Nodes: 0=Source, 1=RouterA, 2=RouterB, 3=RouterC, 4=RouterD, 5=Destination
   // Edge weights represent bandwidth capacity in Mbps
 
-  let network =
-    yog.directed()
-    // From source
-    |> yog.add_edge(from: 0, to: 1, with: 20)
-    // Source -> Router A (20 Mbps)
-    |> yog.add_edge(from: 0, to: 2, with: 30)
-    // Source -> Router B (30 Mbps)
-    // Intermediate connections
-    |> yog.add_edge(from: 1, to: 2, with: 10)
-    // Router A -> Router B (10 Mbps)
-    |> yog.add_edge(from: 1, to: 3, with: 15)
-    // Router A -> Router C (15 Mbps)
-    |> yog.add_edge(from: 2, to: 3, with: 25)
-    // Router B -> Router C (25 Mbps)
-    |> yog.add_edge(from: 2, to: 4, with: 20)
-    // Router B -> Router D (20 Mbps)
-    // To destination
-    |> yog.add_edge(from: 3, to: 5, with: 30)
-    // Router C -> Destination (30 Mbps)
-    |> yog.add_edge(from: 4, to: 5, with: 15)
+  let network = yog.directed()
+  // From source
+  let assert Ok(network) = yog.add_edge(network, from: 0, to: 1, with: 20)
+  // Source -> Router A (20 Mbps)
+  let assert Ok(network) = yog.add_edge(network, from: 0, to: 2, with: 30)
+  // Source -> Router B (30 Mbps)
+  // Intermediate connections
+  let assert Ok(network) = yog.add_edge(network, from: 1, to: 2, with: 10)
+  // Router A -> Router B (10 Mbps)
+  let assert Ok(network) = yog.add_edge(network, from: 1, to: 3, with: 15)
+  // Router A -> Router C (15 Mbps)
+  let assert Ok(network) = yog.add_edge(network, from: 2, to: 3, with: 25)
+  // Router B -> Router C (25 Mbps)
+  let assert Ok(network) = yog.add_edge(network, from: 2, to: 4, with: 20)
+  // Router B -> Router D (20 Mbps)
+  // To destination
+  let assert Ok(network) = yog.add_edge(network, from: 3, to: 5, with: 30)
+  // Router C -> Destination (30 Mbps)
+  let assert Ok(network) = yog.add_edge(network, from: 4, to: 5, with: 15)
   // Router D -> Destination (15 Mbps)
 
   io.println("Network topology:")

@@ -221,7 +221,7 @@ pub fn add_edge(
   let #(builder, src_id) = ensure_node(builder, src_label)
   let #(builder, dst_id) = ensure_node(builder, dst_label)
 
-  let new_graph =
+  let assert Ok(new_graph) =
     model.add_edge(builder.graph, from: src_id, to: dst_id, with: weight)
 
   Builder(..builder, graph: new_graph)
@@ -249,7 +249,7 @@ pub fn add_unweighted_edge(
   let #(builder, src_id) = ensure_node(builder, src_label)
   let #(builder, dst_id) = ensure_node(builder, dst_label)
 
-  let new_graph =
+  let assert Ok(new_graph) =
     model.add_edge(builder.graph, from: src_id, to: dst_id, with: Nil)
 
   Builder(..builder, graph: new_graph)
@@ -279,7 +279,7 @@ pub fn add_simple_edge(
   let #(builder, src_id) = ensure_node(builder, src_label)
   let #(builder, dst_id) = ensure_node(builder, dst_label)
 
-  let new_graph =
+  let assert Ok(new_graph) =
     model.add_edge(builder.graph, from: src_id, to: dst_id, with: 1)
 
   Builder(..builder, graph: new_graph)

@@ -12,11 +12,11 @@ pub fn main() {
     |> yog.add_node(2, "Paris")
     |> yog.add_node(3, "Berlin")
     |> yog.add_node(4, "Rome")
-    |> yog.add_edge(from: 1, to: 2, with: 344)
-    // Distance in km
-    |> yog.add_edge(from: 2, to: 3, with: 878)
-    |> yog.add_edge(from: 3, to: 4, with: 1184)
-    |> yog.add_edge(from: 2, to: 4, with: 1105)
+  // Distance in km
+  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 2, with: 344)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 878)
+  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 4, with: 1184)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 4, with: 1105)
 
   // Calculate all-pairs shortest paths using Floyd-Warshall
   let result =

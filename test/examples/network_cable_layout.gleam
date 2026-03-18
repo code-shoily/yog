@@ -12,12 +12,16 @@ pub fn main() {
     |> model.add_node(2, "Building B")
     |> model.add_node(3, "Building C")
     |> model.add_node(4, "Building D")
-    |> model.add_edge(from: 1, to: 2, with: 100)
-    // $100 to connect
-    |> model.add_edge(from: 1, to: 3, with: 150)
-    |> model.add_edge(from: 2, to: 3, with: 50)
-    |> model.add_edge(from: 2, to: 4, with: 200)
-    |> model.add_edge(from: 3, to: 4, with: 100)
+  // $100 to connect
+  let assert Ok(buildings) =
+    model.add_edge(buildings, from: 1, to: 2, with: 100)
+  let assert Ok(buildings) =
+    model.add_edge(buildings, from: 1, to: 3, with: 150)
+  let assert Ok(buildings) = model.add_edge(buildings, from: 2, to: 3, with: 50)
+  let assert Ok(buildings) =
+    model.add_edge(buildings, from: 2, to: 4, with: 200)
+  let assert Ok(buildings) =
+    model.add_edge(buildings, from: 3, to: 4, with: 100)
 
   // Find minimum cost to connect all buildings
   let cables = mst.kruskal(in: buildings, with_compare: int.compare)

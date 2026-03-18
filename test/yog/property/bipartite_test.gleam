@@ -25,15 +25,15 @@ pub fn is_bipartite_single_node_test() {
 
 pub fn is_bipartite_path_test() {
   // Path: 1 - 2 - 3 - 4 (always bipartite)
-  let graph =
+  let assert Ok(graph) =
     yog.undirected()
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
     |> yog.add_edge(from: 1, to: 2, with: 1)
-    |> yog.add_edge(from: 2, to: 3, with: 1)
-    |> yog.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 4, with: 1)
 
   bipartite.is_bipartite(graph)
   |> should.be_true()
@@ -41,16 +41,16 @@ pub fn is_bipartite_path_test() {
 
 pub fn is_bipartite_even_cycle_test() {
   // Square: 1 - 2 - 3 - 4 - 1 (even cycle is bipartite)
-  let graph =
+  let assert Ok(graph) =
     yog.undirected()
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
     |> yog.add_edge(from: 1, to: 2, with: 1)
-    |> yog.add_edge(from: 2, to: 3, with: 1)
-    |> yog.add_edge(from: 3, to: 4, with: 1)
-    |> yog.add_edge(from: 4, to: 1, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 4, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 4, to: 1, with: 1)
 
   bipartite.is_bipartite(graph)
   |> should.be_true()
@@ -58,14 +58,14 @@ pub fn is_bipartite_even_cycle_test() {
 
 pub fn is_bipartite_odd_cycle_test() {
   // Triangle: 1 - 2 - 3 - 1 (odd cycle is NOT bipartite)
-  let graph =
+  let assert Ok(graph) =
     yog.undirected()
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_edge(from: 1, to: 2, with: 1)
-    |> yog.add_edge(from: 2, to: 3, with: 1)
-    |> yog.add_edge(from: 3, to: 1, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 1, with: 1)
 
   bipartite.is_bipartite(graph)
   |> should.be_false()
@@ -73,7 +73,7 @@ pub fn is_bipartite_odd_cycle_test() {
 
 pub fn is_bipartite_complete_bipartite_test() {
   // K_2,3: Complete bipartite with left={1,2}, right={3,4,5}
-  let graph =
+  let assert Ok(graph) =
     yog.undirected()
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
@@ -81,11 +81,11 @@ pub fn is_bipartite_complete_bipartite_test() {
     |> yog.add_node(4, Nil)
     |> yog.add_node(5, Nil)
     |> yog.add_edge(from: 1, to: 3, with: 1)
-    |> yog.add_edge(from: 1, to: 4, with: 1)
-    |> yog.add_edge(from: 1, to: 5, with: 1)
-    |> yog.add_edge(from: 2, to: 3, with: 1)
-    |> yog.add_edge(from: 2, to: 4, with: 1)
-    |> yog.add_edge(from: 2, to: 5, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 4, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 5, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 4, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 5, with: 1)
 
   bipartite.is_bipartite(graph)
   |> should.be_true()
@@ -93,7 +93,7 @@ pub fn is_bipartite_complete_bipartite_test() {
 
 pub fn is_bipartite_tree_test() {
   // Tree (always bipartite)
-  let graph =
+  let assert Ok(graph) =
     yog.undirected()
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
@@ -101,9 +101,9 @@ pub fn is_bipartite_tree_test() {
     |> yog.add_node(4, Nil)
     |> yog.add_node(5, Nil)
     |> yog.add_edge(from: 1, to: 2, with: 1)
-    |> yog.add_edge(from: 1, to: 3, with: 1)
-    |> yog.add_edge(from: 2, to: 4, with: 1)
-    |> yog.add_edge(from: 2, to: 5, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 3, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 4, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 5, with: 1)
 
   bipartite.is_bipartite(graph)
   |> should.be_true()
@@ -111,22 +111,24 @@ pub fn is_bipartite_tree_test() {
 
 pub fn is_bipartite_disconnected_components_test() {
   // Two disconnected even cycles (both bipartite)
-  let graph =
+  let assert Ok(graph) =
     yog.undirected()
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
     |> yog.add_edge(from: 1, to: 2, with: 1)
-    |> yog.add_edge(from: 2, to: 1, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 1, with: 1)
+  let graph =
+    graph
     |> yog.add_node(5, Nil)
     |> yog.add_node(6, Nil)
     |> yog.add_node(7, Nil)
     |> yog.add_node(8, Nil)
-    |> yog.add_edge(from: 5, to: 6, with: 1)
-    |> yog.add_edge(from: 6, to: 7, with: 1)
-    |> yog.add_edge(from: 7, to: 8, with: 1)
-    |> yog.add_edge(from: 8, to: 5, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 5, to: 6, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 6, to: 7, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 7, to: 8, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 8, to: 5, with: 1)
 
   bipartite.is_bipartite(graph)
   |> should.be_true()
@@ -134,22 +136,24 @@ pub fn is_bipartite_disconnected_components_test() {
 
 pub fn is_bipartite_disconnected_with_odd_cycle_test() {
   // One even cycle + one odd cycle (not bipartite because of odd cycle)
-  let graph =
+  let assert Ok(graph) =
     yog.undirected()
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
     |> yog.add_edge(from: 1, to: 2, with: 1)
-    |> yog.add_edge(from: 2, to: 3, with: 1)
-    |> yog.add_edge(from: 3, to: 4, with: 1)
-    |> yog.add_edge(from: 4, to: 1, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 4, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 4, to: 1, with: 1)
+  let graph =
+    graph
     |> yog.add_node(5, Nil)
     |> yog.add_node(6, Nil)
     |> yog.add_node(7, Nil)
-    |> yog.add_edge(from: 5, to: 6, with: 1)
-    |> yog.add_edge(from: 6, to: 7, with: 1)
-    |> yog.add_edge(from: 7, to: 5, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 5, to: 6, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 6, to: 7, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 7, to: 5, with: 1)
 
   bipartite.is_bipartite(graph)
   |> should.be_false()
@@ -158,15 +162,15 @@ pub fn is_bipartite_disconnected_with_odd_cycle_test() {
 // ============= Partition Tests =============
 
 pub fn partition_path_test() {
-  let graph =
+  let assert Ok(graph) =
     yog.undirected()
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
     |> yog.add_edge(from: 1, to: 2, with: 1)
-    |> yog.add_edge(from: 2, to: 3, with: 1)
-    |> yog.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 4, with: 1)
 
   case bipartite.partition(graph) {
     None -> should.fail()
@@ -212,14 +216,14 @@ pub fn partition_path_test() {
 }
 
 pub fn partition_returns_none_for_odd_cycle_test() {
-  let graph =
+  let assert Ok(graph) =
     yog.undirected()
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_edge(from: 1, to: 2, with: 1)
-    |> yog.add_edge(from: 2, to: 3, with: 1)
-    |> yog.add_edge(from: 3, to: 1, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 1, with: 1)
 
   case bipartite.partition(graph) {
     None -> should.equal(1, 1)
@@ -231,16 +235,16 @@ pub fn partition_returns_none_for_odd_cycle_test() {
 
 pub fn maximum_matching_perfect_test() {
   // K_2,2: Complete bipartite graph with 2 vertices on each side
-  let graph =
+  let assert Ok(graph) =
     yog.undirected()
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
     |> yog.add_edge(from: 1, to: 3, with: 1)
-    |> yog.add_edge(from: 1, to: 4, with: 1)
-    |> yog.add_edge(from: 2, to: 3, with: 1)
-    |> yog.add_edge(from: 2, to: 4, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 4, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 4, with: 1)
 
   case bipartite.partition(graph) {
     None -> should.fail()
@@ -271,15 +275,15 @@ pub fn maximum_matching_perfect_test() {
 
 pub fn maximum_matching_path_test() {
   // Path: 1 - 2 - 3 - 4
-  let graph =
+  let assert Ok(graph) =
     yog.undirected()
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
     |> yog.add_edge(from: 1, to: 2, with: 1)
-    |> yog.add_edge(from: 2, to: 3, with: 1)
-    |> yog.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 4, with: 1)
 
   case bipartite.partition(graph) {
     None -> should.fail()
@@ -296,7 +300,7 @@ pub fn maximum_matching_path_test() {
 
 pub fn maximum_matching_unbalanced_test() {
   // K_2,3: 2 vertices on left, 3 on right
-  let graph =
+  let assert Ok(graph) =
     yog.undirected()
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
@@ -304,11 +308,11 @@ pub fn maximum_matching_unbalanced_test() {
     |> yog.add_node(4, Nil)
     |> yog.add_node(5, Nil)
     |> yog.add_edge(from: 1, to: 3, with: 1)
-    |> yog.add_edge(from: 1, to: 4, with: 1)
-    |> yog.add_edge(from: 1, to: 5, with: 1)
-    |> yog.add_edge(from: 2, to: 3, with: 1)
-    |> yog.add_edge(from: 2, to: 4, with: 1)
-    |> yog.add_edge(from: 2, to: 5, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 4, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 5, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 4, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 5, with: 1)
 
   case bipartite.partition(graph) {
     None -> should.fail()
@@ -363,15 +367,15 @@ pub fn maximum_matching_augmenting_path_test() {
   // Then for 2: 2-4 is available
   // Result: {1-3, 2-4} or {1-4, 2-?} - wait, 2 only connects to 4
   // So we need: 1-3, 2-4 (both matched)
-  let graph =
+  let assert Ok(graph) =
     yog.undirected()
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
     |> yog.add_edge(from: 1, to: 3, with: 1)
-    |> yog.add_edge(from: 1, to: 4, with: 1)
-    |> yog.add_edge(from: 2, to: 4, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 4, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 4, with: 1)
 
   case bipartite.partition(graph) {
     None -> should.fail()
@@ -387,16 +391,16 @@ pub fn maximum_matching_augmenting_path_test() {
 
 pub fn maximum_matching_directed_graph_test() {
   // Test with directed graph (should treat as undirected for bipartite purposes)
-  let graph =
+  let assert Ok(graph) =
     yog.directed()
     |> yog.add_node(1, Nil)
     |> yog.add_node(2, Nil)
     |> yog.add_node(3, Nil)
     |> yog.add_node(4, Nil)
     |> yog.add_edge(from: 1, to: 3, with: 1)
-    |> yog.add_edge(from: 1, to: 4, with: 1)
-    |> yog.add_edge(from: 2, to: 3, with: 1)
-    |> yog.add_edge(from: 2, to: 4, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 4, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 4, with: 1)
 
   case bipartite.partition(graph) {
     None -> should.fail()

@@ -5,6 +5,8 @@ import yog/property/cyclicity as properties
 pub type DagError {
   /// Returned when attempting to create a DAG from a graph that contains cycles.
   CycleDetected
+  /// Returned when attempting to add an invalid edge to a DAG.
+  InvalidEdge(String)
 }
 
 /// An opaque wrapper around a `Graph` that guarantees acyclicity at the type level.
@@ -99,6 +101,8 @@ pub fn add_edge(
   to dst: model.NodeId,
   with weight: e,
 ) -> Result(Dag(n, e), DagError) {
-  model.add_edge(dag.graph, from: src, to: dst, with: weight)
-  |> from_graph()
+  case model.add_edge(dag.graph, from: src, to: dst, with: weight) {
+    Ok(graph) -> from_graph(graph)
+    Error(msg) -> Error(InvalidEdge(msg))
+  }
 }

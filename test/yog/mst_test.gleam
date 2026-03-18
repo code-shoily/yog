@@ -11,14 +11,14 @@ import yog/mst
 //  /|\
 // 2-+-3
 pub fn mst_simple_triangle_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 2)
-    |> model.add_edge(from: 1, to: 3, with: 3)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 2)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 3)
 
   let result = mst.kruskal(in: graph, with_compare: int.compare)
 
@@ -42,13 +42,13 @@ pub fn mst_simple_triangle_test() {
 
 // Linear chain
 pub fn mst_linear_chain_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 5)
-    |> model.add_edge(from: 2, to: 3, with: 10)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 10)
 
   let result = mst.kruskal(in: graph, with_compare: int.compare)
 
@@ -65,7 +65,7 @@ pub fn mst_linear_chain_test() {
 
 // Single edge
 pub fn mst_single_edge_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -122,18 +122,18 @@ pub fn mst_empty_graph_test() {
 //   |/ \|
 //   3---4
 pub fn mst_square_with_diagonal_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
-    |> model.add_edge(from: 4, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 1, with: 1)
-    |> model.add_edge(from: 1, to: 4, with: 5)
-    |> model.add_edge(from: 2, to: 3, with: 5)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 5)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 5)
 
   let result = mst.kruskal(in: graph, with_compare: int.compare)
 
@@ -150,17 +150,17 @@ pub fn mst_square_with_diagonal_test() {
 
 // Classic example where greedy fails but Kruskal works
 pub fn mst_classic_kruskal_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 2)
-    |> model.add_edge(from: 3, to: 4, with: 3)
-    |> model.add_edge(from: 1, to: 4, with: 4)
-    |> model.add_edge(from: 2, to: 4, with: 5)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 2)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 3)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 4)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 5)
 
   let result = mst.kruskal(in: graph, with_compare: int.compare)
 
@@ -176,7 +176,7 @@ pub fn mst_classic_kruskal_test() {
 
 // Pentagon graph
 pub fn mst_pentagon_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -185,10 +185,10 @@ pub fn mst_pentagon_test() {
     |> model.add_node(5, "E")
     // Pentagon edges
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 2)
-    |> model.add_edge(from: 3, to: 4, with: 3)
-    |> model.add_edge(from: 4, to: 5, with: 4)
-    |> model.add_edge(from: 5, to: 1, with: 5)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 2)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 3)
+  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 4)
+  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 1, with: 5)
 
   let result = mst.kruskal(in: graph, with_compare: int.compare)
 
@@ -206,7 +206,7 @@ pub fn mst_pentagon_test() {
 // ============= Disconnected Graph Tests =============
 
 pub fn mst_disconnected_two_components_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -214,8 +214,8 @@ pub fn mst_disconnected_two_components_test() {
     |> model.add_node(4, "D")
     // Component 1: 1-2
     |> model.add_edge(from: 1, to: 2, with: 1)
-    // Component 2: 3-4
-    |> model.add_edge(from: 3, to: 4, with: 2)
+  // Component 2: 3-4
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 2)
 
   let result = mst.kruskal(in: graph, with_compare: int.compare)
 
@@ -231,7 +231,7 @@ pub fn mst_disconnected_two_components_test() {
 }
 
 pub fn mst_disconnected_three_components_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -241,10 +241,10 @@ pub fn mst_disconnected_three_components_test() {
     |> model.add_node(6, "F")
     // Component 1: 1-2
     |> model.add_edge(from: 1, to: 2, with: 1)
-    // Component 2: 3-4
-    |> model.add_edge(from: 3, to: 4, with: 2)
-    // Component 3: 5-6
-    |> model.add_edge(from: 5, to: 6, with: 3)
+  // Component 2: 3-4
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 2)
+  // Component 3: 5-6
+  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 6, with: 3)
 
   let result = mst.kruskal(in: graph, with_compare: int.compare)
 
@@ -255,7 +255,7 @@ pub fn mst_disconnected_three_components_test() {
 
 // Isolated nodes
 pub fn mst_with_isolated_nodes_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -274,16 +274,16 @@ pub fn mst_with_isolated_nodes_test() {
 // ============= Weight Variation Tests =============
 
 pub fn mst_all_same_weights_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_edge(from: 1, to: 2, with: 5)
-    |> model.add_edge(from: 2, to: 3, with: 5)
-    |> model.add_edge(from: 3, to: 4, with: 5)
-    |> model.add_edge(from: 1, to: 4, with: 5)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 5)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 5)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 5)
 
   let result = mst.kruskal(in: graph, with_compare: int.compare)
 
@@ -299,13 +299,13 @@ pub fn mst_all_same_weights_test() {
 }
 
 pub fn mst_zero_weight_edges_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 0)
-    |> model.add_edge(from: 2, to: 3, with: 0)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 0)
 
   let result = mst.kruskal(in: graph, with_compare: int.compare)
 
@@ -321,7 +321,7 @@ pub fn mst_zero_weight_edges_test() {
 // ============= Complete Graph Tests =============
 
 pub fn mst_complete_graph_k4_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -329,11 +329,11 @@ pub fn mst_complete_graph_k4_test() {
     |> model.add_node(4, "D")
     // All possible edges with increasing weights
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 2)
-    |> model.add_edge(from: 1, to: 4, with: 3)
-    |> model.add_edge(from: 2, to: 3, with: 4)
-    |> model.add_edge(from: 2, to: 4, with: 5)
-    |> model.add_edge(from: 3, to: 4, with: 6)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 2)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 3)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 4)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 5)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 6)
 
   let result = mst.kruskal(in: graph, with_compare: int.compare)
 
@@ -349,7 +349,7 @@ pub fn mst_complete_graph_k4_test() {
 }
 
 pub fn mst_complete_graph_k5_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -358,15 +358,15 @@ pub fn mst_complete_graph_k5_test() {
     |> model.add_node(5, "E")
     // K5 has 10 edges
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 2)
-    |> model.add_edge(from: 1, to: 4, with: 3)
-    |> model.add_edge(from: 1, to: 5, with: 4)
-    |> model.add_edge(from: 2, to: 3, with: 5)
-    |> model.add_edge(from: 2, to: 4, with: 6)
-    |> model.add_edge(from: 2, to: 5, with: 7)
-    |> model.add_edge(from: 3, to: 4, with: 8)
-    |> model.add_edge(from: 3, to: 5, with: 9)
-    |> model.add_edge(from: 4, to: 5, with: 10)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 2)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 3)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 5, with: 4)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 5)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 6)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 5, with: 7)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 8)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 5, with: 9)
+  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 10)
 
   let result = mst.kruskal(in: graph, with_compare: int.compare)
 
@@ -384,14 +384,14 @@ pub fn mst_complete_graph_k5_test() {
 // ============= Cycle Detection Tests =============
 
 pub fn mst_avoids_cycle_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 1, with: 100)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 100)
 
   let result = mst.kruskal(in: graph, with_compare: int.compare)
 
@@ -408,7 +408,7 @@ pub fn mst_avoids_cycle_test() {
 
 pub fn mst_larger_graph_test() {
   // Create a graph with 10 nodes and various edges
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "1")
     |> model.add_node(2, "2")
@@ -422,17 +422,17 @@ pub fn mst_larger_graph_test() {
     |> model.add_node(10, "10")
     // Add edges to form a spanning tree with some extras
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 2)
-    |> model.add_edge(from: 3, to: 4, with: 3)
-    |> model.add_edge(from: 4, to: 5, with: 4)
-    |> model.add_edge(from: 5, to: 6, with: 5)
-    |> model.add_edge(from: 6, to: 7, with: 6)
-    |> model.add_edge(from: 7, to: 8, with: 7)
-    |> model.add_edge(from: 8, to: 9, with: 8)
-    |> model.add_edge(from: 9, to: 10, with: 9)
-    // Add some cycle-creating edges with higher weights
-    |> model.add_edge(from: 1, to: 10, with: 100)
-    |> model.add_edge(from: 5, to: 10, with: 50)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 2)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 3)
+  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 4)
+  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 6, with: 5)
+  let assert Ok(graph) = model.add_edge(graph, from: 6, to: 7, with: 6)
+  let assert Ok(graph) = model.add_edge(graph, from: 7, to: 8, with: 7)
+  let assert Ok(graph) = model.add_edge(graph, from: 8, to: 9, with: 8)
+  let assert Ok(graph) = model.add_edge(graph, from: 9, to: 10, with: 9)
+  // Add some cycle-creating edges with higher weights
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 10, with: 100)
+  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 10, with: 50)
 
   let result = mst.kruskal(in: graph, with_compare: int.compare)
 
@@ -450,12 +450,12 @@ pub fn mst_larger_graph_test() {
 // ============= Edge Case: Self Loops =============
 
 pub fn mst_with_self_loop_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 1, with: 1)
-    |> model.add_edge(from: 1, to: 2, with: 2)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 2, with: 2)
 
   let result = mst.kruskal(in: graph, with_compare: int.compare)
 
@@ -479,14 +479,14 @@ pub fn mst_with_self_loop_test() {
 // ============= Prim's Algorithm Tests =============
 
 pub fn prim_simple_triangle_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 2)
-    |> model.add_edge(from: 1, to: 3, with: 3)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 2)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 3)
 
   let result = mst.prim(in: graph, with_compare: int.compare)
 
@@ -502,13 +502,13 @@ pub fn prim_simple_triangle_test() {
 }
 
 pub fn prim_linear_chain_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 5)
-    |> model.add_edge(from: 2, to: 3, with: 10)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 10)
 
   let result = mst.prim(in: graph, with_compare: int.compare)
 
@@ -524,7 +524,7 @@ pub fn prim_linear_chain_test() {
 }
 
 pub fn prim_single_edge_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -565,18 +565,18 @@ pub fn prim_empty_graph_test() {
 }
 
 pub fn prim_square_with_diagonal_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
-    |> model.add_edge(from: 4, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 1, with: 1)
-    |> model.add_edge(from: 1, to: 4, with: 5)
-    |> model.add_edge(from: 2, to: 3, with: 5)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 1, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 5)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 5)
 
   let result = mst.prim(in: graph, with_compare: int.compare)
 
@@ -592,17 +592,17 @@ pub fn prim_square_with_diagonal_test() {
 }
 
 pub fn prim_classic_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 2)
-    |> model.add_edge(from: 3, to: 4, with: 3)
-    |> model.add_edge(from: 1, to: 4, with: 4)
-    |> model.add_edge(from: 2, to: 4, with: 5)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 2)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 3)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 4)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 5)
 
   let result = mst.prim(in: graph, with_compare: int.compare)
 
@@ -617,7 +617,7 @@ pub fn prim_classic_test() {
 }
 
 pub fn prim_pentagon_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -626,10 +626,10 @@ pub fn prim_pentagon_test() {
     |> model.add_node(5, "E")
     // Pentagon edges
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 2)
-    |> model.add_edge(from: 3, to: 4, with: 3)
-    |> model.add_edge(from: 4, to: 5, with: 4)
-    |> model.add_edge(from: 5, to: 1, with: 5)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 2)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 3)
+  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 4)
+  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 1, with: 5)
 
   let result = mst.prim(in: graph, with_compare: int.compare)
 
@@ -645,7 +645,7 @@ pub fn prim_pentagon_test() {
 }
 
 pub fn prim_complete_graph_k4_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -653,11 +653,11 @@ pub fn prim_complete_graph_k4_test() {
     |> model.add_node(4, "D")
     // All possible edges with increasing weights
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 2)
-    |> model.add_edge(from: 1, to: 4, with: 3)
-    |> model.add_edge(from: 2, to: 3, with: 4)
-    |> model.add_edge(from: 2, to: 4, with: 5)
-    |> model.add_edge(from: 3, to: 4, with: 6)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 2)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 3)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 4)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 5)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 6)
 
   let result = mst.prim(in: graph, with_compare: int.compare)
 
@@ -673,7 +673,7 @@ pub fn prim_complete_graph_k4_test() {
 }
 
 pub fn prim_complete_graph_k5_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -682,15 +682,15 @@ pub fn prim_complete_graph_k5_test() {
     |> model.add_node(5, "E")
     // K5 has 10 edges
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 2)
-    |> model.add_edge(from: 1, to: 4, with: 3)
-    |> model.add_edge(from: 1, to: 5, with: 4)
-    |> model.add_edge(from: 2, to: 3, with: 5)
-    |> model.add_edge(from: 2, to: 4, with: 6)
-    |> model.add_edge(from: 2, to: 5, with: 7)
-    |> model.add_edge(from: 3, to: 4, with: 8)
-    |> model.add_edge(from: 3, to: 5, with: 9)
-    |> model.add_edge(from: 4, to: 5, with: 10)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 2)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 3)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 5, with: 4)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 5)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 6)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 5, with: 7)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 8)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 5, with: 9)
+  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 10)
 
   let result = mst.prim(in: graph, with_compare: int.compare)
 
@@ -707,7 +707,7 @@ pub fn prim_complete_graph_k5_test() {
 
 pub fn prim_larger_graph_test() {
   // Create a graph with 10 nodes and various edges
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "1")
     |> model.add_node(2, "2")
@@ -721,17 +721,17 @@ pub fn prim_larger_graph_test() {
     |> model.add_node(10, "10")
     // Add edges to form a spanning tree with some extras
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 2)
-    |> model.add_edge(from: 3, to: 4, with: 3)
-    |> model.add_edge(from: 4, to: 5, with: 4)
-    |> model.add_edge(from: 5, to: 6, with: 5)
-    |> model.add_edge(from: 6, to: 7, with: 6)
-    |> model.add_edge(from: 7, to: 8, with: 7)
-    |> model.add_edge(from: 8, to: 9, with: 8)
-    |> model.add_edge(from: 9, to: 10, with: 9)
-    // Add some cycle-creating edges with higher weights
-    |> model.add_edge(from: 1, to: 10, with: 100)
-    |> model.add_edge(from: 5, to: 10, with: 50)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 2)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 3)
+  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 4)
+  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 6, with: 5)
+  let assert Ok(graph) = model.add_edge(graph, from: 6, to: 7, with: 6)
+  let assert Ok(graph) = model.add_edge(graph, from: 7, to: 8, with: 7)
+  let assert Ok(graph) = model.add_edge(graph, from: 8, to: 9, with: 8)
+  let assert Ok(graph) = model.add_edge(graph, from: 9, to: 10, with: 9)
+  // Add some cycle-creating edges with higher weights
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 10, with: 100)
+  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 10, with: 50)
 
   let result = mst.prim(in: graph, with_compare: int.compare)
 
@@ -748,17 +748,17 @@ pub fn prim_larger_graph_test() {
 
 // Compare Kruskal vs Prim on the same graph
 pub fn prim_vs_kruskal_same_weight_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 2)
-    |> model.add_edge(from: 3, to: 4, with: 3)
-    |> model.add_edge(from: 1, to: 4, with: 4)
-    |> model.add_edge(from: 2, to: 4, with: 5)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 2)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 3)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 4)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 5)
 
   let kruskal_result = mst.kruskal(in: graph, with_compare: int.compare)
   let prim_result = mst.prim(in: graph, with_compare: int.compare)

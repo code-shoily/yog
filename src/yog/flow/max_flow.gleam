@@ -486,7 +486,7 @@ fn residuals_to_graph(
   // Add all edges from residuals
   dict.fold(residuals, graph, fn(g, edge, capacity) {
     let #(from, to) = edge
-    model.add_edge(g, from: from, to: to, with: capacity)
+    model.add_edge_ensure(g, from: from, to: to, with: capacity, default: Nil)
   })
 }
 

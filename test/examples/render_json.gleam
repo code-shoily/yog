@@ -5,7 +5,7 @@ import yog/model
 
 pub fn main() {
   // Create a sample graph
-  let graph =
+  let assert Ok(graph) =
     model.new(model.Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")

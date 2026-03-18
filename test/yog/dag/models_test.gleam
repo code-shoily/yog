@@ -6,8 +6,8 @@ pub fn dag_from_to_graph_test() {
   // Acyclic Graph
   let g1 =
     model.new(Directed)
-    |> model.add_edge_ensured(1, 2, 10, "")
-    |> model.add_edge_ensured(2, 3, 20, "")
+    |> model.add_edge_ensure(1, 2, 10, "")
+    |> model.add_edge_ensure(2, 3, 20, "")
 
   let assert Ok(d1) = models.from_graph(g1)
   models.to_graph(d1)
@@ -16,9 +16,9 @@ pub fn dag_from_to_graph_test() {
   // Cyclic Graph
   let g2 =
     model.new(Directed)
-    |> model.add_edge_ensured(1, 2, 10, "")
-    |> model.add_edge_ensured(2, 3, 20, "")
-    |> model.add_edge_ensured(3, 1, 30, "")
+    |> model.add_edge_ensure(1, 2, 10, "")
+    |> model.add_edge_ensure(2, 3, 20, "")
+    |> model.add_edge_ensure(3, 1, 30, "")
 
   models.from_graph(g2)
   |> should.be_error
@@ -29,7 +29,7 @@ pub fn dag_mutation_test() {
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge_ensured(1, 2, 10, "")
+    |> model.add_edge_ensure(1, 2, 10, "")
   let assert Ok(d) = models.from_graph(g)
 
   // Test add_node
@@ -50,7 +50,8 @@ pub fn dag_mutation_test() {
   model.successors(g4, 1) |> should.equal([])
 
   // Test add_edge success (no cycle)
-  let assert Ok(d5) = models.add_edge(d, from: 2, to: 3, with: 20)
+  let d_with_node3 = models.add_node(d, 3, "C")
+  let assert Ok(d5) = models.add_edge(d_with_node3, from: 2, to: 3, with: 20)
   let g5 = models.to_graph(d5)
   model.successors(g5, 2) |> should.equal([#(3, 20)])
 

@@ -20,7 +20,7 @@
 //// ```gleam
 //// import yog/model
 ////
-//// let graph =
+//// let assert Ok(graph) =
 ////   model.new(model.Undirected)
 ////   |> model.add_node(1, "Alice")
 ////   |> model.add_node(2, "Bob")
@@ -34,6 +34,7 @@
 //// updates.
 
 import gleam/dict.{type Dict}
+import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/pair
@@ -102,20 +103,57 @@ pub fn add_node(graph: Graph(n, e), id: NodeId, data: n) -> Graph(n, e) {
 /// For directed graphs, adds a single edge from `src` to `dst`.
 /// For undirected graphs, adds edges in both directions.
 ///
-/// > **Note:** If `src` or `dst` have not been added via `add_node`,
-/// > the edge will still be created in the edge dictionaries but the
-/// > nodes will be missing from `graph.nodes`. This creates "ghost nodes"
-/// > that are traversable but invisible to functions that iterate over
-/// > nodes (e.g. `order`, `filter_nodes`). Use `add_edge_ensured` to
-/// > auto-create missing endpoints with a default value.
+/// Returns `Error` if either endpoint node doesn't exist in `graph.nodes`.
+/// Use `add_edge_ensure` to auto-create missing nodes with a default value,
+/// or `add_node` to explicitly add nodes before adding edges.
 ///
 /// ## Example
 ///
 /// ```gleam
 /// graph
+/// |> model.add_node(1, "A")
+/// |> model.add_node(2, "B")
 /// |> model.add_edge(from: 1, to: 2, with: 10)
+/// // => Ok(graph)
+/// ```
+///
+/// ```gleam
+/// graph
+/// |> model.add_edge(from: 1, to: 2, with: 10)
+/// // => Error("Node 1 does not exist")
 /// ```
 pub fn add_edge(
+  graph: Graph(n, e),
+  from src: NodeId,
+  to dst: NodeId,
+  with weight: e,
+) -> Result(Graph(n, e), String) {
+  case dict.has_key(graph.nodes, src), dict.has_key(graph.nodes, dst) {
+    True, True ->
+      Ok(add_edge_unchecked(graph, from: src, to: dst, with: weight))
+    False, False ->
+      Error(
+        "Nodes "
+        <> int.to_string(src)
+        <> " and "
+        <> int.to_string(dst)
+        <> " do not exist",
+      )
+    False, _ -> Error("Node " <> int.to_string(src) <> " does not exist")
+    _, False -> Error("Node " <> int.to_string(dst) <> " does not exist")
+  }
+}
+
+/// Adds an edge without checking if nodes exist (internal use).
+///
+/// For directed graphs, adds a single edge from `src` to `dst`.
+/// For undirected graphs, adds edges in both directions.
+///
+/// > **Warning:** If `src` or `dst` have not been added via `add_node`,
+/// > this creates "ghost nodes" that are traversable but invisible to
+/// > functions that iterate over nodes (e.g. `order`, `filter_nodes`).
+/// > Prefer using `add_edge` (checked) or `add_edge_ensure` (auto-creates).
+fn add_edge_unchecked(
   graph: Graph(n, e),
   from src: NodeId,
   to dst: NodeId,
@@ -129,25 +167,27 @@ pub fn add_edge(
   }
 }
 
-/// Like `add_edge`, but ensures both endpoint nodes exist first.
+/// Ensures both endpoint nodes exist, then adds an edge.
 ///
 /// If `src` or `dst` is not already in the graph, it is created with
 /// the supplied `default` node data before the edge is added. Nodes
 /// that already exist are left unchanged.
-/// 
+///
+/// Always succeeds and returns a `Graph` (never fails).
+///
 /// ## Example
 ///
 /// ```gleam
 /// // Nodes 1 and 2 are created automatically with data "unknown"
 /// model.new(model.Directed)
-/// |> model.add_edge_ensured(from: 1, to: 2, with: 10, default: "unknown")
+/// |> model.add_edge_ensure(from: 1, to: 2, with: 10, default: "unknown")
 /// ```
 ///
 /// ```gleam
 /// // Existing nodes keep their data; only missing ones get the default
 /// model.new(model.Directed)
 /// |> model.add_node(1, "Alice")
-/// |> model.add_edge_ensured(from: 1, to: 2, with: 5, default: "anon")
+/// |> model.add_edge_ensure(from: 1, to: 2, with: 5, default: "anon")
 /// // Node 1 is still "Alice", node 2 is "anon"
 /// ```
 /// ## Future Improvements
@@ -155,11 +195,11 @@ pub fn add_edge(
 /// A future version may support separate defaults for each endpoint
 /// (`default_from` and `default_to`). If you need this feature, please
 /// [open an issue](https://github.com/code-shoily/yog/issues).
-/// 
+///
 /// For now, if you need different node values, then call `add_node` before
-/// adding edges. Or call `add_edge_ensured_with()` with a callback function
+/// adding edges. Or call `add_edge_with()` with a callback function
 /// that fetches the value of the NodeId (i.e. from a dict, database, or `identity`)
-pub fn add_edge_ensured(
+pub fn add_edge_ensure(
   graph: Graph(n, e),
   from src: NodeId,
   to dst: NodeId,
@@ -168,35 +208,33 @@ pub fn add_edge_ensured(
 ) -> Graph(n, e) {
   let graph = ensure_node(graph, src, default)
   let graph = ensure_node(graph, dst, default)
-  add_edge(graph, from: src, to: dst, with: weight)
+  add_edge_unchecked(graph, from: src, to: dst, with: weight)
 }
 
-/// Like `add_edge_ensured`, it ensures that node exists before adding 
-/// edge, but when missing, create the node_data from a function rather
-/// than adding a default value.
+/// Ensures both endpoint nodes exist using a callback, then adds an edge.
 ///
-/// If `src` or `dst` is not already in the graph, it is created with
-/// the calling the `by` function that takes the node id and returns
-/// the node data before the edge is added. 
-/// 
+/// If `src` or `dst` is not already in the graph, it is created by
+/// calling the `by` function with the node ID to generate the node data.
 /// Nodes that already exist are left unchanged.
-/// 
+///
+/// Always succeeds and returns a `Graph` (never fails).
+///
 /// ## Example
 ///
 /// ```gleam
 /// // Nodes 1 and 2 are created automatically with value that's the same as NodeId
 /// model.new(model.Directed)
-/// |> model.add_edge_ensured_with(from: 1, to: 2, with: 10, by: fn(x) { x })
+/// |> model.add_edge_with(from: 1, to: 2, with: 10, by: fn(x) { x })
 /// ```
 ///
 /// ```gleam
 /// // Existing nodes keep their data; only missing ones get the default
 /// model.new(model.Directed)
 /// |> model.add_node(1, "1")
-/// |> model.add_edge_ensured(from: 1, to: 2, with: 5, by: fn(n) { int.to_string(n) <> ":new" })
+/// |> model.add_edge_with(from: 1, to: 2, with: 5, by: fn(n) { int.to_string(n) <> ":new" })
 /// // Node 1 is still "1", node 2 is "2:new"
 /// ```
-pub fn add_edge_ensured_with(
+pub fn add_edge_with(
   graph: Graph(n, e),
   from src: NodeId,
   to dst: NodeId,
@@ -205,7 +243,7 @@ pub fn add_edge_ensured_with(
 ) -> Graph(n, e) {
   let graph = ensure_node_with(graph, src, by:)
   let graph = ensure_node_with(graph, dst, by:)
-  add_edge(graph, from: src, to: dst, with: weight)
+  add_edge_unchecked(graph, from: src, to: dst, with: weight)
 }
 
 /// Adds a node only if it doesn't already exist.
@@ -344,13 +382,13 @@ fn do_add_directed_edge(
 /// ## Example
 ///
 /// ```gleam
-/// let graph =
+/// let assert Ok(graph) =
 ///   model.new(Directed)
 ///   |> model.add_node(1, "A")
 ///   |> model.add_node(2, "B")
 ///   |> model.add_node(3, "C")
 ///   |> model.add_edge(from: 1, to: 2, with: 10)
-///   |> model.add_edge(from: 2, to: 3, with: 20)
+/// let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 20)
 ///
 /// let graph = model.remove_node(graph, 2)
 /// // Node 2 is removed, along with edges 1->2 and 2->3
@@ -388,23 +426,23 @@ pub fn remove_node(graph: Graph(n, e), id: NodeId) -> Graph(n, e) {
 ///
 /// ```gleam
 /// // Directed graph - removes single directed edge
-/// let graph =
+/// let assert Ok(graph) =
 ///   model.new(Directed)
 ///   |> model.add_node(1, "A")
 ///   |> model.add_node(2, "B")
 ///   |> model.add_edge(from: 1, to: 2, with: 10)
-///   |> model.remove_edge(1, 2)
+/// let graph = model.remove_edge(graph, 1, 2)
 /// // Edge 1->2 is removed
 /// ```
 ///
 /// ```gleam
 /// // Undirected graph - removes both directions
-/// let graph =
+/// let assert Ok(graph) =
 ///   model.new(Undirected)
 ///   |> model.add_node(1, "A")
 ///   |> model.add_node(2, "B")
 ///   |> model.add_edge(from: 1, to: 2, with: 10)
-///   |> model.remove_edge(1, 2)
+/// let graph = model.remove_edge(graph, 1, 2)
 /// // Edge between 1 and 2 is fully removed
 /// ```
 pub fn remove_edge(
@@ -447,12 +485,12 @@ fn do_remove_directed_edge(
 /// ## Example
 ///
 /// ```gleam
-/// let graph =
+/// let assert Ok(graph) =
 ///   model.new(Directed)
 ///   |> model.add_node(1, "A")
 ///   |> model.add_node(2, "B")
 ///   |> model.add_edge(from: 1, to: 2, with: 10)
-///   |> model.add_edge_with_combine(from: 1, to: 2, with: 5, using: int.add)
+/// let graph = model.add_edge_with_combine(graph, from: 1, to: 2, with: 5, using: int.add)
 /// // Edge 1->2 now has weight 15 (10 + 5)
 /// ```
 ///

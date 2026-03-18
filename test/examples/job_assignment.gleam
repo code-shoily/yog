@@ -18,14 +18,14 @@ pub fn main() {
     |> model.add_node(4, "Programming")
     |> model.add_node(5, "Design")
     |> model.add_node(6, "Testing")
-    // Alice can do Programming or Design
-    |> model.add_edge(from: 1, to: 4, with: Nil)
-    |> model.add_edge(from: 1, to: 5, with: Nil)
-    // Bob can only do Programming
-    |> model.add_edge(from: 2, to: 4, with: Nil)
-    // Charlie can do Design or Testing
-    |> model.add_edge(from: 3, to: 5, with: Nil)
-    |> model.add_edge(from: 3, to: 6, with: Nil)
+  // Alice can do Programming or Design
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: Nil)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 5, with: Nil)
+  // Bob can only do Programming
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: Nil)
+  // Charlie can do Design or Testing
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 5, with: Nil)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 6, with: Nil)
 
   io.println("--- Bipartite Job Assignment ---")
 

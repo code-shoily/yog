@@ -10,9 +10,12 @@ pub fn main() {
     |> model.add_node(1, "Alice")
     |> model.add_node(2, "Bob")
     |> model.add_node(3, "Carol")
-    |> model.add_edge(from: 1, to: 2, with: Nil)
-    |> model.add_edge(from: 2, to: 3, with: Nil)
-    |> model.add_edge(from: 3, to: 1, with: Nil)
+  let assert Ok(social_graph) =
+    model.add_edge(social_graph, from: 1, to: 2, with: Nil)
+  let assert Ok(social_graph) =
+    model.add_edge(social_graph, from: 2, to: 3, with: Nil)
+  let assert Ok(social_graph) =
+    model.add_edge(social_graph, from: 3, to: 1, with: Nil)
 
   // Find groups of mutually connected users
   let communities = connectivity.strongly_connected_components(social_graph)

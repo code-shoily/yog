@@ -6,14 +6,14 @@ import yog/property/clique
 
 // Test finding max clique in a triangle (3-clique)
 pub fn max_clique_triangle_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
 
   let result = clique.max_clique(graph)
 
@@ -27,18 +27,18 @@ pub fn max_clique_triangle_test() {
 
 // Test finding max clique in a 4-clique
 pub fn max_clique_four_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 4, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
 
   let result = clique.max_clique(graph)
 
@@ -52,15 +52,15 @@ pub fn max_clique_four_test() {
 
 // Test max clique with disconnected node
 pub fn max_clique_with_isolated_node_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "Isolated")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
 
   let result = clique.max_clique(graph)
 
@@ -75,15 +75,15 @@ pub fn max_clique_with_isolated_node_test() {
 
 // Test max clique in a path graph (no clique larger than 2)
 pub fn max_clique_path_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
 
   let result = clique.max_clique(graph)
 
@@ -95,26 +95,28 @@ pub fn max_clique_path_test() {
 
 // Test max clique with two separate cliques
 pub fn max_clique_two_cliques_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     // First triangle
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    // Second, larger clique (4-clique)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
+  // Second, larger clique (4-clique)
+  let graph =
+    graph
     |> model.add_node(4, "D")
     |> model.add_node(5, "E")
     |> model.add_node(6, "F")
     |> model.add_node(7, "G")
-    |> model.add_edge(from: 4, to: 5, with: 1)
-    |> model.add_edge(from: 4, to: 6, with: 1)
-    |> model.add_edge(from: 4, to: 7, with: 1)
-    |> model.add_edge(from: 5, to: 6, with: 1)
-    |> model.add_edge(from: 5, to: 7, with: 1)
-    |> model.add_edge(from: 6, to: 7, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 6, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 7, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 6, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 5, to: 7, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 6, to: 7, with: 1)
 
   let result = clique.max_clique(graph)
 
@@ -129,14 +131,14 @@ pub fn max_clique_two_cliques_test() {
 
 // Test max clique in complete graph (all nodes form a clique)
 pub fn max_clique_complete_graph_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
 
   let result = clique.max_clique(graph)
 
@@ -175,13 +177,13 @@ pub fn max_clique_single_node_test() {
 
 // Test finding all maximal cliques in a simple graph
 pub fn all_maximal_cliques_simple_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
 
   let result = clique.all_maximal_cliques(graph)
 
@@ -201,14 +203,14 @@ pub fn all_maximal_cliques_simple_test() {
 
 // Test finding all maximal cliques in a triangle
 pub fn all_maximal_cliques_triangle_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
 
   let result = clique.all_maximal_cliques(graph)
 
@@ -224,19 +226,21 @@ pub fn all_maximal_cliques_triangle_test() {
 
 // Test finding all maximal cliques with disconnected components
 pub fn all_maximal_cliques_disconnected_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     // First triangle
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    // Second edge (disconnected)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
+  // Second edge (disconnected)
+  let graph =
+    graph
     |> model.add_node(4, "D")
     |> model.add_node(5, "E")
-    |> model.add_edge(from: 4, to: 5, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
 
   let result = clique.all_maximal_cliques(graph)
 
@@ -256,18 +260,18 @@ pub fn all_maximal_cliques_disconnected_test() {
 
 // Test that all_maximal_cliques finds the same max as max_clique
 pub fn all_maximal_contains_max_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 4, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
 
   let max = clique.max_clique(graph)
   let all = clique.all_maximal_cliques(graph)
@@ -282,14 +286,14 @@ pub fn all_maximal_contains_max_test() {
 
 // Test finding all 2-cliques (edges) in a triangle
 pub fn k_cliques_size_2_triangle_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
 
   let result = clique.k_cliques(graph, 2)
 
@@ -313,16 +317,16 @@ pub fn k_cliques_size_2_triangle_test() {
 
 // Test finding all 3-cliques (triangles) in a graph
 pub fn k_cliques_size_3_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
 
   let result = clique.k_cliques(graph, 3)
 
@@ -338,18 +342,18 @@ pub fn k_cliques_size_3_test() {
 
 // Test finding all 4-cliques in a complete graph K4
 pub fn k_cliques_size_4_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 4, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
 
   let result = clique.k_cliques(graph, 4)
 
@@ -365,14 +369,14 @@ pub fn k_cliques_size_4_test() {
 
 // Test k_cliques with k larger than any clique
 pub fn k_cliques_too_large_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
 
   let result = clique.k_cliques(graph, 5)
 
@@ -384,7 +388,7 @@ pub fn k_cliques_too_large_test() {
 
 // Test k_cliques with k=1 (all individual nodes)
 pub fn k_cliques_size_1_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -424,7 +428,7 @@ pub fn k_cliques_empty_graph_test() {
 
 // Test k_cliques with k=0 (edge case)
 pub fn k_cliques_zero_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -453,19 +457,19 @@ pub fn k_cliques_negative_test() {
 
 // Test finding triangles in a graph with multiple triangles
 pub fn k_cliques_multiple_triangles_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     // First triangle
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    // Second triangle (shares edge with first)
-    |> model.add_node(4, "D")
-    |> model.add_edge(from: 2, to: 4, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
+  // Second triangle (shares edge with first)
+  let graph = graph |> model.add_node(4, "D")
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
 
   let result = clique.k_cliques(graph, 3)
 
@@ -485,15 +489,15 @@ pub fn k_cliques_multiple_triangles_test() {
 
 // Test k_cliques on a path (no triangles)
 pub fn k_cliques_path_no_triangles_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
 
   let result = clique.k_cliques(graph, 3)
 
@@ -505,7 +509,7 @@ pub fn k_cliques_path_no_triangles_test() {
 
 // Test k_cliques finds all 3-cliques in K5
 pub fn k_cliques_k5_triangles_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -514,15 +518,15 @@ pub fn k_cliques_k5_triangles_test() {
     |> model.add_node(5, "E")
     // Complete graph K5 - all pairs connected
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 4, with: 1)
-    |> model.add_edge(from: 1, to: 5, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
-    |> model.add_edge(from: 2, to: 5, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
-    |> model.add_edge(from: 3, to: 5, with: 1)
-    |> model.add_edge(from: 4, to: 5, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 4, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 5, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 4, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 5, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 4, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 3, to: 5, with: 1)
+  let assert Ok(graph) = model.add_edge(graph, from: 4, to: 5, with: 1)
 
   let result = clique.k_cliques(graph, 3)
 
