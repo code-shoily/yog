@@ -11,14 +11,12 @@ import yog/pathfinding/floyd_warshall
 
 // Basic Floyd-Warshall
 pub fn floyd_warshall_basic_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-    |> model.add_edge(from: 2, to: 3, with: 10)
-    |> model.add_edge(from: 1, to: 3, with: 20)
+    |> model.add_edges([#(1, 2, 5), #(2, 3, 10), #(1, 3, 20)])
 
   let result =
     floyd_warshall.floyd_warshall(
@@ -49,14 +47,12 @@ pub fn floyd_warshall_basic_test() {
 
 // Floyd-Warshall with negative weights
 pub fn floyd_warshall_negative_weights_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 2, to: 1, with: -5)
-    |> model.add_edge(from: 2, to: 3, with: 5)
+    |> model.add_edges([#(1, 2, 10), #(2, 1, -5), #(2, 3, 5)])
 
   let result =
     floyd_warshall.floyd_warshall(
@@ -88,12 +84,11 @@ pub fn floyd_warshall_negative_weights_test() {
 
 // Detecting negative cycles with Floyd-Warshall
 pub fn floyd_warshall_negative_cycle_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-    |> model.add_edge(from: 2, to: 1, with: -10)
+    |> model.add_edges([#(1, 2, 5), #(2, 1, -10)])
 
   let result =
     floyd_warshall.floyd_warshall(
@@ -109,16 +104,13 @@ pub fn floyd_warshall_negative_cycle_test() {
 
 // Multiple paths, choose shortest
 pub fn floyd_warshall_multiple_paths_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 5)
-    |> model.add_edge(from: 3, to: 4, with: 5)
+    |> model.add_edges([#(1, 2, 1), #(2, 4, 1), #(1, 3, 5), #(3, 4, 5)])
 
   let result =
     floyd_warshall.floyd_warshall(
@@ -140,14 +132,13 @@ pub fn floyd_warshall_multiple_paths_test() {
 
 // Disconnected components
 pub fn floyd_warshall_disconnected_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-    |> model.add_edge(from: 3, to: 4, with: 5)
+    |> model.add_edges([#(1, 2, 5), #(3, 4, 5)])
 
   let result =
     floyd_warshall.floyd_warshall(
@@ -213,13 +204,12 @@ pub fn floyd_warshall_empty_test() {
 }
 
 pub fn floyd_warshall_transitive_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1)])
 
   let result =
     floyd_warshall.floyd_warshall(
@@ -238,14 +228,12 @@ pub fn floyd_warshall_transitive_test() {
 }
 
 pub fn floyd_warshall_vs_shortest_path_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 10)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(1, 3, 10)])
 
   let fw_result =
     floyd_warshall.floyd_warshall(
@@ -274,11 +262,11 @@ pub fn floyd_warshall_vs_shortest_path_test() {
 }
 
 pub fn floyd_warshall_undirected_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge(from: 1, to: 2, with: 5)
+    |> model.add_edges([#(1, 2, 5)])
 
   let result =
     floyd_warshall.floyd_warshall(
@@ -298,13 +286,12 @@ pub fn floyd_warshall_undirected_test() {
 }
 
 pub fn floyd_warshall_float_weights_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1.5)
-    |> model.add_edge(from: 2, to: 3, with: 2.5)
+    |> model.add_edges([#(1, 2, 1.5), #(2, 3, 2.5)])
 
   let result =
     floyd_warshall.floyd_warshall(
@@ -324,13 +311,12 @@ pub fn floyd_warshall_float_weights_test() {
 }
 
 pub fn floyd_warshall_negative_self_loop_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge(from: 1, to: 1, with: -5)
-    // Negative self-loop
-    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edges([#(1, 1, -5), #(1, 2, 10)])
+  // Negative self-loop
 
   let result =
     floyd_warshall.floyd_warshall(
@@ -345,13 +331,12 @@ pub fn floyd_warshall_negative_self_loop_test() {
 }
 
 pub fn floyd_warshall_positive_self_loop_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge(from: 1, to: 1, with: 5)
-    // Positive self-loop (ignored, not shortest)
-    |> model.add_edge(from: 1, to: 2, with: 10)
+    |> model.add_edges([#(1, 1, 5), #(1, 2, 10)])
+  // Positive self-loop (ignored, not shortest)
 
   let result =
     floyd_warshall.floyd_warshall(

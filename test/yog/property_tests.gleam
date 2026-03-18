@@ -142,7 +142,8 @@ pub fn add_remove_edge_inverse_directed_test() {
   case model.order(graph) {
     0 -> Nil
     _ -> {
-      let with_edge = model.add_edge(graph, from: src, to: dst, with: weight)
+      let assert Ok(with_edge) =
+        model.add_edge(graph, from: src, to: dst, with: weight)
 
       let edge_exists =
         model.successors(with_edge, src)
@@ -167,7 +168,8 @@ pub fn add_remove_edge_inverse_undirected_test() {
   case model.order(graph) {
     0 -> Nil
     _ -> {
-      let with_edge = model.add_edge(graph, from: src, to: dst, with: weight)
+      let assert Ok(with_edge) =
+        model.add_edge(graph, from: src, to: dst, with: weight)
 
       // Both directions should exist
       let forward_exists =

@@ -73,7 +73,7 @@ pub fn multiple_nodes_json_test() {
 }
 
 pub fn single_directed_edge_json_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
@@ -95,7 +95,7 @@ pub fn single_directed_edge_json_test() {
 }
 
 pub fn single_undirected_edge_json_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
@@ -124,14 +124,12 @@ pub fn single_undirected_edge_json_test() {
 }
 
 pub fn multiple_edges_json_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: "5")
-    |> model.add_edge(from: 2, to: 3, with: "10")
-    |> model.add_edge(from: 1, to: 3, with: "15")
+    |> model.add_edges([#(1, 2, "5"), #(2, 3, "10"), #(1, 3, "15")])
 
   let output = yog_json.to_json(graph, yog_json.default_json_options())
 
@@ -199,7 +197,7 @@ pub fn custom_node_mapper_json_test() {
 }
 
 pub fn custom_edge_mapper_json_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -235,17 +233,19 @@ pub fn custom_edge_mapper_json_test() {
 }
 
 pub fn complex_graph_json_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: "1")
-    |> model.add_edge(from: 1, to: 3, with: "4")
-    |> model.add_edge(from: 2, to: 3, with: "2")
-    |> model.add_edge(from: 2, to: 4, with: "5")
-    |> model.add_edge(from: 3, to: 4, with: "1")
+    |> model.add_edges([
+      #(1, 2, "1"),
+      #(1, 3, "4"),
+      #(2, 3, "2"),
+      #(2, 4, "5"),
+      #(3, 4, "1"),
+    ])
 
   let output = yog_json.to_json(graph, yog_json.default_json_options())
 

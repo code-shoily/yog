@@ -122,7 +122,8 @@ pub fn erdos_renyi_gnp_with_type(
         utils.range(i + 1, n - 1)
         |> list.fold(g, fn(acc, j) {
           case float.random() <. p {
-            True -> model.add_edge(acc, from: i, to: j, with: 1)
+            True ->
+              model.add_edge_ensure(acc, from: i, to: j, with: 1, default: Nil)
             False -> acc
           }
         })
@@ -138,7 +139,14 @@ pub fn erdos_renyi_gnp_with_type(
             True -> acc
             False ->
               case float.random() <. p {
-                True -> model.add_edge(acc, from: i, to: j, with: 1)
+                True ->
+                  model.add_edge_ensure(
+                    acc,
+                    from: i,
+                    to: j,
+                    with: 1,
+                    default: Nil,
+                  )
                 False -> acc
               }
           }
@@ -227,7 +235,13 @@ fn add_random_edges(
             True -> add_random_edges(graph, n, m, existing, graph_type)
             False -> {
               let new_graph =
-                model.add_edge(graph, from: edge.0, to: edge.1, with: 1)
+                model.add_edge_ensure(
+                  graph,
+                  from: edge.0,
+                  to: edge.1,
+                  with: 1,
+                  default: Nil,
+                )
               let new_existing = set.insert(existing, edge)
               add_random_edges(new_graph, n, m - 1, new_existing, graph_type)
             }
@@ -291,7 +305,7 @@ pub fn barabasi_albert_with_type(
           |> list.fold(initial, fn(g, i) {
             utils.range(i + 1, m0 - 1)
             |> list.fold(g, fn(acc, j) {
-              model.add_edge(acc, from: i, to: j, with: 1)
+              model.add_edge_ensure(acc, from: i, to: j, with: 1, default: Nil)
             })
           })
         model.Directed ->
@@ -301,7 +315,14 @@ pub fn barabasi_albert_with_type(
             |> list.fold(g, fn(acc, j) {
               case i == j {
                 True -> acc
-                False -> model.add_edge(acc, from: i, to: j, with: 1)
+                False ->
+                  model.add_edge_ensure(
+                    acc,
+                    from: i,
+                    to: j,
+                    with: 1,
+                    default: Nil,
+                  )
               }
             })
           })
@@ -335,7 +356,7 @@ fn add_node_with_preferential_attachment(
   targets
   |> set.to_list()
   |> list.fold(with_node, fn(g, target) {
-    model.add_edge(g, from: new_node, to: target, with: 1)
+    model.add_edge_ensure(g, from: new_node, to: target, with: 1, default: Nil)
   })
 }
 
@@ -428,7 +449,7 @@ pub fn watts_strogatz_with_type(
             False -> {
               // Keep regular edge
               let j = { i + offset } % n
-              model.add_edge(acc, from: i, to: j, with: 1)
+              model.add_edge_ensure(acc, from: i, to: j, with: 1, default: Nil)
             }
             True -> {
               // Rewire to random node
@@ -457,7 +478,14 @@ fn add_random_edge_not_to(
       let neighbor_ids = list.map(neighbors, fn(pair) { pair.0 })
       case list.contains(neighbor_ids, to) {
         True -> add_random_edge_not_to(graph, from, n)
-        False -> model.add_edge(graph, from: from, to: to, with: 1)
+        False ->
+          model.add_edge_ensure(
+            graph,
+            from: from,
+            to: to,
+            with: 1,
+            default: Nil,
+          )
       }
     }
   }
@@ -529,7 +557,13 @@ fn build_random_tree(
       case list_at(tree_list, index) {
         Ok(parent) -> {
           let new_graph =
-            model.add_edge(graph, from: parent, to: next_node, with: 1)
+            model.add_edge_ensure(
+              graph,
+              from: parent,
+              to: next_node,
+              with: 1,
+              default: Nil,
+            )
           let new_in_tree = set.insert(in_tree, next_node)
           build_random_tree(new_graph, n, new_in_tree, next_node + 1)
         }

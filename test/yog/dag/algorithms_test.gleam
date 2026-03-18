@@ -10,10 +10,10 @@ import yog/model.{Directed}
 pub fn topological_sort_test() {
   let g =
     model.new(Directed)
-    |> model.add_edge_ensured(1, 2, 10, "")
-    |> model.add_edge_ensured(1, 3, 20, "")
-    |> model.add_edge_ensured(2, 4, 30, "")
-    |> model.add_edge_ensured(3, 4, 40, "")
+    |> model.add_edge_ensure(1, 2, 10, "")
+    |> model.add_edge_ensure(1, 3, 20, "")
+    |> model.add_edge_ensure(2, 4, 30, "")
+    |> model.add_edge_ensure(3, 4, 40, "")
 
   let assert Ok(d) = models.from_graph(g)
   let sorted = algorithms.topological_sort(d)
@@ -36,11 +36,11 @@ pub fn topological_sort_test() {
 pub fn longest_path_test() {
   let g =
     model.new(Directed)
-    |> model.add_edge_ensured(1, 2, 10, "")
-    |> model.add_edge_ensured(1, 3, 20, "")
-    |> model.add_edge_ensured(2, 4, 30, "")
-    |> model.add_edge_ensured(3, 4, 40, "")
-    |> model.add_edge_ensured(4, 5, 5, "")
+    |> model.add_edge_ensure(1, 2, 10, "")
+    |> model.add_edge_ensure(1, 3, 20, "")
+    |> model.add_edge_ensure(2, 4, 30, "")
+    |> model.add_edge_ensure(3, 4, 40, "")
+    |> model.add_edge_ensure(4, 5, 5, "")
 
   let assert Ok(d) = models.from_graph(g)
   algorithms.longest_path(d)
@@ -50,11 +50,11 @@ pub fn longest_path_test() {
 pub fn shortest_path_test() {
   let g =
     model.new(Directed)
-    |> model.add_edge_ensured(1, 2, 10, "")
-    |> model.add_edge_ensured(1, 3, 20, "")
-    |> model.add_edge_ensured(2, 4, 30, "")
-    |> model.add_edge_ensured(3, 4, 40, "")
-    |> model.add_edge_ensured(4, 5, 5, "")
+    |> model.add_edge_ensure(1, 2, 10, "")
+    |> model.add_edge_ensure(1, 3, 20, "")
+    |> model.add_edge_ensure(2, 4, 30, "")
+    |> model.add_edge_ensure(3, 4, 40, "")
+    |> model.add_edge_ensure(4, 5, 5, "")
 
   let assert Ok(d) = models.from_graph(g)
 
@@ -68,7 +68,7 @@ pub fn shortest_path_test() {
 pub fn shortest_path_no_path_test() {
   let g =
     model.new(Directed)
-    |> model.add_edge_ensured(1, 2, 10, "")
+    |> model.add_edge_ensure(1, 2, 10, "")
     |> model.add_node(3, "isolated")
 
   let assert Ok(d) = models.from_graph(g)
@@ -81,7 +81,7 @@ pub fn shortest_path_no_path_test() {
 pub fn shortest_path_same_node_test() {
   let g =
     model.new(Directed)
-    |> model.add_edge_ensured(1, 2, 10, "")
+    |> model.add_edge_ensure(1, 2, 10, "")
 
   let assert Ok(d) = models.from_graph(g)
 
@@ -95,8 +95,8 @@ pub fn shortest_path_same_node_test() {
 pub fn transitive_closure_test() {
   let g =
     model.new(Directed)
-    |> model.add_edge_ensured(1, 2, 10, "")
-    |> model.add_edge_ensured(2, 3, 20, "")
+    |> model.add_edge_ensure(1, 2, 10, "")
+    |> model.add_edge_ensure(2, 3, 20, "")
 
   let assert Ok(d) = models.from_graph(g)
   let tc = algorithms.transitive_closure(d, with: int.add) |> models.to_graph
@@ -109,9 +109,9 @@ pub fn transitive_closure_test() {
 pub fn transitive_reduction_test() {
   let g =
     model.new(Directed)
-    |> model.add_edge_ensured(1, 2, 10, "")
-    |> model.add_edge_ensured(2, 3, 20, "")
-    |> model.add_edge_ensured(1, 3, 30, "")
+    |> model.add_edge_ensure(1, 2, 10, "")
+    |> model.add_edge_ensure(2, 3, 20, "")
+    |> model.add_edge_ensure(1, 3, 30, "")
 
   let assert Ok(d) = models.from_graph(g)
   let tr = algorithms.transitive_reduction(d, with: int.add) |> models.to_graph
@@ -124,10 +124,10 @@ pub fn transitive_reduction_test() {
 pub fn count_reachability_test() {
   let g =
     model.new(Directed)
-    |> model.add_edge_ensured(1, 2, 10, "")
-    |> model.add_edge_ensured(1, 4, 20, "")
-    |> model.add_edge_ensured(2, 3, 30, "")
-    |> model.add_edge_ensured(4, 3, 40, "")
+    |> model.add_edge_ensure(1, 2, 10, "")
+    |> model.add_edge_ensure(1, 4, 20, "")
+    |> model.add_edge_ensure(2, 3, 30, "")
+    |> model.add_edge_ensure(4, 3, 40, "")
 
   let assert Ok(d) = models.from_graph(g)
 
@@ -143,12 +143,12 @@ pub fn count_reachability_test() {
 pub fn lowest_common_ancestors_test() {
   let g =
     model.new(Directed)
-    |> model.add_edge_ensured(1, 3, 10, "")
-    |> model.add_edge_ensured(1, 4, 20, "")
-    |> model.add_edge_ensured(2, 3, 30, "")
-    |> model.add_edge_ensured(2, 4, 40, "")
-    |> model.add_edge_ensured(0, 1, 50, "")
-    |> model.add_edge_ensured(0, 2, 60, "")
+    |> model.add_edge_ensure(1, 3, 10, "")
+    |> model.add_edge_ensure(1, 4, 20, "")
+    |> model.add_edge_ensure(2, 3, 30, "")
+    |> model.add_edge_ensure(2, 4, 40, "")
+    |> model.add_edge_ensure(0, 1, 50, "")
+    |> model.add_edge_ensure(0, 2, 60, "")
 
   let assert Ok(d) = models.from_graph(g)
   let lca = algorithms.lowest_common_ancestors(d, 3, 4)

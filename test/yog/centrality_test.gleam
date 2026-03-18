@@ -24,15 +24,13 @@ fn assert_float_close(actual: Float, expected: Float) -> Nil {
 pub fn degree_undirected_star_test() {
   // Star graph: node 1 connected to 2, 3, 4
   // 1 has degree 3 (max), others have degree 1
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, "center")
     |> model.add_node(2, "leaf")
     |> model.add_node(3, "leaf")
     |> model.add_node(4, "leaf")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 4, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(1, 4, 1)])
 
   let scores = centrality.degree(g, centrality.TotalDegree)
 
@@ -47,18 +45,20 @@ pub fn degree_undirected_star_test() {
 pub fn degree_undirected_complete_graph_test() {
   // Complete graph K4: every node connected to every other node
   // Each node has degree 3, max possible is 3
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_node(4, Nil)
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 4, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(1, 3, 1),
+      #(1, 4, 1),
+      #(2, 3, 1),
+      #(2, 4, 1),
+      #(3, 4, 1),
+    ])
 
   let scores = centrality.degree(g, centrality.TotalDegree)
 
@@ -72,15 +72,13 @@ pub fn degree_undirected_complete_graph_test() {
 pub fn degree_undirected_path_test() {
   // Path graph: 1-2-3-4
   // Endpoints have degree 1, middle nodes have degree 2
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_node(4, Nil)
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 4, 1)])
 
   let scores = centrality.degree(g, centrality.TotalDegree)
 
@@ -100,7 +98,7 @@ pub fn degree_undirected_isolated_node_test() {
     |> model.add_node(1, "connected")
     |> model.add_node(2, "connected")
     |> model.add_node(3, "isolated")
-    |> model.add_edge(from: 1, to: 2, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 2, with: 1)
 
   let scores = centrality.degree(g, centrality.TotalDegree)
 
@@ -134,14 +132,12 @@ pub fn degree_directed_out_degree_test() {
   // Node 1: out-degree 2
   // Node 2: out-degree 1
   // Node 3: out-degree 0
-  let g =
+  let assert Ok(g) =
     model.new(model.Directed)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(2, 3, 1)])
 
   let scores = centrality.degree(g, centrality.OutDegree)
 
@@ -161,14 +157,12 @@ pub fn degree_directed_in_degree_test() {
   // Node 1: in-degree 0
   // Node 2: in-degree 1
   // Node 3: in-degree 2
-  let g =
+  let assert Ok(g) =
     model.new(model.Directed)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(2, 3, 1)])
 
   let scores = centrality.degree(g, centrality.InDegree)
 
@@ -188,14 +182,12 @@ pub fn degree_directed_total_degree_test() {
   // Node 1: in 0 + out 2 = 2
   // Node 2: in 1 + out 1 = 2
   // Node 3: in 2 + out 0 = 2
-  let g =
+  let assert Ok(g) =
     model.new(model.Directed)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(2, 3, 1)])
 
   let scores = centrality.degree(g, centrality.TotalDegree)
 
@@ -211,7 +203,7 @@ pub fn degree_directed_mode_ignored_for_undirected_test() {
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
-    |> model.add_edge(from: 1, to: 2, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 2, with: 1)
 
   // All modes should produce same result for undirected graph
   let total = centrality.degree(g, centrality.TotalDegree)
@@ -241,7 +233,7 @@ pub fn degree_two_nodes_test() {
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
-    |> model.add_edge(from: 1, to: 2, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 2, with: 1)
 
   let scores = centrality.degree(g, centrality.TotalDegree)
 
@@ -258,15 +250,15 @@ pub fn closeness_star_graph_test() {
   // Star graph: node 1 connected to 2, 3, 4
   // Node 1 (center): distances [1, 1, 1], sum = 3, centrality = 3/3 = 1.0
   // Node 2 (leaf): distances [1, 2, 2], sum = 5, centrality = 3/5 = 0.6
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, "center")
     |> model.add_node(2, "leaf")
     |> model.add_node(3, "leaf")
     |> model.add_node(4, "leaf")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 4, with: 1)
 
   let scores = centrality.closeness(g, 0, int.add, int.compare, int.to_float)
 
@@ -283,15 +275,15 @@ pub fn closeness_path_graph_test() {
   // Path: 1-2-3-4
   // Node 1: distances [1, 2, 3], sum = 6, centrality = 3/6 = 0.5
   // Node 2: distances [1, 1, 2], sum = 4, centrality = 3/4 = 0.75
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_node(4, Nil)
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 4, with: 1)
 
   let scores = centrality.closeness(g, 0, int.add, int.compare, int.to_float)
 
@@ -307,18 +299,18 @@ pub fn closeness_path_graph_test() {
 pub fn closeness_complete_graph_test() {
   // Complete graph K4: every node connected to every other node
   // Each node: distances [1, 1, 1], sum = 3, centrality = 3/3 = 1.0
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_node(4, Nil)
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 4, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 4, with: 1)
 
   let scores = centrality.closeness(g, 0, int.add, int.compare, int.to_float)
 
@@ -332,7 +324,7 @@ pub fn closeness_complete_graph_test() {
 pub fn closeness_disconnected_graph_test() {
   // Disconnected graph: component 1-2 and isolated node 3
   // Node 3 cannot reach nodes 1 and 2, so centrality = 0.0
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
@@ -365,7 +357,7 @@ pub fn closeness_single_node_test() {
 pub fn closeness_two_nodes_test() {
   // Two connected nodes
   // Each node: distance [1], sum = 1, centrality = 1/1 = 1.0
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
@@ -395,15 +387,15 @@ pub fn harmonic_star_graph_test() {
   // Star graph: node 1 connected to 2, 3, 4
   // Node 1 (center): 1/1 + 1/1 + 1/1 = 3, normalized = 3/3 = 1.0
   // Node 2 (leaf): 1/1 + 1/2 + 1/2 = 2, normalized = 2/3 = 0.666...
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, "center")
     |> model.add_node(2, "leaf")
     |> model.add_node(3, "leaf")
     |> model.add_node(4, "leaf")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 4, with: 1)
 
   let scores =
     centrality.harmonic_centrality(g, 0, int.add, int.compare, int.to_float)
@@ -421,15 +413,15 @@ pub fn harmonic_path_graph_test() {
   // Path: 1-2-3-4
   // Node 1: 1/1 + 1/2 + 1/3 = 1.833... / 3 = 0.611...
   // Node 2: 1/1 + 1/1 + 1/2 = 2.5 / 3 = 0.833...
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_node(4, Nil)
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 4, with: 1)
 
   let scores =
     centrality.harmonic_centrality(g, 0, int.add, int.compare, int.to_float)
@@ -446,18 +438,18 @@ pub fn harmonic_path_graph_test() {
 pub fn harmonic_complete_graph_test() {
   // Complete graph K4: every node connected to every other node with distance 1
   // Each node: 1/1 + 1/1 + 1/1 = 3, normalized = 3/3 = 1.0
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_node(4, Nil)
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 4, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 4, with: 1)
 
   let scores =
     centrality.harmonic_centrality(g, 0, int.add, int.compare, int.to_float)
@@ -475,7 +467,7 @@ pub fn harmonic_disconnected_graph_test() {
   // Node 1: reaches node 2 at distance 1, cannot reach node 3
   // Node 1 score: (1/1) / 2 = 0.5 (only counts reachable nodes)
   // Node 3: reaches no one, score = 0.0
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
@@ -510,7 +502,7 @@ pub fn harmonic_single_node_test() {
 pub fn harmonic_two_nodes_test() {
   // Two connected nodes
   // Each node: 1/1 / 1 = 1.0
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
@@ -538,7 +530,7 @@ pub fn harmonic_vs_closeness_disconnected_test() {
   // Three nodes: 1-2 connected, 3 isolated
   // Closeness: nodes 1, 2, 3 all get 0.0 (can't reach everyone)
   // Harmonic: nodes 1, 2 get non-zero scores (count reachable nodes only)
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
@@ -568,15 +560,15 @@ pub fn betweenness_star_graph_test() {
   // Star graph: node 1 in center, connected to 2, 3, 4
   // All paths between leaves go through center
   // Center (1) should have highest betweenness
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, "center")
     |> model.add_node(2, "leaf")
     |> model.add_node(3, "leaf")
     |> model.add_node(4, "leaf")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 4, with: 1)
 
   let scores = centrality.betweenness(g, 0, int.add, int.compare, int.to_float)
 
@@ -595,15 +587,15 @@ pub fn betweenness_path_graph_test() {
   // Path: 1-2-3-4
   // Node 2 lies on paths: (1,3), (1,4), (2 is endpoint for others)
   // Node 3 lies on paths: (1,4), (2,4), (3 is endpoint for others)
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_node(4, Nil)
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 4, with: 1)
 
   let scores = centrality.betweenness(g, 0, int.add, int.compare, int.to_float)
 
@@ -624,14 +616,14 @@ pub fn betweenness_path_graph_test() {
 pub fn betweenness_triangle_test() {
   // Complete graph K3 (triangle): 1-2-3
   // No single point of failure - all paths are direct
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 3, with: 1)
 
   let scores = centrality.betweenness(g, 0, int.add, int.compare, int.to_float)
 
@@ -647,15 +639,15 @@ pub fn betweenness_triangle_test() {
 pub fn betweenness_directed_line_test() {
   // Directed line: 1 -> 2 -> 3 -> 4
   // All paths go through middle nodes
-  let g =
+  let assert Ok(g) =
     model.new(model.Directed)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_node(4, Nil)
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 4, with: 1)
 
   let scores = centrality.betweenness(g, 0, int.add, int.compare, int.to_float)
 
@@ -676,7 +668,7 @@ pub fn betweenness_directed_line_test() {
 pub fn betweenness_two_nodes_test() {
   // Just two nodes connected
   // No intermediate nodes for paths
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
@@ -715,16 +707,16 @@ pub fn betweenness_diamond_test() {
   // Diamond graph: 1 at top, 2 and 3 in middle, 4 at bottom
   // Paths from 1 to 4: 1-2-4 and 1-3-4 (two equal shortest paths)
   // So nodes 2 and 3 each get 0.5 credit for (1,4) path
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_node(4, Nil)
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 4, with: 1)
 
   let scores = centrality.betweenness(g, 0, int.add, int.compare, int.to_float)
 
@@ -752,15 +744,15 @@ pub fn pagerank_star_graph_test() {
   // Star graph: node 1 (center) links to 2, 3, 4
   // In directed star with edges center->leaf, center has no incoming links
   // So leaves should have higher PageRank than center
-  let g =
+  let assert Ok(g) =
     model.new(model.Directed)
     |> model.add_node(1, "center")
     |> model.add_node(2, "leaf")
     |> model.add_node(3, "leaf")
     |> model.add_node(4, "leaf")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 4, with: 1)
 
   let scores = centrality.pagerank(g, default_pagerank_options())
 
@@ -781,15 +773,15 @@ pub fn pagerank_star_graph_test() {
 pub fn pagerank_reverse_star_test() {
   // Reverse star: leaves link to center
   // Center should have highest PageRank
-  let g =
+  let assert Ok(g) =
     model.new(model.Directed)
     |> model.add_node(1, "center")
     |> model.add_node(2, "leaf")
     |> model.add_node(3, "leaf")
     |> model.add_node(4, "leaf")
     |> model.add_edge(from: 2, to: 1, with: 1)
-    |> model.add_edge(from: 3, to: 1, with: 1)
-    |> model.add_edge(from: 4, to: 1, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 1, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 4, to: 1, with: 1)
 
   let scores = centrality.pagerank(g, default_pagerank_options())
 
@@ -803,14 +795,14 @@ pub fn pagerank_reverse_star_test() {
 pub fn pagerank_cycle_test() {
   // Cycle: 1 -> 2 -> 3 -> 1
   // All nodes should have equal PageRank
-  let g =
+  let assert Ok(g) =
     model.new(model.Directed)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 1, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 1, with: 1)
 
   let scores = centrality.pagerank(g, default_pagerank_options())
 
@@ -827,15 +819,15 @@ pub fn pagerank_cycle_test() {
 pub fn pagerank_line_test() {
   // Line: 1 -> 2 -> 3 -> 4
   // PageRank should decrease along the line
-  let g =
+  let assert Ok(g) =
     model.new(model.Directed)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_node(4, Nil)
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 4, with: 1)
 
   let scores = centrality.pagerank(g, default_pagerank_options())
 
@@ -852,24 +844,24 @@ pub fn pagerank_line_test() {
 pub fn pagerank_complete_graph_test() {
   // Complete graph: every node links to every other node
   // All nodes should have equal PageRank
-  let g =
+  let assert Ok(g) =
     model.new(model.Directed)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_node(4, Nil)
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 4, with: 1)
-    |> model.add_edge(from: 2, to: 1, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
-    |> model.add_edge(from: 3, to: 1, with: 1)
-    |> model.add_edge(from: 3, to: 2, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
-    |> model.add_edge(from: 4, to: 1, with: 1)
-    |> model.add_edge(from: 4, to: 2, with: 1)
-    |> model.add_edge(from: 4, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 1, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 1, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 2, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 4, to: 1, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 4, to: 2, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 4, to: 3, with: 1)
 
   let scores = centrality.pagerank(g, default_pagerank_options())
 
@@ -903,12 +895,12 @@ pub fn pagerank_empty_graph_test() {
 
 pub fn pagerank_two_nodes_mutual_test() {
   // Two nodes linking to each other
-  let g =
+  let assert Ok(g) =
     model.new(model.Directed)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 1, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 1, with: 1)
 
   let scores = centrality.pagerank(g, default_pagerank_options())
 
@@ -926,13 +918,13 @@ pub fn pagerank_two_nodes_mutual_test() {
 
 pub fn closeness_int_test() {
   // Test the convenience wrapper for Int weights
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
 
   let scores = centrality.closeness_int(g)
 
@@ -944,13 +936,13 @@ pub fn closeness_int_test() {
 
 pub fn betweenness_int_test() {
   // Test the convenience wrapper for Int weights
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
 
   let scores = centrality.betweenness_int(g)
 
@@ -962,12 +954,12 @@ pub fn betweenness_int_test() {
 
 pub fn pagerank_default_options_test() {
   // Test the default pagerank options
-  let g =
+  let assert Ok(g) =
     model.new(model.Directed)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 1, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 1, with: 1)
 
   let scores = centrality.pagerank(g, centrality.default_pagerank_options())
 
@@ -983,15 +975,15 @@ pub fn pagerank_default_options_test() {
 pub fn eigenvector_star_test() {
   // Star graph: center connected to all leaves
   // In eigenvector centrality, leaves have some value but center has most
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, "center")
     |> model.add_node(2, "leaf")
     |> model.add_node(3, "leaf")
     |> model.add_node(4, "leaf")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 4, with: 1)
 
   let scores = centrality.eigenvector(g, 100, 0.0001)
 
@@ -1003,15 +995,15 @@ pub fn eigenvector_star_test() {
 
 pub fn eigenvector_path_test() {
   // Path graph: middle nodes should have higher centrality than ends
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_node(4, Nil)
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 4, with: 1)
 
   let scores = centrality.eigenvector(g, 100, 0.0001)
 
@@ -1045,15 +1037,15 @@ pub fn eigenvector_empty_test() {
 
 pub fn katz_star_test() {
   // Star graph with Katz centrality
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, "center")
     |> model.add_node(2, "leaf")
     |> model.add_node(3, "leaf")
     |> model.add_node(4, "leaf")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 4, with: 1)
 
   let scores = centrality.katz(g, 0.1, 1.0, 100, 0.0001)
 
@@ -1070,15 +1062,15 @@ pub fn katz_star_test() {
 
 pub fn katz_path_test() {
   // Path graph with Katz
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_node(4, Nil)
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 4, with: 1)
 
   let scores = centrality.katz(g, 0.1, 1.0, 100, 0.0001)
 
@@ -1113,15 +1105,15 @@ pub fn katz_empty_test() {
 
 pub fn alpha_star_test() {
   // Star graph with Alpha centrality
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, "center")
     |> model.add_node(2, "leaf")
     |> model.add_node(3, "leaf")
     |> model.add_node(4, "leaf")
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 1, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 4, with: 1)
 
   let scores = centrality.alpha_centrality(g, 0.3, 1.0, 100, 0.0001)
 
@@ -1137,15 +1129,15 @@ pub fn alpha_star_test() {
 
 pub fn alpha_path_test() {
   // Path graph with Alpha centrality
-  let g =
+  let assert Ok(g) =
     model.new(model.Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_node(4, Nil)
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 4, with: 1)
 
   let scores = centrality.alpha_centrality(g, 0.3, 1.0, 100, 0.0001)
 
@@ -1157,13 +1149,13 @@ pub fn alpha_path_test() {
 
 pub fn alpha_directed_test() {
   // Directed line: 1 -> 2 -> 3
-  let g =
+  let assert Ok(g) =
     model.new(model.Directed)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
 
   let scores = centrality.alpha_centrality(g, 0.3, 1.0, 100, 0.0001)
 

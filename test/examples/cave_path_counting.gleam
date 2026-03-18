@@ -4,13 +4,14 @@ import gleam/io
 import gleam/list
 import gleam/set.{type Set}
 import gleam/string
+import yog
 import yog/model.{type Graph}
 
 pub fn main() {
   // Model a cave system with small and large caves
   // Small caves (lowercase) can only be visited once
   // Large caves (uppercase) can be visited multiple times
-  let graph =
+  let assert Ok(graph) =
     model.new(model.Undirected)
     |> model.add_node(0, "start")
     |> model.add_node(1, "A")
@@ -18,13 +19,15 @@ pub fn main() {
     |> model.add_node(3, "c")
     |> model.add_node(4, "d")
     |> model.add_node(5, "end")
-    |> model.add_edge(from: 0, to: 1, with: Nil)
-    |> model.add_edge(from: 0, to: 2, with: Nil)
-    |> model.add_edge(from: 1, to: 3, with: Nil)
-    |> model.add_edge(from: 1, to: 2, with: Nil)
-    |> model.add_edge(from: 2, to: 4, with: Nil)
-    |> model.add_edge(from: 1, to: 5, with: Nil)
-    |> model.add_edge(from: 4, to: 5, with: Nil)
+    |> yog.add_unweighted_edges([
+      #(0, 1),
+      #(0, 2),
+      #(1, 3),
+      #(1, 2),
+      #(2, 4),
+      #(1, 5),
+      #(4, 5),
+    ])
 
   // Custom DFS with backtracking to count all valid paths
   let paths = count_paths(graph, 0, set.new(), False)

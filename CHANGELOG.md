@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 4.1.0 - UNRELEASED
+## 5.0.0 - UNRELEASED
 
 ### Breaking Changes
 
@@ -13,7 +13,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `yog/properties/*` → `yog/property/*`
   - `yog/generators/*` → `yog/generator/*`
 
+- **Edge Addition API Changes**: `add_edge()` now returns `Result(Graph, String)` instead of `Graph` to prevent "ghost nodes":
+  - `add_edge(graph, from: 1, to: 2, with: 10)` now returns `Error("Node 1 does not exist")` if nodes don't exist
+  - Use `let assert Ok(graph) = add_edge(...)` when nodes are guaranteed to exist
+  - Use `result.try(add_edge(...))` for chaining operations
+  - For auto-creation of missing nodes, use the renamed functions:
+    - `add_edge_ensured()` → `add_edge_ensure()`
+    - `add_edge_ensured_with()` → `add_edge_with()`
+  - **Rationale**: Previously, `add_edge` could create "ghost nodes" that exist in edge dictionaries but not in the nodes map, causing unexpected behavior in algorithms like centrality calculations and topological sorts
+
 ### Added
+
+- **Bulk Edge Addition Functions**: New convenience functions for adding multiple edges in a single operation:
+  - `add_edges(graph, edges: List(#(NodeId, NodeId, e)))` - Add multiple weighted edges
+  - `add_simple_edges(graph, edges: List(#(NodeId, NodeId)))` - Add multiple edges with weight 1
+  - `add_unweighted_edges(graph, edges: List(#(NodeId, NodeId)))` - Add multiple edges with weight Nil
+  - These functions fail fast on the first missing node, reducing Result-handling boilerplate compared to chaining individual `add_edge` calls
 
 - **F# Comparison**: Added `GLEAM_FSHARP_COMPARISON.md` documenting feature parity, API differences, and migration guidance between the Gleam and F# implementations of Yog.
 

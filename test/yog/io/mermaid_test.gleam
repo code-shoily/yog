@@ -61,7 +61,7 @@ pub fn multiple_nodes_test() {
 }
 
 pub fn single_directed_edge_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
@@ -76,7 +76,7 @@ pub fn single_directed_edge_test() {
 }
 
 pub fn single_undirected_edge_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "Node A")
     |> model.add_node(2, "Node B")
@@ -96,14 +96,12 @@ pub fn single_undirected_edge_test() {
 }
 
 pub fn undirected_no_duplicate_edges_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: "5")
-    |> model.add_edge(from: 2, to: 3, with: "3")
-    |> model.add_edge(from: 1, to: 3, with: "1")
+    |> model.add_edges([#(1, 2, "5"), #(2, 3, "3"), #(1, 3, "1")])
 
   let output = mermaid.to_mermaid(graph, mermaid.default_options())
 
@@ -146,14 +144,12 @@ pub fn undirected_no_duplicate_edges_test() {
 }
 
 pub fn multiple_edges_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: "5")
-    |> model.add_edge(from: 2, to: 3, with: "10")
-    |> model.add_edge(from: 1, to: 3, with: "15")
+    |> model.add_edges([#(1, 2, "5"), #(2, 3, "10"), #(1, 3, "15")])
 
   let output = mermaid.to_mermaid(graph, mermaid.default_options())
 
@@ -198,7 +194,7 @@ pub fn custom_node_label_test() {
 }
 
 pub fn custom_edge_label_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -286,13 +282,12 @@ pub fn highlight_multiple_nodes_test() {
 }
 
 pub fn highlight_edges_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: "5")
-    |> model.add_edge(from: 2, to: 3, with: "10")
+    |> model.add_edges([#(1, 2, "5"), #(2, 3, "10")])
 
   let options =
     mermaid.MermaidOptions(
@@ -316,13 +311,12 @@ pub fn highlight_edges_test() {
 }
 
 pub fn highlight_path_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: "5")
-    |> model.add_edge(from: 2, to: 3, with: "10")
+    |> model.add_edges([#(1, 2, "5"), #(2, 3, "10")])
 
   let options =
     mermaid.MermaidOptions(
@@ -417,13 +411,12 @@ pub fn path_to_options_preserves_base_labels_test() {
 // ============= Integration Tests =============
 
 pub fn render_with_pathfinding_result_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Start")
     |> model.add_node(2, "Middle")
     |> model.add_node(3, "End")
-    |> model.add_edge(from: 1, to: 2, with: "5")
-    |> model.add_edge(from: 2, to: 3, with: "3")
+    |> model.add_edges([#(1, 2, "5"), #(2, 3, "3")])
 
   // This would be the result from pathfinding
   let path = Path(nodes: [1, 2, 3], total_weight: "8")
@@ -454,17 +447,19 @@ pub fn render_with_pathfinding_result_test() {
 }
 
 pub fn complex_graph_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: "1")
-    |> model.add_edge(from: 1, to: 3, with: "4")
-    |> model.add_edge(from: 2, to: 3, with: "2")
-    |> model.add_edge(from: 2, to: 4, with: "5")
-    |> model.add_edge(from: 3, to: 4, with: "1")
+    |> model.add_edges([
+      #(1, 2, "1"),
+      #(1, 3, "4"),
+      #(2, 3, "2"),
+      #(2, 4, "5"),
+      #(3, 4, "1"),
+    ])
 
   let output = mermaid.to_mermaid(graph, mermaid.default_options())
 

@@ -6,17 +6,18 @@ import yog/pathfinding/floyd_warshall
 
 pub fn main() {
   // A graph of cities with distances between them
-  let graph =
+  let assert Ok(graph) =
     yog.undirected()
     |> yog.add_node(1, "London")
     |> yog.add_node(2, "Paris")
     |> yog.add_node(3, "Berlin")
     |> yog.add_node(4, "Rome")
-    |> yog.add_edge(from: 1, to: 2, with: 344)
-    // Distance in km
-    |> yog.add_edge(from: 2, to: 3, with: 878)
-    |> yog.add_edge(from: 3, to: 4, with: 1184)
-    |> yog.add_edge(from: 2, to: 4, with: 1105)
+    |> yog.add_edges([
+      #(1, 2, 344),
+      #(2, 3, 878),
+      #(3, 4, 1184),
+      #(2, 4, 1105),
+    ])
 
   // Calculate all-pairs shortest paths using Floyd-Warshall
   let result =

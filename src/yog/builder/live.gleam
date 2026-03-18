@@ -377,7 +377,8 @@ fn apply_transitions(
         model.add_node(g, id, label)
       }
       AddEdge(from: src, to: dst, weight: weight) -> {
-        model.add_edge(g, from: src, to: dst, with: weight)
+        let assert Ok(g) = model.add_edge(g, from: src, to: dst, with: weight)
+        g
       }
       RemoveEdge(from: src, to: dst) -> {
         model.remove_edge(g, src, dst)

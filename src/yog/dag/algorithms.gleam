@@ -209,7 +209,15 @@ pub fn transitive_closure(
   let new_graph =
     dict.fold(reachability_map, graph, fn(g_acc, source_node, targets) {
       dict.fold(targets, g_acc, fn(g_inner, target_node, weight) {
-        model.add_edge(g_inner, source_node, target_node, weight)
+        // Nodes are guaranteed to exist since we started with the original graph
+        let assert Ok(g) =
+          model.add_edge(
+            g_inner,
+            from: source_node,
+            to: target_node,
+            with: weight,
+          )
+        g
       })
     })
 

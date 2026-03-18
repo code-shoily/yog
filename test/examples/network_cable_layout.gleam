@@ -1,23 +1,25 @@
 import gleam/int
 import gleam/io
 import gleam/list
-import yog/model.{Undirected}
+import yog
+import yog/model
 import yog/mst
 
 pub fn main() {
   // Model buildings and cable costs
   let buildings =
-    model.new(Undirected)
-    |> model.add_node(1, "Building A")
-    |> model.add_node(2, "Building B")
-    |> model.add_node(3, "Building C")
-    |> model.add_node(4, "Building D")
-    |> model.add_edge(from: 1, to: 2, with: 100)
-    // $100 to connect
-    |> model.add_edge(from: 1, to: 3, with: 150)
-    |> model.add_edge(from: 2, to: 3, with: 50)
-    |> model.add_edge(from: 2, to: 4, with: 200)
-    |> model.add_edge(from: 3, to: 4, with: 100)
+    yog.from_edges(model.Undirected, [
+      #(1, 2, 100),
+      // Building A <-> Building B: $100
+      #(1, 3, 150),
+      // Building A <-> Building C: $150
+      #(2, 3, 50),
+      // Building B <-> Building C: $50
+      #(2, 4, 200),
+      // Building B <-> Building D: $200
+      #(3, 4, 100),
+      // Building C <-> Building D: $100
+    ])
 
   // Find minimum cost to connect all buildings
   let cables = mst.kruskal(in: buildings, with_compare: int.compare)

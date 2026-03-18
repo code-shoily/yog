@@ -177,8 +177,14 @@ pub fn from_2d_list_with_topology(
             case dict.get(graph_with_nodes.nodes, to_id) {
               Ok(to_data) -> {
                 case can_move(from_data, to_data) {
-                  True ->
-                    model.add_edge(acc_g, from: from_id, to: to_id, with: 1)
+                  True -> {
+                    case
+                      model.add_edge(acc_g, from: from_id, to: to_id, with: 1)
+                    {
+                      Ok(g) -> g
+                      Error(_) -> acc_g
+                    }
+                  }
                   False -> acc_g
                 }
               }

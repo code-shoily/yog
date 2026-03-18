@@ -5,17 +5,19 @@ import yog
 import yog/flow/network_simplex
 
 pub fn simple_network_simplex_test() {
-  let graph =
+  let assert Ok(graph) =
     yog.directed()
     |> yog.add_node(1, 10)
     // Supply (positive)
     |> yog.add_node(2, 0)
     |> yog.add_node(3, -10)
     // Demand (negative)
-    |> yog.add_edge(from: 1, to: 2, with: #(5, 2))
-    // #(capacity, cost)
-    |> yog.add_edge(from: 1, to: 3, with: #(10, 5))
-    |> yog.add_edge(from: 2, to: 3, with: #(5, 1))
+    |> yog.add_edges([
+      #(1, 2, #(5, 2)),
+      // #(capacity, cost)
+      #(1, 3, #(10, 5)),
+      #(2, 3, #(5, 1)),
+    ])
 
   let get_demand = fn(d: Int) { d }
   let get_capacity = fn(e: #(Int, Int)) { e.0 }
@@ -54,18 +56,18 @@ pub fn transport_problem_test() {
     |> yog.add_node(4, NodeData(-40))
     |> yog.add_node(5, NodeData(-30))
     // Factory 1 Routes
-    |> yog.add_edge_ensured(1, 3, EdgeData(100, 10), NodeData(0))
+    |> yog.add_edge_ensure(1, 3, EdgeData(100, 10), NodeData(0))
     // Cheap to S1
-    |> yog.add_edge_ensured(1, 4, EdgeData(100, 20), NodeData(0))
+    |> yog.add_edge_ensure(1, 4, EdgeData(100, 20), NodeData(0))
     // Okay to S2
-    |> yog.add_edge_ensured(1, 5, EdgeData(100, 50), NodeData(0))
+    |> yog.add_edge_ensure(1, 5, EdgeData(100, 50), NodeData(0))
     // Very expensive to S3
     // Factory 2 Routes
-    |> yog.add_edge_ensured(2, 3, EdgeData(100, 60), NodeData(0))
+    |> yog.add_edge_ensure(2, 3, EdgeData(100, 60), NodeData(0))
     // Very expensive to S1
-    |> yog.add_edge_ensured(2, 4, EdgeData(100, 15), NodeData(0))
+    |> yog.add_edge_ensure(2, 4, EdgeData(100, 15), NodeData(0))
     // Cheap to S2
-    |> yog.add_edge_ensured(2, 5, EdgeData(100, 10), NodeData(0))
+    |> yog.add_edge_ensure(2, 5, EdgeData(100, 10), NodeData(0))
   // Cheap to S3
 
   let demand_of = fn(n: NodeData) { n.demand }

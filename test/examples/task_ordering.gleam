@@ -33,10 +33,13 @@ pub fn main() {
       let prereq_id = char_to_ascii(prereq)
       let step_id = char_to_ascii(step)
 
+      let g =
+        g
+        |> model.add_node(prereq_id, prereq)
+        |> model.add_node(step_id, step)
+      let assert Ok(g) =
+        model.add_edge(g, from: prereq_id, to: step_id, with: Nil)
       g
-      |> model.add_node(prereq_id, prereq)
-      |> model.add_node(step_id, step)
-      |> model.add_edge(from: prereq_id, to: step_id, with: Nil)
     })
 
   case traversal.lexicographical_topological_sort(graph, string.compare) {

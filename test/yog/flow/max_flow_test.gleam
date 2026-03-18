@@ -14,12 +14,14 @@ pub fn residual_graph_construction_test() {
     |> yog.add_edge(from: 0, to: 1, with: 10)
 
   // Manually build residual graph to test
-  let residual =
+  let assert Ok(residual) =
     model.new(model.Directed)
     |> model.add_node(0, Nil)
     |> model.add_node(1, Nil)
-    |> model.add_edge(from: 0, to: 1, with: 10)
-    |> model.add_edge(from: 1, to: 0, with: 0)
+    |> model.add_edges([
+      #(0, 1, 10),
+      #(1, 0, 0),
+    ])
 
   let successors_0 = model.successors(residual, 0)
   let successors_1 = model.successors(residual, 1)
@@ -33,10 +35,15 @@ pub fn residual_graph_construction_test() {
 
 // Basic test: simple network with one bottleneck
 pub fn simple_flow_test() {
-  let network =
-    yog.directed()
-    |> yog.add_edge(from: 0, to: 1, with: 10)
-    |> yog.add_edge(from: 1, to: 2, with: 5)
+  let network = yog.directed()
+  let network = yog.add_node(network, 0, Nil)
+  let network = yog.add_node(network, 1, Nil)
+  let network = yog.add_node(network, 2, Nil)
+  let assert Ok(network) =
+    yog.add_edges(network, [
+      #(0, 1, 10),
+      #(1, 2, 5),
+    ])
 
   let result =
     max_flow.edmonds_karp(
@@ -56,12 +63,18 @@ pub fn simple_flow_test() {
 
 // Two parallel paths with different capacities
 pub fn parallel_paths_test() {
-  let network =
-    yog.directed()
-    |> yog.add_edge(from: 0, to: 1, with: 10)
-    |> yog.add_edge(from: 0, to: 2, with: 10)
-    |> yog.add_edge(from: 1, to: 3, with: 4)
-    |> yog.add_edge(from: 2, to: 3, with: 9)
+  let network = yog.directed()
+  let network = yog.add_node(network, 0, Nil)
+  let network = yog.add_node(network, 1, Nil)
+  let network = yog.add_node(network, 2, Nil)
+  let network = yog.add_node(network, 3, Nil)
+  let assert Ok(network) =
+    yog.add_edges(network, [
+      #(0, 1, 10),
+      #(0, 2, 10),
+      #(1, 3, 4),
+      #(2, 3, 9),
+    ])
 
   let result =
     max_flow.edmonds_karp(
@@ -82,17 +95,25 @@ pub fn parallel_paths_test() {
 
 // Network with multiple paths and intermediate connections
 pub fn complex_network_test() {
-  let network =
-    yog.directed()
-    |> yog.add_edge(from: 0, to: 1, with: 10)
-    |> yog.add_edge(from: 0, to: 2, with: 10)
-    |> yog.add_edge(from: 1, to: 2, with: 2)
-    |> yog.add_edge(from: 1, to: 3, with: 4)
-    |> yog.add_edge(from: 1, to: 4, with: 8)
-    |> yog.add_edge(from: 2, to: 4, with: 9)
-    |> yog.add_edge(from: 3, to: 5, with: 10)
-    |> yog.add_edge(from: 4, to: 3, with: 6)
-    |> yog.add_edge(from: 4, to: 5, with: 10)
+  let network = yog.directed()
+  let network = yog.add_node(network, 0, Nil)
+  let network = yog.add_node(network, 1, Nil)
+  let network = yog.add_node(network, 2, Nil)
+  let network = yog.add_node(network, 3, Nil)
+  let network = yog.add_node(network, 4, Nil)
+  let network = yog.add_node(network, 5, Nil)
+  let assert Ok(network) =
+    yog.add_edges(network, [
+      #(0, 1, 10),
+      #(0, 2, 10),
+      #(1, 2, 2),
+      #(1, 3, 4),
+      #(1, 4, 8),
+      #(2, 4, 9),
+      #(3, 5, 10),
+      #(4, 3, 6),
+      #(4, 5, 10),
+    ])
 
   let result =
     max_flow.edmonds_karp(
@@ -113,18 +134,26 @@ pub fn complex_network_test() {
 // Classic textbook example
 pub fn textbook_example_test() {
   // From Cormen et al. "Introduction to Algorithms"
-  let network =
-    yog.directed()
-    |> yog.add_edge(from: 0, to: 1, with: 16)
-    |> yog.add_edge(from: 0, to: 2, with: 13)
-    |> yog.add_edge(from: 1, to: 2, with: 10)
-    |> yog.add_edge(from: 1, to: 3, with: 12)
-    |> yog.add_edge(from: 2, to: 1, with: 4)
-    |> yog.add_edge(from: 2, to: 4, with: 14)
-    |> yog.add_edge(from: 3, to: 2, with: 9)
-    |> yog.add_edge(from: 3, to: 5, with: 20)
-    |> yog.add_edge(from: 4, to: 3, with: 7)
-    |> yog.add_edge(from: 4, to: 5, with: 4)
+  let network = yog.directed()
+  let network = yog.add_node(network, 0, Nil)
+  let network = yog.add_node(network, 1, Nil)
+  let network = yog.add_node(network, 2, Nil)
+  let network = yog.add_node(network, 3, Nil)
+  let network = yog.add_node(network, 4, Nil)
+  let network = yog.add_node(network, 5, Nil)
+  let assert Ok(network) =
+    yog.add_edges(network, [
+      #(0, 1, 16),
+      #(0, 2, 13),
+      #(1, 2, 10),
+      #(1, 3, 12),
+      #(2, 1, 4),
+      #(2, 4, 14),
+      #(3, 2, 9),
+      #(3, 5, 20),
+      #(4, 3, 7),
+      #(4, 5, 4),
+    ])
 
   let result =
     max_flow.edmonds_karp(
@@ -144,10 +173,16 @@ pub fn textbook_example_test() {
 
 // No path from source to sink
 pub fn no_path_test() {
-  let network =
-    yog.directed()
-    |> yog.add_edge(from: 0, to: 1, with: 10)
-    |> yog.add_edge(from: 2, to: 3, with: 10)
+  let network = yog.directed()
+  let network = yog.add_node(network, 0, Nil)
+  let network = yog.add_node(network, 1, Nil)
+  let network = yog.add_node(network, 2, Nil)
+  let network = yog.add_node(network, 3, Nil)
+  let assert Ok(network) =
+    yog.add_edges(network, [
+      #(0, 1, 10),
+      #(2, 3, 10),
+    ])
 
   let result =
     max_flow.edmonds_karp(
@@ -167,7 +202,10 @@ pub fn no_path_test() {
 
 // Single edge network
 pub fn single_edge_test() {
-  let network = yog.directed() |> yog.add_edge(from: 0, to: 1, with: 42)
+  let network = yog.directed()
+  let network = yog.add_node(network, 0, Nil)
+  let network = yog.add_node(network, 1, Nil)
+  let assert Ok(network) = yog.add_edge(network, from: 0, to: 1, with: 42)
 
   let result =
     max_flow.edmonds_karp(
@@ -187,10 +225,15 @@ pub fn single_edge_test() {
 
 // Source equals sink (should be 0)
 pub fn source_equals_sink_test() {
-  let network =
-    yog.directed()
-    |> yog.add_edge(from: 0, to: 1, with: 10)
-    |> yog.add_edge(from: 1, to: 2, with: 10)
+  let network = yog.directed()
+  let network = yog.add_node(network, 0, Nil)
+  let network = yog.add_node(network, 1, Nil)
+  let network = yog.add_node(network, 2, Nil)
+  let assert Ok(network) =
+    yog.add_edges(network, [
+      #(0, 1, 10),
+      #(1, 2, 10),
+    ])
 
   let result =
     max_flow.edmonds_karp(
@@ -210,11 +253,16 @@ pub fn source_equals_sink_test() {
 
 // Zero capacity edges should be ignored
 pub fn zero_capacity_edges_test() {
-  let network =
-    yog.directed()
-    |> yog.add_edge(from: 0, to: 1, with: 0)
-    |> yog.add_edge(from: 0, to: 2, with: 10)
-    |> yog.add_edge(from: 2, to: 1, with: 10)
+  let network = yog.directed()
+  let network = yog.add_node(network, 0, Nil)
+  let network = yog.add_node(network, 1, Nil)
+  let network = yog.add_node(network, 2, Nil)
+  let assert Ok(network) =
+    yog.add_edges(network, [
+      #(0, 1, 0),
+      #(0, 2, 10),
+      #(2, 1, 10),
+    ])
 
   let result =
     max_flow.edmonds_karp(
@@ -237,18 +285,26 @@ pub fn bipartite_matching_test() {
   // Model bipartite matching as max flow:
   // Source (0) -> left partition (1,2) -> right partition (3,4) -> sink (5)
   // All edges have capacity 1
-  let network =
-    yog.directed()
-    // Source to left partition
-    |> yog.add_edge(from: 0, to: 1, with: 1)
-    |> yog.add_edge(from: 0, to: 2, with: 1)
-    // Left to right edges (potential matches)
-    |> yog.add_edge(from: 1, to: 3, with: 1)
-    |> yog.add_edge(from: 1, to: 4, with: 1)
-    |> yog.add_edge(from: 2, to: 3, with: 1)
-    // Right partition to sink
-    |> yog.add_edge(from: 3, to: 5, with: 1)
-    |> yog.add_edge(from: 4, to: 5, with: 1)
+  let network = yog.directed()
+  let network = yog.add_node(network, 0, Nil)
+  let network = yog.add_node(network, 1, Nil)
+  let network = yog.add_node(network, 2, Nil)
+  let network = yog.add_node(network, 3, Nil)
+  let network = yog.add_node(network, 4, Nil)
+  let network = yog.add_node(network, 5, Nil)
+  // Source to left partition
+  // Left to right edges (potential matches)
+  // Right partition to sink
+  let assert Ok(network) =
+    yog.add_edges(network, [
+      #(0, 1, 1),
+      #(0, 2, 1),
+      #(1, 3, 1),
+      #(1, 4, 1),
+      #(2, 3, 1),
+      #(3, 5, 1),
+      #(4, 5, 1),
+    ])
 
   let result =
     max_flow.edmonds_karp(
@@ -269,12 +325,18 @@ pub fn bipartite_matching_test() {
 
 // Min-cut extraction - simple case
 pub fn min_cut_simple_test() {
-  let network =
-    yog.directed()
-    |> yog.add_edge(from: 0, to: 1, with: 10)
-    |> yog.add_edge(from: 0, to: 2, with: 10)
-    |> yog.add_edge(from: 1, to: 3, with: 4)
-    |> yog.add_edge(from: 2, to: 3, with: 9)
+  let network = yog.directed()
+  let network = yog.add_node(network, 0, Nil)
+  let network = yog.add_node(network, 1, Nil)
+  let network = yog.add_node(network, 2, Nil)
+  let network = yog.add_node(network, 3, Nil)
+  let assert Ok(network) =
+    yog.add_edges(network, [
+      #(0, 1, 10),
+      #(0, 2, 10),
+      #(1, 3, 4),
+      #(2, 3, 9),
+    ])
 
   let result =
     max_flow.edmonds_karp(
@@ -306,11 +368,17 @@ pub fn min_cut_simple_test() {
 
 // Min-cut extraction - verify partitioning
 pub fn min_cut_partitioning_test() {
-  let network =
-    yog.directed()
-    |> yog.add_edge(from: 0, to: 1, with: 10)
-    |> yog.add_edge(from: 1, to: 2, with: 5)
-    |> yog.add_edge(from: 2, to: 3, with: 15)
+  let network = yog.directed()
+  let network = yog.add_node(network, 0, Nil)
+  let network = yog.add_node(network, 1, Nil)
+  let network = yog.add_node(network, 2, Nil)
+  let network = yog.add_node(network, 3, Nil)
+  let assert Ok(network) =
+    yog.add_edges(network, [
+      #(0, 1, 10),
+      #(1, 2, 5),
+      #(2, 3, 15),
+    ])
 
   let result =
     max_flow.edmonds_karp(
@@ -344,11 +412,16 @@ pub fn min_cut_partitioning_test() {
 
 // Triangle network with cycle
 pub fn triangle_with_cycle_test() {
-  let network =
-    yog.directed()
-    |> yog.add_edge(from: 0, to: 1, with: 10)
-    |> yog.add_edge(from: 1, to: 2, with: 10)
-    |> yog.add_edge(from: 0, to: 2, with: 5)
+  let network = yog.directed()
+  let network = yog.add_node(network, 0, Nil)
+  let network = yog.add_node(network, 1, Nil)
+  let network = yog.add_node(network, 2, Nil)
+  let assert Ok(network) =
+    yog.add_edges(network, [
+      #(0, 1, 10),
+      #(1, 2, 10),
+      #(0, 2, 5),
+    ])
 
   let result =
     max_flow.edmonds_karp(
@@ -370,11 +443,17 @@ pub fn triangle_with_cycle_test() {
 
 // Multiple bottlenecks
 pub fn multiple_bottlenecks_test() {
-  let network =
-    yog.directed()
-    |> yog.add_edge(from: 0, to: 1, with: 100)
-    |> yog.add_edge(from: 1, to: 2, with: 1)
-    |> yog.add_edge(from: 2, to: 3, with: 100)
+  let network = yog.directed()
+  let network = yog.add_node(network, 0, Nil)
+  let network = yog.add_node(network, 1, Nil)
+  let network = yog.add_node(network, 2, Nil)
+  let network = yog.add_node(network, 3, Nil)
+  let assert Ok(network) =
+    yog.add_edges(network, [
+      #(0, 1, 100),
+      #(1, 2, 1),
+      #(2, 3, 100),
+    ])
 
   let result =
     max_flow.edmonds_karp(
@@ -395,12 +474,18 @@ pub fn multiple_bottlenecks_test() {
 
 // Diamond network
 pub fn diamond_network_test() {
-  let network =
-    yog.directed()
-    |> yog.add_edge(from: 0, to: 1, with: 10)
-    |> yog.add_edge(from: 0, to: 2, with: 10)
-    |> yog.add_edge(from: 1, to: 3, with: 10)
-    |> yog.add_edge(from: 2, to: 3, with: 10)
+  let network = yog.directed()
+  let network = yog.add_node(network, 0, Nil)
+  let network = yog.add_node(network, 1, Nil)
+  let network = yog.add_node(network, 2, Nil)
+  let network = yog.add_node(network, 3, Nil)
+  let assert Ok(network) =
+    yog.add_edges(network, [
+      #(0, 1, 10),
+      #(0, 2, 10),
+      #(1, 3, 10),
+      #(2, 3, 10),
+    ])
 
   let result =
     max_flow.edmonds_karp(
@@ -420,13 +505,20 @@ pub fn diamond_network_test() {
 
 // Network with intermediate node having limited outgoing capacity
 pub fn limited_intermediate_capacity_test() {
-  let network =
-    yog.directed()
-    |> yog.add_edge(from: 0, to: 1, with: 100)
-    |> yog.add_edge(from: 0, to: 2, with: 100)
-    |> yog.add_edge(from: 1, to: 3, with: 5)
-    |> yog.add_edge(from: 2, to: 3, with: 7)
-    |> yog.add_edge(from: 3, to: 4, with: 8)
+  let network = yog.directed()
+  let network = yog.add_node(network, 0, Nil)
+  let network = yog.add_node(network, 1, Nil)
+  let network = yog.add_node(network, 2, Nil)
+  let network = yog.add_node(network, 3, Nil)
+  let network = yog.add_node(network, 4, Nil)
+  let assert Ok(network) =
+    yog.add_edges(network, [
+      #(0, 1, 100),
+      #(0, 2, 100),
+      #(1, 3, 5),
+      #(2, 3, 7),
+      #(3, 4, 8),
+    ])
 
   let result =
     max_flow.edmonds_karp(
@@ -447,11 +539,16 @@ pub fn limited_intermediate_capacity_test() {
 
 // Flow with float capacities
 pub fn float_capacities_test() {
-  let network =
-    yog.directed()
-    |> yog.add_edge(from: 0, to: 1, with: 10.5)
-    |> yog.add_edge(from: 1, to: 2, with: 5.5)
-    |> yog.add_edge(from: 0, to: 2, with: 3.0)
+  let network = yog.directed()
+  let network = yog.add_node(network, 0, Nil)
+  let network = yog.add_node(network, 1, Nil)
+  let network = yog.add_node(network, 2, Nil)
+  let assert Ok(network) =
+    yog.add_edges(network, [
+      #(0, 1, 10.5),
+      #(1, 2, 5.5),
+      #(0, 2, 3.0),
+    ])
 
   let result =
     max_flow.edmonds_karp(
@@ -486,12 +583,18 @@ pub fn float_capacities_test() {
 
 // Verify max flow = min cut (theorem verification)
 pub fn max_flow_min_cut_theorem_test() {
-  let network =
-    yog.directed()
-    |> yog.add_edge(from: 0, to: 1, with: 10)
-    |> yog.add_edge(from: 0, to: 2, with: 5)
-    |> yog.add_edge(from: 1, to: 3, with: 15)
-    |> yog.add_edge(from: 2, to: 3, with: 10)
+  let network = yog.directed()
+  let network = yog.add_node(network, 0, Nil)
+  let network = yog.add_node(network, 1, Nil)
+  let network = yog.add_node(network, 2, Nil)
+  let network = yog.add_node(network, 3, Nil)
+  let assert Ok(network) =
+    yog.add_edges(network, [
+      #(0, 1, 10),
+      #(0, 2, 5),
+      #(1, 3, 15),
+      #(2, 3, 10),
+    ])
 
   let result =
     max_flow.edmonds_karp(

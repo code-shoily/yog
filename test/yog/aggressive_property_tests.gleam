@@ -43,7 +43,7 @@ pub fn self_loop_directed_test() {
   use graph <- qcheck.given(qcheck_generators.directed_graph_generator())
 
   let next_id = model.order(graph)
-  let graph =
+  let assert Ok(graph) =
     graph
     |> model.add_node(next_id, next_id)
     |> model.add_edge(from: next_id, to: next_id, with: 10)
@@ -56,7 +56,7 @@ pub fn self_loop_undirected_test() {
   use graph <- qcheck.given(qcheck_generators.undirected_graph_generator())
 
   let next_id = model.order(graph)
-  let graph =
+  let assert Ok(graph) =
     graph
     |> model.add_node(next_id, next_id)
     |> model.add_edge(from: next_id, to: next_id, with: 10)
@@ -82,10 +82,11 @@ pub fn multiple_edges_same_pair_test() {
       let weight1 = 10
       let weight2 = 20
 
-      let g1 = model.add_edge(graph, from: src, to: dst, with: weight1)
+      let assert Ok(g1) =
+        model.add_edge(graph, from: src, to: dst, with: weight1)
       let count_after_1 = model.edge_count(g1)
 
-      let g2 = model.add_edge(g1, from: src, to: dst, with: weight2)
+      let assert Ok(g2) = model.add_edge(g1, from: src, to: dst, with: weight2)
       let count_after_2 = model.edge_count(g2)
 
       assert count_after_1 == count_after_2
@@ -131,7 +132,7 @@ pub fn undirected_edge_removal_symmetry_test() {
       case src == dst {
         True -> Nil
         False -> {
-          let with_edge =
+          let assert Ok(with_edge) =
             model.add_edge(graph, from: src, to: dst, with: weight)
 
           // Remove one edge, should implicitly remove both for undirected
@@ -178,7 +179,8 @@ pub fn transpose_with_self_loop_test() {
   let graph_with_loop =
     graph
     |> model.add_node(next_id, next_id)
-    |> model.add_edge(from: next_id, to: next_id, with: 10)
+  let assert Ok(graph_with_loop) =
+    model.add_edge(graph_with_loop, from: next_id, to: next_id, with: 10)
 
   let transposed = transform.transpose(graph_with_loop)
 

@@ -13,9 +13,8 @@ pub fn main() {
     |> model.add_node(1, "Home")
     |> model.add_node(2, "Gym")
     |> model.add_node(3, "Office")
-    |> model.add_edge(from: 1, to: 2, with: 10)
-    |> model.add_edge(from: 2, to: 3, with: 5)
-    |> model.add_edge(from: 1, to: 3, with: 20)
+  let assert Ok(graph) =
+    model.add_edges(graph, [#(1, 2, 10), #(2, 3, 5), #(1, 3, 20)])
 
   // 1. Basic Mermaid output
   io.println("--- Basic Mermaid Output ---")

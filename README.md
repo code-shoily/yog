@@ -66,14 +66,16 @@ import yog/pathfinding/dijkstra
 
 pub fn main() {
   // Create a directed graph
-  let graph =
+  let assert Ok(graph) =
     yog.directed()
     |> yog.add_node(1, "Start")
     |> yog.add_node(2, "Middle")
     |> yog.add_node(3, "End")
-    |> yog.add_edge(from: 1, to: 2, with: 5)
-    |> yog.add_edge(from: 2, to: 3, with: 3)
-    |> yog.add_edge(from: 1, to: 3, with: 10)
+    |> yoh.add_edges([
+      #(1, 2, 5),
+      #(2, 3, 3),
+      #(1, 3, 10)
+    ])
 
   // Find shortest path
   case dijkstra.shortest_path(

@@ -94,7 +94,7 @@ pub fn complete_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
       |> list.fold(graph, fn(g, i) {
         utils.range(i + 1, n - 1)
         |> list.fold(g, fn(acc, j) {
-          model.add_edge(acc, from: i, to: j, with: 1)
+          model.add_edge_ensure(acc, from: i, to: j, with: 1, default: Nil)
         })
       })
     }
@@ -107,7 +107,8 @@ pub fn complete_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
           case i == j {
             True -> acc
             // No self-loops
-            False -> model.add_edge(acc, from: i, to: j, with: 1)
+            False ->
+              model.add_edge_ensure(acc, from: i, to: j, with: 1, default: Nil)
           }
         })
       })
@@ -154,7 +155,7 @@ pub fn cycle_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
           True -> 0
           False -> i + 1
         }
-        model.add_edge(g, from: i, to: next, with: 1)
+        model.add_edge_ensure(g, from: i, to: next, with: 1, default: Nil)
       })
     }
   }
@@ -183,7 +184,7 @@ pub fn path_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
       // Add edges in a line
       utils.range(0, n - 2)
       |> list.fold(graph, fn(g, i) {
-        model.add_edge(g, from: i, to: i + 1, with: 1)
+        model.add_edge_ensure(g, from: i, to: i + 1, with: 1, default: Nil)
       })
     }
   }
@@ -214,7 +215,7 @@ pub fn star_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
       // Connect center (0) to all other nodes
       utils.range(1, n - 1)
       |> list.fold(graph, fn(g, i) {
-        model.add_edge(g, from: 0, to: i, with: 1)
+        model.add_edge_ensure(g, from: 0, to: i, with: 1, default: Nil)
       })
     }
   }
@@ -260,7 +261,7 @@ pub fn wheel_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
           True -> 1
           False -> i + 1
         }
-        model.add_edge(g, from: i, to: next, with: 1)
+        model.add_edge_ensure(g, from: i, to: next, with: 1, default: Nil)
       })
     }
   }
@@ -304,7 +305,7 @@ pub fn complete_bipartite_with_type(
   |> list.fold(graph, fn(g, left) {
     utils.range(m, total - 1)
     |> list.fold(g, fn(acc, right) {
-      model.add_edge(acc, from: left, to: right, with: 1)
+      model.add_edge_ensure(acc, from: left, to: right, with: 1, default: Nil)
     })
   })
 }
@@ -369,12 +370,26 @@ pub fn binary_tree_with_type(
         let right_child = 2 * i + 2
 
         let with_left = case left_child < n {
-          True -> model.add_edge(g, from: i, to: left_child, with: 1)
+          True ->
+            model.add_edge_ensure(
+              g,
+              from: i,
+              to: left_child,
+              with: 1,
+              default: Nil,
+            )
           False -> g
         }
 
         case right_child < n {
-          True -> model.add_edge(with_left, from: i, to: right_child, with: 1)
+          True ->
+            model.add_edge_ensure(
+              with_left,
+              from: i,
+              to: right_child,
+              with: 1,
+              default: Nil,
+            )
           False -> with_left
         }
       })
@@ -428,7 +443,13 @@ pub fn grid_2d_with_type(
       utils.range(0, cols - 2)
       |> list.fold(g, fn(acc, col) {
         let node = row * cols + col
-        model.add_edge(acc, from: node, to: node + 1, with: 1)
+        model.add_edge_ensure(
+          acc,
+          from: node,
+          to: node + 1,
+          with: 1,
+          default: Nil,
+        )
       })
     })
 
@@ -439,7 +460,7 @@ pub fn grid_2d_with_type(
     |> list.fold(g, fn(acc, col) {
       let node = row * cols + col
       let below = node + cols
-      model.add_edge(acc, from: node, to: below, with: 1)
+      model.add_edge_ensure(acc, from: node, to: below, with: 1, default: Nil)
     })
   })
 }
@@ -482,28 +503,28 @@ pub fn petersen_with_type(graph_type: GraphType) -> Graph(Nil, Int) {
   // Outer pentagon: 0-1-2-3-4-0
   let with_outer =
     graph
-    |> model.add_edge(from: 0, to: 1, with: 1)
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
-    |> model.add_edge(from: 4, to: 0, with: 1)
+    |> model.add_edge_ensure(from: 0, to: 1, with: 1, default: Nil)
+    |> model.add_edge_ensure(from: 1, to: 2, with: 1, default: Nil)
+    |> model.add_edge_ensure(from: 2, to: 3, with: 1, default: Nil)
+    |> model.add_edge_ensure(from: 3, to: 4, with: 1, default: Nil)
+    |> model.add_edge_ensure(from: 4, to: 0, with: 1, default: Nil)
 
   // Inner pentagram: 5-7-9-6-8-5
   let with_inner =
     with_outer
-    |> model.add_edge(from: 5, to: 7, with: 1)
-    |> model.add_edge(from: 7, to: 9, with: 1)
-    |> model.add_edge(from: 9, to: 6, with: 1)
-    |> model.add_edge(from: 6, to: 8, with: 1)
-    |> model.add_edge(from: 8, to: 5, with: 1)
+    |> model.add_edge_ensure(from: 5, to: 7, with: 1, default: Nil)
+    |> model.add_edge_ensure(from: 7, to: 9, with: 1, default: Nil)
+    |> model.add_edge_ensure(from: 9, to: 6, with: 1, default: Nil)
+    |> model.add_edge_ensure(from: 6, to: 8, with: 1, default: Nil)
+    |> model.add_edge_ensure(from: 8, to: 5, with: 1, default: Nil)
 
   // Connect outer to inner (spokes)
   with_inner
-  |> model.add_edge(from: 0, to: 5, with: 1)
-  |> model.add_edge(from: 1, to: 6, with: 1)
-  |> model.add_edge(from: 2, to: 7, with: 1)
-  |> model.add_edge(from: 3, to: 8, with: 1)
-  |> model.add_edge(from: 4, to: 9, with: 1)
+  |> model.add_edge_ensure(from: 0, to: 5, with: 1, default: Nil)
+  |> model.add_edge_ensure(from: 1, to: 6, with: 1, default: Nil)
+  |> model.add_edge_ensure(from: 2, to: 7, with: 1, default: Nil)
+  |> model.add_edge_ensure(from: 3, to: 8, with: 1, default: Nil)
+  |> model.add_edge_ensure(from: 4, to: 9, with: 1, default: Nil)
 }
 
 // Helper: Create n nodes with Nil data and sequential IDs

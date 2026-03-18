@@ -11,14 +11,12 @@
 //// import gleam/int
 ////
 //// pub fn main() {
-////   let graph =
+////   let assert Ok(graph) =
 ////     yog.directed()
 ////     |> yog.add_node(1, "Start")
 ////     |> yog.add_node(2, "Middle")
 ////     |> yog.add_node(3, "End")
-////     |> yog.add_edge(from: 1, to: 2, with: 5)
-////     |> yog.add_edge(from: 2, to: 3, with: 3)
-////     |> yog.add_edge(from: 1, to: 3, with: 10)
+////     |> yog.add_edges([#(1, 2, 5), #(2, 3, 3), #(1, 3, 10))
 ////
 ////   case pathfinding.shortest_path(
 ////     in: graph,
@@ -229,47 +227,93 @@ pub fn add_node(graph: Graph(n, e), id: NodeId, data: n) -> Graph(n, e) {
 /// For directed graphs, adds a single edge from `src` to `dst`.
 /// For undirected graphs, adds edges in both directions.
 ///
+/// Returns `Error` if either endpoint node doesn't exist.
+/// Use `add_edge_ensure` to auto-create missing nodes, or add nodes first with `add_node`.
+///
 /// ## Example
 ///
 /// ```gleam
 /// graph
+/// |> yog.add_node(1, "A")
+/// |> yog.add_node(2, "B")
 /// |> yog.add_edge(from: 1, to: 2, with: 10)
+/// // => Ok(graph)
+/// ```
+///
+/// ## With result.try for chaining
+///
+/// ```gleam
+/// use graph <- result.try(yog.add_edge(graph, from: 1, to: 2, with: 10))
+/// use graph <- result.try(yog.add_edge(graph, from: 2, to: 3, with: 5))
+/// Ok(graph)
 /// ```
 pub fn add_edge(
   graph: Graph(n, e),
   from src: NodeId,
   to dst: NodeId,
   with weight: e,
-) -> Graph(n, e) {
+) -> Result(Graph(n, e), String) {
   model.add_edge(graph, from: src, to: dst, with: weight)
 }
 
-/// Like `add_edge`, but ensures both endpoint nodes exist first.
+/// Ensures both endpoint nodes exist, then adds an edge.
 ///
 /// If `src` or `dst` is not already in the graph, it is created with
 /// the supplied `default` node data. Existing nodes are left unchanged.
+///
+/// Always succeeds and returns a `Graph` (never fails).
+/// Use this when you want to build graphs quickly without pre-creating nodes.
 ///
 /// ## Example
 ///
 /// ```gleam
 /// yog.directed()
-/// |> yog.add_edge_ensured(from: 1, to: 2, with: 10, default: "anon")
+/// |> yog.add_edge_ensure(from: 1, to: 2, with: 10, default: "anon")
 /// // Nodes 1 and 2 are auto-created with data "anon"
 /// ```
-pub fn add_edge_ensured(
+pub fn add_edge_ensure(
   graph: Graph(n, e),
   from src: NodeId,
   to dst: NodeId,
   with weight: e,
   default default: n,
 ) -> Graph(n, e) {
-  model.add_edge_ensured(graph, from: src, to: dst, with: weight, default:)
+  model.add_edge_ensure(graph, from: src, to: dst, with: weight, default:)
+}
+
+/// Ensures both endpoint nodes exist using a callback, then adds an edge.
+///
+/// If `src` or `dst` is not already in the graph, it is created by
+/// calling the `by` function with the node ID to generate the node data.
+/// Existing nodes are left unchanged.
+///
+/// Always succeeds and returns a `Graph` (never fails).
+///
+/// ## Example
+///
+/// ```gleam
+/// yog.directed()
+/// |> yog.add_edge_with(from: 1, to: 2, with: 10, by: fn(id) {
+///   "Node" <> int.to_string(id)
+/// })
+/// // Nodes 1 and 2 are auto-created with "Node1" and "Node2"
+/// ```
+pub fn add_edge_with(
+  graph: Graph(n, e),
+  from src: NodeId,
+  to dst: NodeId,
+  with weight: e,
+  by by: fn(NodeId) -> n,
+) -> Graph(n, e) {
+  model.add_edge_with(graph, from: src, to: dst, with: weight, by:)
 }
 
 /// Adds an unweighted edge to the graph.
 ///
 /// This is a convenience function for graphs where edges have no meaningful weight.
 /// Uses `Nil` as the edge data type.
+///
+/// Returns `Error` if either endpoint node doesn't exist.
 ///
 /// ## Example
 ///
@@ -283,7 +327,7 @@ pub fn add_unweighted_edge(
   graph: Graph(n, Nil),
   from src: NodeId,
   to dst: NodeId,
-) -> Graph(n, Nil) {
+) -> Result(Graph(n, Nil), String) {
   model.add_edge(graph, from: src, to: dst, with: Nil)
 }
 
@@ -292,20 +336,103 @@ pub fn add_unweighted_edge(
 /// This is a convenience function for graphs with integer weights where
 /// a default weight of 1 is appropriate (e.g., unweighted graphs, hop counts).
 ///
+/// Returns `Error` if either endpoint node doesn't exist.
+///
 /// ## Example
 ///
 /// ```gleam
 /// graph
+/// |> yog.add_node(1, "A")
+/// |> yog.add_node(2, "B")
 /// |> yog.add_simple_edge(from: 1, to: 2)
-/// |> yog.add_simple_edge(from: 2, to: 3)
-/// // Both edges have weight 1
 /// ```
 pub fn add_simple_edge(
   graph: Graph(n, Int),
   from src: NodeId,
   to dst: NodeId,
-) -> Graph(n, Int) {
+) -> Result(Graph(n, Int), String) {
   model.add_edge(graph, from: src, to: dst, with: 1)
+}
+
+/// Adds multiple edges to the graph in a single operation.
+///
+/// Fails fast on the first edge that references non-existent nodes.
+/// Returns `Error` if any endpoint node doesn't exist.
+///
+/// This is more ergonomic than chaining multiple `add_edge` calls
+/// as it only requires unwrapping a single `Result`.
+///
+/// ## Example
+///
+/// ```gleam
+/// let assert Ok(graph) =
+///   yog.directed()
+///   |> yog.add_node(1, "A")
+///   |> yog.add_node(2, "B")
+///   |> yog.add_node(3, "C")
+///   |> yog.add_edges([
+///     #(1, 2, 10),
+///     #(2, 3, 5),
+///     #(1, 3, 15),
+///   ])
+/// ```
+pub fn add_edges(
+  graph: Graph(n, e),
+  edges: List(#(NodeId, NodeId, e)),
+) -> Result(Graph(n, e), String) {
+  model.add_edges(graph, edges)
+}
+
+/// Adds multiple simple edges (weight = 1) to the graph.
+///
+/// Fails fast on the first edge that references non-existent nodes.
+/// Convenient for unweighted graphs where all edges have weight 1.
+///
+/// ## Example
+///
+/// ```gleam
+/// let assert Ok(graph) =
+///   yog.directed()
+///   |> yog.add_node(1, "A")
+///   |> yog.add_node(2, "B")
+///   |> yog.add_node(3, "C")
+///   |> yog.add_simple_edges([
+///     #(1, 2),
+///     #(2, 3),
+///     #(1, 3),
+///   ])
+/// ```
+pub fn add_simple_edges(
+  graph: Graph(n, Int),
+  edges: List(#(NodeId, NodeId)),
+) -> Result(Graph(n, Int), String) {
+  model.add_simple_edges(graph, edges)
+}
+
+/// Adds multiple unweighted edges (weight = Nil) to the graph.
+///
+/// Fails fast on the first edge that references non-existent nodes.
+/// Convenient for graphs where edges carry no weight information.
+///
+/// ## Example
+///
+/// ```gleam
+/// let assert Ok(graph) =
+///   yog.directed()
+///   |> yog.add_node(1, "A")
+///   |> yog.add_node(2, "B")
+///   |> yog.add_node(3, "C")
+///   |> yog.add_unweighted_edges([
+///     #(1, 2),
+///     #(2, 3),
+///     #(1, 3),
+///   ])
+/// ```
+pub fn add_unweighted_edges(
+  graph: Graph(n, Nil),
+  edges: List(#(NodeId, NodeId)),
+) -> Result(Graph(n, Nil), String) {
+  model.add_unweighted_edges(graph, edges)
 }
 
 /// Gets nodes you can travel TO from the given node (successors).
@@ -346,9 +473,7 @@ pub fn from_edges(
   list.fold(edges, new(graph_type), fn(g, edge) {
     let #(src, dst, weight) = edge
     g
-    |> add_node(src, Nil)
-    |> add_node(dst, Nil)
-    |> add_edge(from: src, to: dst, with: weight)
+    |> add_edge_ensure(from: src, to: dst, with: weight, default: Nil)
   })
 }
 
@@ -366,9 +491,7 @@ pub fn from_unweighted_edges(
   list.fold(edges, new(graph_type), fn(g, edge) {
     let #(src, dst) = edge
     g
-    |> add_node(src, Nil)
-    |> add_node(dst, Nil)
-    |> add_unweighted_edge(from: src, to: dst)
+    |> add_edge_ensure(from: src, to: dst, with: Nil, default: Nil)
   })
 }
 
@@ -385,11 +508,13 @@ pub fn from_adjacency_list(
 ) -> Graph(Nil, e) {
   list.fold(adj_list, new(graph_type), fn(g, entry) {
     let #(src, edges) = entry
-    list.fold(edges, add_node(g, src, Nil), fn(acc, edge) {
+    // First, ensure the source node exists
+    let g = add_node(g, src, Nil)
+    // Then add all edges
+    list.fold(edges, g, fn(acc, edge) {
       let #(dst, weight) = edge
       acc
-      |> add_node(dst, Nil)
-      |> add_edge(from: src, to: dst, with: weight)
+      |> add_edge_ensure(from: src, to: dst, with: weight, default: Nil)
     })
   })
 }

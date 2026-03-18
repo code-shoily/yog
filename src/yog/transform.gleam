@@ -314,7 +314,12 @@ pub fn complement(
 
           case has_edge {
             True -> acc
-            False -> model.add_edge(acc, src, dst, default_weight)
+            False -> {
+              // Nodes are guaranteed to exist since init_graph preserves all nodes
+              let assert Ok(new_graph) =
+                model.add_edge(acc, from: src, to: dst, with: default_weight)
+              new_graph
+            }
           }
         }
       }

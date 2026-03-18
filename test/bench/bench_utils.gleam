@@ -70,11 +70,17 @@ pub fn grid_graph(width: Int, height: Int) -> Graph(Nil, Int) {
     |> list.fold(g, fn(gg, x) {
       let node = y * width + x
       let gg = case x < width - 1 {
-        True -> yog.add_edge(gg, node, node + 1, 1)
+        True -> {
+          let assert Ok(g) = yog.add_edge(gg, node, node + 1, 1)
+          g
+        }
         False -> gg
       }
       case y < height - 1 {
-        True -> yog.add_edge(gg, node, node + width, 1)
+        True -> {
+          let assert Ok(g) = yog.add_edge(gg, node, node + width, 1)
+          g
+        }
         False -> gg
       }
     })
@@ -103,7 +109,10 @@ pub fn random_dag(nodes: Int, seed: Int) -> Graph(Nil, Int) {
       // Use simple pseudo-random check
       let should_add = { from * 31 + to * 17 + seed } % 10 < 3
       case should_add {
-        True -> yog.add_edge(gg, from, to, 1)
+        True -> {
+          let assert Ok(g) = yog.add_edge(gg, from, to, 1)
+          g
+        }
         False -> gg
       }
     })

@@ -18,14 +18,17 @@ pub fn main() {
     |> model.add_node(4, "Programming")
     |> model.add_node(5, "Design")
     |> model.add_node(6, "Testing")
-    // Alice can do Programming or Design
-    |> model.add_edge(from: 1, to: 4, with: Nil)
-    |> model.add_edge(from: 1, to: 5, with: Nil)
-    // Bob can only do Programming
-    |> model.add_edge(from: 2, to: 4, with: Nil)
-    // Charlie can do Design or Testing
-    |> model.add_edge(from: 3, to: 5, with: Nil)
-    |> model.add_edge(from: 3, to: 6, with: Nil)
+  let assert Ok(graph) =
+    model.add_unweighted_edges(graph, [
+      // Alice can do Programming or Design
+      #(1, 4),
+      #(1, 5),
+      // Bob can only do Programming
+      #(2, 4),
+      // Charlie can do Design or Testing
+      #(3, 5),
+      #(3, 6),
+    ])
 
   io.println("--- Bipartite Job Assignment ---")
 

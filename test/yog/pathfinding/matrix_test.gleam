@@ -8,14 +8,12 @@ import yog/pathfinding/matrix
 
 // Small matrix basic test
 pub fn distance_matrix_basic_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-    |> model.add_edge(from: 2, to: 3, with: 10)
-    |> model.add_edge(from: 1, to: 3, with: 20)
+    |> model.add_edges([#(1, 2, 5), #(2, 3, 10), #(1, 3, 20)])
 
   let result =
     matrix.distance_matrix(
@@ -47,15 +45,13 @@ pub fn distance_matrix_basic_test() {
 
 // Matrix of subset of nodes
 pub fn distance_matrix_subset_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-    |> model.add_edge(from: 2, to: 3, with: 5)
-    |> model.add_edge(from: 3, to: 4, with: 5)
+    |> model.add_edges([#(1, 2, 5), #(2, 3, 5), #(3, 4, 5)])
 
   let result =
     matrix.distance_matrix(
@@ -87,12 +83,12 @@ pub fn distance_matrix_subset_test() {
 
 // Matrix with unreachable nodes
 pub fn distance_matrix_unreachable_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 5)
+    |> model.add_edges([#(1, 2, 5)])
 
   let result =
     matrix.distance_matrix(
@@ -122,13 +118,12 @@ pub fn distance_matrix_algorithm_selection_test() {
   // Dijkstra is generally better for sparse matrices
   // Floyd-Warshall better for dense
   // distance_matrix should handle this internally
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1)])
 
   let result =
     matrix.distance_matrix(
@@ -144,12 +139,11 @@ pub fn distance_matrix_algorithm_selection_test() {
 
 // Detection of negative cycle in distance matrix
 pub fn distance_matrix_negative_cycle_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 1, with: -5)
+    |> model.add_edges([#(1, 2, 1), #(2, 1, -5)])
 
   let result =
     matrix.distance_matrix(
@@ -165,7 +159,7 @@ pub fn distance_matrix_negative_cycle_test() {
 }
 
 pub fn distance_matrix_sparse_pois_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -173,11 +167,13 @@ pub fn distance_matrix_sparse_pois_test() {
     |> model.add_node(4, "D")
     |> model.add_node(5, "E")
     |> model.add_node(6, "F")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-    |> model.add_edge(from: 2, to: 3, with: 3)
-    |> model.add_edge(from: 1, to: 4, with: 10)
-    |> model.add_edge(from: 4, to: 5, with: 2)
-    |> model.add_edge(from: 3, to: 6, with: 1)
+    |> model.add_edges([
+      #(1, 2, 5),
+      #(2, 3, 3),
+      #(1, 4, 10),
+      #(4, 5, 2),
+      #(3, 6, 1),
+    ])
 
   // Only 2 POIs out of 6 nodes (sparse: 2*3 = 6 < 6, uses multiple Dijkstra)
   let pois = [1, 6]
@@ -206,16 +202,13 @@ pub fn distance_matrix_sparse_pois_test() {
 }
 
 pub fn distance_matrix_dense_pois_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-    |> model.add_edge(from: 2, to: 3, with: 3)
-    |> model.add_edge(from: 3, to: 4, with: 2)
-    |> model.add_edge(from: 1, to: 4, with: 15)
+    |> model.add_edges([#(1, 2, 5), #(2, 3, 3), #(3, 4, 2), #(1, 4, 15)])
 
   // 3 POIs out of 4 nodes (dense: 3*3 = 9 > 4, uses Floyd-Warshall)
   let pois = [1, 2, 4]
@@ -244,7 +237,7 @@ pub fn distance_matrix_dense_pois_test() {
 }
 
 pub fn distance_matrix_consistency_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -252,11 +245,13 @@ pub fn distance_matrix_consistency_test() {
     |> model.add_node(4, "D")
     |> model.add_node(5, "E")
     |> model.add_node(6, "F")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
-    |> model.add_edge(from: 4, to: 5, with: 1)
-    |> model.add_edge(from: 5, to: 6, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 4, 1),
+      #(4, 5, 1),
+      #(5, 6, 1),
+    ])
 
   let pois = [1, 3, 6]
 
@@ -271,13 +266,12 @@ pub fn distance_matrix_consistency_test() {
     )
 
   // Build a smaller graph with only POIs to force Floyd-Warshall path
-  let small_graph =
+  let assert Ok(small_graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(3, "C")
     |> model.add_node(6, "F")
-    |> model.add_edge(from: 1, to: 3, with: 2)
-    |> model.add_edge(from: 3, to: 6, with: 3)
+    |> model.add_edges([#(1, 3, 2), #(3, 6, 3)])
 
   let result2 =
     matrix.distance_matrix(
@@ -302,11 +296,11 @@ pub fn distance_matrix_consistency_test() {
 }
 
 pub fn distance_matrix_empty_pois_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge(from: 1, to: 2, with: 5)
+    |> model.add_edges([#(1, 2, 5)])
 
   case
     matrix.distance_matrix(
@@ -326,11 +320,11 @@ pub fn distance_matrix_empty_pois_test() {
 }
 
 pub fn distance_matrix_single_poi_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge(from: 1, to: 2, with: 5)
+    |> model.add_edges([#(1, 2, 5)])
 
   case
     matrix.distance_matrix(
@@ -351,14 +345,13 @@ pub fn distance_matrix_single_poi_test() {
 }
 
 pub fn distance_matrix_disconnected_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 5)
-    |> model.add_edge(from: 3, to: 4, with: 3)
+    |> model.add_edges([#(1, 2, 5), #(3, 4, 3)])
 
   let pois = [1, 4]
 

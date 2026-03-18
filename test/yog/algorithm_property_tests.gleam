@@ -291,7 +291,8 @@ pub fn bridges_increase_components_test() {
     0 | 1 -> Nil
     _ -> {
       // Force edge insertion so we might create a bridge
-      let graph = model.add_edge(graph, from: src, to: dst, with: weight)
+      let assert Ok(graph) =
+        model.add_edge(graph, from: src, to: dst, with: weight)
 
       let result = connectivity.analyze(in: graph)
 

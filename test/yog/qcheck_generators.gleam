@@ -53,7 +53,8 @@ pub fn graph_generator_custom(
   valid_edges
   |> list.fold(graph, fn(g, edge) {
     let #(src, dst, weight) = edge
-    model.add_edge(g, from: src, to: dst, with: weight)
+    let assert Ok(g) = model.add_edge(g, from: src, to: dst, with: weight)
+    g
   })
 }
 

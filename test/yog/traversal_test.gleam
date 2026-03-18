@@ -13,13 +13,12 @@ import yog/traversal.{BreadthFirst, Continue, DepthFirst, Halt, Stop}
 
 // Test BFS on a simple linear path: 1 -> 2 -> 3
 pub fn bfs_linear_path_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1)])
 
   traversal.walk(in: graph, from: 1, using: BreadthFirst)
   |> should.equal([1, 2, 3])
@@ -32,17 +31,19 @@ pub fn bfs_linear_path_test() {
 //  / \
 // 4   5
 pub fn bfs_tree_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Root")
     |> model.add_node(2, "Left")
     |> model.add_node(3, "Right")
     |> model.add_node(4, "LL")
     |> model.add_node(5, "LR")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
-    |> model.add_edge(from: 2, to: 5, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(1, 3, 1),
+      #(2, 4, 1),
+      #(2, 5, 1),
+    ])
 
   let result = traversal.walk(in: graph, from: 1, using: BreadthFirst)
 
@@ -53,14 +54,16 @@ pub fn bfs_tree_test() {
 
 // Test BFS with a cycle (should not infinite loop)
 pub fn bfs_with_cycle_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 1, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 1, 1),
+    ])
 
   let result = traversal.walk(in: graph, from: 1, using: BreadthFirst)
 
@@ -90,13 +93,12 @@ pub fn bfs_nonexistent_start_test() {
 
 // Test BFS on undirected graph
 pub fn bfs_undirected_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1)])
 
   let result = traversal.walk(in: graph, from: 2, using: BreadthFirst)
 
@@ -109,13 +111,12 @@ pub fn bfs_undirected_test() {
 
 // Test DFS on a simple linear path: 1 -> 2 -> 3
 pub fn dfs_linear_path_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1)])
 
   traversal.walk(in: graph, from: 1, using: DepthFirst)
   |> should.equal([1, 2, 3])
@@ -128,17 +129,19 @@ pub fn dfs_linear_path_test() {
 //  / \
 // 4   5
 pub fn dfs_tree_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Root")
     |> model.add_node(2, "Left")
     |> model.add_node(3, "Right")
     |> model.add_node(4, "LL")
     |> model.add_node(5, "LR")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
-    |> model.add_edge(from: 2, to: 5, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(1, 3, 1),
+      #(2, 4, 1),
+      #(2, 5, 1),
+    ])
 
   let result = traversal.walk(in: graph, from: 1, using: DepthFirst)
 
@@ -151,14 +154,16 @@ pub fn dfs_tree_test() {
 
 // Test DFS with a cycle (should not infinite loop)
 pub fn dfs_with_cycle_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 1, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 1, 1),
+    ])
 
   let result = traversal.walk(in: graph, from: 1, using: DepthFirst)
 
@@ -185,16 +190,18 @@ pub fn dfs_isolated_node_test() {
 //  \ /
 //   4
 pub fn dfs_diamond_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Top")
     |> model.add_node(2, "Left")
     |> model.add_node(3, "Right")
     |> model.add_node(4, "Bottom")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(1, 3, 1),
+      #(2, 4, 1),
+      #(3, 4, 1),
+    ])
 
   let result = traversal.walk(in: graph, from: 1, using: DepthFirst)
 
@@ -207,15 +214,13 @@ pub fn dfs_diamond_test() {
 
 // Test walk_until stops at target node (BFS)
 pub fn walk_until_bfs_stops_at_target_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 4, 1)])
 
   let result =
     traversal.walk_until(
@@ -232,15 +237,13 @@ pub fn walk_until_bfs_stops_at_target_test() {
 
 // Test walk_until stops at target node (DFS)
 pub fn walk_until_dfs_stops_at_target_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 4, 1)])
 
   let result =
     traversal.walk_until(
@@ -257,13 +260,12 @@ pub fn walk_until_dfs_stops_at_target_test() {
 
 // Test walk_until never stops (visits all nodes)
 pub fn walk_until_never_stops_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1)])
 
   let result =
     traversal.walk_until(
@@ -280,7 +282,7 @@ pub fn walk_until_never_stops_test() {
 
 // Test walk_until stops immediately at start node
 pub fn walk_until_stops_at_start_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -301,17 +303,19 @@ pub fn walk_until_stops_at_start_test() {
 
 // Test walk_until on a tree with complex stop condition
 pub fn walk_until_complex_condition_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Root")
     |> model.add_node(2, "Left")
     |> model.add_node(3, "Right")
     |> model.add_node(4, "LL")
     |> model.add_node(5, "LR")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
-    |> model.add_edge(from: 2, to: 5, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(1, 3, 1),
+      #(2, 4, 1),
+      #(2, 5, 1),
+    ])
 
   let result =
     traversal.walk_until(
@@ -330,12 +334,11 @@ pub fn walk_until_complex_condition_test() {
 
 // Test with self-loop
 pub fn traversal_with_self_loop_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-    |> model.add_edge(from: 1, to: 1, with: 1)
-    |> model.add_edge(from: 1, to: 2, with: 1)
+    |> model.add_edges([#(1, 1, 1), #(1, 2, 1)])
 
   let result = traversal.walk(in: graph, from: 1, using: BreadthFirst)
 
@@ -346,7 +349,7 @@ pub fn traversal_with_self_loop_test() {
 
 // Test with disconnected component (shouldn't reach it)
 pub fn traversal_disconnected_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -363,15 +366,13 @@ pub fn traversal_disconnected_test() {
 
 // Test BFS vs DFS difference on the same graph
 pub fn bfs_vs_dfs_difference_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Root")
     |> model.add_node(2, "L")
     |> model.add_node(3, "R")
     |> model.add_node(4, "LL")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(2, 4, 1)])
 
   let bfs_result = traversal.walk(in: graph, from: 1, using: BreadthFirst)
   let dfs_result = traversal.walk(in: graph, from: 1, using: DepthFirst)
@@ -389,15 +390,13 @@ pub fn bfs_vs_dfs_difference_test() {
 
 // Test fold_walk with BFS collecting nodes within distance
 pub fn fold_walk_bfs_distance_limit_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 4, 1)])
 
   // Collect only nodes within distance 2
   let result =
@@ -434,15 +433,13 @@ pub fn fold_walk_bfs_distance_limit_test() {
 
 // Test fold_walk building parent map
 pub fn fold_walk_parent_map_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Root")
     |> model.add_node(2, "Left")
     |> model.add_node(3, "Right")
     |> model.add_node(4, "LL")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(2, 4, 1)])
 
   let parents =
     traversal.fold_walk(
@@ -482,17 +479,14 @@ pub fn fold_walk_parent_map_test() {
 
 // Test fold_walk counting nodes at each depth
 pub fn fold_walk_depth_count_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Root")
     |> model.add_node(2, "Left")
     |> model.add_node(3, "Right")
     |> model.add_node(4, "LL")
     |> model.add_node(5, "LR")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
-    |> model.add_edge(from: 2, to: 5, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(2, 4, 1), #(2, 5, 1)])
 
   let depth_counts =
     traversal.fold_walk(
@@ -524,13 +518,12 @@ pub fn fold_walk_depth_count_test() {
 
 // Test fold_walk with DFS
 pub fn fold_walk_dfs_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1)])
 
   // Collect nodes in order visited
   let result =
@@ -549,17 +542,19 @@ pub fn fold_walk_dfs_test() {
 
 // Test fold_walk with Stop control
 pub fn fold_walk_stop_control_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Root")
     |> model.add_node(2, "Left")
     |> model.add_node(3, "Right")
     |> model.add_node(4, "LL")
     |> model.add_node(5, "LR")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
-    |> model.add_edge(from: 2, to: 5, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(1, 3, 1),
+      #(2, 4, 1),
+      #(2, 5, 1),
+    ])
 
   // Stop exploring from node 2 (so nodes 4 and 5 shouldn't be visited)
   let result =
@@ -604,14 +599,16 @@ pub fn fold_walk_isolated_node_test() {
 
 // Test fold_walk with cycle (should not infinite loop)
 pub fn fold_walk_with_cycle_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 1, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 1, 1),
+    ])
 
   let result =
     traversal.fold_walk(
@@ -629,7 +626,7 @@ pub fn fold_walk_with_cycle_test() {
 
 // Test fold_walk start node metadata
 pub fn fold_walk_start_metadata_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Start")
     |> model.add_node(2, "Next")
@@ -659,15 +656,13 @@ pub fn fold_walk_start_metadata_test() {
 
 // Test fold_walk with Halt control (BFS)
 pub fn fold_walk_halt_bfs_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(2, 4, 1)])
 
   // Halt when we find node 2
   let result =
@@ -692,15 +687,13 @@ pub fn fold_walk_halt_bfs_test() {
 
 // Test fold_walk with Halt control (DFS)
 pub fn fold_walk_halt_dfs_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_node(4, "D")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 4, with: 1)
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 4, 1)])
 
   // Halt when we find node 3
   let result =
@@ -725,15 +718,17 @@ pub fn fold_walk_halt_dfs_test() {
 
 // Test fold_walk Halt vs Stop difference
 pub fn fold_walk_halt_vs_stop_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "Root")
     |> model.add_node(2, "Left")
     |> model.add_node(3, "Right")
     |> model.add_node(4, "LL")
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 1, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(1, 3, 1),
+      #(2, 4, 1),
+    ])
 
   // With Stop: visits 1, 2, 3 (skips 4 because we stopped at 2)
   let stop_result =
@@ -776,7 +771,7 @@ pub fn fold_walk_halt_vs_stop_test() {
 
 // Test that Halt at start node returns immediately
 pub fn fold_walk_halt_at_start_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
@@ -1689,64 +1684,72 @@ pub fn implicit_fold_by_identity_key_test() {
 // ============= Cycle Detection Tests =============
 
 pub fn is_cyclic_directed_acyclic_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
-    |> model.add_edge(1, 2, 1)
-    |> model.add_edge(2, 3, 1)
-    |> model.add_edge(1, 3, 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(1, 3, 1),
+    ])
 
   traversal.is_cyclic(graph) |> should.be_false()
   traversal.is_acyclic(graph) |> should.be_true()
 }
 
 pub fn is_cyclic_directed_cyclic_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
-    |> model.add_edge(1, 2, 1)
-    |> model.add_edge(2, 3, 1)
-    |> model.add_edge(3, 1, 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 1, 1),
+    ])
 
   traversal.is_cyclic(graph) |> should.be_true()
   traversal.is_acyclic(graph) |> should.be_false()
 }
 
 pub fn is_cyclic_undirected_acyclic_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
     |> model.add_node(4, Nil)
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 2, to: 4, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(2, 4, 1),
+    ])
 
   traversal.is_cyclic(graph) |> should.be_false()
   traversal.is_acyclic(graph) |> should.be_true()
 }
 
 pub fn is_cyclic_undirected_cyclic_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, Nil)
     |> model.add_node(2, Nil)
     |> model.add_node(3, Nil)
-    |> model.add_edge(from: 1, to: 2, with: 1)
-    |> model.add_edge(from: 2, to: 3, with: 1)
-    |> model.add_edge(from: 3, to: 1, with: 1)
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 3, 1),
+      #(3, 1, 1),
+    ])
 
   traversal.is_cyclic(graph) |> should.be_true()
   traversal.is_acyclic(graph) |> should.be_false()
 }
 
 pub fn is_cyclic_undirected_self_loop_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Undirected)
     |> model.add_node(1, Nil)
     |> model.add_edge(from: 1, to: 1, with: 1)

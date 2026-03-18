@@ -26,42 +26,44 @@ pub fn main() {
   io.println("  Dave (4): Qualified for Project Manager (7), Designer (8)\n")
 
   let network =
-    yog.directed()
-    // Source to candidates (capacity 1 - each candidate can take one job)
-    |> yog.add_edge(from: 0, to: 1, with: 1)
-    // Source -> Alice
-    |> yog.add_edge(from: 0, to: 2, with: 1)
-    // Source -> Bob
-    |> yog.add_edge(from: 0, to: 3, with: 1)
-    // Source -> Carol
-    |> yog.add_edge(from: 0, to: 4, with: 1)
-    // Source -> Dave
-    // Candidate qualifications (who can do which job)
-    |> yog.add_edge(from: 1, to: 5, with: 1)
-    // Alice -> Software Engineer
-    |> yog.add_edge(from: 1, to: 6, with: 1)
-    // Alice -> Data Analyst
-    |> yog.add_edge(from: 2, to: 5, with: 1)
-    // Bob -> Software Engineer
-    |> yog.add_edge(from: 2, to: 7, with: 1)
-    // Bob -> Project Manager
-    |> yog.add_edge(from: 3, to: 6, with: 1)
-    // Carol -> Data Analyst
-    |> yog.add_edge(from: 3, to: 8, with: 1)
-    // Carol -> Designer
-    |> yog.add_edge(from: 4, to: 7, with: 1)
-    // Dave -> Project Manager
-    |> yog.add_edge(from: 4, to: 8, with: 1)
-    // Dave -> Designer
-    // Jobs to sink (capacity 1 - each job needs one person)
-    |> yog.add_edge(from: 5, to: 9, with: 1)
-    // Software Engineer -> Sink
-    |> yog.add_edge(from: 6, to: 9, with: 1)
-    // Data Analyst -> Sink
-    |> yog.add_edge(from: 7, to: 9, with: 1)
-    // Project Manager -> Sink
-    |> yog.add_edge(from: 8, to: 9, with: 1)
-  // Designer -> Sink
+    model.Directed
+    |> yog.from_edges([
+      // Source to candidates (capacity 1 - each candidate can take one job)
+      #(0, 1, 1),
+      // Source -> Alice
+      #(0, 2, 1),
+      // Source -> Bob
+      #(0, 3, 1),
+      // Source -> Carol
+      #(0, 4, 1),
+      // Source -> Dave
+      // Candidate qualifications (who can do which job)
+      #(1, 5, 1),
+      // Alice -> Software Engineer
+      #(1, 6, 1),
+      // Alice -> Data Analyst
+      #(2, 5, 1),
+      // Bob -> Software Engineer
+      #(2, 7, 1),
+      // Bob -> Project Manager
+      #(3, 6, 1),
+      // Carol -> Data Analyst
+      #(3, 8, 1),
+      // Carol -> Designer
+      #(4, 7, 1),
+      // Dave -> Project Manager
+      #(4, 8, 1),
+      // Dave -> Designer
+      // Jobs to sink (capacity 1 - each job needs one person)
+      #(5, 9, 1),
+      // Software Engineer -> Sink
+      #(6, 9, 1),
+      // Data Analyst -> Sink
+      #(7, 9, 1),
+      // Project Manager -> Sink
+      #(8, 9, 1),
+      // Designer -> Sink
+    ])
 
   // Find maximum matching
   let result =
