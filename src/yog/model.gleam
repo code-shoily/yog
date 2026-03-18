@@ -246,6 +246,96 @@ pub fn add_edge_with(
   add_edge_unchecked(graph, from: src, to: dst, with: weight)
 }
 
+/// Adds multiple edges to the graph in a single operation.
+///
+/// Fails fast on the first edge that references non-existent nodes.
+/// Returns `Error` if any endpoint node doesn't exist.
+///
+/// This is more ergonomic than chaining multiple `add_edge` calls
+/// as it only requires unwrapping a single `Result`.
+///
+/// ## Example
+///
+/// ```gleam
+/// let assert Ok(graph) =
+///   model.new(Directed)
+///   |> model.add_node(1, "A")
+///   |> model.add_node(2, "B")
+///   |> model.add_node(3, "C")
+///   |> model.add_edges([
+///     #(1, 2, 10),
+///     #(2, 3, 5),
+///     #(1, 3, 15),
+///   ])
+/// ```
+pub fn add_edges(
+  graph: Graph(n, e),
+  edges: List(#(NodeId, NodeId, e)),
+) -> Result(Graph(n, e), String) {
+  list.try_fold(edges, graph, fn(g, edge) {
+    let #(src, dst, weight) = edge
+    add_edge(g, from: src, to: dst, with: weight)
+  })
+}
+
+/// Adds multiple simple edges (weight = 1) to the graph.
+///
+/// Fails fast on the first edge that references non-existent nodes.
+/// Convenient for unweighted graphs where all edges have weight 1.
+///
+/// ## Example
+///
+/// ```gleam
+/// let assert Ok(graph) =
+///   model.new(Directed)
+///   |> model.add_node(1, "A")
+///   |> model.add_node(2, "B")
+///   |> model.add_node(3, "C")
+///   |> model.add_simple_edges([
+///     #(1, 2),
+///     #(2, 3),
+///     #(1, 3),
+///   ])
+/// ```
+pub fn add_simple_edges(
+  graph: Graph(n, Int),
+  edges: List(#(NodeId, NodeId)),
+) -> Result(Graph(n, Int), String) {
+  list.try_fold(edges, graph, fn(g, edge) {
+    let #(src, dst) = edge
+    add_edge(g, from: src, to: dst, with: 1)
+  })
+}
+
+/// Adds multiple unweighted edges (weight = Nil) to the graph.
+///
+/// Fails fast on the first edge that references non-existent nodes.
+/// Convenient for graphs where edges carry no weight information.
+///
+/// ## Example
+///
+/// ```gleam
+/// let assert Ok(graph) =
+///   model.new(Directed)
+///   |> model.add_node(1, "A")
+///   |> model.add_node(2, "B")
+///   |> model.add_node(3, "C")
+///   |> model.add_unweighted_edges([
+///     #(1, 2),
+///     #(2, 3),
+///     #(1, 3),
+///   ])
+/// ```
+pub fn add_unweighted_edges(
+  graph: Graph(n, Nil),
+  edges: List(#(NodeId, NodeId)),
+) -> Result(Graph(n, Nil), String) {
+  list.try_fold(edges, graph, fn(g, edge) {
+    let #(src, dst) = edge
+    add_edge(g, from: src, to: dst, with: Nil)
+  })
+}
+
 /// Adds a node only if it doesn't already exist.
 fn ensure_node(graph: Graph(n, e), id: NodeId, data: n) -> Graph(n, e) {
   case dict.has_key(graph.nodes, id) {

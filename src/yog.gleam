@@ -356,6 +356,87 @@ pub fn add_simple_edge(
   model.add_edge(graph, from: src, to: dst, with: 1)
 }
 
+/// Adds multiple edges to the graph in a single operation.
+///
+/// Fails fast on the first edge that references non-existent nodes.
+/// Returns `Error` if any endpoint node doesn't exist.
+///
+/// This is more ergonomic than chaining multiple `add_edge` calls
+/// as it only requires unwrapping a single `Result`.
+///
+/// ## Example
+///
+/// ```gleam
+/// let assert Ok(graph) =
+///   yog.directed()
+///   |> yog.add_node(1, "A")
+///   |> yog.add_node(2, "B")
+///   |> yog.add_node(3, "C")
+///   |> yog.add_edges([
+///     #(1, 2, 10),
+///     #(2, 3, 5),
+///     #(1, 3, 15),
+///   ])
+/// ```
+pub fn add_edges(
+  graph: Graph(n, e),
+  edges: List(#(NodeId, NodeId, e)),
+) -> Result(Graph(n, e), String) {
+  model.add_edges(graph, edges)
+}
+
+/// Adds multiple simple edges (weight = 1) to the graph.
+///
+/// Fails fast on the first edge that references non-existent nodes.
+/// Convenient for unweighted graphs where all edges have weight 1.
+///
+/// ## Example
+///
+/// ```gleam
+/// let assert Ok(graph) =
+///   yog.directed()
+///   |> yog.add_node(1, "A")
+///   |> yog.add_node(2, "B")
+///   |> yog.add_node(3, "C")
+///   |> yog.add_simple_edges([
+///     #(1, 2),
+///     #(2, 3),
+///     #(1, 3),
+///   ])
+/// ```
+pub fn add_simple_edges(
+  graph: Graph(n, Int),
+  edges: List(#(NodeId, NodeId)),
+) -> Result(Graph(n, Int), String) {
+  model.add_simple_edges(graph, edges)
+}
+
+/// Adds multiple unweighted edges (weight = Nil) to the graph.
+///
+/// Fails fast on the first edge that references non-existent nodes.
+/// Convenient for graphs where edges carry no weight information.
+///
+/// ## Example
+///
+/// ```gleam
+/// let assert Ok(graph) =
+///   yog.directed()
+///   |> yog.add_node(1, "A")
+///   |> yog.add_node(2, "B")
+///   |> yog.add_node(3, "C")
+///   |> yog.add_unweighted_edges([
+///     #(1, 2),
+///     #(2, 3),
+///     #(1, 3),
+///   ])
+/// ```
+pub fn add_unweighted_edges(
+  graph: Graph(n, Nil),
+  edges: List(#(NodeId, NodeId)),
+) -> Result(Graph(n, Nil), String) {
+  model.add_unweighted_edges(graph, edges)
+}
+
 /// Gets nodes you can travel TO from the given node (successors).
 /// Returns a list of tuples containing the destination node ID and edge data.
 pub fn successors(graph: Graph(n, e), id: NodeId) -> List(#(NodeId, e)) {
