@@ -79,8 +79,9 @@ pub type WalkMetadata(nid) {
 ///
 /// For directed graphs, a cycle exists if there is a path from a node back to itself
 /// (evaluated efficiently via Kahn's algorithm).
-/// For undirected graphs, a cycle exists if there is a path of length >= 3 from a node back to itself,
-/// or a self-loop.
+/// 
+/// A cycle in an undirected graph is a path that starts and ends at the same vertex, 
+/// traverses edges only once, and contains at least three vertices, or has a self-loop.
 ///
 /// **Time Complexity:** O(V + E)
 ///
@@ -147,29 +148,30 @@ fn check_undirected_cycle(
   let new_visited = set.insert(visited, node)
   let neighbors = model.successor_ids(graph, node)
 
-  list.fold_until(neighbors, #(False, new_visited), fn(acc, neighbor) {
-    let #(_, current_visited) = acc
-    case set.contains(current_visited, neighbor) {
-      True -> {
-        let is_parent = case parent {
-          Some(p) -> p == neighbor
-          None -> False
-        }
-        case is_parent {
-          True -> list.Continue(#(False, current_visited))
-          False -> list.Stop(#(True, current_visited))
-        }
+  use #(_, current_visited), neighbor <- list.fold_until(neighbors, #(
+    False,
+    new_visited,
+  ))
+  case set.contains(current_visited, neighbor) {
+    True -> {
+      let is_parent = case parent {
+        Some(p) -> p == neighbor
+        None -> False
       }
-      False -> {
-        let #(has_cycle, next_visited) =
-          check_undirected_cycle(graph, neighbor, Some(node), current_visited)
-        case has_cycle {
-          True -> list.Stop(#(True, next_visited))
-          False -> list.Continue(#(False, next_visited))
-        }
+      case is_parent {
+        True -> list.Continue(#(False, current_visited))
+        False -> list.Stop(#(True, current_visited))
       }
     }
-  })
+    False -> {
+      let #(has_cycle, next_visited) =
+        check_undirected_cycle(graph, neighbor, Some(node), current_visited)
+      case has_cycle {
+        True -> list.Stop(#(True, next_visited))
+        False -> list.Continue(#(False, next_visited))
+      }
+    }
+  }
 }
 
 /// Walks the graph starting from the given node, visiting all reachable nodes.

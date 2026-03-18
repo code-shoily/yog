@@ -1051,6 +1051,135 @@ pub fn add_edge_ensured_self_loop_test() {
   model.successors(graph, 1) |> should.equal([#(1, 5)])
 }
 
+// ============= Tests for add_edge_ensured_with() =============
+
+pub fn add_edge_ensured_with_creates_both_missing_nodes_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_edge_ensured_with(from: 1, to: 2, with: 10, by: int.to_string)
+
+  // Both nodes should exist with data derived from their IDs
+  dict.get(graph.nodes, 1)
+  |> should.equal(Ok("1"))
+
+  dict.get(graph.nodes, 2)
+  |> should.equal(Ok("2"))
+
+  // Edge should exist
+  model.successors(graph, 1)
+  |> should.equal([#(2, 10)])
+}
+
+pub fn add_edge_ensured_with_preserves_existing_nodes_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "Alice")
+    |> model.add_edge_ensured_with(from: 1, to: 2, with: 5, by: fn(n) {
+      "Node:" <> int.to_string(n)
+    })
+
+  // Node 1 keeps its original data
+  dict.get(graph.nodes, 1)
+  |> should.equal(Ok("Alice"))
+
+  // Node 2 is created using the function
+  dict.get(graph.nodes, 2)
+  |> should.equal(Ok("Node:2"))
+}
+
+pub fn add_edge_ensured_with_both_nodes_exist_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "Alice")
+    |> model.add_node(2, "Bob")
+    |> model.add_edge_ensured_with(from: 1, to: 2, with: 7, by: fn(_) {
+      "ignored"
+    })
+
+  // Neither should be overwritten
+  dict.get(graph.nodes, 1) |> should.equal(Ok("Alice"))
+  dict.get(graph.nodes, 2) |> should.equal(Ok("Bob"))
+
+  model.successors(graph, 1)
+  |> should.equal([#(2, 7)])
+}
+
+pub fn add_edge_ensured_with_undirected_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_edge_ensured_with(from: 1, to: 2, with: 10, by: fn(n) {
+      n * 10
+    })
+
+  // Both directions
+  model.successors(graph, 1) |> should.equal([#(2, 10)])
+  model.successors(graph, 2) |> should.equal([#(1, 10)])
+
+  // Both nodes exist with computed data
+  dict.get(graph.nodes, 1) |> should.equal(Ok(10))
+  dict.get(graph.nodes, 2) |> should.equal(Ok(20))
+}
+
+pub fn add_edge_ensured_with_self_loop_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_edge_ensured_with(from: 1, to: 1, with: 5, by: fn(n) {
+      n + 100
+    })
+
+  dict.get(graph.nodes, 1) |> should.equal(Ok(101))
+  model.successors(graph, 1) |> should.equal([#(1, 5)])
+}
+
+pub fn add_edge_ensured_with_identity_function_test() {
+  // Using identity function (node data = node ID)
+  let graph =
+    model.new(Directed)
+    |> model.add_edge_ensured_with(from: 42, to: 99, with: 1, by: fn(x) { x })
+
+  dict.get(graph.nodes, 42) |> should.equal(Ok(42))
+  dict.get(graph.nodes, 99) |> should.equal(Ok(99))
+}
+
+pub fn add_edge_ensured_with_db_lookup_simulation_test() {
+  // Simulating a database lookup scenario
+  let db = dict.from_list([#(1, "User:Alice"), #(2, "User:Bob")])
+  let get_from_db = fn(id) {
+    case dict.get(db, id) {
+      Ok(name) -> name
+      Error(_) -> "Unknown:" <> int.to_string(id)
+    }
+  }
+
+  let graph =
+    model.new(Directed)
+    |> model.add_edge_ensured_with(from: 1, to: 2, with: 10, by: get_from_db)
+
+  // Both nodes fetched from "database"
+  dict.get(graph.nodes, 1) |> should.equal(Ok("User:Alice"))
+  dict.get(graph.nodes, 2) |> should.equal(Ok("User:Bob"))
+}
+
+pub fn add_edge_ensured_with_partial_db_lookup_test() {
+  // One node exists, other needs to be "fetched"
+  let db = dict.from_list([#(2, "User:Bob")])
+  let get_from_db = fn(id) {
+    case dict.get(db, id) {
+      Ok(name) -> name
+      Error(_) -> "Unknown:" <> int.to_string(id)
+    }
+  }
+
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "Custom:Alice")
+    |> model.add_edge_ensured_with(from: 1, to: 2, with: 10, by: get_from_db)
+
+  // Node 1 keeps custom data, node 2 is fetched from DB
+  dict.get(graph.nodes, 1) |> should.equal(Ok("Custom:Alice"))
+  dict.get(graph.nodes, 2) |> should.equal(Ok("User:Bob"))
+}
+
 // ============= Tests for order() and node_count() =============
 
 pub fn order_empty_graph_test() {

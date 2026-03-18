@@ -155,6 +155,10 @@ pub fn add_edge(
 /// A future version may support separate defaults for each endpoint
 /// (`default_from` and `default_to`). If you need this feature, please
 /// [open an issue](https://github.com/code-shoily/yog/issues).
+/// 
+/// For now, if you need different node values, then call `add_node` before
+/// adding edges. Or call `add_edge_ensured_with()` with a callback function
+/// that fetches the value of the NodeId (i.e. from a dict, database, or `identity`)
 pub fn add_edge_ensured(
   graph: Graph(n, e),
   from src: NodeId,
@@ -167,11 +171,61 @@ pub fn add_edge_ensured(
   add_edge(graph, from: src, to: dst, with: weight)
 }
 
+/// Like `add_edge_ensured`, it ensures that node exists before adding 
+/// edge, but when missing, create the node_data from a function rather
+/// than adding a default value.
+///
+/// If `src` or `dst` is not already in the graph, it is created with
+/// the calling the `by` function that takes the node id and returns
+/// the node data before the edge is added. 
+/// 
+/// Nodes that already exist are left unchanged.
+/// 
+/// ## Example
+///
+/// ```gleam
+/// // Nodes 1 and 2 are created automatically with value that's the same as NodeId
+/// model.new(model.Directed)
+/// |> model.add_edge_ensured_with(from: 1, to: 2, with: 10, by: fn(x) { x })
+/// ```
+///
+/// ```gleam
+/// // Existing nodes keep their data; only missing ones get the default
+/// model.new(model.Directed)
+/// |> model.add_node(1, "1")
+/// |> model.add_edge_ensured(from: 1, to: 2, with: 5, by: fn(n) { int.to_string(n) <> ":new" })
+/// // Node 1 is still "1", node 2 is "2:new"
+/// ```
+pub fn add_edge_ensured_with(
+  graph: Graph(n, e),
+  from src: NodeId,
+  to dst: NodeId,
+  with weight: e,
+  by by: fn(NodeId) -> n,
+) -> Graph(n, e) {
+  let graph = ensure_node_with(graph, src, by:)
+  let graph = ensure_node_with(graph, dst, by:)
+  add_edge(graph, from: src, to: dst, with: weight)
+}
+
 /// Adds a node only if it doesn't already exist.
 fn ensure_node(graph: Graph(n, e), id: NodeId, data: n) -> Graph(n, e) {
   case dict.has_key(graph.nodes, id) {
     True -> graph
     False -> add_node(graph, id, data)
+  }
+}
+
+/// Adds a node only if it doesn't already exist, using a function
+/// to create the node data from the node ID.
+fn ensure_node_with(
+  graph: Graph(n, e),
+  id: NodeId,
+  by make: fn(NodeId) -> n,
+) -> Graph(n, e) {
+  case dict.has_key(graph.nodes, id) {
+    True -> graph
+    False -> add_node(graph, id, make(id))
   }
 }
 
