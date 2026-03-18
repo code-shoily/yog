@@ -25,42 +25,45 @@ pub fn main() {
   io.println("  Carol (3): Qualified for Data Analyst (6), Designer (8)")
   io.println("  Dave (4): Qualified for Project Manager (7), Designer (8)\n")
 
-  let network = yog.directed()
-  // Source to candidates (capacity 1 - each candidate can take one job)
-  let assert Ok(network) = yog.add_edge(network, from: 0, to: 1, with: 1)
-  // Source -> Alice
-  let assert Ok(network) = yog.add_edge(network, from: 0, to: 2, with: 1)
-  // Source -> Bob
-  let assert Ok(network) = yog.add_edge(network, from: 0, to: 3, with: 1)
-  // Source -> Carol
-  let assert Ok(network) = yog.add_edge(network, from: 0, to: 4, with: 1)
-  // Source -> Dave
-  // Candidate qualifications (who can do which job)
-  let assert Ok(network) = yog.add_edge(network, from: 1, to: 5, with: 1)
-  // Alice -> Software Engineer
-  let assert Ok(network) = yog.add_edge(network, from: 1, to: 6, with: 1)
-  // Alice -> Data Analyst
-  let assert Ok(network) = yog.add_edge(network, from: 2, to: 5, with: 1)
-  // Bob -> Software Engineer
-  let assert Ok(network) = yog.add_edge(network, from: 2, to: 7, with: 1)
-  // Bob -> Project Manager
-  let assert Ok(network) = yog.add_edge(network, from: 3, to: 6, with: 1)
-  // Carol -> Data Analyst
-  let assert Ok(network) = yog.add_edge(network, from: 3, to: 8, with: 1)
-  // Carol -> Designer
-  let assert Ok(network) = yog.add_edge(network, from: 4, to: 7, with: 1)
-  // Dave -> Project Manager
-  let assert Ok(network) = yog.add_edge(network, from: 4, to: 8, with: 1)
-  // Dave -> Designer
-  // Jobs to sink (capacity 1 - each job needs one person)
-  let assert Ok(network) = yog.add_edge(network, from: 5, to: 9, with: 1)
-  // Software Engineer -> Sink
-  let assert Ok(network) = yog.add_edge(network, from: 6, to: 9, with: 1)
-  // Data Analyst -> Sink
-  let assert Ok(network) = yog.add_edge(network, from: 7, to: 9, with: 1)
-  // Project Manager -> Sink
-  let assert Ok(network) = yog.add_edge(network, from: 8, to: 9, with: 1)
-  // Designer -> Sink
+  let network =
+    model.Directed
+    |> yog.from_edges([
+      // Source to candidates (capacity 1 - each candidate can take one job)
+      #(0, 1, 1),
+      // Source -> Alice
+      #(0, 2, 1),
+      // Source -> Bob
+      #(0, 3, 1),
+      // Source -> Carol
+      #(0, 4, 1),
+      // Source -> Dave
+      // Candidate qualifications (who can do which job)
+      #(1, 5, 1),
+      // Alice -> Software Engineer
+      #(1, 6, 1),
+      // Alice -> Data Analyst
+      #(2, 5, 1),
+      // Bob -> Software Engineer
+      #(2, 7, 1),
+      // Bob -> Project Manager
+      #(3, 6, 1),
+      // Carol -> Data Analyst
+      #(3, 8, 1),
+      // Carol -> Designer
+      #(4, 7, 1),
+      // Dave -> Project Manager
+      #(4, 8, 1),
+      // Dave -> Designer
+      // Jobs to sink (capacity 1 - each job needs one person)
+      #(5, 9, 1),
+      // Software Engineer -> Sink
+      #(6, 9, 1),
+      // Data Analyst -> Sink
+      #(7, 9, 1),
+      // Project Manager -> Sink
+      #(8, 9, 1),
+      // Designer -> Sink
+    ])
 
   // Find maximum matching
   let result =

@@ -13,9 +13,8 @@ pub fn main() {
     |> model.add_node(1, "Start")
     |> model.add_node(2, "Middle")
     |> model.add_node(3, "End")
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 2, with: 5)
-  let assert Ok(graph) = model.add_edge(graph, from: 2, to: 3, with: 3)
-  let assert Ok(graph) = model.add_edge(graph, from: 1, to: 3, with: 10)
+  let assert Ok(graph) =
+    model.add_edges(graph, [#(1, 2, 5), #(2, 3, 3), #(1, 3, 10)])
 
   // 1. Basic DOT output
   io.println("--- Basic DOT Output ---")

@@ -3,6 +3,7 @@ import gleam/io
 import gleam/set
 import yog
 import yog/flow/max_flow
+import yog/model
 
 pub fn main() {
   io.println("=== Network Bandwidth Allocation ===\n")
@@ -10,27 +11,28 @@ pub fn main() {
   // Model a network with routers and bandwidth constraints
   // Nodes: 0=Source, 1=RouterA, 2=RouterB, 3=RouterC, 4=RouterD, 5=Destination
   // Edge weights represent bandwidth capacity in Mbps
-
-  let network = yog.directed()
-  // From source
-  let assert Ok(network) = yog.add_edge(network, from: 0, to: 1, with: 20)
-  // Source -> Router A (20 Mbps)
-  let assert Ok(network) = yog.add_edge(network, from: 0, to: 2, with: 30)
-  // Source -> Router B (30 Mbps)
-  // Intermediate connections
-  let assert Ok(network) = yog.add_edge(network, from: 1, to: 2, with: 10)
-  // Router A -> Router B (10 Mbps)
-  let assert Ok(network) = yog.add_edge(network, from: 1, to: 3, with: 15)
-  // Router A -> Router C (15 Mbps)
-  let assert Ok(network) = yog.add_edge(network, from: 2, to: 3, with: 25)
-  // Router B -> Router C (25 Mbps)
-  let assert Ok(network) = yog.add_edge(network, from: 2, to: 4, with: 20)
-  // Router B -> Router D (20 Mbps)
-  // To destination
-  let assert Ok(network) = yog.add_edge(network, from: 3, to: 5, with: 30)
-  // Router C -> Destination (30 Mbps)
-  let assert Ok(network) = yog.add_edge(network, from: 4, to: 5, with: 15)
-  // Router D -> Destination (15 Mbps)
+  let network =
+    yog.from_edges(model.Directed, [
+      // Source to routers
+      #(0, 1, 20),
+      // Source -> Router A (20 Mbps)
+      #(0, 2, 30),
+      // Source -> Router B (30 Mbps)
+      // Intermediate connections
+      #(1, 2, 10),
+      // Router A -> Router B (10 Mbps)
+      #(1, 3, 15),
+      // Router A -> Router C (15 Mbps)
+      #(2, 3, 25),
+      // Router B -> Router C (25 Mbps)
+      #(2, 4, 20),
+      // Router B -> Router D (20 Mbps)
+      // Routers to destination
+      #(3, 5, 30),
+      // Router C -> Destination (30 Mbps)
+      #(4, 5, 15),
+      // Router D -> Destination (15 Mbps)
+    ])
 
   io.println("Network topology:")
   io.println("  Source (0) -> RouterA (1): 20 Mbps")

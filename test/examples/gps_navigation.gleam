@@ -2,24 +2,22 @@ import gleam/int
 import gleam/io
 import gleam/option.{Some}
 import yog
+import yog/model
 import yog/pathfinding/a_star
 
 pub fn main() {
   // A graph of locations and travel times (minutes)
   let graph =
-    yog.undirected()
-    |> yog.add_node(1, #(0, 0))
-    // Home: (x, y)
-    |> yog.add_node(2, #(5, 2))
-    // Coffee shop
-    |> yog.add_node(3, #(2, 8))
-    // Park
-    |> yog.add_node(4, #(10, 10))
-  // Office
-  let assert Ok(graph) = yog.add_edge(graph, from: 1, to: 2, with: 10)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 3, with: 15)
-  let assert Ok(graph) = yog.add_edge(graph, from: 3, to: 4, with: 20)
-  let assert Ok(graph) = yog.add_edge(graph, from: 2, to: 4, with: 25)
+    yog.from_edges(model.Undirected, [
+      #(1, 2, 10),
+      // Home (1) <-> Coffee shop (2): 10 min
+      #(2, 3, 15),
+      // Coffee shop (2) <-> Park (3): 15 min
+      #(3, 4, 20),
+      // Park (3) <-> Office (4): 20 min
+      #(2, 4, 25),
+      // Coffee shop (2) <-> Office (4): 25 min
+    ])
 
   // Use A* with Euclidean-style distance heuristic
   let heuristic = fn(from: Int, to: Int) {
@@ -35,6 +33,7 @@ pub fn main() {
           3 -> 5
           // estimate from park
           4 -> 0
+          // at destination
           _ -> 0
         }
       False -> 0
