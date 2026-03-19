@@ -13,9 +13,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `yog/properties/*` → `yog/property/*`
   - `yog/generators/*` → `yog/generator/*`
 
+- **Module Rename**: `yog/io/*` → `yog/render/*`
+  - The `io` module name was misleading as it only contained rendering/output functionality
+  - All rendering modules now live under `yog/render/`:
+    - `yog/io/dot` → `yog/render/dot`
+    - `yog/io/mermaid` → `yog/render/mermaid`
+    - `yog/io/json` → `yog/render/json`
+    - `yog/io/ascii` → `yog/render/ascii`
+  - Update your imports: `import yog/io/dot` → `import yog/render/dot`
+
 - **Typed Rendering Configuration**:
-  - `yog/io/dot`: `DotOptions` now uses robust Algebraic Data Types (ADTs) like `Layout`, `RankDir`, `NodeShape`, and `Style` instead of strings. Numeric values now use `Float` for precision (e.g., `nodesep`, `penwidth`).
-  - `yog/io/mermaid`: `MermaidOptions` now uses `Direction`, `NodeShape`, and `CssLength` ADTs, providing a type-safe way to configure diagram appearance.
+  - `yog/render/dot`: `DotOptions` now uses robust Algebraic Data Types (ADTs) like `Layout`, `RankDir`, `NodeShape`, and `Style` instead of strings. Numeric values now use `Float` for precision (e.g., `nodesep`, `penwidth`).
+  - `yog/render/mermaid`: `MermaidOptions` now uses `Direction`, `NodeShape`, and `CssLength` ADTs, providing a type-safe way to configure diagram appearance.
 
 - **Edge Addition API Changes**: `add_edge()` and `add_edge_with_combine()` now return `Result(Graph, String)` instead of `Graph` to prevent "ghost nodes":
   - `add_edge(graph, from: 1, to: 2, with: 10)` now returns `Error("Node 1 does not exist")` if nodes don't exist
@@ -37,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Toroidal Grid Builder** (`yog/builder/toroidal`): Support for graphs with wrapping (torus) topology. Includes specialized toroidal distance heuristics: `toroidal_manhattan_distance`, `toroidal_chebyshev_distance`, and `toroidal_octile_distance`.
 
-- **ASCII Art Rendering** (`yog/io/ascii`): New module for rendering grids and mazes as ASCII text, ideal for terminal output and debugging.
+- **ASCII Art Rendering** (`yog/render/ascii`): New module for rendering grids and mazes as ASCII text, ideal for terminal output and debugging.
 
 - **Grid Distance Heuristics**: Added `chebyshev_distance` (for 8-way movement) and `octile_distance` (for realistic diagonal costs) to `yog/builder/grid`.
 

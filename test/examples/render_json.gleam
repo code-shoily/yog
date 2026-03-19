@@ -1,7 +1,7 @@
 import gleam/io
 import gleam/json
-import yog/io/json as yog_json
 import yog/model
+import yog/render/json as yog_json
 
 pub fn main() {
   // Create a sample graph

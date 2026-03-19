@@ -1,9 +1,9 @@
 import gleam/option.{Some}
 import gleam/string
 import gleeunit/should
-import yog/io/dot
 import yog/model.{Directed, Undirected}
 import yog/pathfinding/utils.{Path}
+import yog/render/dot
 
 // =============================================================================
 // DOT (Graphviz) Rendering Tests

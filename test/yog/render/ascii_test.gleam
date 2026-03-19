@@ -3,8 +3,8 @@ import gleam/list
 import gleam/string
 import gleeunit/should
 import yog/builder/grid
-import yog/io/ascii
 import yog/model
+import yog/render/ascii
 
 // Test basic ASCII rendering with a simple grid
 pub fn simple_grid_ascii_test() {

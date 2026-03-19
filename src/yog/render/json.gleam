@@ -30,7 +30,7 @@
 //// ## Example: D3.js Integration
 ////
 //// ```gleam
-//// import yog/io/json
+//// import yog/render/json
 ////
 //// // Export for D3.js force simulation
 //// let json_string = json.to_string(graph)

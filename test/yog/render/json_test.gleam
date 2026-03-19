@@ -2,8 +2,8 @@ import gleam/json
 import gleam/list
 import gleam/string
 import gleeunit/should
-import yog/io/json as yog_json
 import yog/model.{Directed, Undirected}
+import yog/render/json as yog_json
 
 // =============================================================================
 // JSON Rendering Tests

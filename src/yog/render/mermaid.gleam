@@ -7,7 +7,7 @@
 //// ## Quick Start
 ////
 //// ```gleam
-//// import yog/io/mermaid
+//// import yog/render/mermaid
 ////
 //// let diagram = mermaid.to_string(my_graph)
 //// // Paste into Markdown:

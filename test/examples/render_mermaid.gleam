@@ -1,9 +1,9 @@
 import gleam/int
 import gleam/io
 import gleam/option.{None, Some}
-import yog/io/mermaid
 import yog/model
 import yog/pathfinding/dijkstra
+import yog/render/mermaid
 import yog/transform
 
 pub fn main() {

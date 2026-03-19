@@ -8,7 +8,7 @@
 //// ## Quick Start
 ////
 //// ```gleam
-//// import yog/io/dot
+//// import yog/render/dot
 ////
 //// // Export with default styling
 //// let dot_string = dot.to_string(my_graph)

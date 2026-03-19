@@ -7,7 +7,7 @@
 //// ## Quick Start
 ////
 //// ```gleam
-//// import yog/io/ascii
+//// import yog/render/ascii
 //// import yog/builder/grid
 ////
 ////  let map = [

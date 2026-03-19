@@ -2,9 +2,9 @@ import gleam/list
 import gleam/option.{Some}
 import gleam/string
 import gleeunit/should
-import yog/io/mermaid
 import yog/model.{Directed, Undirected}
 import yog/pathfinding/utils.{Path}
+import yog/render/mermaid
 
 // ============= Basic Mermaid Generation Tests =============
 
