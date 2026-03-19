@@ -1,5 +1,6 @@
 import gleam/dict
 import gleam/int
+import gleam/option.{None, Some}
 import gleeunit/should
 import yog/model.{Directed, Undirected}
 import yog/pathfinding/matrix
@@ -21,6 +22,7 @@ pub fn distance_matrix_basic_test() {
       between: [1, 2, 3],
       with_zero: 0,
       with_add: int.add,
+      with_subtract: None,
       with_compare: int.compare,
     )
 
@@ -59,6 +61,7 @@ pub fn distance_matrix_subset_test() {
       between: [1, 4],
       with_zero: 0,
       with_add: int.add,
+      with_subtract: None,
       with_compare: int.compare,
     )
 
@@ -96,6 +99,7 @@ pub fn distance_matrix_unreachable_test() {
       between: [1, 3],
       with_zero: 0,
       with_add: int.add,
+      with_subtract: None,
       with_compare: int.compare,
     )
 
@@ -131,6 +135,7 @@ pub fn distance_matrix_algorithm_selection_test() {
       between: [1, 2, 3],
       with_zero: 0,
       with_add: int.add,
+      with_subtract: None,
       with_compare: int.compare,
     )
 
@@ -151,6 +156,7 @@ pub fn distance_matrix_negative_cycle_test() {
       between: [1, 2],
       with_zero: 0,
       with_add: int.add,
+      with_subtract: Some(int.subtract),
       with_compare: int.compare,
     )
 
@@ -184,6 +190,7 @@ pub fn distance_matrix_sparse_pois_test() {
       between: pois,
       with_zero: 0,
       with_add: int.add,
+      with_subtract: None,
       with_compare: int.compare,
     )
   {
@@ -219,6 +226,7 @@ pub fn distance_matrix_dense_pois_test() {
       between: pois,
       with_zero: 0,
       with_add: int.add,
+      with_subtract: None,
       with_compare: int.compare,
     )
   {
@@ -262,6 +270,7 @@ pub fn distance_matrix_consistency_test() {
       between: pois,
       with_zero: 0,
       with_add: int.add,
+      with_subtract: None,
       with_compare: int.compare,
     )
 
@@ -279,6 +288,7 @@ pub fn distance_matrix_consistency_test() {
       between: [1, 3, 6],
       with_zero: 0,
       with_add: int.add,
+      with_subtract: None,
       with_compare: int.compare,
     )
 
@@ -308,6 +318,7 @@ pub fn distance_matrix_empty_pois_test() {
       between: [],
       with_zero: 0,
       with_add: int.add,
+      with_subtract: None,
       with_compare: int.compare,
     )
   {
@@ -332,6 +343,7 @@ pub fn distance_matrix_single_poi_test() {
       between: [1],
       with_zero: 0,
       with_add: int.add,
+      with_subtract: None,
       with_compare: int.compare,
     )
   {
@@ -361,6 +373,7 @@ pub fn distance_matrix_disconnected_test() {
       between: pois,
       with_zero: 0,
       with_add: int.add,
+      with_subtract: None,
       with_compare: int.compare,
     )
   {
@@ -371,6 +384,50 @@ pub fn distance_matrix_disconnected_test() {
       dict.get(distances, #(1, 4)) |> should.equal(Error(Nil))
       // Distance from 4 to 4
       dict.get(distances, #(4, 4)) |> should.equal(Ok(0))
+    }
+    Error(Nil) -> should.fail()
+  }
+}
+
+// Test that verifies Johnson's algorithm is used for sparse graphs with negative weights
+pub fn distance_matrix_johnson_selection_test() {
+  // Create a sparse graph with negative weights
+  let assert Ok(graph) =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_node(5, "E")
+    |> model.add_edges([
+      #(1, 2, 4),
+      #(1, 3, 2),
+      #(2, 3, -3),
+      #(3, 4, 2),
+      #(2, 4, 5),
+      #(4, 5, 1),
+    ])
+
+  // Many POIs to potentially trigger all-pairs algorithm
+  let pois = [1, 2, 3, 4, 5]
+
+  case
+    matrix.distance_matrix(
+      in: graph,
+      between: pois,
+      with_zero: 0,
+      with_add: int.add,
+      with_subtract: Some(int.subtract),
+      with_compare: int.compare,
+    )
+  {
+    Ok(distances) -> {
+      // Path from 1 to 4: 1->2->3->4 = 4 + (-3) + 2 = 3
+      dict.get(distances, #(1, 4)) |> should.equal(Ok(3))
+      // Path from 1 to 3: 1->2->3 = 4 + (-3) = 1 (better than direct 1->3 = 2)
+      dict.get(distances, #(1, 3)) |> should.equal(Ok(1))
+      // Path from 1 to 5: 1->2->3->4->5 = 4 + (-3) + 2 + 1 = 4
+      dict.get(distances, #(1, 5)) |> should.equal(Ok(4))
     }
     Error(Nil) -> should.fail()
   }

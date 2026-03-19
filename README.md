@@ -27,7 +27,7 @@ A graph algorithm library for Gleam, providing implementations of classic graph 
 ## Features
 
 - **Graph Data Structures**: Directed and undirected graphs with generic node and edge data
-- **Pathfinding Algorithms**: Dijkstra, A*, Bellman-Ford, Floyd-Warshall, and **Implicit Variants** (state-space search)
+- **Pathfinding Algorithms**: Dijkstra, A*, Bellman-Ford, Floyd-Warshall, Johnson's, and **Implicit Variants** (state-space search)
 - **Maximum Flow**: Highly optimized Edmonds-Karp algorithm with flat dictionary residuals
 - **Graph Generators**: Create classic patterns (complete, cycle, path, star, wheel, bipartite, trees, grids) and random graphs (Erdős-Rényi, Barabási-Albert, Watts-Strogatz)
 - **Graph Traversal**: BFS and DFS with early termination and **Implicit Variants**
@@ -142,6 +142,7 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 | **A*** | Non-negative weights + good heuristic | O((V+E) log V) |
 | **Bellman-Ford** | Negative weights OR cycle detection needed | O(VE) |
 | **Floyd-Warshall** | All-pairs shortest paths, distance matrices | O(V³) |
+| **Johnson's** | All-pairs shortest paths in sparse graphs with negative weights | O(V² log V + VE) |
 | **Edmonds-Karp** | Maximum flow, bipartite matching, network optimization | O(VE²) |
 | **BFS/DFS** | Unweighted graphs, exploring reachability | O(V+E) |
 | **Kruskal's MST** | Finding minimum spanning tree | O(E log E) |
