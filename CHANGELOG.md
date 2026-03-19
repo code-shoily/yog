@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `yog/properties/*` → `yog/property/*`
   - `yog/generators/*` → `yog/generator/*`
 
+- **Typed Rendering Configuration**:
+  - `yog/io/dot`: `DotOptions` now uses robust Algebraic Data Types (ADTs) like `Layout`, `RankDir`, `NodeShape`, and `Style` instead of strings. Numeric values now use `Float` for precision (e.g., `nodesep`, `penwidth`).
+  - `yog/io/mermaid`: `MermaidOptions` now uses `Direction`, `NodeShape`, and `CssLength` ADTs, providing a type-safe way to configure diagram appearance.
+
 - **Edge Addition API Changes**: `add_edge()` and `add_edge_with_combine()` now return `Result(Graph, String)` instead of `Graph` to prevent "ghost nodes":
   - `add_edge(graph, from: 1, to: 2, with: 10)` now returns `Error("Node 1 does not exist")` if nodes don't exist
   - `add_edge_with_combine(graph, from: 1, to: 2, with: 5, using: int.add)` also returns `Result`
@@ -30,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `add_simple_edges(graph, edges: List(#(NodeId, NodeId)))` - Add multiple edges with weight 1
   - `add_unweighted_edges(graph, edges: List(#(NodeId, NodeId)))` - Add multiple edges with weight Nil
   - These functions fail fast on the first missing node, reducing Result-handling boilerplate compared to chaining individual `add_edge` calls
+
+- **Toroidal Grid Builder** (`yog/builder/toroidal`): Support for graphs with wrapping (torus) topology. Includes specialized toroidal distance heuristics: `toroidal_manhattan_distance`, `toroidal_chebyshev_distance`, and `toroidal_octile_distance`.
+
+- **ASCII Art Rendering** (`yog/io/ascii`): New module for rendering grids and mazes as ASCII text, ideal for terminal output and debugging.
+
+- **Grid Distance Heuristics**: Added `chebyshev_distance` (for 8-way movement) and `octile_distance` (for realistic diagonal costs) to `yog/builder/grid`.
 
 - **F# Comparison**: Added `GLEAM_FSHARP_COMPARISON.md` documenting feature parity, API differences, and migration guidance between the Gleam and F# implementations of Yog.
 
