@@ -43,6 +43,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **F# Comparison**: Added `GLEAM_FSHARP_COMPARISON.md` documenting feature parity, API differences, and migration guidance between the Gleam and F# implementations of Yog.
 
+- **Community Detection Suite** (`yog/community/*`): Major new module implementing 8 community detection algorithms (~3,200 lines). Community detection identifies densely connected groups of nodes in graphs - essential for social network analysis, biological networks, recommendation systems, and infrastructure analysis.
+
+  **Core Module** (`yog/community`):
+  - `Communities` type: Maps nodes to community IDs with count
+  - `Dendrogram` type: Hierarchical community structure with merge history
+  - Utilities: `communities_to_dict/1`, `largest_community/1`, `community_sizes/1`, `merge_communities/3`
+
+  **Algorithms** (in `yog/community/`):
+  | Algorithm | Module | Best For | Complexity |
+  |-----------|--------|----------|------------|
+  | **Louvain** | `louvain` | Large graphs, speed/quality balance | O(E log V) |
+  | **Leiden** | `leiden` | Quality guarantee, well-connected | O(E log V) |
+  | **Label Propagation** | `label_propagation` | Very large graphs, speed | O(E × iters) |
+  | **Girvan-Newman** | `girvan_newman` | Hierarchical structure | O(E² × V) |
+  | **Walktrap** | `walktrap` | Random walk-based communities | O(V² log V) |
+  | **Infomap** | `infomap` | Flow-based, information-theoretic | O(E × iters) |
+  | **Clique Percolation** | `clique_percolation` | Overlapping communities | O(3^(V/3)) |
+  | **Random Walk** | `random_walk` | Primitives for custom algorithms | O(steps × k) |
+
+  **Metrics Module** (`yog/community/metrics`):
+  - `modularity/2` - Newman's modularity Q for evaluating partition quality
+  - `count_triangles/1`, `triangles_per_node/1` - Triangle counting
+  - `clustering_coefficient/2`, `average_clustering_coefficient/1` - Clustering metrics
+  - `density/1`, `community_density/2`, `average_community_density/2` - Density metrics
+
+  **Quick Start**:
+  ```gleam
+  import yog/community/louvain
+  
+  let communities = louvain.detect(graph)
+  io.debug(communities.num_communities)  // => 4
+  
+  // Hierarchical detection
+  let dendrogram = louvain.detect_hierarchical(graph)
+  ```
+
+  **Algorithm Selection Guide**:
+  - **Speed Priority**: Label Propagation > Louvain > Leiden
+  - **Quality Priority**: Leiden > Louvain > Infomap > Walktrap
+  - **Hierarchical Structure**: Girvan-Newman, Louvain, Leiden, Walktrap
+  - **Overlapping Communities**: Clique Percolation (nodes can belong to multiple)
+  - **Flow-Based**: Infomap (uses PageRank and Map Equation)
+
 ### Changed
 
 - **Project Structure Reorganization**:
