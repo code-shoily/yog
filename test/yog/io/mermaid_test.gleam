@@ -1,5 +1,5 @@
 import gleam/list
-import gleam/option.{None, Some}
+import gleam/option.{Some}
 import gleam/string
 import gleeunit/should
 import yog/io/mermaid
@@ -21,8 +21,9 @@ pub fn empty_undirected_graph_test() {
   let graph = model.new(Undirected)
   let output = mermaid.to_mermaid(graph, mermaid.default_options())
 
+  // Default direction is TD for all graphs
   output
-  |> string.starts_with("graph LR\n")
+  |> string.starts_with("graph TD\n")
   |> should.be_true()
 }
 
@@ -176,10 +177,8 @@ pub fn custom_node_label_test() {
 
   let options =
     mermaid.MermaidOptions(
+      ..mermaid.default_options(),
       node_label: fn(id, data) { data <> " (ID:" <> string.inspect(id) <> ")" },
-      edge_label: fn(weight) { weight },
-      highlighted_nodes: None,
-      highlighted_edges: None,
     )
 
   let output = mermaid.to_mermaid(graph, options)
@@ -202,10 +201,9 @@ pub fn custom_edge_label_test() {
 
   let options =
     mermaid.MermaidOptions(
+      ..mermaid.default_options(),
       node_label: fn(id, _data) { string.inspect(id) },
       edge_label: fn(weight) { weight <> " km" },
-      highlighted_nodes: None,
-      highlighted_edges: None,
     )
 
   let output = mermaid.to_mermaid(graph, options)
@@ -390,10 +388,9 @@ pub fn path_to_options_preserves_base_labels_test() {
 
   let base =
     mermaid.MermaidOptions(
+      ..mermaid.default_options(),
       node_label: fn(_id, data) { "Custom " <> data },
       edge_label: fn(weight) { weight <> " units" },
-      highlighted_nodes: None,
-      highlighted_edges: None,
     )
 
   let options = mermaid.path_to_options(path, base)

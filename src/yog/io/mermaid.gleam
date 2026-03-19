@@ -17,22 +17,6 @@
 //// // ```
 //// ```
 ////
-//// ## Output Formats
-////
-//// - `to_string/1`: Simple flowchart (graph TD/LR)
-//// - `to_string_with_options/2`: Customized with labels, highlighting
-////
-//// ## Supported Platforms
-////
-//// | Platform | Mermaid Support |
-//// |----------|-----------------|
-//// | GitHub | ✅ Native in Markdown |
-//// | GitLab | ✅ Native in Markdown |
-//// | Notion | ✅ Native block |
-//// | Obsidian | ✅ With plugin |
-//// | VS Code | ✅ With extension |
-//// | MkDocs | ✅ With plugin |
-////
 //// ## Customization
 ////
 //// Use `MermaidOptions` to:
@@ -47,12 +31,75 @@
 //// - [GitHub Mermaid Docs](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams)
 
 import gleam/dict
+import gleam/float
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
 import yog/model.{type Graph, type NodeId, Directed, Undirected}
 import yog/pathfinding/utils.{type Path}
+
+// =============================================================================
+// TYPES
+// =============================================================================
+
+/// Direction for graph layout
+pub type Direction {
+  /// Top-Down (vertical, top to bottom) - Mermaid "TD" or "TB"
+  TD
+  /// Left-Right (horizontal)
+  LR
+  /// Bottom-Top (vertical, bottom to top)
+  BT
+  /// Right-Left (horizontal, right to left)
+  RL
+}
+
+/// Node shape options for Mermaid diagrams.
+pub type NodeShape {
+  /// Rectangle with rounded corners: [label]
+  RoundedRect
+  /// Stadium shape (pill): ([label])
+  Stadium
+  /// Subroutine shape (rectangle with side lines): [[label]]
+  Subroutine
+  /// Cylindrical shape (database): [(label)]
+  Cylinder
+  /// Circle: ((label))
+  Circle
+  /// Asymmetric shape (flag): >label]
+  Asymmetric
+  /// Rhombus (decision): {label}
+  Rhombus
+  /// Hexagon: {{label}}
+  Hexagon
+  /// Parallelogram: [/label/]
+  Parallelogram
+  /// Parallelogram alt: [\label\]
+  ParallelogramAlt
+  /// Trapezoid: [/label\]
+  Trapezoid
+  /// Trapezoid alt: [\label/]
+  TrapezoidAlt
+}
+
+/// CSS length unit for styling
+pub type CssLength {
+  /// Pixels (most common)
+  Px(Int)
+  /// Ems (relative to font size)
+  Em(Float)
+  /// Rems (relative to root font size)
+  Rem(Float)
+  /// Percentage
+  Percent(Float)
+  /// Custom CSS value (for advanced users)
+  CustomCss(String)
+}
+
+// =============================================================================
+// OPTIONS
+// =============================================================================
 
 /// Options for customizing Mermaid diagram rendering.
 pub type MermaidOptions {
@@ -65,18 +112,52 @@ pub type MermaidOptions {
     highlighted_nodes: option.Option(List(NodeId)),
     /// Optional list of edges to highlight as (from, to) pairs
     highlighted_edges: option.Option(List(#(NodeId, NodeId))),
+    // Graph-level attributes
+    /// Graph direction (default: TD)
+    direction: Direction,
+    // Node styling
+    /// Node shape (default: RoundedRect)
+    node_shape: NodeShape,
+    /// Highlight fill color (CSS color, default: #ffeb3b)
+    highlight_fill: String,
+    /// Highlight stroke color (CSS color, default: #f57c00)
+    highlight_stroke: String,
+    /// Highlight stroke width (default: Px(3))
+    highlight_stroke_width: CssLength,
+    // Edge styling
+    /// Default link thickness (default: Px(2))
+    link_thickness: CssLength,
+    /// Highlighted link stroke color (default: #f57c00)
+    highlight_link_stroke: String,
+    /// Highlighted link stroke width (default: Px(3))
+    highlight_link_stroke_width: CssLength,
   )
 }
 
 /// Creates default Mermaid options with simple labeling.
 ///
 /// Uses node ID as label and edge weight as-is.
+/// Default configuration:
+/// - Direction: Top-to-bottom (TD)
+/// - Node shape: Rounded rectangle
+/// - Highlight: Yellow fill with orange stroke
 pub fn default_options() -> MermaidOptions {
   MermaidOptions(
     node_label: fn(id, _data) { int.to_string(id) },
     edge_label: fn(weight) { weight },
     highlighted_nodes: None,
     highlighted_edges: None,
+    // Graph-level
+    direction: TD,
+    // Node styling
+    node_shape: RoundedRect,
+    highlight_fill: "#ffeb3b",
+    highlight_stroke: "#f57c00",
+    highlight_stroke_width: Px(3),
+    // Edge styling
+    link_thickness: Px(2),
+    highlight_link_stroke: "#f57c00",
+    highlight_link_stroke_width: Px(3),
   )
 }
 
@@ -126,16 +207,27 @@ pub fn to_mermaid(
   options: MermaidOptions,
 ) -> String {
   // Graph type and direction
-  let graph_type = case graph.kind {
-    Directed -> "graph TD\n"
-    Undirected -> "graph LR\n"
-  }
+  let graph_type = "graph " <> direction_to_string(options.direction) <> "\n"
 
   // Style definitions for highlighting
   let styles = case options.highlighted_nodes, options.highlighted_edges {
-    Some(_), _ | _, Some(_) ->
-      "  classDef highlight fill:#ffeb3b,stroke:#f57c00,stroke-width:3px\n"
-      <> "  classDef highlightEdge stroke:#f57c00,stroke-width:3px\n"
+    Some(_), _ | _, Some(_) -> {
+      let node_highlight =
+        "  classDef highlight fill:"
+        <> options.highlight_fill
+        <> ",stroke:"
+        <> options.highlight_stroke
+        <> ",stroke-width:"
+        <> css_length_to_string(options.highlight_stroke_width)
+        <> "\n"
+      let edge_highlight =
+        "  classDef highlightEdge stroke:"
+        <> options.highlight_link_stroke
+        <> ",stroke-width:"
+        <> css_length_to_string(options.highlight_link_stroke_width)
+        <> "\n"
+      node_highlight <> edge_highlight
+    }
     None, None -> ""
   }
 
@@ -143,7 +235,10 @@ pub fn to_mermaid(
   let nodes =
     dict.fold(graph.nodes, [], fn(acc, id, data) {
       let label = options.node_label(id, data)
-      let node_def = "  " <> int.to_string(id) <> "[\"" <> label <> "\"]"
+      let node_def =
+        "  "
+        <> int.to_string(id)
+        <> node_shape_brackets(options.node_shape, label)
 
       // Add highlight class if this node is in the highlighted list
       let node_with_highlight = case options.highlighted_nodes {
@@ -208,30 +303,6 @@ pub fn to_mermaid(
 }
 
 /// Converts a shortest path result to highlighted Mermaid options.
-///
-/// Useful for visualizing pathfinding algorithm results.
-///
-/// ## Example
-///
-/// ```gleam
-/// let path = pathfinding.shortest_path(
-///   in: graph,
-///   from: 1,
-///   to: 5,
-///   with_zero: "0",
-///   with_add: string_add,
-///   with_compare: string_compare,
-/// )
-///
-/// case path {
-///   Some(p) -> {
-///     let options = render.path_to_options(p, default_options())
-///     let diagram = render.to_mermaid(graph, options)
-///     io.println(diagram)
-///   }
-///   None -> io.println("No path found")
-/// }
-/// ```
 pub fn path_to_options(
   path: Path(e),
   base_options: MermaidOptions,
@@ -254,5 +325,48 @@ fn path_to_edges(nodes: List(NodeId)) -> List(#(NodeId, NodeId)) {
       #(first, second),
       ..path_to_edges([second, ..rest])
     ]
+  }
+}
+
+// =============================================================================
+// HELPERS
+// =============================================================================
+
+/// Convert Direction to Mermaid string
+fn direction_to_string(dir: Direction) -> String {
+  case dir {
+    TD -> "TD"
+    LR -> "LR"
+    BT -> "BT"
+    RL -> "RL"
+  }
+}
+
+/// Convert CssLength to CSS string
+fn css_length_to_string(length: CssLength) -> String {
+  case length {
+    Px(n) -> int.to_string(n) <> "px"
+    Em(f) -> float.to_string(f) <> "em"
+    Rem(f) -> float.to_string(f) <> "rem"
+    Percent(f) -> float.to_string(f) <> "%"
+    CustomCss(s) -> s
+  }
+}
+
+/// Helper to convert NodeShape to Mermaid bracket syntax
+fn node_shape_brackets(shape: NodeShape, label: String) -> String {
+  case shape {
+    RoundedRect -> "[\"" <> label <> "\"]"
+    Stadium -> "([\"" <> label <> "\"])"
+    Subroutine -> "[[\"" <> label <> "\"]]"
+    Cylinder -> "[(\"" <> label <> "\")]"
+    Circle -> "((\"" <> label <> "\"))"
+    Asymmetric -> ">\"" <> label <> "\"]"
+    Rhombus -> "{\"" <> label <> "\"}"
+    Hexagon -> "{{\"" <> label <> "\"}}"
+    Parallelogram -> "[/\"" <> label <> "\"/]"
+    ParallelogramAlt -> "[\\\"" <> label <> "\"\\]"
+    Trapezoid -> "[/\"" <> label <> "\"\\]"
+    TrapezoidAlt -> "[\\\"" <> label <> "\"/]"
   }
 }

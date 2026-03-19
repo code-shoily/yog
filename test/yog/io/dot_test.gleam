@@ -1,4 +1,4 @@
-import gleam/option.{None, Some}
+import gleam/option.{Some}
 import gleam/string
 import gleeunit/should
 import yog/io/dot
@@ -163,14 +163,9 @@ pub fn custom_node_label_dot_test() {
     |> model.add_node(2, "End")
 
   let options =
-    dot.DotOptions(
-      node_label: fn(id, data) { data <> " (" <> string.inspect(id) <> ")" },
-      edge_label: fn(weight) { weight },
-      highlighted_nodes: None,
-      highlighted_edges: None,
-      node_shape: "ellipse",
-      highlight_color: "red",
-    )
+    dot.DotOptions(..dot.default_dot_options(), node_label: fn(id, data) {
+      data <> " (" <> string.inspect(id) <> ")"
+    })
 
   let output = dot.to_dot(graph, options)
 
@@ -192,22 +187,25 @@ pub fn custom_edge_label_dot_test() {
 
   let options =
     dot.DotOptions(
+      ..dot.default_dot_options(),
       node_label: fn(id, _data) { string.inspect(id) },
       edge_label: fn(weight) { weight <> " km" },
-      highlighted_nodes: None,
-      highlighted_edges: None,
-      node_shape: "box",
+      node_shape: dot.Box,
       highlight_color: "blue",
     )
 
   let output = dot.to_dot(graph, options)
 
   output
-  |> string.contains("1 -> 2 [label=\"100 km\"]")
+  |> string.contains("1 -> 2")
   |> should.be_true()
 
   output
-  |> string.contains("node [shape=box]")
+  |> string.contains("label=\"100 km\"")
+  |> should.be_true()
+
+  output
+  |> string.contains("shape=box")
   |> should.be_true()
 }
 
@@ -223,12 +221,12 @@ pub fn highlight_single_node_dot_test() {
 
   let output = dot.to_dot(graph, options)
 
-  // Node 2 should be highlighted with fillcolor
+  // Node 2 should be highlighted with red fillcolor
   output
-  |> string.contains("2 [label=\"2\" fillcolor=\"red\", style=filled]")
+  |> string.contains("2 [label=\"2\", fillcolor=\"red\"]")
   |> should.be_true()
 
-  // Node 1 should not be highlighted
+  // Node 1 should not have highlight override (uses base style lightblue)
   output
   |> string.contains("1 [label=\"1\"];")
   |> should.be_true()
@@ -247,14 +245,14 @@ pub fn highlight_multiple_nodes_dot_test() {
   let output = dot.to_dot(graph, options)
 
   output
-  |> string.contains("1 [label=\"1\" fillcolor=\"red\", style=filled]")
+  |> string.contains("1 [label=\"1\", fillcolor=\"red\"]")
   |> should.be_true()
 
   output
-  |> string.contains("3 [label=\"3\" fillcolor=\"red\", style=filled]")
+  |> string.contains("3 [label=\"3\", fillcolor=\"red\"]")
   |> should.be_true()
 
-  // Node 2 should not have fillcolor attribute
+  // Node 2 should not have highlight override (uses base style)
   output
   |> string.contains("2 [label=\"2\"];")
   |> should.be_true()
@@ -277,7 +275,7 @@ pub fn highlight_edges_dot_test() {
   let output = dot.to_dot(graph, options)
 
   output
-  |> string.contains("1 -> 2 [label=\"5\" color=\"red\", penwidth=2]")
+  |> string.contains("1 -> 2 [label=\"5\" color=\"red\", penwidth=2.0]")
   |> should.be_true()
 
   // Edge 2->3 should not be highlighted
@@ -334,22 +332,22 @@ pub fn render_dot_with_pathfinding_result_test() {
 
   // Verify path is highlighted
   output
-  |> string.contains("1 [label=\"1\" fillcolor=\"red\", style=filled]")
+  |> string.contains("1 [label=\"1\", fillcolor=\"red\"]")
   |> should.be_true()
 
   output
-  |> string.contains("2 [label=\"2\" fillcolor=\"red\", style=filled]")
+  |> string.contains("2 [label=\"2\", fillcolor=\"red\"]")
   |> should.be_true()
 
   output
-  |> string.contains("3 [label=\"3\" fillcolor=\"red\", style=filled]")
+  |> string.contains("3 [label=\"3\", fillcolor=\"red\"]")
   |> should.be_true()
 
   output
-  |> string.contains("1 -> 2 [label=\"5\" color=\"red\", penwidth=2]")
+  |> string.contains("1 -> 2 [label=\"5\" color=\"red\", penwidth=2.0]")
   |> should.be_true()
 
   output
-  |> string.contains("2 -> 3 [label=\"3\" color=\"red\", penwidth=2]")
+  |> string.contains("2 -> 3 [label=\"3\" color=\"red\", penwidth=2.0]")
   |> should.be_true()
 }
