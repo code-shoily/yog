@@ -43,6 +43,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **F# Comparison**: Added `GLEAM_FSHARP_COMPARISON.md` documenting feature parity, API differences, and migration guidance between the Gleam and F# implementations of Yog.
 
+- **Community Detection (Phase 0 & 1)**:
+  - New `yog/community` module for core types (`Communities`, `Dendrogram`) and utilities.
+  - New `yog/community/metrics` module implementing Modularity (Q), Clustering Coefficient, Density, and Triangle Counting.
+  - New `yog/community/label_propagation` module for fast, stochastic community detection (uses FFI for randomization).
+  - New `yog/community/girvan_newman` module for hierarchical community detection via edge betweenness.
+
 ### Changed
 
 - **Project Structure Reorganization**:
