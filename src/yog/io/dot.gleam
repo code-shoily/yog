@@ -381,8 +381,14 @@ pub fn to_dot(graph: Graph(String, String), options: DotOptions) -> String {
       "arrowtail=" <> arrow_style_to_string(tail),
       ..edge_attrs
     ]
-    Some(head), None -> ["arrowhead=" <> arrow_style_to_string(head), ..edge_attrs]
-    None, Some(tail) -> ["arrowtail=" <> arrow_style_to_string(tail), ..edge_attrs]
+    Some(head), None -> [
+      "arrowhead=" <> arrow_style_to_string(head),
+      ..edge_attrs
+    ]
+    None, Some(tail) -> [
+      "arrowtail=" <> arrow_style_to_string(tail),
+      ..edge_attrs
+    ]
     None, None -> edge_attrs
   }
   let base_edge_style =
