@@ -885,12 +885,11 @@ pub fn remove_node_self_loop_test() {
 // ============= Add Edge With Combine Tests =============
 
 pub fn add_edge_with_combine_new_edge_test() {
-  let graph =
+  let assert Ok(graph) =
     model.new(Directed)
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
-  let graph =
-    model.add_edge_with_combine(graph, from: 1, to: 2, with: 10, using: int.add)
+    |> model.add_edge_with_combine(from: 1, to: 2, with: 10, using: int.add)
 
   model.successors(graph, 1)
   |> should.equal([#(2, 10)])
@@ -902,8 +901,13 @@ pub fn add_edge_with_combine_existing_edge_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 2, with: 10)
-  let graph =
-    model.add_edge_with_combine(graph, from: 1, to: 2, with: 5, using: int.add)
+    |> result.try(model.add_edge_with_combine(
+      _,
+      from: 1,
+      to: 2,
+      with: 5,
+      using: int.add,
+    ))
 
   model.successors(graph, 1)
   |> should.equal([#(2, 15)])
@@ -915,10 +919,20 @@ pub fn add_edge_with_combine_multiple_times_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 2, with: 10)
-  let graph =
-    model.add_edge_with_combine(graph, from: 1, to: 2, with: 5, using: int.add)
-  let graph =
-    model.add_edge_with_combine(graph, from: 1, to: 2, with: 3, using: int.add)
+    |> result.try(model.add_edge_with_combine(
+      _,
+      from: 1,
+      to: 2,
+      with: 5,
+      using: int.add,
+    ))
+    |> result.try(model.add_edge_with_combine(
+      _,
+      from: 1,
+      to: 2,
+      with: 3,
+      using: int.add,
+    ))
 
   model.successors(graph, 1)
   |> should.equal([#(2, 18)])
@@ -930,8 +944,13 @@ pub fn add_edge_with_combine_undirected_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 2, with: 10)
-  let graph =
-    model.add_edge_with_combine(graph, from: 1, to: 2, with: 5, using: int.add)
+    |> result.try(model.add_edge_with_combine(
+      _,
+      from: 1,
+      to: 2,
+      with: 5,
+      using: int.add,
+    ))
 
   // Both directions should be updated
   model.successors(graph, 1)
@@ -950,10 +969,20 @@ pub fn add_edge_with_combine_different_edges_test() {
     |> model.add_node(2, "B")
     |> model.add_node(3, "C")
     |> model.add_edge(from: 1, to: 2, with: 10)
-  let graph =
-    model.add_edge_with_combine(graph, from: 1, to: 3, with: 20, using: int.add)
-  let graph =
-    model.add_edge_with_combine(graph, from: 1, to: 2, with: 5, using: int.add)
+    |> result.try(model.add_edge_with_combine(
+      _,
+      from: 1,
+      to: 3,
+      with: 20,
+      using: int.add,
+    ))
+    |> result.try(model.add_edge_with_combine(
+      _,
+      from: 1,
+      to: 2,
+      with: 5,
+      using: int.add,
+    ))
 
   let edges = model.successors(graph, 1)
   list.length(edges)
@@ -974,11 +1003,36 @@ pub fn add_edge_with_combine_max_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 2, with: 10)
-  let graph =
-    model.add_edge_with_combine(graph, from: 1, to: 2, with: 15, using: int.max)
+    |> result.try(model.add_edge_with_combine(
+      _,
+      from: 1,
+      to: 2,
+      with: 15,
+      using: int.max,
+    ))
 
   model.successors(graph, 1)
   |> should.equal([#(2, 15)])
+}
+
+pub fn add_edge_with_combine_missing_node_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+
+  // Node 2 doesn't exist
+  model.add_edge_with_combine(graph, from: 1, to: 2, with: 10, using: int.add)
+  |> should.be_error
+  |> should.equal("Node 2 does not exist")
+}
+
+pub fn add_edge_with_combine_both_missing_nodes_test() {
+  let graph = model.new(Directed)
+
+  // Neither node 1 nor 2 exist
+  model.add_edge_with_combine(graph, from: 1, to: 2, with: 10, using: int.add)
+  |> should.be_error
+  |> should.equal("Nodes 1 and 2 do not exist")
 }
 
 // ============= Tests for add_edge_ensure() =============

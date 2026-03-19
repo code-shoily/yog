@@ -569,6 +569,8 @@ fn do_remove_directed_edge(
 /// The combine function receives `(existing_weight, new_weight)` and should
 /// return the combined weight.
 ///
+/// Returns `Error` if either endpoint node doesn't exist in `graph.nodes`.
+///
 /// **Time Complexity:** O(1)
 ///
 /// ## Example
@@ -579,7 +581,7 @@ fn do_remove_directed_edge(
 ///   |> model.add_node(1, "A")
 ///   |> model.add_node(2, "B")
 ///   |> model.add_edge(from: 1, to: 2, with: 10)
-/// let graph = model.add_edge_with_combine(graph, from: 1, to: 2, with: 5, using: int.add)
+/// let assert Ok(graph) = model.add_edge_with_combine(graph, from: 1, to: 2, with: 5, using: int.add)
 /// // Edge 1->2 now has weight 15 (10 + 5)
 /// ```
 ///
@@ -594,12 +596,27 @@ pub fn add_edge_with_combine(
   to dst: NodeId,
   with weight: e,
   using with_combine: fn(e, e) -> e,
-) -> Graph(n, e) {
-  let graph = do_add_directed_combine(graph, src, dst, weight, with_combine)
-
-  case graph.kind {
-    Directed -> graph
-    Undirected -> do_add_directed_combine(graph, dst, src, weight, with_combine)
+) -> Result(Graph(n, e), String) {
+  case dict.has_key(graph.nodes, src), dict.has_key(graph.nodes, dst) {
+    True, True -> {
+      let graph = do_add_directed_combine(graph, src, dst, weight, with_combine)
+      let result = case graph.kind {
+        Directed -> graph
+        Undirected ->
+          do_add_directed_combine(graph, dst, src, weight, with_combine)
+      }
+      Ok(result)
+    }
+    False, False ->
+      Error(
+        "Nodes "
+        <> int.to_string(src)
+        <> " and "
+        <> int.to_string(dst)
+        <> " do not exist",
+      )
+    False, _ -> Error("Node " <> int.to_string(src) <> " does not exist")
+    _, False -> Error("Node " <> int.to_string(dst) <> " does not exist")
   }
 }
 

@@ -511,8 +511,18 @@ pub fn contract(
     dict.fold(b_out, graph, fn(acc_g, neighbor, weight) {
       case neighbor == a || neighbor == b {
         True -> acc_g
-        False ->
-          model.add_edge_with_combine(acc_g, a, neighbor, weight, with_combine)
+        False -> {
+          // Nodes are guaranteed to exist since we're contracting an existing graph
+          let assert Ok(g) =
+            model.add_edge_with_combine(
+              acc_g,
+              a,
+              neighbor,
+              weight,
+              with_combine,
+            )
+          g
+        }
       }
     })
 
@@ -523,14 +533,18 @@ pub fn contract(
       dict.fold(b_in, graph, fn(acc_g, neighbor, weight) {
         case neighbor == a || neighbor == b {
           True -> acc_g
-          False ->
-            model.add_edge_with_combine(
-              acc_g,
-              neighbor,
-              a,
-              weight,
-              with_combine,
-            )
+          False -> {
+            // Nodes are guaranteed to exist since we're contracting an existing graph
+            let assert Ok(g) =
+              model.add_edge_with_combine(
+                acc_g,
+                neighbor,
+                a,
+                weight,
+                with_combine,
+              )
+            g
+          }
         }
       })
     }

@@ -13,14 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `yog/properties/*` → `yog/property/*`
   - `yog/generators/*` → `yog/generator/*`
 
-- **Edge Addition API Changes**: `add_edge()` now returns `Result(Graph, String)` instead of `Graph` to prevent "ghost nodes":
+- **Edge Addition API Changes**: `add_edge()` and `add_edge_with_combine()` now return `Result(Graph, String)` instead of `Graph` to prevent "ghost nodes":
   - `add_edge(graph, from: 1, to: 2, with: 10)` now returns `Error("Node 1 does not exist")` if nodes don't exist
+  - `add_edge_with_combine(graph, from: 1, to: 2, with: 5, using: int.add)` also returns `Result`
   - Use `let assert Ok(graph) = add_edge(...)` when nodes are guaranteed to exist
   - Use `result.try(add_edge(...))` for chaining operations
   - For auto-creation of missing nodes, use the renamed functions:
     - `add_edge_ensured()` → `add_edge_ensure()`
     - `add_edge_ensured_with()` → `add_edge_with()`
-  - **Rationale**: Previously, `add_edge` could create "ghost nodes" that exist in edge dictionaries but not in the nodes map, causing unexpected behavior in algorithms like centrality calculations and topological sorts
+  - **Rationale**: Previously, these functions could create "ghost nodes" that exist in edge dictionaries but not in the nodes map, causing unexpected behavior in algorithms like centrality calculations and topological sorts. Check [this PR](https://github.com/code-shoily/yog/pull/10) for more info.
 
 ### Added
 

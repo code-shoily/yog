@@ -295,13 +295,16 @@ pub fn to_simple_graph(
 
   dict.fold(graph.edges, base, fn(g, _eid, edge) {
     let #(src, dst, data) = edge
-    model.add_edge_with_combine(
-      g,
-      from: src,
-      to: dst,
-      with: data,
-      using: combine_fn,
-    )
+    // Nodes are guaranteed to exist since we added them in the base graph
+    let assert Ok(result) =
+      model.add_edge_with_combine(
+        g,
+        from: src,
+        to: dst,
+        with: data,
+        using: combine_fn,
+      )
+    result
   })
 }
 
