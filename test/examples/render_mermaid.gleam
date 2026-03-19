@@ -33,12 +33,11 @@ pub fn main() {
     Some(path) -> {
       let base_options =
         mermaid.MermaidOptions(
+          ..mermaid.default_options(),
           node_label: fn(id, data) {
             data <> " (ID: " <> int.to_string(id) <> ")"
           },
           edge_label: fn(weight) { weight <> " km" },
-          highlighted_nodes: None,
-          highlighted_edges: None,
         )
       let options = mermaid.path_to_options(path, base_options)
       let mermaid_custom =
