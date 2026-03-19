@@ -66,12 +66,14 @@ import yog/pathfinding/dijkstra
 
 pub fn main() {
   // Create a directed graph
-  let assert Ok(graph) =
+  let graph =
     yog.directed()
     |> yog.add_node(1, "Start")
     |> yog.add_node(2, "Middle")
     |> yog.add_node(3, "End")
-    |> yoh.add_edges([
+
+  let assert Ok(graph) =
+    yog.add_edges(graph, [
       #(1, 2, 5),
       #(2, 3, 3),
       #(1, 3, 10)
@@ -158,6 +160,17 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 | **Bron-Kerbosch** | Maximum and all maximal cliques | O(3^(n/3)) |
 | **Network Simplex** | Global minimum cost flow optimization | O(E) pivots |
 | **Implicit Search** | Pathfinding/Traversal on on-demand graphs | O((V+E) log V) |
+| **PageRank** | Link-quality node importance | O(V+E) per iter |
+| **Betweenness** | Bridge/gatekeeper detection | O(VE) or O(V³) |
+| **Closeness / Harmonic** | Distance-based importance | O(VE log V) |
+| **Eigenvector / Katz** | Influence based on neighbor centrality | O(V+E) per iter |
+| **Louvain** | Modularity optimization, large graphs | O(E log V) |
+| **Leiden** | Quality guarantee, well-connected communities | O(E log V) |
+| **Label Propagation** | Very large graphs, extreme speed | O(E) per iter |
+| **Infomap** | Information-theoretic flow tracking | O(E) per iter |
+| **Walktrap** | Random-walk structural communities | O(V² log V) |
+| **Girvan-Newman** | Hierarchical edge betweenness | O(E²V) |
+| **Clique Percolation** | Overlapping community discovery | O(3^(V/3)) |
 
 ## Benchmarking
 

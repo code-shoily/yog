@@ -11,8 +11,8 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 | **Package** | [hex.pm/packages/yog](https://hex.pm/packages/yog) | [nuget.org/packages/Yog.FSharp](https://www.nuget.org/packages/Yog.FSharp/) |
 | **Documentation** | [HexDocs](https://hexdocs.pm/yog/) | [GitHub Pages](https://code-shoily.github.io/yog-fsharp) |
 | **Status** | Stable, Production Ready | 0.5.0 Pre-release |
-| **Total Algorithms** | 50+ | 50+ |
-| **Lines of Code** | ~10,000 | ~8,500 |
+| **Total Algorithms** | 60+ | 50+ |
+| **Lines of Code** | ~13,000 | ~8,500 |
 
 ## Core Data Structures
 
@@ -106,6 +106,21 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 | **Alpha Centrality** | ✅ | ✅ | |
 
 **Status**: ✅ Feature parity - All 8 centrality measures in both
+
+## Community Detection
+
+| Algorithm | Gleam | F# | Notes |
+| --------- | ------- | ----- | ------- |
+| **Louvain** | ✅ | ❌ | Fast modularity optimization |
+| **Leiden** | ✅ | ❌ | Quality guaranteed partitions |
+| **Label Propagation** | ✅ | ❌ | Near-linear time scaling |
+| **Girvan-Newman** | ✅ | ❌ | Hierarchical edge betweenness |
+| **Walktrap** | ✅ | ❌ | Random walk distances |
+| **Infomap** | ✅ | ❌ | Information-theoretic flow |
+| **Clique Percolation** | ✅ | ❌ | Overlapping communities |
+| **Metrics & Modularity** | ✅ | ❌ | Quality evaluation |
+
+**Status**: ✅ **Gleam exclusive feature**
 
 ## Minimum Spanning Trees
 
@@ -244,11 +259,12 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 
 ### Gleam Only
 
+- ✅ **Community Detection Suite** - 8 algorithms including Louvain, Leiden, Infomap
 - ✅ **Complete Network Simplex** - Full min cost flow implementation (930 LOC)
 - ✅ **Edge Contraction** - Graph transformation
 - ✅ **Pairing Heap** - Custom priority queue for pathfinding
 - ✅ **Two-List Queue** - Optimized BFS queue
-- ✅ **Production Ready** - Stable 0.6.0 release
+- ✅ **Production Ready** - Stable 5.0.0 release
 
 ### F# Only
 
@@ -279,7 +295,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 
 | Version | Gleam | F# |
 | --------- | ------- | ----- |
-| **Latest** | 0.6.0 | 0.5.0 |
+| **Latest** | 5.0.0 | 0.5.0 |
 | **First Release** | 2024 | 2025 |
 | **Stability** | Stable | Pre-release |
 
@@ -323,7 +339,6 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 
 - [ ] Additional centrality measures
 - [ ] Graph isomorphism detection
-- [ ] Community detection algorithms
 - [ ] Graph coloring algorithms
 
 ## Contributing
@@ -346,10 +361,11 @@ Both implementations are **high-quality, feature-rich graph libraries** with exc
 
 **Gleam Strengths:**
 
+- ✅ Community Detection Suite (8 algorithms)
 - ✅ Complete Network Simplex (production-ready min cost flow)
 - ✅ Edge contraction
 - ✅ Battle-tested on BEAM VM
-- ✅ Stable 0.6.0 release
+- ✅ Stable 5.0.0 release
 - ✅ Custom optimized data structures
 
 **F# Strengths:**
@@ -367,5 +383,5 @@ Both implementations are **high-quality, feature-rich graph libraries** with exc
 ---
 
 **Last Updated**: March 2025
-**Gleam Version**: 4.0.0
+**Gleam Version**: 5.0.0
 **F# Version**: 0.5.0
