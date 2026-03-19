@@ -153,6 +153,76 @@ pub fn manhattan_distance_test() {
   |> should.equal(0)
 }
 
+// Chebyshev distance tests
+
+pub fn chebyshev_distance_test() {
+  // Distance from (0,0) to (3,4) in a grid with 10 columns
+  // Chebyshev = max(3, 4) = 4
+  let from = grid.coord_to_id(0, 0, 10)
+  let to = grid.coord_to_id(3, 4, 10)
+
+  grid.chebyshev_distance(from, to, 10)
+  |> should.equal(4)
+
+  // Distance from (2,3) to (2,7)
+  // Chebyshev = max(0, 4) = 4
+  let from2 = grid.coord_to_id(2, 3, 10)
+  let to2 = grid.coord_to_id(2, 7, 10)
+
+  grid.chebyshev_distance(from2, to2, 10)
+  |> should.equal(4)
+
+  // Distance from (1,1) to (4,4)
+  // Chebyshev = max(3, 3) = 3
+  let from3 = grid.coord_to_id(1, 1, 10)
+  let to3 = grid.coord_to_id(4, 4, 10)
+
+  grid.chebyshev_distance(from3, to3, 10)
+  |> should.equal(3)
+
+  // Distance from (5,5) to (5,5) should be 0
+  let same = grid.coord_to_id(5, 5, 10)
+
+  grid.chebyshev_distance(same, same, 10)
+  |> should.equal(0)
+}
+
+// Octile distance tests
+
+pub fn octile_distance_test() {
+  // Distance from (0,0) to (3,4) in a grid with 10 columns
+  // Octile = min(3,4) * √2 + |3-4| = 3 * 1.414... + 1 = 5.242...
+  let from = grid.coord_to_id(0, 0, 10)
+  let to = grid.coord_to_id(3, 4, 10)
+
+  let distance = grid.octile_distance(from, to, 10)
+  distance
+  |> should.equal(5.242640687119285)
+
+  // Distance from (2,3) to (2,7)
+  // Octile = min(0,4) * √2 + |0-4| = 0 + 4 = 4.0
+  let from2 = grid.coord_to_id(2, 3, 10)
+  let to2 = grid.coord_to_id(2, 7, 10)
+
+  grid.octile_distance(from2, to2, 10)
+  |> should.equal(4.0)
+
+  // Distance from (1,1) to (4,4)
+  // Octile = min(3,3) * √2 + |3-3| = 3 * 1.414... = 4.242...
+  let from3 = grid.coord_to_id(1, 1, 10)
+  let to3 = grid.coord_to_id(4, 4, 10)
+
+  let distance3 = grid.octile_distance(from3, to3, 10)
+  distance3
+  |> should.equal(4.242640687119285)
+
+  // Distance from (5,5) to (5,5) should be 0.0
+  let same = grid.coord_to_id(5, 5, 10)
+
+  grid.octile_distance(same, same, 10)
+  |> should.equal(0.0)
+}
+
 // Find node tests
 
 pub fn find_node_test() {

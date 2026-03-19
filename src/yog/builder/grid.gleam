@@ -3,6 +3,15 @@
 //// This module provides convenient ways to convert 2D grids (like heightmaps,
 //// mazes, or game boards) into graphs for pathfinding and traversal algorithms.
 ////
+//// ## Choosing the Right Distance Heuristic
+////
+//// For optimal A* pathfinding, use the heuristic that matches your topology:
+////
+//// - **Rook (4-way)** → `manhattan_distance` - sum of absolute differences
+//// - **Queen (8-way)** → `chebyshev_distance` - maximum of absolute differences
+//// - **Weighted diagonals** → `octile_distance` - when diagonal moves cost √2
+//// - **Bishop or Knight** → `chebyshev_distance` (admissible but may be loose)
+////
 //// ## Example
 ////
 //// ```gleam
@@ -42,6 +51,7 @@
 //// ```
 
 import gleam/dict
+import gleam/int
 import gleam/list
 import yog/internal/utils
 import yog/model.{type Graph, type GraphType, type NodeId}
@@ -360,6 +370,89 @@ pub fn manhattan_distance(from_id: NodeId, to_id: NodeId, cols: Int) -> Int {
   }
 
   row_diff + col_diff
+}
+
+/// Calculates the Chebyshev distance between two node IDs.
+///
+/// This is the optimal heuristic for A* pathfinding on grids with 8-way
+/// (queen) movement, where diagonal moves have the same cost as orthogonal moves.
+/// Chebyshev distance is the maximum of absolute differences in coordinates:
+/// max(|x1 - x2|, |y1 - y2|)
+///
+/// **Use this for:** `queen()` topology, or any 8-directional movement
+///
+/// ## Example
+///
+/// ```gleam
+/// let start = grid.coord_to_id(0, 0, 10)
+/// let goal = grid.coord_to_id(3, 4, 10)
+/// let distance = grid.chebyshev_distance(start, goal, 10)
+/// // => 4 (max of 3 and 4)
+/// ```
+pub fn chebyshev_distance(from_id: NodeId, to_id: NodeId, cols: Int) -> Int {
+  let #(from_row, from_col) = id_to_coord(from_id, cols)
+  let #(to_row, to_col) = id_to_coord(to_id, cols)
+
+  let row_diff = case from_row > to_row {
+    True -> from_row - to_row
+    False -> to_row - from_row
+  }
+
+  let col_diff = case from_col > to_col {
+    True -> from_col - to_col
+    False -> to_col - from_col
+  }
+
+  case row_diff > col_diff {
+    True -> row_diff
+    False -> col_diff
+  }
+}
+
+/// Calculates the Octile distance between two node IDs.
+///
+/// This is the optimal heuristic for A* pathfinding on grids with 8-way
+/// movement where diagonal moves cost √2 (approximately 1.414) and orthogonal
+/// moves cost 1. This represents true Euclidean-style movement on a grid.
+///
+/// The formula is: min(dx, dy) × √2 + |dx - dy|
+///
+/// **Use this for:** Weighted 8-directional movement with realistic diagonal costs
+///
+/// ## Example
+///
+/// ```gleam
+/// let start = grid.coord_to_id(0, 0, 10)
+/// let goal = grid.coord_to_id(3, 4, 10)
+/// let distance = grid.octile_distance(start, goal, 10)
+/// // => 5.242... (3 × √2 + 1)
+/// ```
+pub fn octile_distance(from_id: NodeId, to_id: NodeId, cols: Int) -> Float {
+  let #(from_row, from_col) = id_to_coord(from_id, cols)
+  let #(to_row, to_col) = id_to_coord(to_id, cols)
+
+  let row_diff = case from_row > to_row {
+    True -> from_row - to_row
+    False -> to_row - from_row
+  }
+
+  let col_diff = case from_col > to_col {
+    True -> from_col - to_col
+    False -> to_col - from_col
+  }
+
+  let min_d = case row_diff < col_diff {
+    True -> row_diff
+    False -> col_diff
+  }
+
+  let max_d = case row_diff > col_diff {
+    True -> row_diff
+    False -> col_diff
+  }
+
+  // √2 ≈ 1.414213562373095
+  int.to_float(min_d) *. 1.414213562373095 +. int.to_float(max_d - min_d)
 }
 
 /// Finds a node in the grid where the cell data matches a predicate.
