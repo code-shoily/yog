@@ -15,6 +15,8 @@
 //// | [Infomap](https://www.mapequation.org/) | `yog/community/infomap` | Information-theoretic, flow-based |
 //// | [Clique Percolation](https://en.wikipedia.org/wiki/Clique_percolation_method) | `yog/community/clique_percolation` | Overlapping communities |
 //// | [Walktrap](https://doi.org/10.1080/15427951.2007.10129237) | `yog/community/walktrap` | Random walk-based distances |
+//// | [Local Community](https://en.wikipedia.org/wiki/Community_structure#Local_communities) | `yog/community/local_community` | Massive graphs, seed expansion |
+//// | [Fluid Communities](https://arxiv.org/abs/1703.09307) | `yog/community/fluid_communities` | Exact `k` partitions, fast |
 ////
 //// ## Core Types
 ////
@@ -55,6 +57,8 @@
 //// - **Infomap**: When flow/random walk structure matters
 //// - **Clique Percolation**: When nodes may belong to multiple communities
 //// - **Walktrap**: Good for capturing local structure via random walks
+//// - **Local Community**: When the graph is massive/infinite and you only care about the immediate community around specific seeds
+//// - **Fluid Communities**: Fast and allows finding exactly `k` communities
 
 import gleam/dict.{type Dict}
 import gleam/int
