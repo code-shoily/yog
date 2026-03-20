@@ -142,6 +142,8 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 | Algorithm | Use When | Time Complexity |
 | --------- | -------- | --------------- |
 | **Dijkstra** | Non-negative weights, single shortest path | O((V+E) log V) |
+| **Bidirectional Dijkstra** | Known target, weighted graphs, ~2× faster | O((V+E) log V / 2) |
+| **Bidirectional BFS** | Known target, unweighted graphs, up to 500× faster | O(b^(d/2)) |
 | **A*** | Non-negative weights + good heuristic | O((V+E) log V) |
 | **Bellman-Ford** | Negative weights OR cycle detection needed | O(VE) |
 | **Floyd-Warshall** | All-pairs shortest paths, distance matrices | O(V³) |
@@ -184,6 +186,49 @@ gleam run -m bench/simple_pathfinding
 ```
 
 For detailed instructions on creating custom benchmarks, interpreting results, and comparing against reference implementations, see the [Benchmarking Guide](BENCHMARKING_GUIDE.md).
+
+## Development
+
+### Running Tests
+
+Run the full test suite:
+
+```bash
+gleam test
+```
+
+Run tests for a specific module:
+
+```bash
+./test_module.sh yog/pathfinding/bidirectional_test
+```
+
+Run a specific test function:
+
+```bash
+./test_module.sh yog/pathfinding/bidirectional_test dijkstra_complex_diamond_test
+```
+
+### Running Examples
+
+Run all examples at once:
+
+```bash
+./run_examples.sh
+```
+
+Run a specific example:
+
+```bash
+gleam run -m examples/gps_navigation
+```
+
+### Project Structure
+
+- `src/yog/` - Core graph library modules
+- `test/` - Unit tests and property-based tests
+- `test/examples/` - Real-world usage examples
+- `test/bench/` - Performance benchmarks
 
 ## AI Assistance
 
