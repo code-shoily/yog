@@ -204,6 +204,33 @@ pub fn count_unique_communities(assignments: Dict(NodeId, CommunityId)) -> Int {
   |> set.size
 }
 
+/// Normalize community IDs to be contiguous from 0 to k-1.
+/// This ensures that if there are k communities, they are numbered 0, 1, ..., k-1
+/// with no gaps, which is required for various property tests and downstream algorithms.
+pub fn normalize_assignments(
+  assignments: Dict(NodeId, CommunityId),
+) -> Dict(NodeId, CommunityId) {
+  // Get all unique community IDs and sort them
+  let unique_communities =
+    assignments
+    |> dict.values
+    |> set.from_list
+    |> set.to_list
+    |> list.sort(int.compare)
+
+  // Create a mapping from old ID to new contiguous ID
+  let id_mapping =
+    list.index_fold(unique_communities, dict.new(), fn(acc, old_id, new_id) {
+      dict.insert(acc, old_id, new_id)
+    })
+
+  // Remap all assignments
+  dict.map_values(assignments, fn(_node, old_community_id) {
+    dict.get(id_mapping, old_community_id)
+    |> result.unwrap(0)
+  })
+}
+
 /// Convert assignments to community -> nodes mapping.
 pub fn get_community_nodes(
   assignments: Dict(NodeId, CommunityId),

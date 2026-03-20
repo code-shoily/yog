@@ -22,9 +22,9 @@ gleam test
 
 | File | Purpose |
 | ------ | --------- |
-| `test/yog/property_tests.gleam` | Basic structural properties |
-| `test/yog/aggressive_property_tests.gleam` | Edge cases and boundary conditions |
-| `test/yog/algorithm_property_tests.gleam` | Algorithm correctness and cross-validation |
+| `test/yog/property_test.gleam` | Basic structural properties |
+| `test/yog/aggressive_property_test.gleam` | Edge cases and boundary conditions |
+| `test/yog/algorithm_property_test.gleam` | Algorithm correctness and cross-validation |
 
 ## Category 1: Structural Properties
 

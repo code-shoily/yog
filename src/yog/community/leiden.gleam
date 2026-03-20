@@ -134,9 +134,12 @@ pub fn detect_with_options(
 
   let #(final_state, _) = do_leiden(graph, initial_state, 0, options)
 
+  let normalized_assignments =
+    internal.normalize_assignments(final_state.assignments)
+
   Communities(
-    assignments: final_state.assignments,
-    num_communities: internal.count_unique_communities(final_state.assignments),
+    assignments: normalized_assignments,
+    num_communities: internal.count_unique_communities(normalized_assignments),
   )
 }
 

@@ -190,10 +190,12 @@ fn do_louvain(
   let #(improved, new_state) = phase1_local_optimize(graph, state, options)
 
   // Calculate modularity
+  let normalized_assignments =
+    internal.normalize_assignments(new_state.assignments)
   let communities =
     Communities(
-      assignments: new_state.assignments,
-      num_communities: internal.count_unique_communities(new_state.assignments),
+      assignments: normalized_assignments,
+      num_communities: internal.count_unique_communities(normalized_assignments),
     )
   let q = metrics.modularity(graph, communities)
   let new_history = [q, ..mod_history]
@@ -227,10 +229,12 @@ fn do_louvain_hierarchical(
   let #(improved, new_state) = phase1_local_optimize(graph, state, options)
 
   // Save current level
+  let normalized_assignments =
+    internal.normalize_assignments(new_state.assignments)
   let current_communities =
     Communities(
-      assignments: new_state.assignments,
-      num_communities: internal.count_unique_communities(new_state.assignments),
+      assignments: normalized_assignments,
+      num_communities: internal.count_unique_communities(normalized_assignments),
     )
   let new_levels = [current_communities, ..levels]
 
@@ -271,10 +275,12 @@ fn do_louvain_hierarchical_recursive(
   let #(improved, new_state) = phase1_local_optimize(graph, state, options)
 
   // Save current level
+  let normalized_assignments =
+    internal.normalize_assignments(new_state.assignments)
   let current_communities =
     Communities(
-      assignments: new_state.assignments,
-      num_communities: internal.count_unique_communities(new_state.assignments),
+      assignments: normalized_assignments,
+      num_communities: internal.count_unique_communities(normalized_assignments),
     )
   let new_levels = [current_communities, ..levels]
 
