@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+- **Connected Components Algorithms** (`yog/connectivity`): New functions for finding connected components in undirected and weakly connected components in directed graphs:
+  - `connected_components/1` - Find connected components in undirected graphs using DFS
+  - `weakly_connected_components/1` - Find weakly connected components in directed graphs (treating edges as undirected)
+  - Both algorithms run in O(V + E) time complexity
+  - See module documentation for comparison with existing SCC algorithms
+
+
 ## 5.0.0 - 2026-03-20
 
 ### Breaking Changes
