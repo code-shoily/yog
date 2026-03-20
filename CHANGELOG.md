@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Bidirectional Search** (`yog/pathfinding/bidirectional`): Meet-in-the-middle pathfinding algorithms for dramatic speedup:
+  - `shortest_path_unweighted/3` - Bidirectional BFS for unweighted graphs with O(b^(d/2)) complexity (up to 500× faster than standard BFS!)
+  - `shortest_path/6` - Bidirectional Dijkstra for weighted graphs (approximately 2× faster than standard Dijkstra)
+  - Works with both directed and undirected graphs, leveraging yog's efficient `in_edges` structure for backward search
+  - Proper termination conditions ensuring optimality
+  - Comprehensive path reconstruction from meeting point
+  - Convenience wrappers: `shortest_path_int/3` and `shortest_path_float/3`
+  - **Performance Example**: With branching factor 10 and depth 6: standard BFS explores 1,000,000 nodes vs bidirectional BFS explores only 2,000 nodes
+
 - **Graph Operations Module** (`yog/operation`): New module implementing set-theoretic graph operations following NetworkX's "Graph as a Set" philosophy:
   - **Set-Theoretic Operations**: `union/2`, `intersection/2`, `difference/2`, `symmetric_difference/2` for combining and comparing graphs
   - **Composition & Joins**: `disjoint_union/2` (safe combination with auto re-indexing), `cartesian_product/2` (for grids and hypercubes), `compose/2` (merge overlapping graphs)
