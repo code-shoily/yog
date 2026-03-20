@@ -9,12 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Graph Operations Module** (`yog/operation`): New module implementing set-theoretic graph operations following NetworkX's "Graph as a Set" philosophy:
+  - **Set-Theoretic Operations**: `union/2`, `intersection/2`, `difference/2`, `symmetric_difference/2` for combining and comparing graphs
+  - **Composition & Joins**: `disjoint_union/2` (safe combination with auto re-indexing), `cartesian_product/2` (for grids and hypercubes), `compose/2` (merge overlapping graphs)
+  - **Graph Powers**: `power/2` creates the k-th power of a graph (connects nodes within distance k), useful for reachability analysis
+  - **Structural Comparison**: `is_subgraph/2` for subset validation, `is_isomorphic/2` for checking structural identity (with quick checks for node/edge counts and degree sequences)
+  - All operations preserve graph structure and handle edge data appropriately
+  - See module documentation for algorithm complexities and use cases
+
 - **Connected Components Algorithms** (`yog/connectivity`): New functions for finding connected components in undirected and weakly connected components in directed graphs:
   - `connected_components/1` - Find connected components in undirected graphs using DFS
   - `weakly_connected_components/1` - Find weakly connected components in directed graphs (treating edges as undirected)
   - Both algorithms run in O(V + E) time complexity
   - See module documentation for comparison with existing SCC algorithms
-
 
 ## 5.0.0 - 2026-03-20
 
