@@ -54,6 +54,7 @@
 import gleam/dict
 import gleam/int
 import gleam/list
+import gleam/order
 import gleam/result
 import gleam/set
 import yog/model.{type Graph, type NodeId}
@@ -325,16 +326,21 @@ pub fn is_isomorphic(first: Graph(n, e), second: Graph(n, e)) -> Bool {
       case first_edges == second_edges {
         False -> False
         True -> {
-          let first_degrees = degree_sequence(first) |> list.sort(int.compare)
-          let second_degrees = degree_sequence(second) |> list.sort(int.compare)
+          let degree_compare = fn(a: #(Int, Int), b: #(Int, Int)) {
+            case int.compare(a.0, b.0) {
+              order.Eq -> int.compare(a.1, b.1)
+              other -> other
+            }
+          }
+          let first_degrees =
+            degree_sequence(first) |> list.sort(degree_compare)
+          let second_degrees =
+            degree_sequence(second) |> list.sort(degree_compare)
 
           case first_degrees == second_degrees {
             False -> False
             True -> {
-              case first_order <= 3 {
-                True -> True
-                False -> attempt_isomorphism(first, second)
-              }
+              attempt_isomorphism(first, second)
             }
           }
         }
@@ -343,20 +349,26 @@ pub fn is_isomorphic(first: Graph(n, e), second: Graph(n, e)) -> Bool {
   }
 }
 
-/// Computes the degree sequence of a graph.
-fn degree_sequence(graph: Graph(n, e)) -> List(Int) {
+/// Computes the degree sequence of a graph, dropping node uniqueness but preserving in/out combinations.
+fn degree_sequence(graph: Graph(n, e)) -> List(#(Int, Int)) {
   model.all_nodes(graph)
   |> list.map(fn(node) {
     let out_deg = list.length(model.successor_ids(graph, node))
     let in_deg = list.length(model.predecessors(graph, node))
-    out_deg + in_deg
+    #(in_deg, out_deg)
   })
 }
 
 /// Attempts to find an isomorphism between two graphs using backtracking.
 fn attempt_isomorphism(first: Graph(n, e), second: Graph(n, e)) -> Bool {
-  let first_nodes = model.all_nodes(first) |> list.sort(int.compare)
-  let second_nodes = model.all_nodes(second) |> list.sort(int.compare)
+  let degree = fn(node) {
+    list.length(model.predecessors(first, node))
+    + list.length(model.successor_ids(first, node))
+  }
+  let first_nodes =
+    model.all_nodes(first)
+    |> list.sort(fn(a, b) { int.compare(degree(b), degree(a)) })
+  let second_nodes = model.all_nodes(second)
   try_mapping(first, second, first_nodes, second_nodes, dict.new())
 }
 
@@ -370,7 +382,15 @@ fn try_mapping(
   case remaining_first {
     [] -> True
     [src, ..rest] -> {
-      list.any(available_second, fn(candidate) {
+      let src_in = list.length(model.predecessors(first, src))
+      let src_out = list.length(model.successor_ids(first, src))
+      let valid_candidates =
+        list.filter(available_second, fn(candidate) {
+          let cand_in = list.length(model.predecessors(second, candidate))
+          let cand_out = list.length(model.successor_ids(second, candidate))
+          src_in == cand_in && src_out == cand_out
+        })
+      list.any(valid_candidates, fn(candidate) {
         case is_mapping_valid(first, second, src, candidate, current_mapping) {
           False -> False
           True -> {
