@@ -1302,3 +1302,555 @@ pub fn connectivity_bridge_ordering_test() {
   result.bridges
   |> should.equal([#(3, 5)])
 }
+
+// ============= Connected Components Tests (Undirected) =============
+
+pub fn cc_empty_graph_test() {
+  let graph = model.new(Undirected)
+
+  let result = connectivity.connected_components(graph)
+
+  result
+  |> should.equal([])
+}
+
+pub fn cc_single_node_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+
+  let result = connectivity.connected_components(graph)
+
+  list.length(result)
+  |> should.equal(1)
+
+  case result {
+    [[node]] -> node |> should.equal(1)
+    _ -> should.fail()
+  }
+}
+
+pub fn cc_two_connected_nodes_test() {
+  let assert Ok(graph) =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+
+  let result = connectivity.connected_components(graph)
+
+  // One component with both nodes
+  list.length(result)
+  |> should.equal(1)
+
+  case result {
+    [component] -> {
+      list.length(component)
+      |> should.equal(2)
+
+      list.contains(component, 1)
+      |> should.be_true()
+
+      list.contains(component, 2)
+      |> should.be_true()
+    }
+    _ -> should.fail()
+  }
+}
+
+pub fn cc_two_separate_components_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edge_ensure(from: 1, to: 2, with: 1, default: "")
+    |> model.add_edge_ensure(from: 3, to: 4, with: 1, default: "")
+
+  let result = connectivity.connected_components(graph)
+
+  // Two separate components
+  list.length(result)
+  |> should.equal(2)
+
+  // Each component should have 2 nodes
+  list.all(result, fn(comp) { list.length(comp) == 2 })
+  |> should.be_true()
+}
+
+pub fn cc_triangle_test() {
+  let assert Ok(graph) =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 1, 1)])
+
+  let result = connectivity.connected_components(graph)
+
+  // One component with all three nodes
+  list.length(result)
+  |> should.equal(1)
+
+  case result {
+    [component] -> list.length(component) |> should.equal(3)
+    _ -> should.fail()
+  }
+}
+
+pub fn cc_linear_chain_test() {
+  let assert Ok(graph) =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_node(5, "E")
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 4, 1), #(4, 5, 1)])
+
+  let result = connectivity.connected_components(graph)
+
+  // One component - all connected
+  list.length(result)
+  |> should.equal(1)
+
+  case result {
+    [component] -> list.length(component) |> should.equal(5)
+    _ -> should.fail()
+  }
+}
+
+pub fn cc_star_graph_test() {
+  let assert Ok(graph) =
+    model.new(Undirected)
+    |> model.add_node(1, "Center")
+    |> model.add_node(2, "A")
+    |> model.add_node(3, "B")
+    |> model.add_node(4, "C")
+    |> model.add_node(5, "D")
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1), #(1, 4, 1), #(1, 5, 1)])
+
+  let result = connectivity.connected_components(graph)
+
+  // One component
+  list.length(result)
+  |> should.equal(1)
+
+  case result {
+    [component] -> list.length(component) |> should.equal(5)
+    _ -> should.fail()
+  }
+}
+
+pub fn cc_multiple_components_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A1")
+    |> model.add_node(2, "A2")
+    |> model.add_node(3, "A3")
+    |> model.add_node(4, "B1")
+    |> model.add_node(5, "B2")
+    |> model.add_node(6, "C")
+    // Component A: triangle
+    |> model.add_edge_ensure(from: 1, to: 2, with: 1, default: "")
+    |> model.add_edge_ensure(from: 2, to: 3, with: 1, default: "")
+    |> model.add_edge_ensure(from: 3, to: 1, with: 1, default: "")
+    // Component B: edge
+    |> model.add_edge_ensure(from: 4, to: 5, with: 1, default: "")
+  // Component C: isolated node (no edges added)
+
+  let result = connectivity.connected_components(graph)
+
+  // Three components
+  list.length(result)
+  |> should.equal(3)
+
+  let sizes = list.map(result, list.length) |> list.sort(int.compare)
+  sizes
+  |> should.equal([1, 2, 3])
+}
+
+pub fn cc_complete_graph_test() {
+  // K4 - complete graph with 4 nodes
+  let assert Ok(graph) =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(1, 3, 1),
+      #(1, 4, 1),
+      #(2, 3, 1),
+      #(2, 4, 1),
+      #(3, 4, 1),
+    ])
+
+  let result = connectivity.connected_components(graph)
+
+  list.length(result)
+  |> should.equal(1)
+
+  case result {
+    [component] -> list.length(component) |> should.equal(4)
+    _ -> should.fail()
+  }
+}
+
+pub fn cc_isolated_nodes_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+
+  let result = connectivity.connected_components(graph)
+
+  // Each isolated node is its own component
+  list.length(result)
+  |> should.equal(3)
+
+  list.all(result, fn(comp) { list.length(comp) == 1 })
+  |> should.be_true()
+}
+
+// ============= Weakly Connected Components Tests (Directed) =============
+
+pub fn wcc_empty_graph_test() {
+  let graph = model.new(Directed)
+
+  let result = connectivity.weakly_connected_components(graph)
+
+  result
+  |> should.equal([])
+}
+
+pub fn wcc_single_node_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+
+  let result = connectivity.weakly_connected_components(graph)
+
+  list.length(result)
+  |> should.equal(1)
+
+  case result {
+    [[node]] -> node |> should.equal(1)
+    _ -> should.fail()
+  }
+}
+
+pub fn wcc_two_nodes_one_direction_test() {
+  // 1 -> 2
+  let assert Ok(graph) =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+
+  let result = connectivity.weakly_connected_components(graph)
+
+  // Weakly connected (treating as undirected)
+  list.length(result)
+  |> should.equal(1)
+
+  case result {
+    [component] -> {
+      list.length(component)
+      |> should.equal(2)
+
+      list.contains(component, 1)
+      |> should.be_true()
+
+      list.contains(component, 2)
+      |> should.be_true()
+    }
+    _ -> should.fail()
+  }
+}
+
+pub fn wcc_two_nodes_opposite_directions_test() {
+  // 1 -> 2 and 2 -> 1 (strongly connected)
+  let assert Ok(graph) =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_edges([#(1, 2, 1), #(2, 1, 1)])
+
+  let result = connectivity.weakly_connected_components(graph)
+
+  // Still one component
+  list.length(result)
+  |> should.equal(1)
+
+  case result {
+    [component] -> list.length(component) |> should.equal(2)
+    _ -> should.fail()
+  }
+}
+
+pub fn wcc_diverging_arrows_test() {
+  // 1 -> 2 and 1 -> 3 (star from center)
+  let assert Ok(graph) =
+    model.new(Directed)
+    |> model.add_node(1, "Center")
+    |> model.add_node(2, "A")
+    |> model.add_node(3, "B")
+    |> model.add_edges([#(1, 2, 1), #(1, 3, 1)])
+
+  let result = connectivity.weakly_connected_components(graph)
+
+  // All weakly connected via node 1
+  list.length(result)
+  |> should.equal(1)
+
+  case result {
+    [component] -> list.length(component) |> should.equal(3)
+    _ -> should.fail()
+  }
+}
+
+pub fn wcc_converging_arrows_test() {
+  // 1 -> 3 and 2 -> 3 (both point to 3)
+  let assert Ok(graph) =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edges([#(1, 3, 1), #(2, 3, 1)])
+
+  let result = connectivity.weakly_connected_components(graph)
+
+  // All weakly connected via node 3
+  list.length(result)
+  |> should.equal(1)
+
+  case result {
+    [component] -> list.length(component) |> should.equal(3)
+    _ -> should.fail()
+  }
+}
+
+pub fn wcc_opposing_arrows_test() {
+  // 1 -> 2 <- 3 (opposing directions, no path 1 -> 3 or 3 -> 1)
+  let assert Ok(graph) =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edges([#(1, 2, 1), #(3, 2, 1)])
+
+  let wccs = connectivity.weakly_connected_components(graph)
+  let sccs = connectivity.strongly_connected_components(graph)
+
+  // WCC: All one component (treating edges as undirected)
+  list.length(wccs)
+  |> should.equal(1)
+
+  // SCC: Three separate components (no cycles)
+  list.length(sccs)
+  |> should.equal(3)
+}
+
+pub fn wcc_linear_chain_directed_test() {
+  // 1 -> 2 -> 3 -> 4
+  let assert Ok(graph) =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 4, 1)])
+
+  let wccs = connectivity.weakly_connected_components(graph)
+  let sccs = connectivity.strongly_connected_components(graph)
+
+  // WCC: One component
+  list.length(wccs)
+  |> should.equal(1)
+
+  case wccs {
+    [component] -> list.length(component) |> should.equal(4)
+    _ -> should.fail()
+  }
+
+  // SCC: Four separate components (no cycles)
+  list.length(sccs)
+  |> should.equal(4)
+}
+
+pub fn wcc_two_separate_components_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A1")
+    |> model.add_node(2, "A2")
+    |> model.add_node(3, "B1")
+    |> model.add_node(4, "B2")
+    // Component A: 1 -> 2
+    |> model.add_edge_ensure(from: 1, to: 2, with: 1, default: "")
+    // Component B: 3 -> 4
+    |> model.add_edge_ensure(from: 3, to: 4, with: 1, default: "")
+
+  let result = connectivity.weakly_connected_components(graph)
+
+  list.length(result)
+  |> should.equal(2)
+
+  list.all(result, fn(comp) { list.length(comp) == 2 })
+  |> should.be_true()
+}
+
+pub fn wcc_with_cycle_test() {
+  // 1 -> 2 -> 3 -> 1 (cycle) and 3 -> 4
+  let assert Ok(graph) =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(3, 1, 1), #(3, 4, 1)])
+
+  let wccs = connectivity.weakly_connected_components(graph)
+  let sccs = connectivity.strongly_connected_components(graph)
+
+  // WCC: One component (all connected when ignoring direction)
+  list.length(wccs)
+  |> should.equal(1)
+
+  case wccs {
+    [component] -> list.length(component) |> should.equal(4)
+    _ -> should.fail()
+  }
+
+  // SCC: Two components - {1,2,3} and {4}
+  list.length(sccs)
+  |> should.equal(2)
+
+  let scc_sizes = list.map(sccs, list.length) |> list.sort(int.compare)
+  scc_sizes
+  |> should.equal([1, 3])
+}
+
+pub fn wcc_vs_cc_equivalence_test() {
+  // Create undirected graph
+  let assert Ok(undirected) =
+    model.new(Undirected)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(4, 4, 1)])
+  // Self-loop on 4
+
+  // Create equivalent directed graph (edges one way)
+  let assert Ok(directed) =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_edges([#(1, 2, 1), #(2, 3, 1), #(4, 4, 1)])
+
+  let cc_result = connectivity.connected_components(undirected)
+  let wcc_result = connectivity.weakly_connected_components(directed)
+
+  // Both should find same number of components
+  list.length(cc_result)
+  |> should.equal(list.length(wcc_result))
+
+  // Both should have same component size distribution
+  let cc_sizes = list.map(cc_result, list.length) |> list.sort(int.compare)
+  let wcc_sizes = list.map(wcc_result, list.length) |> list.sort(int.compare)
+
+  cc_sizes
+  |> should.equal(wcc_sizes)
+}
+
+pub fn wcc_isolated_nodes_test() {
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+
+  let result = connectivity.weakly_connected_components(graph)
+
+  // Each isolated node is its own component
+  list.length(result)
+  |> should.equal(3)
+
+  list.all(result, fn(comp) { list.length(comp) == 1 })
+  |> should.be_true()
+}
+
+pub fn wcc_complex_graph_test() {
+  // Complex directed graph with multiple WCCs
+  // WCC 1: 1 -> 2 -> 3, 4 -> 2 (all connected via 2)
+  // WCC 2: 5 -> 6 -> 7, 7 -> 5 (cycle)
+  // WCC 3: 8 (isolated)
+  let graph =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_node(4, "D")
+    |> model.add_node(5, "E")
+    |> model.add_node(6, "F")
+    |> model.add_node(7, "G")
+    |> model.add_node(8, "H")
+    // WCC 1
+    |> model.add_edge_ensure(from: 1, to: 2, with: 1, default: "")
+    |> model.add_edge_ensure(from: 2, to: 3, with: 1, default: "")
+    |> model.add_edge_ensure(from: 4, to: 2, with: 1, default: "")
+    // WCC 2 (cycle)
+    |> model.add_edge_ensure(from: 5, to: 6, with: 1, default: "")
+    |> model.add_edge_ensure(from: 6, to: 7, with: 1, default: "")
+    |> model.add_edge_ensure(from: 7, to: 5, with: 1, default: "")
+  // WCC 3 (no edges)
+
+  let result = connectivity.weakly_connected_components(graph)
+
+  // Three WCCs
+  list.length(result)
+  |> should.equal(3)
+
+  let sizes = list.map(result, list.length) |> list.sort(int.compare)
+  sizes
+  |> should.equal([1, 3, 4])
+}
+
+pub fn wcc_bidirectional_edges_test() {
+  // 1 <-> 2 and 2 <-> 3 (strongly connected triangle via bidirectional edges)
+  let assert Ok(graph) =
+    model.new(Directed)
+    |> model.add_node(1, "A")
+    |> model.add_node(2, "B")
+    |> model.add_node(3, "C")
+    |> model.add_edges([
+      #(1, 2, 1),
+      #(2, 1, 1),
+      #(2, 3, 1),
+      #(3, 2, 1),
+    ])
+
+  let wccs = connectivity.weakly_connected_components(graph)
+  let sccs = connectivity.strongly_connected_components(graph)
+
+  // WCC and SCC should be the same (all strongly connected)
+  list.length(wccs)
+  |> should.equal(1)
+
+  list.length(sccs)
+  |> should.equal(1)
+
+  case wccs, sccs {
+    [wcc], [scc] -> {
+      list.length(wcc) |> should.equal(3)
+      list.length(scc) |> should.equal(3)
+    }
+    _, _ -> should.fail()
+  }
+}

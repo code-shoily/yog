@@ -1,15 +1,16 @@
-//// Graph connectivity analysis - finding bridges, articulation points, and strongly connected components.
+//// Graph connectivity analysis - finding connected components, bridges, articulation points,
+//// and strongly connected components.
 ////
 //// This module provides algorithms for analyzing the connectivity structure of graphs,
-//// identifying critical components whose removal would disconnect the graph.
+//// identifying components, and finding critical elements whose removal would disconnect the graph.
 ////
-//// ## Algorithms
+//// ## Component Types
 ////
-//// | Algorithm | Function | Use Case |
-//// |-----------|----------|----------|
-//// | [Tarjan's Bridge-Finding](https://en.wikipedia.org/wiki/Bridge_(graph_theory)) | `analyze/1` | Find bridges and articulation points |
-//// | [Tarjan's SCC](https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm) | `strongly_connected_components/1` | Find SCCs in one pass |
-//// | [Kosaraju's Algorithm](https://en.wikipedia.org/wiki/Kosaraju%27s_algorithm) | `kosaraju/1` | Find SCCs using two DFS passes |
+//// | Component Type | Function | Graph Type | Description |
+//// |----------------|----------|------------|-------------|
+//// | **Connected Components** | `connected_components/1` | Undirected | Maximal connected subgraphs |
+//// | **Weakly Connected Components** | `weakly_connected_components/1` | Directed | Connected when ignoring direction |
+//// | **Strongly Connected Components** | `strongly_connected_components/1` | Directed | Connected following edge directions |
 ////
 //// ## Bridges vs Articulation Points
 ////
@@ -18,18 +19,21 @@
 //// - **Articulation Point** (cut vertex): A node whose removal increases the number of connected
 ////   components. These are critical nodes in the network.
 ////
-//// ## Strongly Connected Components
+//// ## Algorithms
 ////
-//// A **strongly connected component** (SCC) is a maximal subgraph where every node is reachable
-//// from every other node. SCCs form a DAG when collapsed, useful for:
-//// - Identifying cycles in dependency graphs
-//// - Finding groups of mutually reachable web pages
-//// - Analyzing feedback loops in systems
+//// | Algorithm | Function | Use Case | Complexity |
+//// |-----------|----------|----------|------------|
+//// | DFS-based CC | `connected_components/1` | Undirected graph components | O(V + E) |
+//// | DFS-based WCC | `weakly_connected_components/1` | Directed graph, ignore direction | O(V + E) |
+//// | [Tarjan's SCC](https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm) | `strongly_connected_components/1` | Find SCCs in one pass | O(V + E) |
+//// | [Kosaraju's Algorithm](https://en.wikipedia.org/wiki/Kosaraju%27s_algorithm) | `kosaraju/1` | Find SCCs using two DFS passes | O(V + E) |
+//// | [Tarjan's Bridge-Finding](https://en.wikipedia.org/wiki/Bridge_(graph_theory)) | `analyze/1` | Find bridges and articulation points | O(V + E) |
 ////
 //// All algorithms run in **O(V + E)** linear time.
 ////
 //// ## References
 ////
+//// - [Wikipedia: Connected Component](https://en.wikipedia.org/wiki/Component_(graph_theory))
 //// - [Wikipedia: Strongly Connected Components](https://en.wikipedia.org/wiki/Strongly_connected_component)
 //// - [Wikipedia: Biconnected Component](https://en.wikipedia.org/wiki/Biconnected_component)
 //// - [CP-Algorithms: Finding Bridges](https://cp-algorithms.com/graph/bridge-searching.html)
@@ -47,6 +51,10 @@ import yog/transform
 /// Bridges are stored as ordered pairs where the first node ID is smaller.
 pub type Bridge =
   #(NodeId, NodeId)
+
+/// Type alias for a connected component - a list of node IDs.
+pub type Component =
+  List(NodeId)
 
 /// Results from connectivity analysis containing bridges and articulation points.
 pub type ConnectivityResults {
@@ -434,6 +442,203 @@ fn second_dfs(
         let #(comp, vis) = acc
         second_dfs(transposed, succ, vis, comp)
       })
+    }
+  }
+}
+
+// ============= Connected Components (Undirected Graphs) =============
+
+/// Finds Connected Components in an **undirected graph**.
+///
+/// A connected component is a maximal subgraph where every node is reachable
+/// from every other node via undirected edges. This uses simple DFS and runs
+/// in linear time.
+///
+/// **Important:** This algorithm is designed for undirected graphs. For directed
+/// graphs, use `weakly_connected_components/1` instead.
+///
+/// **Time Complexity:** O(V + E) where V is vertices and E is edges
+/// **Space Complexity:** O(V) for the visited set
+///
+/// ## Example
+///
+/// ```gleam
+/// import yog/connectivity
+/// import yog/model.{Undirected}
+///
+/// let graph =
+///   model.new(Undirected)
+///   |> model.add_node(1, "A")
+///   |> model.add_node(2, "B")
+///   |> model.add_node(3, "C")
+///   |> model.add_node(4, "D")
+///   |> model.add_edge(from: 1, to: 2, with: 1)
+///   |> model.add_edge(from: 3, to: 4, with: 1)
+///
+/// let components = connectivity.connected_components(graph)
+/// // => [[1, 2], [3, 4]]  // Two separate components
+/// ```
+///
+/// ## Comparison with Other Component Types
+///
+/// | Function | Graph Type | Direction | Use Case |
+/// |----------|------------|-----------|----------|
+/// | `connected_components/1` | Undirected | N/A | Standard undirected connectivity |
+/// | `weakly_connected_components/1` | Directed | Ignored | Directed graphs treated as undirected |
+/// | `strongly_connected_components/1` | Directed | Followed | Maximum reachability following arrows |
+pub fn connected_components(graph: Graph(n, e)) -> List(Component) {
+  let nodes = model.all_nodes(graph)
+  do_connected_components(graph, nodes, set.new(), [])
+}
+
+fn do_connected_components(
+  graph: Graph(n, e),
+  nodes: List(NodeId),
+  visited: Set(NodeId),
+  components: List(Component),
+) -> List(Component) {
+  case nodes {
+    [] -> components
+    [node, ..rest] -> {
+      case set.contains(visited, node) {
+        True -> do_connected_components(graph, rest, visited, components)
+        False -> {
+          let #(component, new_visited) = dfs_collect(graph, node, visited, [])
+          do_connected_components(graph, rest, new_visited, [
+            component,
+            ..components
+          ])
+        }
+      }
+    }
+  }
+}
+
+fn dfs_collect(
+  graph: Graph(n, e),
+  node: NodeId,
+  visited: Set(NodeId),
+  component: List(NodeId),
+) -> #(List(NodeId), Set(NodeId)) {
+  case set.contains(visited, node) {
+    True -> #(component, visited)
+    False -> {
+      let new_visited = set.insert(visited, node)
+      let neighbors = model.successor_ids(graph, node)
+
+      list.fold(
+        neighbors,
+        #([node, ..component], new_visited),
+        fn(acc, neighbor) {
+          let #(comp, vis) = acc
+          dfs_collect(graph, neighbor, vis, comp)
+        },
+      )
+    }
+  }
+}
+
+// ============= Weakly Connected Components (Directed Graphs) =============
+
+/// Finds Weakly Connected Components in a **directed graph**.
+///
+/// A weakly connected component is a maximal subgraph where, if you ignore
+/// edge directions, all nodes are reachable from each other. This is equivalent
+/// to finding connected components on the underlying undirected graph.
+///
+/// For directed graphs, you have two component concepts:
+/// - **Weakly Connected Components** (WCC): Treat edges as undirected
+/// - **Strongly Connected Components** (SCC): Follow edge directions
+///
+/// **Time Complexity:** O(V + E) where V is vertices and E is edges
+/// **Space Complexity:** O(V) for the visited set
+///
+/// ## Example
+///
+/// ```gleam
+/// import yog/connectivity
+/// import yog/model.{Directed}
+///
+/// let graph =
+///   model.new(Directed)
+///   |> model.add_node(1, "A")
+///   |> model.add_node(2, "B")
+///   |> model.add_node(3, "C")
+///   |> model.add_edge(from: 1, to: 2, with: 1)
+///   |> model.add_edge(from: 3, to: 2, with: 1)  // 1->2<-3
+///
+/// // SCCs: [[1], [2], [3]]  (no cycles)
+/// let sccs = connectivity.strongly_connected_components(graph)
+///
+/// // WCCs: [[1, 2, 3]]  (weakly connected as undirected)
+/// let wccs = connectivity.weakly_connected_components(graph)
+/// ```
+///
+/// ## Comparison with Other Component Types
+///
+/// | Function | Graph Type | Direction | Use Case |
+/// |----------|------------|-----------|----------|
+/// | `connected_components/1` | Undirected | N/A | Standard undirected connectivity |
+/// | `weakly_connected_components/1` | Directed | Ignored | Directed graphs treated as undirected |
+/// | `strongly_connected_components/1` | Directed | Followed | Maximum reachability following arrows |
+///
+/// ## Implementation Notes
+///
+/// This function uses `model.neighbors/2` which treats edges as undirected
+/// by combining successors and predecessors for directed graphs. This is
+/// more efficient than actually converting the graph to undirected form.
+pub fn weakly_connected_components(graph: Graph(n, e)) -> List(Component) {
+  let nodes = model.all_nodes(graph)
+  do_weakly_connected_components(graph, nodes, set.new(), [])
+}
+
+fn do_weakly_connected_components(
+  graph: Graph(n, e),
+  nodes: List(NodeId),
+  visited: Set(NodeId),
+  components: List(Component),
+) -> List(Component) {
+  case nodes {
+    [] -> components
+    [node, ..rest] -> {
+      case set.contains(visited, node) {
+        True -> do_weakly_connected_components(graph, rest, visited, components)
+        False -> {
+          let #(component, new_visited) =
+            wcc_dfs_collect(graph, node, visited, [])
+          do_weakly_connected_components(graph, rest, new_visited, [
+            component,
+            ..components
+          ])
+        }
+      }
+    }
+  }
+}
+
+fn wcc_dfs_collect(
+  graph: Graph(n, e),
+  node: NodeId,
+  visited: Set(NodeId),
+  component: List(NodeId),
+) -> #(List(NodeId), Set(NodeId)) {
+  case set.contains(visited, node) {
+    True -> #(component, visited)
+    False -> {
+      let new_visited = set.insert(visited, node)
+      // Use neighbors() to treat edges as undirected
+      let neighbors =
+        model.neighbors(graph, node)
+        |> list.map(fn(n) { n.0 })
+
+      list.fold(
+        neighbors,
+        #([node, ..component], new_visited),
+        fn(acc, neighbor) {
+          let #(comp, vis) = acc
+          wcc_dfs_collect(graph, neighbor, vis, comp)
+        },
+      )
     }
   }
 }
