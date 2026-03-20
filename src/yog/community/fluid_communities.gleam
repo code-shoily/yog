@@ -128,7 +128,7 @@ fn do_fluid(
   weight_fn: fn(e) -> Float,
 ) -> Communities {
   case iters <= 0 {
-    True -> normalize_communities(assignments, sizes)
+    True -> normalize_communities(nodes, assignments, sizes)
     False -> {
       let shuffled = internal.shuffle(nodes, seed)
       let next_seed = seed + 1
@@ -270,7 +270,7 @@ fn do_fluid(
         )
 
       case changed {
-        False -> normalize_communities(new_assignments, new_sizes)
+        False -> normalize_communities(nodes, new_assignments, new_sizes)
         True ->
           do_fluid(
             graph,
@@ -287,6 +287,7 @@ fn do_fluid(
 }
 
 fn normalize_communities(
+  nodes: List(NodeId),
   assignments: Dict(NodeId, CommunityId),
   sizes: Dict(CommunityId, Int),
 ) -> Communities {
@@ -301,11 +302,14 @@ fn normalize_communities(
       dict.insert(acc, old_id, i)
     })
 
+  let default_c = 0
   let new_assignments =
-    dict.fold(assignments, dict.new(), fn(acc, node, old_id) {
-      let new_id = dict.get(mapping, old_id) |> result.unwrap(0)
+    list.fold(nodes, dict.new(), fn(acc, node) {
+      let old_id = dict.get(assignments, node) |> result.unwrap(-1)
+      let new_id = dict.get(mapping, old_id) |> result.unwrap(default_c)
       dict.insert(acc, node, new_id)
     })
 
-  Communities(assignments: new_assignments, num_communities: dict.size(mapping))
+  let actual_k = int.max(1, dict.size(mapping))
+  Communities(assignments: new_assignments, num_communities: actual_k)
 }
