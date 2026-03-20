@@ -48,6 +48,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **ASCII Art Rendering** (`yog/render/ascii`): New module for rendering grids and mazes as ASCII text, ideal for terminal output and debugging.
 
+- **Network Health Metrics** (`yog/health`): New module for measuring graph structural quality:
+  - `diameter/5` - Maximum distance (worst-case reachability)
+  - `radius/5` - Minimum eccentricity (best central point)
+  - `eccentricity/6` - Maximum distance from a specific node
+  - `assortativity/1` - Degree correlation (homophily vs heterophily)
+  - `average_path_length/6` - Typical separation between nodes
+
 - **Grid Distance Heuristics**: Added `chebyshev_distance` (for 8-way movement) and `octile_distance` (for realistic diagonal costs) to `yog/builder/grid`.
 
 - **F# Comparison**: Added `GLEAM_FSHARP_COMPARISON.md` documenting feature parity, API differences, and migration guidance between the Gleam and F# implementations of Yog.

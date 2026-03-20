@@ -35,6 +35,7 @@ A graph algorithm library for Gleam, providing implementations of classic graph 
 - **Graph Visualization**: Mermaid, DOT (Graphviz), and JSON rendering
 - **Minimum Spanning Tree**: Kruskal's and Prim's algorithms with Union-Find and Priority Queues
 - **Minimum Cut**: Stoer-Wagner algorithm for global min-cut
+- **Network Health**: Diameter, radius, eccentricity, assortativity, average path length
 - **Directed Acyclic Graphs (DAG)**: Strictly-validated `Dag(n, e)` wrapper bringing O(V+E) DP routines like `longest_path` (Critical Path), LCA, and transitive structures
 - **Topological Sorting**: Kahn's algorithm with lexicographical variant, alongside guaranteed cycle-free DAG-specific sorts
 - **Strongly Connected Components**: Tarjan's and Kosaraju's algorithms
