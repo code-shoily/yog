@@ -1,4 +1,3 @@
-import gleam/int
 import gleam/list
 import gleeunit/should
 import yog/model.{Directed, Undirected}
