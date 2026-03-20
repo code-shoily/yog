@@ -11,39 +11,38 @@
 #
 # The argument is the path under test/ without the .gleam extension.
 # Slashes are converted to @ to match Erlang module naming.
-
+#!/usr/bin/env bash
 set -euo pipefail
 
 if [ $# -eq 0 ]; then
-  echo "Usage: $0 <module_path>"
-  echo ""
-  echo "Examples:"
-  echo "  $0 yog/pathfinding_test"
-  echo "  $0 yog/model_test"
-  echo "  $0 yog_test"
-  echo ""
-  echo "Available test modules:"
-  find test -name "*_test.gleam" | sed 's|test/||; s|\.gleam||' | sort
+  echo "Usage: $0 <module_path> [function_name]"
+  echo "Example: $0 yog/operations_test union_commutative_test"
   exit 1
 fi
 
 MODULE_PATH="$1"
-# Convert path separators to @ (Gleam -> Erlang module naming)
+FUNCTION_NAME="${2:-}" # Optional second argument
 ERLANG_MODULE="${MODULE_PATH//\//@}"
 
 echo "Building project..."
 gleam build --target erlang
 
 echo ""
-echo "Running tests for: $ERLANG_MODULE"
+if [ -n "$FUNCTION_NAME" ]; then
+  echo "Running test: $ERLANG_MODULE:$FUNCTION_NAME"
+  # EUnit expects the function name as an atom. 
+  # We use {generator, Mod, Fun} or {test, Mod, Fun}
+  EUNIT_EXPR="eunit:test({test, '${ERLANG_MODULE}', '${FUNCTION_NAME}'}, [verbose])"
+else
+  echo "Running all tests for: $ERLANG_MODULE"
+  EUNIT_EXPR="eunit:test('${ERLANG_MODULE}', [verbose])"
+fi
+
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# Expand the glob and build -pa flags for each ebin directory
 PA_FLAGS=()
 for dir in build/dev/erlang/*/ebin; do
   PA_FLAGS+=(-pa "$dir")
 done
 
-erl "${PA_FLAGS[@]}" \
-  -eval "eunit:test('${ERLANG_MODULE}', [verbose]), init:stop()" \
-  -noshell
+erl "${PA_FLAGS[@]}" -eval "$EUNIT_EXPR, init:stop()" -noshell
