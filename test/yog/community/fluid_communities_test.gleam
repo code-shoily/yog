@@ -22,7 +22,8 @@ pub fn fluid_communities_disjoint_test() {
       #(6, 4, 1),
     ])
 
-  let ops = FluidOptions(target_communities: 2, max_iterations: 20, seed: Some(42))
+  let ops =
+    FluidOptions(target_communities: 2, max_iterations: 20, seed: Some(42))
   let communities = fluid_communities.detect_with_options(graph, ops)
 
   communities.num_communities |> should.equal(2)
@@ -47,7 +48,8 @@ pub fn fluid_communities_limits_k_test() {
     |> yog.add_node(2, Nil)
 
   // Requesting 10 nodes on a 2 node graph should cap k at 2
-  let ops = FluidOptions(target_communities: 10, max_iterations: 1, seed: Some(1))
+  let ops =
+    FluidOptions(target_communities: 10, max_iterations: 1, seed: Some(1))
   let communities = fluid_communities.detect_with_options(graph, ops)
 
   communities.num_communities |> should.equal(2)

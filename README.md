@@ -171,6 +171,8 @@ Detailed documentation for each algorithm can be found on [HexDocs](https://hexd
 | **Walktrap** | Random-walk structural communities | O(V² log V) |
 | **Girvan-Newman** | Hierarchical edge betweenness | O(E²V) |
 | **Clique Percolation** | Overlapping community discovery | O(3^(V/3)) |
+| **Local Community** | Massive/infinite graphs, seed expansion | O(S × E_S) |
+| **Fluid Communities** | Exact `k` partitions, fast | O(E) per iter |
 
 ## Benchmarking
 

@@ -64,7 +64,16 @@ import yog/model.{type Graph, type NodeId}
 ///
 /// Time Complexity: O(E)
 pub fn modularity(graph: Graph(n, Int), communities: Communities) -> Float {
-  let m = int.to_float(model.edge_count(graph))
+  let m =
+    {
+      list.fold(model.all_nodes(graph), 0.0, fn(acc, u) {
+        let weight_sum =
+          yog.successors(graph, u)
+          |> list.fold(0, fn(sum, edge) { sum + edge.1 })
+        acc +. int.to_float(weight_sum)
+      })
+    }
+    /. 2.0
   case m == 0.0 {
     True -> 0.0
     False -> {

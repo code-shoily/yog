@@ -115,9 +115,11 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 | **Leiden** | ✅ | ❌ | Quality guaranteed partitions |
 | **Label Propagation** | ✅ | ❌ | Near-linear time scaling |
 | **Girvan-Newman** | ✅ | ❌ | Hierarchical edge betweenness |
-| **Walktrap** | ✅ | ❌ | Random walk distances |
+| ** Walktrap** | ✅ | ❌ | Random walk distances |
 | **Infomap** | ✅ | ❌ | Information-theoretic flow |
 | **Clique Percolation** | ✅ | ❌ | Overlapping communities |
+| **Local Community** | ✅ | ❌ | Massive graphs, seed expansion |
+| **Fluid Communities** | ✅ | ❌ | Exact `k` partitions, fast |
 | **Metrics & Modularity** | ✅ | ❌ | Quality evaluation |
 
 **Status**: ✅ **Gleam exclusive feature**
@@ -259,7 +261,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 
 ### Gleam Only
 
-- ✅ **Community Detection Suite** - 8 algorithms including Louvain, Leiden, Infomap
+- ✅ **Community Detection Suite** - 10 algorithms including Louvain, Leiden, Infomap, Fluid
 - ✅ **Complete Network Simplex** - Full min cost flow implementation (930 LOC)
 - ✅ **Edge Contraction** - Graph transformation
 - ✅ **Pairing Heap** - Custom priority queue for pathfinding
@@ -361,7 +363,7 @@ Both implementations are **high-quality, feature-rich graph libraries** with exc
 
 **Gleam Strengths:**
 
-- ✅ Community Detection Suite (8 algorithms)
+- ✅ Community Detection Suite (10 algorithms)
 - ✅ Complete Network Simplex (production-ready min cost flow)
 - ✅ Edge contraction
 - ✅ Battle-tested on BEAM VM

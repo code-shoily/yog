@@ -52,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **F# Comparison**: Added `GLEAM_FSHARP_COMPARISON.md` documenting feature parity, API differences, and migration guidance between the Gleam and F# implementations of Yog.
 
-- **Community Detection Suite** (`yog/community/*`): Major new module implementing 8 community detection algorithms (~3,200 lines). Community detection identifies densely connected groups of nodes in graphs - essential for social network analysis, biological networks, recommendation systems, and infrastructure analysis.
+- **Community Detection Suite** (`yog/community/*`): Major new module implementing 10 community detection algorithms (~3,400 lines). Community detection identifies densely connected groups of nodes in graphs - essential for social network analysis, biological networks, recommendation systems, and infrastructure analysis.
 
   **Core Module** (`yog/community`):
   - `Communities` type: Maps nodes to community IDs with count
@@ -69,6 +69,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   | **Walktrap** | `walktrap` | Random walk-based communities | O(V² log V) |
   | **Infomap** | `infomap` | Flow-based, information-theoretic | O(E × iters) |
   | **Clique Percolation** | `clique_percolation` | Overlapping communities | O(3^(V/3)) |
+  | **Local Community** | `local_community` | Massive graphs, seed expansion | O(S × E_S) |
+  | **Fluid Communities** | `fluid_communities`| Exact `k` partitions | O(E × iters) |
   | **Random Walk** | `random_walk` | Primitives for custom algorithms | O(steps × k) |
 
   **Metrics Module** (`yog/community/metrics`):
@@ -89,8 +91,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ```
 
   **Algorithm Selection Guide**:
-  - **Speed Priority**: Label Propagation > Louvain > Leiden
+  - **Speed Priority**: Label Propagation > Fluid Communities > Louvain > Leiden
   - **Quality Priority**: Leiden > Louvain > Infomap > Walktrap
+  - **Specific size (k)**: Fluid Communities
+  - **Massive/Infinite graphs**: Local Community
   - **Hierarchical Structure**: Girvan-Newman, Louvain, Leiden, Walktrap
   - **Overlapping Communities**: Clique Percolation (nodes can belong to multiple)
   - **Flow-Based**: Infomap (uses PageRank and Map Equation)
