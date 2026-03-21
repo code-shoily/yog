@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 5.1.0 - Unreleased
 
 ### Added
 
@@ -31,6 +31,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `weakly_connected_components/1` - Find weakly connected components in directed graphs (treating edges as undirected)
   - Both algorithms run in O(V + E) time complexity
   - See module documentation for comparison with existing SCC algorithms
+
+- **Enhanced DOT Rendering** (`yog/render/dot`): Major improvements to Graphviz export functionality:
+  - **Generic Data Types**: `DotOptions` is now generic over node data `n` and edge data `e`, allowing it to work with any graph types without manual conversion
+    - Use `default_dot_options()` for `String` edge data (backward compatible)
+    - Use `default_dot_options_with_edge_formatter(fn(e) -> String)` for custom edge types (e.g., `Int`, `Float`, custom records)
+    - Use `default_dot_options_with()` for full control over both node and edge labeling
+  - **Per-Element Styling**: New callback functions for fine-grained visual control:
+    - `node_attributes: fn(NodeId, n) -> List(#(String, String))` - Set custom DOT attributes per node (e.g., `[#("fillcolor", "green"), #("shape", "diamond")]`)
+    - `edge_attributes: fn(NodeId, NodeId, e) -> List(#(String, String))` - Set custom DOT attributes per edge (e.g., `[#("color", "red"), #("penwidth", "2")]`)
+    - Custom attributes override highlighting and default styles
+  - **Subgraphs and Clusters**: New `Subgraph` type for visual node grouping:
+    - Create visual clusters with `Subgraph(name: "cluster_0", label: Some("Group A"), node_ids: [1, 2, 3], ...)`
+    - Supports all Graphviz subgraph attributes: `style`, `fillcolor`, `color`
+    - Use `cluster_` prefix in name for bounded rectangle visualization
+  - Improved attribute formatting with consistent `key="value"` syntax
+  - **Example**:
+
+    ```gleam
+    let options = DotOptions(
+      ..dot.default_dot_options_with_edge_formatter(int.to_string),
+      node_attributes: fn(id, _) {
+        case id == start_node { True -> [#("fillcolor", "green")] False -> [] }
+      },
+      subgraphs: Some([Subgraph(name: "cluster_a", label: Some("Module A"), node_ids: [1, 2])]),
+    )
+    let dot_string = dot.to_dot(my_graph, options)
+    ```
 
 ### Changed
 
