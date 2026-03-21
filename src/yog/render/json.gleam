@@ -1,5 +1,18 @@
 //// JSON format export for graph data exchange.
 ////
+//// **⚠️ DEPRECATION NOTICE**
+////
+//// This module is planned to be moved to `yog_io` in a future release.
+//// The API will be redesigned to support:
+//// - Generic types (not just String node/edge data)
+//// - Multiple JSON formats (D3.js, Cytoscape.js, vis.js, etc.)
+//// - File I/O operations (reading/writing JSON files)
+//// - Enhanced metadata support
+////
+//// For details on the planned API improvements, see `md_dumps/JSON_API_SPEC.md`.
+////
+//// ---
+////
 //// This module exports graphs to JSON format, suitable for:
 //// - Interoperability with web applications
 //// - Storage in document databases (MongoDB, CouchDB)
