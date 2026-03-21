@@ -11,7 +11,7 @@
 //// import yog/render/dot
 ////
 //// // Export with default styling
-//// let dot_string = dot.to_string(my_graph)
+//// let dot_string = dot.to_dot(my_graph, dot.default_dot_options())
 ////
 //// // Write to file and render with Graphviz CLI
 //// // $ dot -Tpng output.dot -o graph.png
@@ -22,8 +22,64 @@
 //// Use `DotOptions` to customize:
 //// - Node labels and shapes
 //// - Edge labels and styles
+//// - **Per-node and per-edge attributes** (custom colors, shapes, etc.)
+//// - **Subgraphs/clusters** for visual grouping
 //// - Highlight specific nodes or paths
 //// - Graph direction (LR, TB, etc.)
+////
+//// ## Generic Data Types
+////
+//// The `to_dot` function works with any node and edge data types. Use 
+//// `default_dot_options_with_edge_formatter()` when your edge data is not a String:
+////
+//// ```gleam
+//// let options = dot.default_dot_options_with_edge_formatter(fn(weight) {
+////   int.to_string(weight)
+//// })
+//// let dot_string = dot.to_dot(my_int_weighted_graph, options)
+//// ```
+////
+//// ## Per-Element Styling
+////
+//// Provide custom attribute functions for fine-grained control:
+////
+//// ```gleam
+//// let options = DotOptions(
+////   ..dot.default_dot_options(),
+////   node_attributes: fn(id, data) {
+////     case id {
+////       1 -> [("fillcolor", "green"), ("shape", "diamond")]
+////       _ -> []
+////     }
+////   },
+////   edge_attributes: fn(from, to, weight) {
+////     case weight > 10 {
+////       True -> [("color", "red"), ("penwidth", "2")]
+////       False -> []
+////     }
+////   },
+//// )
+//// ```
+////
+//// ## Subgraphs and Clusters
+////
+//// Group nodes visually using subgraphs:
+////
+//// ```gleam
+//// let options = DotOptions(
+////   ..dot.default_dot_options(),
+////   subgraphs: Some([
+////     Subgraph(
+////       name: "cluster_0",
+////       label: Some("Cluster A"),
+////       node_ids: [1, 2, 3],
+////       style: Some(dot.Filled),
+////       fillcolor: Some("lightgrey"),
+////       color: None,
+////     ),
+////   ]),
+//// )
+//// ```
 ////
 //// ## Rendering Options
 ////
@@ -41,6 +97,7 @@
 //// - [DOT Language Guide](https://graphviz.org/doc/info/lang.html)
 //// - [Node Shapes](https://graphviz.org/doc/info/shapes.html)
 //// - [Arrow Styles](https://graphviz.org/doc/info/arrows.html)
+//// - [Cluster/Subgraph Syntax](https://graphviz.org/docs/attrs/cluster/)
 
 import gleam/dict
 import gleam/float
@@ -50,6 +107,47 @@ import gleam/option.{type Option, None, Some}
 import gleam/string
 import yog/model.{type Graph, type NodeId, Directed, Undirected}
 import yog/pathfinding/utils.{type Path}
+
+// =============================================================================
+// SUBGRAPH TYPE
+// =============================================================================
+
+/// A subgraph (cluster) for grouping nodes visually in the diagram.
+///
+/// In Graphviz, subgraphs with names starting with "cluster_" are rendered
+/// as bounded rectangles around the contained nodes. This is useful for:
+/// - Visualizing communities or partitions
+/// - Grouping related nodes
+/// - Highlighting logical components
+///
+/// ## Example
+///
+/// ```gleam
+/// Subgraph(
+///   name: "cluster_0",
+///   label: Some("Module A"),
+///   node_ids: [1, 2, 3],
+///   style: Some(dot.Filled),
+///   fillcolor: Some("lightblue"),
+///   color: Some("blue"),
+/// )
+/// ```
+pub type Subgraph {
+  Subgraph(
+    /// Subgraph name. Use "cluster_" prefix for visual clustering.
+    name: String,
+    /// Optional label displayed at the top of the subgraph.
+    label: Option(String),
+    /// List of node IDs to include in this subgraph.
+    node_ids: List(NodeId),
+    /// Optional style for the subgraph boundary.
+    style: Option(Style),
+    /// Optional fill color for the subgraph background.
+    fillcolor: Option(String),
+    /// Optional border color for the subgraph.
+    color: Option(String),
+  )
+}
 
 // =============================================================================
 // TYPES
@@ -191,16 +289,42 @@ pub type Overlap {
 // =============================================================================
 
 /// Options for customizing DOT (Graphviz) diagram rendering.
-pub type DotOptions {
+///
+/// This type is generic over node data `n` and edge data `e`, allowing it to work
+/// with graphs of any data types. Use `default_dot_options()` for String edge
+/// data, or `default_dot_options_with_edge_formatter()` for custom edge types.
+///
+/// ## Per-Element Styling
+///
+/// Use `node_attributes` and `edge_attributes` to set custom DOT attributes
+/// for individual nodes and edges. These functions receive the node/edge data
+/// and should return a list of #(attribute_name, attribute_value) pairs.
+///
+/// Common node attributes: "fillcolor", "shape", "width", "height", "penwidth"
+/// Common edge attributes: "color", "penwidth", "style", "arrowhead", "constraint"
+///
+pub type DotOptions(n, e) {
   DotOptions(
     /// Function to convert node ID and data to a display label
-    node_label: fn(NodeId, String) -> String,
-    /// Function to convert edge weight to a display label
-    edge_label: fn(String) -> String,
+    node_label: fn(NodeId, n) -> String,
+    /// Function to convert edge data to a display label
+    edge_label: fn(e) -> String,
     /// Optional list of node IDs to highlight
     highlighted_nodes: Option(List(NodeId)),
     /// Optional list of edges to highlight as (from, to) pairs
     highlighted_edges: Option(List(#(NodeId, NodeId))),
+    // Per-element styling (NEW)
+    /// Function to provide custom DOT attributes for each node.
+    /// Returns list of #(attribute_name, attribute_value) pairs.
+    /// These attributes override any defaults or highlighting.
+    node_attributes: fn(NodeId, n) -> List(#(String, String)),
+    /// Function to provide custom DOT attributes for each edge.
+    /// Returns list of #(attribute_name, attribute_value) pairs.
+    /// These attributes override any defaults or highlighting.
+    edge_attributes: fn(NodeId, NodeId, e) -> List(#(String, String)),
+    // Subgraphs (NEW)
+    /// Optional list of subgraphs/clusters for visual node grouping.
+    subgraphs: Option(List(Subgraph)),
     // Graph-level attributes
     /// Graph name (default: "G")
     graph_name: String,
@@ -262,12 +386,86 @@ pub type DotOptions {
 /// - Node shape: Ellipse
 /// - Colors: Light blue nodes, black edges
 /// - Font: Helvetica 12pt
-pub fn default_dot_options() -> DotOptions {
-  DotOptions(
+///
+/// **Note:** This function returns `DotOptions(n, String)`, meaning it works
+/// with any node data type (node labels use the ID only) but requires edge
+/// data to be `String`. For other edge types, use
+/// `default_dot_options_with_edge_formatter()`.
+///
+/// ## Example
+///
+/// ```gleam
+/// let options = dot.default_dot_options()
+/// let dot_string = dot.to_dot(my_string_graph, options)
+/// ```
+pub fn default_dot_options() -> DotOptions(n, String) {
+  create_dot_options(
     node_label: fn(id, _data) { int.to_string(id) },
     edge_label: fn(weight) { weight },
+  )
+}
+
+/// Creates default DOT options with a custom edge formatter.
+///
+/// Use this when your graph has non-String edge data (e.g., Int, Float, custom types).
+/// The provided formatter function converts edge data to strings for display.
+///
+/// ## Example
+///
+/// ```gleam
+/// // For a graph with Int edge weights
+/// let options = dot.default_dot_options_with_edge_formatter(fn(weight) {
+///   int.to_string(weight)
+/// })
+///
+/// // For a graph with custom edge data
+/// let options = dot.default_dot_options_with_edge_formatter(fn(edge_data) {
+///   edge_data.name <> ": " <> float.to_string(edge_data.weight)
+/// })
+/// ```
+pub fn default_dot_options_with_edge_formatter(
+  edge_formatter: fn(e) -> String,
+) -> DotOptions(n, e) {
+  create_dot_options(
+    node_label: fn(id, _data) { int.to_string(id) },
+    edge_label: edge_formatter,
+  )
+}
+
+/// Creates default DOT options with custom label formatters for both nodes and edges.
+///
+/// Use this when you need full control over how both node and edge data are displayed.
+///
+/// ## Example
+///
+/// ```gleam
+/// let options = dot.default_dot_options_with(
+///   node_label: fn(id, data) { data.name <> " (" <> int.to_string(id) <> ")" },
+///   edge_label: fn(weight) { int.to_string(weight) <> " ms" },
+/// )
+/// ```
+pub fn default_dot_options_with(
+  node_label node_label: fn(NodeId, n) -> String,
+  edge_label edge_label: fn(e) -> String,
+) -> DotOptions(n, e) {
+  create_dot_options(node_label:, edge_label:)
+}
+
+// Private helper to create options with the common defaults
+fn create_dot_options(
+  node_label node_label: fn(NodeId, n) -> String,
+  edge_label edge_label: fn(e) -> String,
+) -> DotOptions(n, e) {
+  DotOptions(
+    node_label: node_label,
+    edge_label: edge_label,
     highlighted_nodes: None,
     highlighted_edges: None,
+    // Per-element styling defaults (no custom attributes)
+    node_attributes: fn(_, _) { [] },
+    edge_attributes: fn(_, _, _) { [] },
+    // Subgraphs default to none
+    subgraphs: None,
     // Graph-level
     graph_name: "G",
     layout: None,
@@ -300,10 +498,13 @@ pub fn default_dot_options() -> DotOptions {
 
 /// Converts a graph to DOT (Graphviz) syntax.
 ///
-/// The graph's node data and edge data must be convertible to strings.
-/// Use the options to customize labels and highlighting.
+/// Works with any node data type `n` and edge data type `e`. Use the options
+/// to customize labels, styling, and to define subgraphs. Use
+/// `default_dot_options()` or `default_dot_options_with_edge_formatter()` to
+/// create appropriate options for your graph.
 ///
-/// **Time Complexity:** O(V + E)
+/// **Time Complexity:** O(V + E + S) where S is the total number of nodes
+/// across all subgraphs.
 ///
 /// ## Example
 ///
@@ -314,8 +515,25 @@ pub fn default_dot_options() -> DotOptions {
 ///   |> model.add_node(2, "Process")
 ///   |> model.add_edge(from: 1, to: 2, with: "5")
 ///
-/// let diagram = dot.to_dot(graph, default_dot_options())
+/// let diagram = dot.to_dot(graph, dot.default_dot_options())
 /// // io.println(diagram)
+/// ```
+///
+/// ## Custom Styling Example
+///
+/// ```gleam
+/// let options = DotOptions(
+///   ..dot.default_dot_options(),
+///   node_attributes: fn(id, data) {
+///     case id {
+///       1 -> [("fillcolor", "green"), ("shape", "diamond")]
+///       _ -> []
+///     }
+///   },
+///   subgraphs: Some([
+///     Subgraph(name: "cluster_0", label: Some("Group A"), node_ids: [1, 2]),
+///   ]),
+/// )
 /// ```
 ///
 /// This output can be processed by Graphviz tools (e.g., `dot -Tpng -o graph.png`):
@@ -324,10 +542,14 @@ pub fn default_dot_options() -> DotOptions {
 ///   node [shape=ellipse];
 ///   1 [label="Start"];
 ///   2 [label="Process"];
+///   subgraph cluster_0 {
+///     label="Group A";
+///     1; 2;
+///   }
 ///   1 -> 2 [label="5"];
 /// }
 /// ````
-pub fn to_dot(graph: Graph(String, String), options: DotOptions) -> String {
+pub fn to_dot(graph: Graph(n, e), options: DotOptions(n, e)) -> String {
   let graph_type = case graph.kind {
     Directed -> "digraph " <> options.graph_name <> " {\n"
     Undirected -> "graph " <> options.graph_name <> " {\n"
@@ -394,33 +616,80 @@ pub fn to_dot(graph: Graph(String, String), options: DotOptions) -> String {
   let base_edge_style =
     "  edge [" <> string.join(edge_attrs_with_arrows, ", ") <> "];\n"
 
+  // Generate nodes with per-element attributes
   let nodes =
     dict.fold(graph.nodes, [], fn(acc, id, data) {
       let label = options.node_label(id, data)
       let id_str = int.to_string(id)
 
-      let highlight_attrs = case options.highlighted_nodes {
+      // Build attribute list starting with label
+      let attrs = [#("label", label)]
+
+      // Add highlighting if applicable
+      let attrs = case options.highlighted_nodes {
         Some(highlighted) -> {
           case list.contains(highlighted, id) {
-            True -> ", fillcolor=\"" <> options.highlight_color <> "\""
-            False -> ""
+            True -> [#("fillcolor", options.highlight_color), ..attrs]
+            False -> attrs
           }
         }
-        None -> ""
+        None -> attrs
       }
-      [
-        "  "
-          <> id_str
-          <> " [label=\""
-          <> label
-          <> "\""
-          <> highlight_attrs
-          <> "];",
-        ..acc
-      ]
+
+      // Merge custom attributes (these override highlighting and defaults)
+      let custom_attrs = options.node_attributes(id, data)
+      let attrs = merge_attributes_list(attrs, custom_attrs)
+
+      // Format attributes
+      let attr_str = format_attributes_list(attrs)
+
+      ["  " <> id_str <> " [" <> attr_str <> "];", ..acc]
     })
     |> string.join("\n")
 
+  // Generate subgraphs
+  let subgraphs_str = case options.subgraphs {
+    None -> ""
+    Some(subgraph_list) -> {
+      list.map(subgraph_list, fn(sub) {
+        let header = "  subgraph " <> sub.name <> " {\n"
+
+        let label = case sub.label {
+          Some(l) -> "    label=\"" <> l <> "\";\n"
+          None -> ""
+        }
+
+        let style = case sub.style {
+          Some(s) -> "    style=" <> style_to_string(s) <> ";\n"
+          None -> ""
+        }
+
+        let fillcolor = case sub.fillcolor {
+          Some(f) -> "    fillcolor=\"" <> f <> "\";\n"
+          None -> ""
+        }
+
+        let color = case sub.color {
+          Some(c) -> "    color=\"" <> c <> "\";\n"
+          None -> ""
+        }
+
+        let node_list = case sub.node_ids {
+          [] -> ""
+          ids ->
+            ids
+            |> list.map(fn(id) { "    " <> int.to_string(id) })
+            |> string.join(";\n")
+            <> ";\n"
+        }
+
+        header <> label <> style <> fillcolor <> color <> node_list <> "  }"
+      })
+      |> string.join("\n")
+    }
+  }
+
+  // Generate edges with per-element attributes
   let edges =
     dict.fold(graph.out_edges, [], fn(acc, from_id, targets) {
       let inner_edges =
@@ -439,6 +708,11 @@ pub fn to_dot(graph: Graph(String, String), options: DotOptions) -> String {
                 Undirected -> " -- "
               }
 
+              // Build attribute list starting with label
+              let label = options.edge_label(weight)
+              let attrs = [#("label", label)]
+
+              // Add highlighting if applicable
               let is_highlighted = case options.highlighted_edges {
                 Some(highlighted) ->
                   list.contains(highlighted, #(from_id, to_id))
@@ -446,24 +720,29 @@ pub fn to_dot(graph: Graph(String, String), options: DotOptions) -> String {
                 None -> False
               }
 
-              let mut_attrs = case is_highlighted {
-                True ->
-                  " color=\""
-                  <> options.highlight_color
-                  <> "\", penwidth="
-                  <> float.to_string(options.highlight_penwidth)
-                False -> ""
+              let attrs = case is_highlighted {
+                True -> [
+                  #("penwidth", float.to_string(options.highlight_penwidth)),
+                  #("color", options.highlight_color),
+                  ..attrs
+                ]
+                False -> attrs
               }
+
+              // Merge custom attributes (these override highlighting)
+              let custom_attrs = options.edge_attributes(from_id, to_id, weight)
+              let attrs = merge_attributes_list(attrs, custom_attrs)
+
+              // Format attributes
+              let attr_str = format_attributes_list(attrs)
 
               let edge_def =
                 "  "
                 <> int.to_string(from_id)
                 <> connector
                 <> int.to_string(to_id)
-                <> " [label=\""
-                <> options.edge_label(weight)
-                <> "\""
-                <> mut_attrs
+                <> " ["
+                <> attr_str
                 <> "];"
               [edge_def, ..inner_acc]
             }
@@ -473,21 +752,64 @@ pub fn to_dot(graph: Graph(String, String), options: DotOptions) -> String {
     })
     |> string.join("\n")
 
+  // Combine all parts
   graph_type
   <> graph_attr_line
   <> base_node_style
   <> base_edge_style
   <> nodes
   <> "\n"
+  <> case subgraphs_str {
+    "" -> ""
+    s -> s <> "\n"
+  }
   <> edges
   <> "\n}"
 }
 
+// Merge two attribute lists, with override taking precedence.
+// Later attributes override earlier ones with the same key.
+fn merge_attributes_list(
+  base: List(#(String, String)),
+  override: List(#(String, String)),
+) -> List(#(String, String)) {
+  // Start with base, then fold override entries
+  // For each override, remove any existing entry with the same key, then prepend
+  list.fold(override, base, fn(acc, pair) {
+    let filtered = list.filter(acc, fn(existing) { existing.0 != pair.0 })
+    [pair, ..filtered]
+  })
+}
+
+// Format a list of attributes as key="value", key2="value2"
+// Reverses the list first so that earlier entries appear first
+fn format_attributes_list(attrs: List(#(String, String))) -> String {
+  attrs
+  |> list.reverse()
+  |> list.map(fn(pair) { pair.0 <> "=\"" <> pair.1 <> "\"" })
+  |> string.join(", ")
+}
+
 /// Converts a shortest path result to highlighted DOT options.
+///
+/// Creates a copy of the base options with the path's nodes and edges
+/// set to be highlighted. This is useful for visualizing algorithm results.
+///
+/// ## Example
+///
+/// ```gleam
+/// case pathfinding.dijkstra(...) {
+///   Some(path) -> {
+///     let options = dot.path_to_dot_options(path, dot.default_dot_options())
+///     let dot_string = dot.to_dot(graph, options)
+///   }
+///   None -> ""
+/// }
+/// ```
 pub fn path_to_dot_options(
   path: Path(e),
-  base_options: DotOptions,
-) -> DotOptions {
+  base_options: DotOptions(n, e),
+) -> DotOptions(n, e) {
   let nodes = path.nodes
   let edges = path_to_edges(nodes)
 
