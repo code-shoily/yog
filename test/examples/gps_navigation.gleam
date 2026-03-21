@@ -48,7 +48,7 @@ pub fn main() {
       with_zero: 0,
       with_add: int.add,
       with_compare: int.compare,
-      heuristic: heuristic,
+      with_heuristic: heuristic,
     )
 
   case result {

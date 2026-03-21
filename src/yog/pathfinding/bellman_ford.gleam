@@ -104,6 +104,12 @@ pub type ImplicitBellmanFordResult(cost) {
 /// - `ShortestPath(path)`: If a valid shortest path exists
 /// - `NegativeCycle`: If a negative cycle is reachable from the start node
 /// - `NoPath`: If no path exists from start to goal
+///
+/// ## Parameters
+///
+/// - `zero`: The identity element for addition (e.g., 0 for integers)
+/// - `add`: Function to add two weights
+/// - `compare`: Function to compare two weights
 pub fn bellman_ford(
   in graph: Graph(n, e),
   from start: NodeId,
@@ -125,11 +131,19 @@ pub fn bellman_ford(
       initial_distances,
       initial_predecessors,
       node_count - 1,
-      add,
-      compare,
+      with_add: add,
+      with_compare: compare,
     )
 
-  case has_negative_cycle(graph, all_nodes, distances, add, compare) {
+  case
+    has_negative_cycle(
+      graph,
+      all_nodes,
+      distances,
+      with_add: add,
+      with_compare: compare,
+    )
+  {
     True -> NegativeCycle
     False -> {
       case dict.get(distances, goal) {
@@ -151,8 +165,8 @@ pub fn relaxation_passes(
   distances: Dict(NodeId, e),
   predecessors: Dict(NodeId, NodeId),
   remaining: Int,
-  add: fn(e, e) -> e,
-  compare: fn(e, e) -> Order,
+  with_add add: fn(e, e) -> e,
+  with_compare compare: fn(e, e) -> Order,
 ) -> #(Dict(NodeId, e), Dict(NodeId, NodeId)) {
   case remaining <= 0 {
     True -> #(distances, predecessors)
@@ -196,8 +210,8 @@ pub fn relaxation_passes(
         new_distances,
         new_predecessors,
         remaining - 1,
-        add,
-        compare,
+        with_add: add,
+        with_compare: compare,
       )
     }
   }
@@ -207,8 +221,8 @@ pub fn has_negative_cycle(
   graph: Graph(n, e),
   nodes: List(NodeId),
   distances: Dict(NodeId, e),
-  add: fn(e, e) -> e,
-  compare: fn(e, e) -> Order,
+  with_add add: fn(e, e) -> e,
+  with_compare compare: fn(e, e) -> Order,
 ) -> Bool {
   list.any(nodes, fn(u) {
     case dict.get(distances, u) {
@@ -259,6 +273,12 @@ pub fn reconstruct_path(
 /// - `FoundGoal(cost)`: If a valid shortest path to goal exists
 /// - `DetectedNegativeCycle`: If a negative cycle is reachable from start
 /// - `NoGoal`: If no goal state is reached
+///
+/// ## Parameters
+///
+/// - `zero`: The identity element for addition (e.g., 0 for integers)
+/// - `add`: Function to add two costs
+/// - `compare`: Function to compare two costs
 pub fn implicit_bellman_ford(
   from start: state,
   successors_with_cost successors: fn(state) -> List(#(state, cost)),
@@ -385,6 +405,11 @@ fn do_implicit_bellman_ford(
 }
 
 /// Like `implicit_bellman_ford`, but deduplicates visited states by a custom key.
+///
+/// Essential when your state carries extra data beyond what defines identity.
+/// The `visited_by` function extracts the deduplication key from each state.
+///
+/// **Time Complexity:** O(VE) where V and E are measured in unique *keys*
 pub fn implicit_bellman_ford_by(
   from start: state,
   successors_with_cost successors: fn(state) -> List(#(state, cost)),

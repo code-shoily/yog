@@ -32,6 +32,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Both algorithms run in O(V + E) time complexity
   - See module documentation for comparison with existing SCC algorithms
 
+### Changed
+
+- **Consistent Parameter Labels**: Added descriptive labels to all semiring and algorithm parameters across pathfinding, centrality, health, and community detection modules for improved API consistency and self-documentation:
+  - **Pathfinding**: `bellman_ford`, `floyd_warshall`, `a_star` (including helper functions like `relaxation_passes`, `has_negative_cycle`)
+  - **Centrality**: `closeness`, `harmonic_centrality`, `betweenness` and all convenience wrappers
+  - **Health**: `diameter`, `radius`, `eccentricity`, `average_path_length`
+  - **Community Detection**: `girvan_newman` (including `edge_betweenness` and helper functions)
+  - All functions now use consistent labels: `with_zero`, `with_add`, `with_compare`, `with_to_float`, `with_heuristic`, `with`
+  - **Backward compatible**: Both labeled and unlabeled calls are supported (e.g., `dijkstra.shortest_path(graph, 1, 5, 0, int.add, int.compare)` and `dijkstra.shortest_path(in: graph, from: 1, to: 5, with_zero: 0, with_add: int.add, with_compare: int.compare)` both work)
+  - Follows the pattern established by Dijkstra's algorithm for a more uniform and intuitive API
+
 ## 5.0.0 - 2026-03-20
 
 ### Breaking Changes

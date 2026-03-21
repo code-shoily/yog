@@ -49,7 +49,12 @@
 //// let communities = gn.detect_with_options(graph, options)
 ////
 //// // Full hierarchical detection
-//// let dendrogram = gn.detect_hierarchical(graph, zero: 0, add: int.add, compare: int.compare)
+//// let dendrogram = gn.detect_hierarchical(
+////   graph,
+////   with_zero: 0,
+////   with_add: int.add,
+////   with_compare: int.compare
+//// )
 //// ```
 ////
 //// ## References
@@ -84,18 +89,31 @@ pub fn default_options() -> GirvanNewmanOptions {
 }
 
 /// Calculates edge betweenness centrality for all edges.
+///
+/// ## Parameters
+///
+/// - `zero`: The identity element for addition (e.g., 0 for integers)
+/// - `add`: Function to add two weights
+/// - `compare`: Function to compare two weights
 pub fn edge_betweenness(
   graph: Graph(n, e),
-  zero: e,
-  add: fn(e, e) -> e,
-  compare: fn(e, e) -> Order,
+  with_zero zero: e,
+  with_add add: fn(e, e) -> e,
+  with_compare compare: fn(e, e) -> Order,
 ) -> Dict(#(NodeId, NodeId), Float) {
   let nodes = model.all_nodes(graph)
   let initial = dict.new()
 
   let edge_scores =
     list.fold(nodes, initial, fn(acc, s) {
-      let discovery = run_discovery(graph, s, zero, add, compare)
+      let discovery =
+        run_discovery(
+          graph,
+          s,
+          with_zero: zero,
+          with_add: add,
+          with_compare: compare,
+        )
       let edge_dependencies = accumulate_edge_dependencies(discovery)
 
       dict.fold(edge_dependencies, acc, fn(acc2, edge, delta) {
@@ -117,9 +135,9 @@ type BrandesDiscovery =
 fn run_discovery(
   graph: Graph(n, e),
   source: NodeId,
-  zero: e,
-  add: fn(e, e) -> e,
-  compare: fn(e, e) -> Order,
+  with_zero zero: e,
+  with_add add: fn(e, e) -> e,
+  with_compare compare: fn(e, e) -> Order,
 ) -> BrandesDiscovery {
   let queue =
     pq.new(fn(a: #(e, NodeId), b: #(e, NodeId)) { compare(a.0, b.0) })
@@ -130,7 +148,16 @@ fn run_discovery(
   let preds = dict.new()
   let stack = []
 
-  do_brandes_dijkstra(graph, queue, dists, sigmas, preds, stack, add, compare)
+  do_brandes_dijkstra(
+    graph,
+    queue,
+    dists,
+    sigmas,
+    preds,
+    stack,
+    with_add: add,
+    with_compare: compare,
+  )
 }
 
 fn do_brandes_dijkstra(
@@ -140,8 +167,8 @@ fn do_brandes_dijkstra(
   sigmas: Dict(NodeId, Int),
   preds: Dict(NodeId, List(NodeId)),
   stack: List(NodeId),
-  add: fn(e, e) -> e,
-  compare: fn(e, e) -> Order,
+  with_add add: fn(e, e) -> e,
+  with_compare compare: fn(e, e) -> Order,
 ) -> BrandesDiscovery {
   case pq.pop(queue) {
     Error(Nil) -> #(stack, preds, sigmas)
@@ -156,8 +183,8 @@ fn do_brandes_dijkstra(
             sigmas,
             preds,
             stack,
-            add,
-            compare,
+            with_add: add,
+            with_compare: compare,
           )
         _ -> {
           let new_stack = [v, ..stack]
@@ -210,8 +237,8 @@ fn do_brandes_dijkstra(
             next_sigmas,
             next_preds,
             new_stack,
-            add,
-            compare,
+            with_add: add,
+            with_compare: compare,
           )
         }
       }
@@ -272,7 +299,12 @@ pub fn detect_with_options(
   options: GirvanNewmanOptions,
 ) -> Result(Communities, String) {
   let dendrogram =
-    detect_hierarchical(graph, zero: 0, add: int.add, compare: int.compare)
+    detect_hierarchical(
+      graph,
+      with_zero: 0,
+      with_add: int.add,
+      with_compare: int.compare,
+    )
 
   case options.target_communities {
     None ->
@@ -288,21 +320,27 @@ pub fn detect_with_options(
 }
 
 /// Full hierarchical Girvan-Newman detection.
+///
+/// ## Parameters
+///
+/// - `zero`: The identity element for addition (e.g., 0 for integers)
+/// - `add`: Function to add two weights
+/// - `compare`: Function to compare two weights
 pub fn detect_hierarchical(
   graph: Graph(n, e),
-  zero zero: e,
-  add add: fn(e, e) -> e,
-  compare compare: fn(e, e) -> Order,
+  with_zero zero: e,
+  with_add add: fn(e, e) -> e,
+  with_compare compare: fn(e, e) -> Order,
 ) -> Dendrogram {
-  do_gn_split(graph, [], zero, add, compare)
+  do_gn_split(graph, [], with_zero: zero, with_add: add, with_compare: compare)
 }
 
 fn do_gn_split(
   graph: Graph(n, e),
   levels: List(Communities),
-  zero: e,
-  add: fn(e, e) -> e,
-  compare: fn(e, e) -> Order,
+  with_zero zero: e,
+  with_add add: fn(e, e) -> e,
+  with_compare compare: fn(e, e) -> Order,
 ) -> Dendrogram {
   let current_comms = find_connected_components(graph)
   let new_levels = [current_comms, ..levels]
@@ -310,7 +348,13 @@ fn do_gn_split(
   case model.edge_count(graph) == 0 {
     True -> Dendrogram(levels: list.reverse(new_levels), merge_order: [])
     False -> {
-      let ebc = edge_betweenness(graph, zero, add, compare)
+      let ebc =
+        edge_betweenness(
+          graph,
+          with_zero: zero,
+          with_add: add,
+          with_compare: compare,
+        )
       let max_val =
         dict.values(ebc)
         |> list.fold(0.0, float.max)
@@ -324,7 +368,13 @@ fn do_gn_split(
 
       let new_graph =
         model.remove_edge(graph, edge_to_remove.0, edge_to_remove.1)
-      do_gn_split(new_graph, new_levels, zero, add, compare)
+      do_gn_split(
+        new_graph,
+        new_levels,
+        with_zero: zero,
+        with_add: add,
+        with_compare: compare,
+      )
     }
   }
 }

@@ -23,8 +23,20 @@
 //// let graph = // ... build your graph
 ////
 //// // Check graph compactness
-//// let diam = health.diameter(graph, 0, int.add, int.compare, fn(w) { w })
-//// let rad = health.radius(graph, 0, int.add, int.compare, fn(w) { w })
+//// let diam = health.diameter(
+////   in: graph,
+////   with_zero: 0,
+////   with_add: int.add,
+////   with_compare: int.compare,
+////   with: fn(w) { w }
+//// )
+//// let rad = health.radius(
+////   in: graph,
+////   with_zero: 0,
+////   with_add: int.add,
+////   with_compare: int.compare,
+////   with: fn(w) { w }
+//// )
 ////
 //// // Small diameter = well-connected
 //// // High assortativity = nodes cluster with similar nodes
@@ -51,18 +63,24 @@ import yog/transform
 /// ## Example
 ///
 /// ```gleam
-/// let diam = health.diameter(graph, 0, int.add, int.compare, fn(w) { w })
+/// let diam = health.diameter(
+///   in: graph,
+///   with_zero: 0,
+///   with_add: int.add,
+///   with_compare: int.compare,
+///   with: fn(w) { w }
+/// )
 /// case diam {
 ///   Some(d) -> io.println("Diameter: " <> int.to_string(d))
 ///   None -> io.println("Graph is disconnected")
 /// }
 /// ```
 pub fn diameter(
-  graph: Graph(n, e),
-  with_zero: e,
-  with_add: fn(e, e) -> e,
-  with_compare: fn(e, e) -> Order,
-  weight_fn: fn(e) -> e,
+  in graph: Graph(n, e),
+  with_zero zero: e,
+  with_add add: fn(e, e) -> e,
+  with_compare compare: fn(e, e) -> Order,
+  with weight_fn: fn(e) -> e,
 ) -> Option(e) {
   let nodes = model.all_nodes(graph)
 
@@ -73,12 +91,12 @@ pub fn diameter(
       let eccentricities =
         list.filter_map(nodes, fn(node) {
           eccentricity(
-            graph,
-            node,
-            with_zero,
-            with_add,
-            with_compare,
-            weight_fn,
+            in: graph,
+            node: node,
+            with_zero: zero,
+            with_add: add,
+            with_compare: compare,
+            with: weight_fn,
           )
           |> option.to_result(Nil)
         })
@@ -87,7 +105,7 @@ pub fn diameter(
         True -> None
         False ->
           list.reduce(eccentricities, fn(max_ecc, ecc) {
-            case with_compare(ecc, max_ecc) {
+            case compare(ecc, max_ecc) {
               order.Gt -> ecc
               _ -> max_ecc
             }
@@ -106,18 +124,24 @@ pub fn diameter(
 /// ## Example
 ///
 /// ```gleam
-/// let rad = health.radius(graph, 0, int.add, int.compare, fn(w) { w })
+/// let rad = health.radius(
+///   in: graph,
+///   with_zero: 0,
+///   with_add: int.add,
+///   with_compare: int.compare,
+///   with: fn(w) { w }
+/// )
 /// case rad {
 ///   Some(r) -> io.println("Radius: " <> int.to_string(r))
 ///   None -> io.println("Graph is disconnected")
 /// }
 /// ```
 pub fn radius(
-  graph: Graph(n, e),
-  with_zero: e,
-  with_add: fn(e, e) -> e,
-  with_compare: fn(e, e) -> Order,
-  weight_fn: fn(e) -> e,
+  in graph: Graph(n, e),
+  with_zero zero: e,
+  with_add add: fn(e, e) -> e,
+  with_compare compare: fn(e, e) -> Order,
+  with weight_fn: fn(e) -> e,
 ) -> Option(e) {
   let nodes = model.all_nodes(graph)
 
@@ -128,12 +152,12 @@ pub fn radius(
       let eccentricities =
         list.filter_map(nodes, fn(node) {
           eccentricity(
-            graph,
-            node,
-            with_zero,
-            with_add,
-            with_compare,
-            weight_fn,
+            in: graph,
+            node: node,
+            with_zero: zero,
+            with_add: add,
+            with_compare: compare,
+            with: weight_fn,
           )
           |> option.to_result(Nil)
         })
@@ -142,7 +166,7 @@ pub fn radius(
         True -> None
         False ->
           list.reduce(eccentricities, fn(min_ecc, ecc) {
-            case with_compare(ecc, min_ecc) {
+            case compare(ecc, min_ecc) {
               order.Lt -> ecc
               _ -> min_ecc
             }
@@ -161,25 +185,32 @@ pub fn radius(
 /// ## Example
 ///
 /// ```gleam
-/// let ecc = health.eccentricity(graph, node_id, 0, int.add, int.compare, fn(w) { w })
+/// let ecc = health.eccentricity(
+///   in: graph,
+///   node: node_id,
+///   with_zero: 0,
+///   with_add: int.add,
+///   with_compare: int.compare,
+///   with: fn(w) { w }
+/// )
 /// case ecc {
 ///   Some(e) -> io.println("Eccentricity: " <> int.to_string(e))
 ///   None -> io.println("Node cannot reach all others")
 /// }
 /// ```
 pub fn eccentricity(
-  graph: Graph(n, e),
-  node: NodeId,
-  with_zero: e,
-  with_add: fn(e, e) -> e,
-  with_compare: fn(e, e) -> Order,
-  weight_fn: fn(e) -> e,
+  in graph: Graph(n, e),
+  node node: NodeId,
+  with_zero zero: e,
+  with_add add: fn(e, e) -> e,
+  with_compare compare: fn(e, e) -> Order,
+  with weight_fn: fn(e) -> e,
 ) -> Option(e) {
   let all_nodes = model.all_nodes(graph)
   let num_nodes = list.length(all_nodes)
 
   case num_nodes {
-    0 | 1 -> Some(with_zero)
+    0 | 1 -> Some(zero)
     _ -> {
       // Transform graph to apply weight function
       let weighted_graph = transform.map_edges(graph, with: weight_fn)
@@ -189,9 +220,9 @@ pub fn eccentricity(
         dijkstra.single_source_distances(
           in: weighted_graph,
           from: node,
-          with_zero: with_zero,
-          with_add: with_add,
-          with_compare: with_compare,
+          with_zero: zero,
+          with_add: add,
+          with_compare: compare,
         )
 
       // Check if all nodes are reachable
@@ -204,7 +235,7 @@ pub fn eccentricity(
           case
             dict.values(distances)
             |> list.reduce(fn(max_dist, dist) {
-              case with_compare(dist, max_dist) {
+              case compare(dist, max_dist) {
                 order.Gt -> dist
                 _ -> max_dist
               }
@@ -317,12 +348,12 @@ pub fn assortativity(graph: Graph(n, e)) -> Float {
 ///
 /// ```gleam
 /// let avg_path = health.average_path_length(
-///   graph,
-///   0,
-///   int.add,
-///   int.compare,
-///   fn(w) { w },
-///   int.to_float
+///   in: graph,
+///   with_zero: 0,
+///   with_add: int.add,
+///   with_compare: int.compare,
+///   with: fn(w) { w },
+///   with_to_float: int.to_float
 /// )
 /// case avg_path {
 ///   Some(avg) -> io.println("Average path length: " <> float.to_string(avg))
@@ -330,12 +361,12 @@ pub fn assortativity(graph: Graph(n, e)) -> Float {
 /// }
 /// ```
 pub fn average_path_length(
-  graph: Graph(n, e),
-  with_zero: e,
-  with_add: fn(e, e) -> e,
-  with_compare: fn(e, e) -> Order,
-  weight_fn: fn(e) -> e,
-  to_float: fn(e) -> Float,
+  in graph: Graph(n, e),
+  with_zero zero: e,
+  with_add add: fn(e, e) -> e,
+  with_compare compare: fn(e, e) -> Order,
+  with weight_fn: fn(e) -> e,
+  with_to_float to_float: fn(e) -> Float,
 ) -> Option(Float) {
   let nodes = model.all_nodes(graph)
   let num_nodes = list.length(nodes)
@@ -352,9 +383,9 @@ pub fn average_path_length(
           dijkstra.single_source_distances(
             in: weighted_graph,
             from: source,
-            with_zero: with_zero,
-            with_add: with_add,
-            with_compare: with_compare,
+            with_zero: zero,
+            with_add: add,
+            with_compare: compare,
           )
         })
 
@@ -378,7 +409,7 @@ pub fn average_path_length(
             })
 
           // Subtract self-distances (all zeros) and divide by number of pairs (n * (n-1))
-          let zero_distances = int.to_float(num_nodes) *. to_float(with_zero)
+          let zero_distances = int.to_float(num_nodes) *. to_float(zero)
           let num_pairs = int.to_float(num_nodes * { num_nodes - 1 })
           Some({ total -. zero_distances } /. num_pairs)
         }

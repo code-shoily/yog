@@ -76,6 +76,9 @@ import yog/pathfinding/utils.{
 ///
 /// ## Parameters
 ///
+/// - `zero`: The identity element for addition (e.g., 0 for integers)
+/// - `add`: Function to add two weights
+/// - `compare`: Function to compare two weights
 /// - `heuristic`: A function that estimates distance from any node to the goal.
 ///   Must be admissible (h(n) ≤ actual distance).
 pub fn a_star(
@@ -85,7 +88,7 @@ pub fn a_star(
   with_zero zero: e,
   with_add add: fn(e, e) -> e,
   with_compare compare: fn(e, e) -> Order,
-  heuristic h: fn(NodeId, NodeId) -> e,
+  with_heuristic h: fn(NodeId, NodeId) -> e,
 ) -> Option(Path(e)) {
   let initial_f = h(start, goal)
   let frontier =
@@ -157,13 +160,16 @@ fn do_a_star(
 ///
 /// ## Parameters
 ///
+/// - `zero`: The identity element for addition (e.g., 0 for integers)
+/// - `add`: Function to add two costs
+/// - `compare`: Function to compare two costs
 /// - `heuristic`: Function that estimates remaining cost from any state to goal.
 ///   Must be admissible.
 pub fn implicit_a_star(
   from start: state,
   successors_with_cost successors: fn(state) -> List(#(state, cost)),
   is_goal is_goal: fn(state) -> Bool,
-  heuristic h: fn(state) -> cost,
+  with_heuristic h: fn(state) -> cost,
   with_zero zero: cost,
   with_add add: fn(cost, cost) -> cost,
   with_compare compare: fn(cost, cost) -> Order,
@@ -242,13 +248,16 @@ fn do_implicit_a_star(
 
 /// Like `implicit_a_star`, but deduplicates visited states by a custom key.
 ///
+/// Essential when your state carries extra data beyond what defines identity.
+/// The `visited_by` function extracts the deduplication key from each state.
+///
 /// **Time Complexity:** O((V + E) log V) where V and E are measured in unique *keys*
 pub fn implicit_a_star_by(
   from start: state,
   successors_with_cost successors: fn(state) -> List(#(state, cost)),
   visited_by key_fn: fn(state) -> key,
   is_goal is_goal: fn(state) -> Bool,
-  heuristic h: fn(state) -> cost,
+  with_heuristic h: fn(state) -> cost,
   with_zero zero: cost,
   with_add add: fn(cost, cost) -> cost,
   with_compare compare: fn(cost, cost) -> Order,
@@ -361,13 +370,13 @@ fn do_implicit_a_star_by(
 ///   dx + dy
 /// }
 ///
-/// a_star.a_star_int(graph, from: start, to: goal, heuristic: heuristic)
+/// a_star.a_star_int(graph, from: start, to: goal, with_heuristic: heuristic)
 /// ```
 pub fn a_star_int(
   in graph: Graph(n, Int),
   from start: NodeId,
   to goal: NodeId,
-  heuristic h: fn(NodeId, NodeId) -> Int,
+  with_heuristic h: fn(NodeId, NodeId) -> Int,
 ) -> Option(Path(Int)) {
   a_star(
     graph,
@@ -376,7 +385,7 @@ pub fn a_star_int(
     with_zero: 0,
     with_add: int.add,
     with_compare: int.compare,
-    heuristic: h,
+    with_heuristic: h,
   )
 }
 
@@ -392,7 +401,7 @@ pub fn a_star_float(
   in graph: Graph(n, Float),
   from start: NodeId,
   to goal: NodeId,
-  heuristic h: fn(NodeId, NodeId) -> Float,
+  with_heuristic h: fn(NodeId, NodeId) -> Float,
 ) -> Option(Path(Float)) {
   a_star(
     graph,
@@ -401,6 +410,6 @@ pub fn a_star_float(
     with_zero: 0.0,
     with_add: float.add,
     with_compare: float.compare,
-    heuristic: h,
+    with_heuristic: h,
   )
 }

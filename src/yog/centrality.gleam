@@ -93,19 +93,19 @@ pub fn degree(graph: Graph(n, e), mode: DegreeMode) -> Centrality {
 /// ```gleam
 /// centrality.closeness(
 ///   graph,
-///   zero: 0,
-///   add: int.add,
-///   compare: int.compare,
-///   to_float: int.to_float,
+///   with_zero: 0,
+///   with_add: int.add,
+///   with_compare: int.compare,
+///   with_to_float: int.to_float,
 /// )
 /// // => dict.from_list([#(1, 0.666), #(2, 1.0), #(3, 0.666)])
 /// ```
 pub fn closeness(
   graph: Graph(n, e),
-  zero: e,
-  add: fn(e, e) -> e,
-  compare: fn(e, e) -> Order,
-  to_float: fn(e) -> Float,
+  with_zero zero: e,
+  with_add add: fn(e, e) -> e,
+  with_compare compare: fn(e, e) -> Order,
+  with_to_float to_float: fn(e) -> Float,
 ) -> Centrality {
   let nodes = model.all_nodes(graph)
   let n = list.length(nodes)
@@ -116,7 +116,13 @@ pub fn closeness(
     False -> {
       list.fold(nodes, dict.new(), fn(acc, source) {
         let distances =
-          dijkstra.single_source_distances(graph, source, zero, add, compare)
+          dijkstra.single_source_distances(
+            in: graph,
+            from: source,
+            with_zero: zero,
+            with_add: add,
+            with_compare: compare,
+          )
 
         case dict.size(distances) == n {
           False -> {
@@ -151,10 +157,10 @@ pub fn closeness(
 /// **Time Complexity:** O(V * (V + E) log V)
 pub fn harmonic_centrality(
   graph: Graph(n, e),
-  zero: e,
-  add: fn(e, e) -> e,
-  compare: fn(e, e) -> Order,
-  to_float: fn(e) -> Float,
+  with_zero zero: e,
+  with_add add: fn(e, e) -> e,
+  with_compare compare: fn(e, e) -> Order,
+  with_to_float to_float: fn(e) -> Float,
 ) -> Centrality {
   let nodes = model.all_nodes(graph)
   let n = list.length(nodes)
@@ -167,7 +173,13 @@ pub fn harmonic_centrality(
 
       list.fold(nodes, dict.new(), fn(acc, source) {
         let distances =
-          dijkstra.single_source_distances(graph, source, zero, add, compare)
+          dijkstra.single_source_distances(
+            in: graph,
+            from: source,
+            with_zero: zero,
+            with_add: add,
+            with_compare: compare,
+          )
 
         let sum_of_reciprocals =
           dict.fold(distances, 0.0, fn(sum, node, dist) {
@@ -198,10 +210,10 @@ pub fn harmonic_centrality(
 /// **Time Complexity:** O(VE) for unweighted, O(VE + V²logV) for weighted.
 pub fn betweenness(
   graph: Graph(n, e),
-  zero: e,
-  add: fn(e, e) -> e,
-  compare: fn(e, e) -> Order,
-  _to_float: fn(e) -> Float,
+  with_zero zero: e,
+  with_add add: fn(e, e) -> e,
+  with_compare compare: fn(e, e) -> Order,
+  with_to_float _to_float: fn(e) -> Float,
 ) -> Centrality {
   let nodes = model.all_nodes(graph)
   let initial =
@@ -942,33 +954,69 @@ pub fn degree_total(graph: Graph(n, e)) -> Centrality {
 /// Closeness centrality with **Int** weights (e.g., unweighted graphs).
 /// Uses 0 as zero, int.add, int.compare, and int.to_float.
 pub fn closeness_int(graph: Graph(n, Int)) -> Centrality {
-  closeness(graph, 0, int.add, int.compare, int.to_float)
+  closeness(
+    graph,
+    with_zero: 0,
+    with_add: int.add,
+    with_compare: int.compare,
+    with_to_float: int.to_float,
+  )
 }
 
 /// Closeness centrality with **Float** weights.
 /// Uses 0.0 as zero, float.add, float.compare, and identity.
 pub fn closeness_float(graph: Graph(n, Float)) -> Centrality {
-  closeness(graph, 0.0, float.add, float.compare, fn(x) { x })
+  closeness(
+    graph,
+    with_zero: 0.0,
+    with_add: float.add,
+    with_compare: float.compare,
+    with_to_float: fn(x) { x },
+  )
 }
 
 /// Harmonic centrality with **Int** weights.
 pub fn harmonic_centrality_int(graph: Graph(n, Int)) -> Centrality {
-  harmonic_centrality(graph, 0, int.add, int.compare, int.to_float)
+  harmonic_centrality(
+    graph,
+    with_zero: 0,
+    with_add: int.add,
+    with_compare: int.compare,
+    with_to_float: int.to_float,
+  )
 }
 
 /// Harmonic centrality with **Float** weights.
 pub fn harmonic_centrality_float(graph: Graph(n, Float)) -> Centrality {
-  harmonic_centrality(graph, 0.0, float.add, float.compare, fn(x) { x })
+  harmonic_centrality(
+    graph,
+    with_zero: 0.0,
+    with_add: float.add,
+    with_compare: float.compare,
+    with_to_float: fn(x) { x },
+  )
 }
 
 /// Betweenness centrality with **Int** weights.
 pub fn betweenness_int(graph: Graph(n, Int)) -> Centrality {
-  betweenness(graph, 0, int.add, int.compare, int.to_float)
+  betweenness(
+    graph,
+    with_zero: 0,
+    with_add: int.add,
+    with_compare: int.compare,
+    with_to_float: int.to_float,
+  )
 }
 
 /// Betweenness centrality with **Float** weights.
 pub fn betweenness_float(graph: Graph(n, Float)) -> Centrality {
-  betweenness(graph, 0.0, float.add, float.compare, fn(x) { x })
+  betweenness(
+    graph,
+    with_zero: 0.0,
+    with_add: float.add,
+    with_compare: float.compare,
+    with_to_float: fn(x) { x },
+  )
 }
 
 /// Default PageRank options (damping=0.85, max_iterations=100, tolerance=0.0001).

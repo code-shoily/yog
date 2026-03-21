@@ -29,7 +29,7 @@ pub fn astar_zero_heuristic_test() {
       with_zero: 0,
       with_add: int.add,
       with_compare: int.compare,
-      heuristic: zero_heuristic,
+      with_heuristic: zero_heuristic,
     )
 
   result
@@ -83,7 +83,7 @@ pub fn astar_manhattan_distance_test() {
       with_zero: 0,
       with_add: int.add,
       with_compare: int.compare,
-      heuristic: manhattan,
+      with_heuristic: manhattan,
     )
 
   case result {
@@ -125,7 +125,7 @@ pub fn astar_better_than_greedy_test() {
       with_zero: 0,
       with_add: int.add,
       with_compare: int.compare,
-      heuristic: h,
+      with_heuristic: h,
     )
 
   // Should find path through 3, not 2 (cost 3 vs 101)
@@ -149,7 +149,7 @@ pub fn astar_same_start_goal_test() {
       with_zero: 0,
       with_add: int.add,
       with_compare: int.compare,
-      heuristic: h,
+      with_heuristic: h,
     )
 
   result
@@ -175,7 +175,7 @@ pub fn astar_no_path_test() {
       with_zero: 0,
       with_add: int.add,
       with_compare: int.compare,
-      heuristic: h,
+      with_heuristic: h,
     )
 
   result
@@ -219,7 +219,7 @@ pub fn astar_admissible_heuristic_test() {
       with_zero: 0,
       with_add: int.add,
       with_compare: int.compare,
-      heuristic: h,
+      with_heuristic: h,
     )
 
   // Should find optimal path 1->3->4->5 with cost 6
@@ -254,7 +254,7 @@ pub fn astar_diamond_test() {
       with_zero: 0,
       with_add: int.add,
       with_compare: int.compare,
-      heuristic: h,
+      with_heuristic: h,
     )
 
   result
@@ -280,7 +280,7 @@ pub fn astar_with_cycle_test() {
       with_zero: 0,
       with_add: int.add,
       with_compare: int.compare,
-      heuristic: h,
+      with_heuristic: h,
     )
 
   result
@@ -315,7 +315,7 @@ pub fn astar_perfect_heuristic_test() {
       with_zero: 0,
       with_add: int.add,
       with_compare: int.compare,
-      heuristic: h,
+      with_heuristic: h,
     )
 
   result
@@ -348,7 +348,7 @@ pub fn astar_consistent_heuristic_test() {
       with_zero: 0,
       with_add: int.add,
       with_compare: int.compare,
-      heuristic: h,
+      with_heuristic: h,
     )
 
   result
@@ -383,7 +383,7 @@ pub fn implicit_a_star_grid_manhattan_test() {
     a_star.implicit_a_star(
       from: #(0, 0),
       successors_with_cost: successors_with_cost,
-      heuristic: manhattan_heuristic,
+      with_heuristic: manhattan_heuristic,
       is_goal: fn(pos) { pos == #(2, 2) },
       with_zero: 0,
       with_add: int.add,
@@ -409,7 +409,7 @@ pub fn implicit_a_star_linear_path_test() {
     a_star.implicit_a_star(
       from: 1,
       successors_with_cost: successors_with_cost,
-      heuristic: heuristic,
+      with_heuristic: heuristic,
       is_goal: fn(n) { n == 4 },
       with_zero: 0,
       with_add: int.add,
@@ -435,7 +435,7 @@ pub fn implicit_a_star_no_path_test() {
     a_star.implicit_a_star(
       from: 1,
       successors_with_cost: successors_with_cost,
-      heuristic: heuristic,
+      with_heuristic: heuristic,
       is_goal: fn(n) { n == 4 },
       with_zero: 0,
       with_add: int.add,
@@ -453,7 +453,7 @@ pub fn implicit_a_star_start_is_goal_test() {
     a_star.implicit_a_star(
       from: 42,
       successors_with_cost: successors_with_cost,
-      heuristic: heuristic,
+      with_heuristic: heuristic,
       is_goal: fn(n) { n == 42 },
       with_zero: 0,
       with_add: int.add,
@@ -486,7 +486,7 @@ pub fn implicit_a_star_multiple_paths_test() {
     a_star.implicit_a_star(
       from: 1,
       successors_with_cost: successors_with_cost,
-      heuristic: heuristic,
+      with_heuristic: heuristic,
       is_goal: fn(n) { n == 4 },
       with_zero: 0,
       with_add: int.add,
@@ -523,7 +523,7 @@ pub fn implicit_a_star_admissible_heuristic_test() {
     a_star.implicit_a_star(
       from: #(0, 0),
       successors_with_cost: successors_with_cost,
-      heuristic: manhattan_heuristic,
+      with_heuristic: manhattan_heuristic,
       is_goal: fn(pos) { pos == #(2, 2) },
       with_zero: 0,
       with_add: int.add,
@@ -567,7 +567,7 @@ pub fn implicit_a_star_by_position_mask_test() {
       from: #("@", 0),
       successors_with_cost: successors,
       visited_by: fn(state) { state },
-      heuristic: heuristic,
+      with_heuristic: heuristic,
       is_goal: fn(state) { state.0 == "b" },
       with_zero: 0,
       with_add: int.add,
@@ -607,7 +607,7 @@ pub fn implicit_a_star_by_best_cost_wins_test() {
       from: #(1, "start"),
       successors_with_cost: successors,
       visited_by: fn(state) { state.0 },
-      heuristic: heuristic,
+      with_heuristic: heuristic,
       is_goal: fn(state) { state.0 == 4 },
       with_zero: 0,
       with_add: int.add,
@@ -634,7 +634,7 @@ pub fn implicit_a_star_by_identity_equivalence_test() {
       from: 1,
       successors_with_cost: successors_with_cost,
       visited_by: fn(n) { n },
-      heuristic: heuristic,
+      with_heuristic: heuristic,
       is_goal: fn(n) { n == 4 },
       with_zero: 0,
       with_add: int.add,
@@ -645,7 +645,7 @@ pub fn implicit_a_star_by_identity_equivalence_test() {
     a_star.implicit_a_star(
       from: 1,
       successors_with_cost: successors_with_cost,
-      heuristic: heuristic,
+      with_heuristic: heuristic,
       is_goal: fn(n) { n == 4 },
       with_zero: 0,
       with_add: int.add,
@@ -680,7 +680,7 @@ pub fn astar_float_weights_test() {
       with_zero: 0.0,
       with_add: float.add,
       with_compare: float.compare,
-      heuristic: h,
+      with_heuristic: h,
     )
 
   case result {
@@ -710,7 +710,7 @@ pub fn astar_undirected_test() {
       with_zero: 0,
       with_add: int.add,
       with_compare: int.compare,
-      heuristic: h,
+      with_heuristic: h,
     )
 
   result
@@ -754,7 +754,7 @@ pub fn astar_vs_dijkstra_test() {
       with_zero: 0,
       with_add: int.add,
       with_compare: int.compare,
-      heuristic: h,
+      with_heuristic: h,
     )
 
   astar_result |> should.equal(dijkstra_result)
@@ -775,7 +775,7 @@ pub fn astar_empty_graph_test() {
       with_zero: 0,
       with_add: int.add,
       with_compare: int.compare,
-      heuristic: h,
+      with_heuristic: h,
     )
 
   result |> should.equal(None)

@@ -77,6 +77,12 @@ import yog/model.{type Graph, type NodeId}
 /// **Time Complexity:** O(V³)
 ///
 /// Returns an error if a negative cycle is detected.
+///
+/// ## Parameters
+///
+/// - `zero`: The identity element for addition (e.g., 0 for integers)
+/// - `add`: Function to add two weights
+/// - `compare`: Function to compare two weights
 pub fn floyd_warshall(
   in graph: Graph(n, e),
   with_zero zero: e,
