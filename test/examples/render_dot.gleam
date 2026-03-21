@@ -4,10 +4,9 @@ import gleam/option.{None, Some}
 import yog/model
 import yog/pathfinding/dijkstra
 import yog/render/dot
-import yog/transform
 
 pub fn main() {
-  // Create a sample graph
+  // Create a sample graph with Int edge weights
   let graph =
     model.new(model.Directed)
     |> model.add_node(1, "Start")
@@ -16,22 +15,20 @@ pub fn main() {
   let assert Ok(graph) =
     model.add_edges(graph, [#(1, 2, 5), #(2, 3, 3), #(1, 3, 10)])
 
+  // Create options with an edge formatter for Int weights
+  let options = dot.default_dot_options_with_edge_formatter(int.to_string)
+
   // 1. Basic DOT output
   io.println("--- Basic DOT Output ---")
-  let dot_basic =
-    dot.to_dot(
-      graph |> transform.map_edges(int.to_string),
-      dot.default_dot_options(),
-    )
+  let dot_basic = dot.to_dot(graph, options)
   io.println(dot_basic)
 
   // 2. DOT with highlighted path
   io.println("\n--- DOT with Highlighted Path ---")
   case dijkstra.shortest_path(graph, 1, 3, 0, int.add, int.compare) {
     Some(path) -> {
-      let options = dot.path_to_dot_options(path, dot.default_dot_options())
-      let dot_highlighted =
-        dot.to_dot(graph |> transform.map_edges(int.to_string), options)
+      let highlighted_options = dot.path_to_dot_options(path, options)
+      let dot_highlighted = dot.to_dot(graph, highlighted_options)
       io.println(dot_highlighted)
     }
     None -> io.println("No path found")
