@@ -130,11 +130,25 @@ fn do_a_star(
                 |> list.fold(rest_frontier, fn(acc_h, neighbor) {
                   let #(next_id, weight) = neighbor
                   let next_dist = add(dist, weight)
-                  let f_score = add(next_dist, h(next_id, goal))
-                  priority_queue.push(
-                    acc_h,
-                    #(f_score, next_dist, [next_id, ..path]),
-                  )
+
+                  // Only add to frontier if not visited or if this is a better path
+                  case
+                    should_explore_node(
+                      new_visited,
+                      next_id,
+                      next_dist,
+                      compare,
+                    )
+                  {
+                    True -> {
+                      let f_score = add(next_dist, h(next_id, goal))
+                      priority_queue.push(
+                        acc_h,
+                        #(f_score, next_dist, [next_id, ..path]),
+                      )
+                    }
+                    False -> acc_h
+                  }
                 })
               do_a_star(
                 graph,
@@ -221,12 +235,26 @@ fn do_implicit_a_star(
                 |> list.fold(rest_frontier, fn(frontier_acc, neighbor) {
                   let #(next_state, edge_cost) = neighbor
                   let next_dist = add(dist, edge_cost)
-                  let f_score = add(next_dist, h(next_state))
-                  priority_queue.push(frontier_acc, #(
-                    f_score,
-                    next_dist,
-                    next_state,
-                  ))
+
+                  // Only add to frontier if not visited or if this is a better path
+                  case
+                    should_explore_node(
+                      new_distances,
+                      next_state,
+                      next_dist,
+                      compare,
+                    )
+                  {
+                    True -> {
+                      let f_score = add(next_dist, h(next_state))
+                      priority_queue.push(frontier_acc, #(
+                        f_score,
+                        next_dist,
+                        next_state,
+                      ))
+                    }
+                    False -> frontier_acc
+                  }
                 })
 
               do_implicit_a_star(
@@ -321,12 +349,27 @@ fn do_implicit_a_star_by(
                 |> list.fold(rest_frontier, fn(frontier_acc, neighbor) {
                   let #(next_state, edge_cost) = neighbor
                   let next_dist = add(dist, edge_cost)
-                  let f_score = add(next_dist, h(next_state))
-                  priority_queue.push(frontier_acc, #(
-                    f_score,
-                    next_dist,
-                    next_state,
-                  ))
+                  let next_key = key_fn(next_state)
+
+                  // Only add to frontier if not visited or if this is a better path
+                  case
+                    should_explore_node(
+                      new_distances,
+                      next_key,
+                      next_dist,
+                      compare,
+                    )
+                  {
+                    True -> {
+                      let f_score = add(next_dist, h(next_state))
+                      priority_queue.push(frontier_acc, #(
+                        f_score,
+                        next_dist,
+                        next_state,
+                      ))
+                    }
+                    False -> frontier_acc
+                  }
                 })
 
               do_implicit_a_star_by(
