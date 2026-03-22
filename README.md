@@ -48,6 +48,24 @@ A graph algorithm library for Gleam, providing implementations of classic graph 
 - **Efficient Data Structures**: Pairing heap for priority queues, two-list queue for BFS
 - **Property-Based Testing**: Exhaustively tested across core graph operations and invariants using `qcheck`
 
+### ⚠️ Experimental Features
+
+The following modules are **experimental** and provide minimal, working functionality:
+
+- **Multigraphs** (`yog/multi/*`): Support for graphs with multiple edges between the same pair of nodes
+  - Multiple parallel edges with unique edge IDs
+  - Eulerian path and circuit detection for multigraphs
+  - BFS/DFS traversal adapted for parallel edges
+  - Conversion to simple graphs with configurable edge merging strategies
+- **DAG-specific operations** (`yog/dag/*`): Type-safe wrapper for directed acyclic graphs
+  - Compile-time acyclicity guarantees
+  - O(V+E) DAG-specific algorithms (longest path, shortest path)
+  - Transitive closure and reduction
+  - Lowest common ancestors (LCA)
+  - Reachability counting for ancestors/descendants
+
+These modules are functional but may not be fully optimized for performance. Additional features, performance enhancements, and API changes are expected in future versions. Use with caution in production environments.
+
 ## Installation
 
 Add Yog to your Gleam project:

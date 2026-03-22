@@ -1,3 +1,15 @@
+//// # ⚠️ Experimental Module
+////
+//// This module is experimental and provides minimal, working functionality.
+//// The implementation is functional but may not be fully optimized for performance.
+////
+//// **Expected changes:**
+//// - Additional features and algorithms will be added
+//// - Performance enhancements and optimizations
+//// - API may be subject to change in future versions
+////
+//// Use with caution in production environments.
+
 import gleam/dict
 import gleam/list
 import gleam/option.{type Option, None, Some}
