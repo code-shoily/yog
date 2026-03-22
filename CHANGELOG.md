@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 5.1.0 - Unreleased
+## 5.1.0 - 2026-03-22
 
 ### Added
 
@@ -69,6 +69,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Notice added to all module files and documented in README under "⚠️ Experimental Features" section
 
 ### Changed
+
+- **DAG Module Naming Convention**: Renamed plural files to singular for consistency with Gleam conventions:
+  - `yog/dag/algorithms` → `yog/dag/algorithm`
+  - `yog/dag/models` → `yog/dag/model`
+  - Follows the same pluralization cleanup done in v5.0.0 for `property/` and `generator/` modules
 
 - **Consistent Parameter Labels**: Added descriptive labels to all semiring and algorithm parameters across pathfinding, centrality, health, and community detection modules for improved API consistency and self-documentation:
   - **Pathfinding**: `bellman_ford`, `floyd_warshall`, `a_star` (including helper functions like `relaxation_passes`, `has_negative_cycle`)
