@@ -114,7 +114,8 @@ pub fn transitive_reduction_test() {
     |> model.add_edge_ensure(1, 3, 30, "")
 
   let assert Ok(d) = dag_model.from_graph(g)
-  let tr = algorithm.transitive_reduction(d, with: int.add) |> dag_model.to_graph
+  let tr =
+    algorithm.transitive_reduction(d, with: int.add) |> dag_model.to_graph
 
   let assert Ok(targets_of_1) = dict.get(tr.out_edges, 1)
   dict.has_key(targets_of_1, 2) |> should.be_true
