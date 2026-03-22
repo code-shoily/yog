@@ -1,5 +1,7 @@
 import gleam/dict
+import gleam/float
 import gleam/int
+import gleam/result
 import gleeunit/should
 import yog/centrality
 import yog/model
@@ -1029,6 +1031,164 @@ pub fn eigenvector_empty_test() {
   let g = model.new(model.Undirected)
   let scores = centrality.eigenvector(g, 100, 0.0001)
   dict.size(scores) |> should.equal(0)
+}
+
+pub fn eigenvector_2leaf_star_exact_test() {
+  // 2-leaf star graph: mathematically known eigenvector
+  // Expected: center ≈ 0.707 (1/√2), leaves ≈ 0.5 (1/2)
+  // Ratio: √2 ≈ 1.414
+  let assert Ok(g) =
+    model.new(model.Undirected)
+    |> model.add_node(1, "center")
+    |> model.add_node(2, "leaf")
+    |> model.add_node(3, "leaf")
+    |> model.add_edge(from: 1, to: 2, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 1, to: 3, with: 1)
+
+  let scores = centrality.eigenvector(g, 100, 0.0001)
+
+  let assert Ok(center) = dict.get(scores, 1)
+  let assert Ok(leaf2) = dict.get(scores, 2)
+  let assert Ok(leaf3) = dict.get(scores, 3)
+
+  // Check values are close to expected (within 0.01)
+  let center_expected =
+    1.0 /. { 2.0 |> float.square_root() |> result.unwrap(1.414) }
+  let center_diff = float.absolute_value(center -. center_expected)
+  should.be_true(center_diff <. 0.01)
+
+  let leaf2_diff = float.absolute_value(leaf2 -. 0.5)
+  should.be_true(leaf2_diff <. 0.01)
+
+  let leaf3_diff = float.absolute_value(leaf3 -. 0.5)
+  should.be_true(leaf3_diff <. 0.01)
+
+  // Leaves should be equal
+  let leaves_diff = float.absolute_value(leaf2 -. leaf3)
+  should.be_true(leaves_diff <. 0.0001)
+
+  // Center should be significantly higher than leaves
+  should.be_true(center >. leaf2 +. 0.1)
+}
+
+pub fn eigenvector_triangle_exact_test() {
+  // Complete triangle (K3): all nodes should have equal centrality
+  let assert Ok(g) =
+    model.new(model.Undirected)
+    |> model.add_node(1, Nil)
+    |> model.add_node(2, Nil)
+    |> model.add_node(3, Nil)
+    |> model.add_edge(from: 1, to: 2, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 1, with: 1)
+
+  let scores = centrality.eigenvector(g, 100, 0.0001)
+
+  let assert Ok(c1) = dict.get(scores, 1)
+  let assert Ok(c2) = dict.get(scores, 2)
+  let assert Ok(c3) = dict.get(scores, 3)
+
+  // All should be equal (1/√3 ≈ 0.577)
+  let diff_12 = float.absolute_value(c1 -. c2)
+  should.be_true(diff_12 <. 0.001)
+
+  let diff_23 = float.absolute_value(c2 -. c3)
+  should.be_true(diff_23 <. 0.001)
+
+  // Each should be approximately 1/sqrt(3)
+  let expected = 1.0 /. { 3.0 |> float.square_root() |> result.unwrap(1.732) }
+  let diff_expected = float.absolute_value(c1 -. expected)
+  should.be_true(diff_expected <. 0.01)
+}
+
+pub fn eigenvector_linear_chain_test() {
+  // Linear chain: 1-2-3-4-5
+  // Central nodes should have higher centrality than endpoints
+  let assert Ok(g) =
+    model.new(model.Undirected)
+    |> model.add_node(1, Nil)
+    |> model.add_node(2, Nil)
+    |> model.add_node(3, Nil)
+    |> model.add_node(4, Nil)
+    |> model.add_node(5, Nil)
+    |> model.add_edge(from: 1, to: 2, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 4, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 4, to: 5, with: 1)
+
+  let scores = centrality.eigenvector(g, 500, 0.000001)
+
+  let assert Ok(c1) = dict.get(scores, 1)
+  let assert Ok(c2) = dict.get(scores, 2)
+  let assert Ok(c3) = dict.get(scores, 3)
+  let assert Ok(c4) = dict.get(scores, 4)
+  let assert Ok(c5) = dict.get(scores, 5)
+
+  // Center (node 3) should have highest centrality
+  should.be_true(c3 >. c1)
+  should.be_true(c3 >. c5)
+
+  // Due to symmetry: c1 = c5, c2 = c4
+  let diff_15 = float.absolute_value(c1 -. c5)
+  should.be_true(diff_15 <. 0.01)
+
+  let diff_24 = float.absolute_value(c2 -. c4)
+  should.be_true(diff_24 <. 0.01)
+
+  // Increasing from ends to center: c1 < c2 < c3
+  should.be_true(c2 >. c1)
+  should.be_true(c3 >. c2)
+}
+
+pub fn eigenvector_barbell_test() {
+  // Barbell graph: two triangles connected by a single edge
+  // Nodes in triangles should have similar centrality,
+  // but slightly different due to the bridge
+  let assert Ok(g) =
+    model.new(model.Undirected)
+    // Triangle 1
+    |> model.add_node(1, Nil)
+    |> model.add_node(2, Nil)
+    |> model.add_node(3, Nil)
+    // Triangle 2
+    |> model.add_node(4, Nil)
+    |> model.add_node(5, Nil)
+    |> model.add_node(6, Nil)
+    // Triangle 1 edges
+    |> model.add_edge(from: 1, to: 2, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 2, to: 3, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 1, with: 1)
+  // Triangle 2 edges
+  let assert Ok(g) = model.add_edge(g, from: 4, to: 5, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 5, to: 6, with: 1)
+  let assert Ok(g) = model.add_edge(g, from: 6, to: 4, with: 1)
+  // Bridge
+  let assert Ok(g) = model.add_edge(g, from: 3, to: 4, with: 1)
+
+  let scores = centrality.eigenvector(g, 500, 0.000001)
+
+  let assert Ok(c1) = dict.get(scores, 1)
+  let assert Ok(c2) = dict.get(scores, 2)
+  let assert Ok(c3) = dict.get(scores, 3)
+  let assert Ok(c4) = dict.get(scores, 4)
+  let assert Ok(c5) = dict.get(scores, 5)
+  let assert Ok(c6) = dict.get(scores, 6)
+
+  // Bridge nodes (3, 4) should have higher centrality than others
+  should.be_true(c3 >. c1)
+  should.be_true(c3 >. c2)
+  should.be_true(c4 >. c5)
+  should.be_true(c4 >. c6)
+
+  // Due to symmetry: values in corresponding positions should be equal
+  let diff_barbell_15 = float.absolute_value(c1 -. c5)
+  should.be_true(diff_barbell_15 <. 0.01)
+
+  let diff_barbell_26 = float.absolute_value(c2 -. c6)
+  should.be_true(diff_barbell_26 <. 0.01)
+
+  let diff_barbell_34 = float.absolute_value(c3 -. c4)
+  should.be_true(diff_barbell_34 <. 0.01)
 }
 
 // ---------------------------------------------------------------------------

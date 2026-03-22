@@ -620,15 +620,23 @@ pub fn eigenvector(
     True ->
       list.fold(nodes, dict.new(), fn(acc, id) { dict.insert(acc, id, 1.0) })
     False -> {
+      // Initialize with all ones, plus small node-ID-based perturbation
+      // The perturbation must be large enough to break symmetry but small enough
+      // not to bias results toward high-ID nodes
       let initial_scores =
         list.fold(nodes, dict.new(), fn(acc, id) {
-          dict.insert(acc, id, 1.0 /. int.to_float(n))
+          // Use 1.0 + (id / 1000.0) to add 0.1% per node ID
+          // This is sufficient to break oscillation in symmetric graphs
+          let perturbation = int.to_float(id) /. 1000.0
+          dict.insert(acc, id, 1.0 +. perturbation)
         })
 
-      iterate_eigenvector(
+      iterate_eigenvector_with_oscillation_check(
         graph,
         nodes,
         initial_scores,
+        dict.new(),
+        // prev_prev starts empty
         max_iterations,
         tolerance,
         0,
@@ -637,10 +645,11 @@ pub fn eigenvector(
   }
 }
 
-fn iterate_eigenvector(
+fn iterate_eigenvector_with_oscillation_check(
   graph: Graph(n, e),
   nodes: List(NodeId),
   scores: Dict(NodeId, Float),
+  prev_prev_scores: Dict(NodeId, Float),
   max_iterations: Int,
   tolerance: Float,
   iteration: Int,
@@ -668,18 +677,55 @@ fn iterate_eigenvector(
         False -> new_scores
       }
 
+      // Check for convergence against previous iteration
       let l2_diff = calculate_l2_difference(scores, normalized, nodes)
-      case l2_diff <. tolerance {
-        True -> normalized
+
+      // Also check for 2-cycle oscillation (compare with prev_prev)
+      let is_oscillating = case dict.size(prev_prev_scores) > 0 {
+        True -> {
+          let l2_diff_2 =
+            calculate_l2_difference(prev_prev_scores, normalized, nodes)
+          l2_diff_2 <. tolerance
+        }
+        False -> False
+      }
+
+      case is_oscillating {
+        // Oscillation detected: return average of the two oscillating states
+        // This gives the approximate eigenvector for graphs with symmetric structure
+        True -> {
+          let averaged =
+            list.fold(nodes, dict.new(), fn(acc, node) {
+              let val1 = dict.get(normalized, node) |> result.unwrap(0.0)
+              let val2 = dict.get(scores, node) |> result.unwrap(0.0)
+              let avg = { val1 +. val2 } /. 2.0
+              dict.insert(acc, node, avg)
+            })
+
+          // Renormalize the average
+          let avg_norm = calculate_l2_norm(averaged, nodes)
+          case avg_norm >. 0.0 {
+            True ->
+              dict.map_values(averaged, fn(_node, score) { score /. avg_norm })
+            False -> averaged
+          }
+        }
         False ->
-          iterate_eigenvector(
-            graph,
-            nodes,
-            normalized,
-            max_iterations,
-            tolerance,
-            iteration + 1,
-          )
+          case l2_diff <. tolerance {
+            // Normal convergence
+            True -> normalized
+            False ->
+              iterate_eigenvector_with_oscillation_check(
+                graph,
+                nodes,
+                normalized,
+                scores,
+                // prev becomes prev_prev
+                max_iterations,
+                tolerance,
+                iteration + 1,
+              )
+          }
       }
     }
   }
