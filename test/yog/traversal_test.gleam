@@ -1757,3 +1757,17 @@ pub fn is_cyclic_undirected_self_loop_test() {
   traversal.is_cyclic(graph) |> should.be_true()
   traversal.is_acyclic(graph) |> should.be_false()
 }
+
+pub fn is_cyclic_empty_graph_directed_test() {
+  let graph = model.new(Directed)
+
+  traversal.is_cyclic(graph) |> should.be_false()
+  traversal.is_acyclic(graph) |> should.be_true()
+}
+
+pub fn is_cyclic_empty_graph_undirected_test() {
+  let graph = model.new(Undirected)
+
+  traversal.is_cyclic(graph) |> should.be_false()
+  traversal.is_acyclic(graph) |> should.be_true()
+}

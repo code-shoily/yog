@@ -90,6 +90,27 @@ pub fn has_eulerian_circuit_empty_graph_test() {
   |> should.be_false()
 }
 
+pub fn has_eulerian_path_empty_graph_test() {
+  let graph = yog.undirected()
+
+  eulerian.has_eulerian_path(graph)
+  |> should.be_false()
+}
+
+pub fn find_eulerian_circuit_empty_graph_test() {
+  let graph = yog.undirected()
+
+  eulerian.find_eulerian_circuit(graph)
+  |> should.equal(None)
+}
+
+pub fn find_eulerian_path_empty_graph_test() {
+  let graph = yog.undirected()
+
+  eulerian.find_eulerian_path(graph)
+  |> should.equal(None)
+}
+
 // ============= Eulerian Path Tests (Undirected) =============
 
 pub fn has_eulerian_path_line_test() {

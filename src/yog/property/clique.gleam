@@ -228,7 +228,11 @@ fn bron_kerbosch_all(
   acc: List(Set(NodeId)),
 ) -> List(Set(NodeId)) {
   case set.is_empty(p) && set.is_empty(x) {
-    True -> [r, ..acc]
+    True ->
+      case set.is_empty(r) {
+        True -> acc
+        False -> [r, ..acc]
+      }
     False -> {
       set.to_list(p)
       |> list.fold(#(p, x, acc), fn(state, v) {

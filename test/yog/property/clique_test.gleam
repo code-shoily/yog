@@ -249,6 +249,17 @@ pub fn all_maximal_cliques_disconnected_test() {
   |> should.be_true
 }
 
+// Test all_maximal_cliques on empty graph
+pub fn all_maximal_cliques_empty_graph_test() {
+  let graph = model.new(Undirected)
+
+  let result = clique.all_maximal_cliques(graph)
+
+  result
+  |> list.length
+  |> should.equal(0)
+}
+
 // Test that all_maximal_cliques finds the same max as max_clique
 pub fn all_maximal_contains_max_test() {
   let assert Ok(graph) =

@@ -81,6 +81,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Clique Detection Empty Graph Bug** (`yog/property/clique`): Fixed `all_maximal_cliques` to return an empty list `[]` for empty graphs instead of a list containing one empty set `[set.new()]`:
+  - **Problem**: `all_maximal_cliques` on an empty graph would return `[set.new()]`, inconsistent with `max_clique` (returns empty set) and `k_cliques` (returns empty list)
+  - **Root Cause**: The Bron-Kerbosch algorithm would report the empty set as a maximal clique when all candidate sets (R, P, X) were empty
+  - **Solution**: Added check to only report non-empty cliques as maximal cliques in `bron_kerbosch_all`
+  - **Impact**: Empty graphs now correctly return no maximal cliques, consistent with other clique functions
+  - **Test Added**: `all_maximal_cliques_empty_graph_test` validates the fix
+
 - **Eigenvector Centrality Oscillation Bug** (`yog/centrality`): Fixed critical bug where eigenvector centrality would oscillate and never converge for symmetric graphs:
   - **Problem**: Star graphs and other symmetric structures caused the power iteration algorithm to oscillate between two states indefinitely (e.g., [0.816, 0.408, 0.408] ↔ [0.577, 0.577, 0.577])
   - **Root Cause**: Uniform initialization [1/√n, 1/√n, ...] contained equal components of eigenspaces with eigenvalues of equal magnitude but opposite signs (e.g., +√2 and -√2), causing 2-cycle oscillation
