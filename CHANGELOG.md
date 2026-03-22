@@ -59,6 +59,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     let dot_string = dot.to_dot(my_graph, options)
     ```
 
+### Documentation
+
+- **Experimental Module Notices**: Added experimental status warnings to `yog/multi/*` (multigraphs) and `yog/dag/*` (DAG-specific operations) modules:
+  - These modules are functional with minimal, working implementations
+  - May not be fully optimized for performance
+  - Additional features and performance enhancements planned
+  - API may be subject to change in future versions
+  - Notice added to all module files and documented in README under "⚠️ Experimental Features" section
+
 ### Changed
 
 - **Consistent Parameter Labels**: Added descriptive labels to all semiring and algorithm parameters across pathfinding, centrality, health, and community detection modules for improved API consistency and self-documentation:
@@ -69,6 +78,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All functions now use consistent labels: `with_zero`, `with_add`, `with_compare`, `with_to_float`, `with_heuristic`, `with`
   - **Backward compatible**: Both labeled and unlabeled calls are supported (e.g., `dijkstra.shortest_path(graph, 1, 5, 0, int.add, int.compare)` and `dijkstra.shortest_path(in: graph, from: 1, to: 5, with_zero: 0, with_add: int.add, with_compare: int.compare)` both work)
   - Follows the pattern established by Dijkstra's algorithm for a more uniform and intuitive API
+
+### Fixed
+
+- **Eigenvector Centrality Oscillation Bug** (`yog/centrality`): Fixed critical bug where eigenvector centrality would oscillate and never converge for symmetric graphs:
+  - **Problem**: Star graphs and other symmetric structures caused the power iteration algorithm to oscillate between two states indefinitely (e.g., [0.816, 0.408, 0.408] ↔ [0.577, 0.577, 0.577])
+  - **Root Cause**: Uniform initialization [1/√n, 1/√n, ...] contained equal components of eigenspaces with eigenvalues of equal magnitude but opposite signs (e.g., +√2 and -√2), causing 2-cycle oscillation
+  - **Solution**:
+    - Added small node-ID-based perturbation to initial vector to break symmetry: `1.0 + (id / 1000.0)`
+    - Implemented 2-cycle oscillation detection by tracking state from 2 iterations ago
+    - When oscillation is detected, returns the normalized average of the two oscillating states, which approximates the true principal eigenvector
+  - **Impact**: 2-leaf star graphs now correctly return center ≈ 0.707, leaves ≈ 0.5 (ratio √2 ≈ 1.414) instead of all nodes ≈ 0.577
+  - **Tests Added**:
+    - `eigenvector_2leaf_star_exact_test` - Validates exact eigenvector values with mathematical precision
+    - `eigenvector_triangle_exact_test` - Tests complete triangle (K3) for equal centrality
+    - `eigenvector_linear_chain_test` - Validates 5-node chain with symmetry properties
+    - `eigenvector_barbell_test` - Tests two triangles connected by bridge, validates bridge nodes have higher centrality
+  - All existing tests continue to pass with improved numerical accuracy
 
 ## 5.0.0 - 2026-03-20
 
