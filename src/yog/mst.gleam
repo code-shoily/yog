@@ -33,8 +33,8 @@ import gleam/dict
 import gleam/list
 import gleam/order.{type Order}
 import gleam/set.{type Set}
-import yog/internal/priority_queue
 import yog/disjoint_set
+import yog/internal/priority_queue
 import yog/model.{type Graph, type NodeId, Undirected}
 
 /// Represents an edge in the minimum spanning tree.
