@@ -1,5 +1,5 @@
 name = "yog"
-version = "5.1.0"
+version = "5.1.1"
 targets = ["erlang", "javascript"]
 description = "A comprehensive graph and pathfinding library for Gleam."
 licences = ["Apache-2.0"]
