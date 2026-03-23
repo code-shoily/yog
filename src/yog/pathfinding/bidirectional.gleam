@@ -47,7 +47,7 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/order.{type Order}
 import gleam/set.{type Set}
-import gleamy/priority_queue
+import yog/internal/priority_queue
 import yog/internal/queue
 import yog/model.{type Graph, type NodeId}
 import yog/pathfinding/utils.{type Path, Path, should_explore_node}

@@ -194,7 +194,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 | Format | Gleam | F# | Purpose |
 | -------- | ------- | ----- | --------- |
 | **DOT (Graphviz)** | ✅ | ✅ | Professional visualization |
-| **JSON** | ✅ | ✅ | Web APIs, data interchange |
+| **JSON** | Extenstion Package | ✅ | Web APIs, data interchange |
 | **Mermaid** | ✅ | ✅ | Markdown diagrams |
 | **GraphML** | 🔶 Planned | ✅ | XML format for Gephi, yEd, Cytoscape |
 | **GDF** | 🔶 Planned | ✅ | Gephi lightweight format |
@@ -283,7 +283,7 @@ This document compares the Gleam and F# implementations of the Yog graph algorit
 
 - ✅ Network Simplex works correctly in Gleam
 - ✅ All core algorithms present and tested
-- ❌ No GraphML/GDF support yet (coming soon)
+- ✅ GraphML/GDF features are in an extension package [yog-io](https://github.com/code-shoily/yog_io)
 
 ### Gleam →  
 

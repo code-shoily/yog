@@ -61,7 +61,7 @@ import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/order.{type Order}
-import gleamy/priority_queue
+import yog/internal/priority_queue
 import yog/model.{type Graph, type NodeId}
 import yog/pathfinding/utils.{
   type Path, Path, compare_a_star_frontier, should_explore_node,

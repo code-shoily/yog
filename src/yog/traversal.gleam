@@ -43,7 +43,7 @@ import gleam/option.{type Option, None, Some}
 import gleam/order
 import gleam/result
 import gleam/set.{type Set}
-import gleamy/priority_queue
+import yog/internal/priority_queue
 import yog/internal/queue
 import yog/model.{type Graph, type NodeId}
 

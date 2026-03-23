@@ -32,7 +32,7 @@ A graph algorithm library for Gleam, providing implementations of classic graph 
 - **Graph Generators**: Create classic patterns (complete, cycle, path, star, wheel, bipartite, trees, grids) and random graphs (Erdős-Rényi, Barabási-Albert, Watts-Strogatz)
 - **Graph Traversal**: BFS and DFS with early termination and **Implicit Variants**
 - **Graph Transformations**: Transpose (O(1)!), map, filter, merge, subgraph extraction, edge contraction
-- **Graph Visualization**: Mermaid, DOT (Graphviz), and JSON rendering
+- **Graph Visualization**: Mermaid, DOT (Graphviz), and ASCII rendering
 - **Minimum Spanning Tree**: Kruskal's and Prim's algorithms with Union-Find and Priority Queues
 - **Minimum Cut**: Stoer-Wagner algorithm for global min-cut
 - **Network Health**: Diameter, radius, eccentricity, assortativity, average path length
@@ -140,7 +140,6 @@ Detailed examples are located in the [test/examples/](https://github.com/code-sh
 - [Graph Generation Showcase](https://github.com/code-shoily/yog/blob/main/test/examples/graph_generation_showcase.gleam) - ⭐ All 9 classic graph patterns with statistics.
 - [DOT rendering](https://github.com/code-shoily/yog/blob/main/test/examples/render_dot.gleam) - Exporting graphs to Graphviz format.
 - [Mermaid rendering](https://github.com/code-shoily/yog/blob/main/test/examples/render_mermaid.gleam) - Generating Mermaid diagrams.
-- [JSON rendering](https://github.com/code-shoily/yog/blob/main/test/examples/render_json.gleam) - Exporting graphs to JSON for web use.
 - [Graph creation](https://github.com/code-shoily/yog/blob/main/test/examples/graph_creation.gleam) - Comprehensive guide to 10+ ways of creating graphs.
 
 ### Running Examples Locally

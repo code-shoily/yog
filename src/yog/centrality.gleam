@@ -20,7 +20,7 @@ import gleam/list
 import gleam/option
 import gleam/order.{type Order, Gt}
 import gleam/result
-import gleamy/priority_queue as pq
+import yog/internal/priority_queue as pq
 import yog/model.{type Graph, type NodeId, Directed, Undirected}
 import yog/pathfinding/dijkstra
 

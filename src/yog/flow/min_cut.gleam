@@ -46,7 +46,7 @@ import gleam/int
 import gleam/list
 import gleam/order
 import gleam/set.{type Set}
-import gleamy/priority_queue
+import yog/internal/priority_queue
 import yog/model.{type Graph, type NodeId}
 import yog/transform
 

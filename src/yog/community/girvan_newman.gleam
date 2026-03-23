@@ -70,7 +70,7 @@ import gleam/option.{type Option, None, Some}
 import gleam/order.{type Order, Eq, Gt, Lt}
 import gleam/result
 import gleam/set
-import gleamy/priority_queue as pq
+import yog/internal/priority_queue as pq
 import yog
 import yog/community.{type Communities, type Dendrogram, Communities, Dendrogram}
 import yog/model.{type Graph, type NodeId, Directed, Undirected}

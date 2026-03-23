@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Internal Priority Queue Implementation** (`yog/internal/priority_queue`, `yog/internal/pairing_heap`): Removed dependency on `gleamy_structures` by implementing our own pairing heap and priority queue with the same contract. This reduces external dependencies while maintaining identical functionality.
+
+### Removed
+
+- **JSON Rendering Module** (`yog/render/json`): Removed in favor of `yog_io` package for JSON serialization.
+- **gleamy_structures dependency**: No longer required, replaced by internal implementations.
+- **Deprecated DAG Modules** (`yog/dag/algorithms`, `yog/dag/models`): Removed deprecated plural module names. Use the singular versions (`yog/dag/algorithm`, `yog/dag/model`) instead. These were deprecated in v5.1.0.
+
 ## 5.1.0 - 2026-03-22
 
 ### Added
@@ -272,7 +284,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `yog/eulerian` → `yog/property/eulerian`
   - `yog/pathfinding` → `yog/pathfinding/dijkstra`, `yog/pathfinding/a_star`, `yog/pathfinding/bellman_ford`, `yog/pathfinding/floyd_warshall`
   - Facade modules removed; import specific modules (e.g., `yog/pathfinding/dijkstra`)
-- **Rendering**: `yog/render` split into `yog/io/*` (mermaid, dot, json)
+- **Rendering**: `yog/render` split into `yog/io/*` (mermaid, dot, ascii)
 - **Traversal Control**: `fold_walk` and `implicit_fold` now use `WalkControl` enum (`Continue`, `Stop`, `Halt`)
 
 ### Added
@@ -381,7 +393,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Labeled builder (`yog/builder/labeled`): String/any type node labels
 - `yog` ergonomic API: `directed()`, `undirected()`
-- Visualization (`yog/render`): Mermaid, DOT, JSON export
+- Visualization (`yog/render`): Mermaid, DOT, ASCII
 
 ## 1.0.0 - 2025-02-26
 
