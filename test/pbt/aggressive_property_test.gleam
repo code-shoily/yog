@@ -4,9 +4,9 @@
 
 import gleam/list
 import gleeunit
+import pbt/qcheck_generators
 import qcheck
 import yog/model
-import yog/qcheck_generators
 import yog/transform
 
 pub fn main() {

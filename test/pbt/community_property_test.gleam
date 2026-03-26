@@ -4,6 +4,7 @@ import gleam/int
 import gleam/list
 import gleam/option
 import gleeunit/should
+import pbt/qcheck_generators
 import qcheck
 import yog
 import yog/community/fluid_communities
@@ -13,7 +14,6 @@ import yog/community/louvain
 import yog/community/metrics
 import yog/internal/utils
 import yog/model
-import yog/qcheck_generators
 
 const epsilon = 0.0000001
 
