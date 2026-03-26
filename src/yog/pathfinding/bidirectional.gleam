@@ -46,6 +46,7 @@ import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/order.{type Order}
+import gleam/result
 import gleam/set.{type Set}
 import yog/internal/priority_queue
 import yog/internal/queue
@@ -132,186 +133,254 @@ pub fn shortest_path_unweighted(
   }
 }
 
+fn get_queue_min_dist(
+  q: queue.Queue(NodeId),
+  dists: dict.Dict(NodeId, Int),
+) -> Option(Int) {
+  case queue.pop(q) {
+    Ok(#(node, _)) ->
+      dict.get(dists, node)
+      |> option.from_result
+    Error(Nil) -> option.None
+  }
+}
+
 fn do_bidirectional_bfs(
   graph: Graph(n, e),
   forward_queue: queue.Queue(NodeId),
   backward_queue: queue.Queue(NodeId),
   state: BiSearchState(Int),
 ) -> Option(BiSearchState(Int)) {
-  // Check if we found a path
-  case state.meeting_point {
-    Some(_) -> Some(state)
-    None -> {
-      // Alternate between forward and backward search
-      // Always expand the smaller frontier for better performance
-      let forward_size = dict.size(state.forward_dist)
-      let backward_size = dict.size(state.backward_dist)
+  // Check if we can terminate early because we found the optimal path
+  let can_terminate = case state.best_length {
+    Some(best) -> {
+      let f_min = get_queue_min_dist(forward_queue, state.forward_dist)
+      let b_min = get_queue_min_dist(backward_queue, state.backward_dist)
+      case f_min, b_min {
+        Some(f), Some(b) -> f + b + 1 >= best
+        _, _ -> False
+      }
+    }
+    None -> False
+  }
 
-      case forward_size <= backward_size {
-        True -> {
-          // Expand forward frontier
-          case queue.pop(forward_queue) {
-            Error(Nil) -> None
-            Ok(#(current, rest_queue)) -> {
-              let current_dist =
-                dict.get(state.forward_dist, current)
-                |> option.from_result
-                |> option.unwrap(0)
-
-              // Check if this node was reached from the other direction
-              let new_state = case dict.has_key(state.backward_dist, current) {
-                True -> {
-                  let back_dist =
-                    dict.get(state.backward_dist, current)
-                    |> option.from_result
-                    |> option.unwrap(0)
-                  let total = current_dist + back_dist
-                  BiSearchState(
-                    ..state,
-                    meeting_point: Some(current),
-                    best_length: Some(total),
-                  )
-                }
-                False -> state
-              }
-
-              // Expand neighbors
-              let neighbors = model.successor_ids(graph, current)
-              let #(next_state, next_queue) =
-                list.fold(
-                  neighbors,
-                  #(new_state, rest_queue),
-                  fn(acc, neighbor) {
-                    let #(s, q) = acc
-                    case dict.has_key(s.forward_dist, neighbor) {
-                      True -> #(s, q)
-                      False -> {
-                        let updated_state =
-                          BiSearchState(
-                            ..s,
-                            forward_dist: dict.insert(
-                              s.forward_dist,
-                              neighbor,
-                              current_dist + 1,
-                            ),
-                            forward_parent: dict.insert(
-                              s.forward_parent,
-                              neighbor,
-                              current,
-                            ),
-                          )
-                        let updated_queue = queue.push(q, neighbor)
-
-                        // Check if we met the backward search
-                        case dict.has_key(s.backward_dist, neighbor) {
-                          True -> {
-                            let back_dist =
-                              dict.get(s.backward_dist, neighbor)
-                              |> option.from_result
-                              |> option.unwrap(0)
-                            let total = current_dist + 1 + back_dist
-                            #(
-                              BiSearchState(
-                                ..updated_state,
-                                meeting_point: Some(neighbor),
-                                best_length: Some(total),
-                              ),
-                              updated_queue,
-                            )
-                          }
-                          False -> #(updated_state, updated_queue)
-                        }
-                      }
-                    }
-                  },
-                )
-
-              do_bidirectional_bfs(
-                graph,
-                next_queue,
-                backward_queue,
-                next_state,
-              )
-            }
+  case can_terminate {
+    True -> Some(state)
+    False -> {
+      // Check if both queues are empty (exhausted search space)
+      let f_empty = queue.pop(forward_queue) |> result.is_error
+      let b_empty = queue.pop(backward_queue) |> result.is_error
+      case f_empty, b_empty {
+        True, True ->
+          case state.meeting_point {
+            Some(_) -> Some(state)
+            None -> None
           }
-        }
-        False -> {
-          // Expand backward frontier
-          case queue.pop(backward_queue) {
-            Error(Nil) -> None
-            Ok(#(current, rest_queue)) -> {
-              let current_dist =
-                dict.get(state.backward_dist, current)
-                |> option.from_result
-                |> option.unwrap(0)
+        _, _ -> {
+          // Alternate between forward and backward search
+          let forward_size = dict.size(state.forward_dist)
+          let backward_size = dict.size(state.backward_dist)
 
-              // Check if this node was reached from the forward direction
-              let new_state = case dict.has_key(state.forward_dist, current) {
-                True -> {
-                  let fwd_dist =
+          case forward_size <= backward_size && !f_empty || b_empty {
+            True -> {
+              // Expand forward frontier
+              case queue.pop(forward_queue) {
+                Error(Nil) -> None
+                Ok(#(current, rest_queue)) -> {
+                  let current_dist =
                     dict.get(state.forward_dist, current)
                     |> option.from_result
                     |> option.unwrap(0)
-                  let total = fwd_dist + current_dist
-                  BiSearchState(
-                    ..state,
-                    meeting_point: Some(current),
-                    best_length: Some(total),
-                  )
-                }
-                False -> state
-              }
 
-              // Expand predecessors (going backwards in directed graphs)
-              let predecessors =
-                model.predecessors(graph, current)
-                |> list.map(fn(p) { p.0 })
-              let #(next_state, next_queue) =
-                list.fold(predecessors, #(new_state, rest_queue), fn(acc, pred) {
-                  let #(s, q) = acc
-                  case dict.has_key(s.backward_dist, pred) {
-                    True -> #(s, q)
-                    False -> {
-                      let updated_state =
-                        BiSearchState(
-                          ..s,
-                          backward_dist: dict.insert(
-                            s.backward_dist,
-                            pred,
-                            current_dist + 1,
-                          ),
-                          backward_parent: dict.insert(
-                            s.backward_parent,
-                            pred,
-                            current,
-                          ),
-                        )
-                      let updated_queue = queue.push(q, pred)
-
-                      // Check if we met the forward search
-                      case dict.has_key(s.forward_dist, pred) {
-                        True -> {
-                          let fwd_dist =
-                            dict.get(s.forward_dist, pred)
-                            |> option.from_result
-                            |> option.unwrap(0)
-                          let total = fwd_dist + current_dist + 1
-                          #(
-                            BiSearchState(
-                              ..updated_state,
-                              meeting_point: Some(pred),
-                              best_length: Some(total),
-                            ),
-                            updated_queue,
+                  // Check if this node was reached from the other direction
+                  let new_state = case
+                    dict.has_key(state.backward_dist, current)
+                  {
+                    True -> {
+                      let back_dist =
+                        dict.get(state.backward_dist, current)
+                        |> option.from_result
+                        |> option.unwrap(0)
+                      let total = current_dist + back_dist
+                      case state.best_length {
+                        Some(best) if total >= best -> state
+                        _ ->
+                          BiSearchState(
+                            ..state,
+                            meeting_point: Some(current),
+                            best_length: Some(total),
                           )
-                        }
-                        False -> #(updated_state, updated_queue)
                       }
                     }
+                    False -> state
                   }
-                })
 
-              do_bidirectional_bfs(graph, forward_queue, next_queue, next_state)
+                  // Expand neighbors
+                  let neighbors = model.successor_ids(graph, current)
+                  let #(next_state, next_queue) =
+                    list.fold(
+                      neighbors,
+                      #(new_state, rest_queue),
+                      fn(acc, neighbor) {
+                        let #(s, q) = acc
+                        case dict.has_key(s.forward_dist, neighbor) {
+                          True -> #(s, q)
+                          False -> {
+                            let updated_state =
+                              BiSearchState(
+                                ..s,
+                                forward_dist: dict.insert(
+                                  s.forward_dist,
+                                  neighbor,
+                                  current_dist + 1,
+                                ),
+                                forward_parent: dict.insert(
+                                  s.forward_parent,
+                                  neighbor,
+                                  current,
+                                ),
+                              )
+                            let updated_queue = queue.push(q, neighbor)
+
+                            // Check if we met the backward search
+                            case dict.has_key(s.backward_dist, neighbor) {
+                              True -> {
+                                let back_dist =
+                                  dict.get(s.backward_dist, neighbor)
+                                  |> option.from_result
+                                  |> option.unwrap(0)
+                                let total = current_dist + 1 + back_dist
+                                case s.best_length {
+                                  Some(best) if total >= best -> #(
+                                    updated_state,
+                                    updated_queue,
+                                  )
+                                  _ -> #(
+                                    BiSearchState(
+                                      ..updated_state,
+                                      meeting_point: Some(neighbor),
+                                      best_length: Some(total),
+                                    ),
+                                    updated_queue,
+                                  )
+                                }
+                              }
+                              False -> #(updated_state, updated_queue)
+                            }
+                          }
+                        }
+                      },
+                    )
+
+                  do_bidirectional_bfs(
+                    graph,
+                    next_queue,
+                    backward_queue,
+                    next_state,
+                  )
+                }
+              }
+            }
+            False -> {
+              // Expand backward frontier
+              case queue.pop(backward_queue) {
+                Error(Nil) -> None
+                Ok(#(current, rest_queue)) -> {
+                  let current_dist =
+                    dict.get(state.backward_dist, current)
+                    |> option.from_result
+                    |> option.unwrap(0)
+
+                  // Check if this node was reached from the forward direction
+                  let new_state = case
+                    dict.has_key(state.forward_dist, current)
+                  {
+                    True -> {
+                      let fwd_dist =
+                        dict.get(state.forward_dist, current)
+                        |> option.from_result
+                        |> option.unwrap(0)
+                      let total = fwd_dist + current_dist
+                      case state.best_length {
+                        Some(best) if total >= best -> state
+                        _ ->
+                          BiSearchState(
+                            ..state,
+                            meeting_point: Some(current),
+                            best_length: Some(total),
+                          )
+                      }
+                    }
+                    False -> state
+                  }
+
+                  // Expand predecessors
+                  let predecessors =
+                    model.predecessors(graph, current)
+                    |> list.map(fn(p) { p.0 })
+                  let #(next_state, next_queue) =
+                    list.fold(
+                      predecessors,
+                      #(new_state, rest_queue),
+                      fn(acc, pred) {
+                        let #(s, q) = acc
+                        case dict.has_key(s.backward_dist, pred) {
+                          True -> #(s, q)
+                          False -> {
+                            let updated_state =
+                              BiSearchState(
+                                ..s,
+                                backward_dist: dict.insert(
+                                  s.backward_dist,
+                                  pred,
+                                  current_dist + 1,
+                                ),
+                                backward_parent: dict.insert(
+                                  s.backward_parent,
+                                  pred,
+                                  current,
+                                ),
+                              )
+                            let updated_queue = queue.push(q, pred)
+
+                            // Check if we met the forward search
+                            case dict.has_key(s.forward_dist, pred) {
+                              True -> {
+                                let fwd_dist =
+                                  dict.get(s.forward_dist, pred)
+                                  |> option.from_result
+                                  |> option.unwrap(0)
+                                let total = fwd_dist + current_dist + 1
+                                case s.best_length {
+                                  Some(best) if total >= best -> #(
+                                    updated_state,
+                                    updated_queue,
+                                  )
+                                  _ -> #(
+                                    BiSearchState(
+                                      ..updated_state,
+                                      meeting_point: Some(pred),
+                                      best_length: Some(total),
+                                    ),
+                                    updated_queue,
+                                  )
+                                }
+                              }
+                              False -> #(updated_state, updated_queue)
+                            }
+                          }
+                        }
+                      },
+                    )
+
+                  do_bidirectional_bfs(
+                    graph,
+                    forward_queue,
+                    next_queue,
+                    next_state,
+                  )
+                }
+              }
             }
           }
         }

@@ -9,6 +9,7 @@ import gleam/option.{None, Some}
 import gleam/result
 import gleam/set
 import gleeunit
+import pbt/qcheck_generators
 import qcheck
 import yog/centrality
 import yog/connectivity
@@ -16,7 +17,6 @@ import yog/model.{type Graph, type NodeId}
 import yog/mst
 import yog/pathfinding/bellman_ford
 import yog/pathfinding/dijkstra
-import yog/qcheck_generators
 import yog/traversal
 
 pub fn main() {

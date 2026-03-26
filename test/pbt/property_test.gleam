@@ -10,9 +10,9 @@ import gleam/int
 import gleam/list
 import gleam/set
 import gleeunit
+import pbt/qcheck_generators
 import qcheck
 import yog/model.{type Graph, type NodeId}
-import yog/qcheck_generators
 import yog/transform
 import yog/traversal
 

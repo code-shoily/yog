@@ -1,5 +1,6 @@
 import gleam/list
 import qcheck
+import yog/internal/utils
 import yog/model.{type Graph, type GraphType}
 import yog/traversal
 
@@ -74,17 +75,24 @@ pub fn directed_graph_generator() {
   graph_generator_custom(model.Directed, num_nodes, num_edges)
 }
 
-/// Generate an edge triple #(src, dst, weight)
-pub fn edge_triple_generator(num_nodes: Int) {
+/// Generate an edge triple #(src, dst, weight) with a custom weight generator
+pub fn edge_triple_generator_custom(
+  num_nodes: Int,
+  weight_gen: qcheck.Generator(Int),
+) {
   case num_nodes {
     0 -> qcheck.return(#(0, 0, 1))
     _ -> {
       use src <- qcheck.bind(qcheck.bounded_int(0, num_nodes - 1))
       use dst <- qcheck.bind(qcheck.bounded_int(0, num_nodes - 1))
-      use weight <- qcheck.map(qcheck.bounded_int(1, 100))
+      use weight <- qcheck.map(weight_gen)
       #(src, dst, weight)
     }
   }
+}
+
+pub fn edge_triple_generator(num_nodes: Int) {
+  edge_triple_generator_custom(num_nodes, qcheck.bounded_int(1, 100))
 }
 
 /// Generate a traversal order (BFS or DFS)
@@ -102,4 +110,91 @@ pub fn graph_and_edge_generator(kind: GraphType) {
   use graph <- qcheck.bind(graph_generator_custom(kind, num_nodes, num_edges))
   use edge <- qcheck.map(edge_triple_generator(num_nodes))
   #(graph, edge)
+}
+
+/// Generate a star graph with a center and leaves
+/// Returns #(graph, center_id, leaf_ids)
+pub fn star_graph_generator() {
+  use num_nodes <- qcheck.bind(qcheck.bounded_int(3, 10))
+  let center = 0
+  let leaves = utils.range(1, num_nodes - 1)
+
+  let graph = build_nodes(model.new(model.Undirected), 0, num_nodes - 1)
+
+  let graph =
+    list.fold(leaves, graph, fn(g, leaf) {
+      let assert Ok(g) = model.add_edge(g, from: center, to: leaf, with: 1)
+      g
+    })
+
+  qcheck.return(#(graph, center, leaves))
+}
+
+fn unweighted_edge_generator(num_nodes: Int) {
+  use src <- qcheck.bind(qcheck.bounded_int(0, num_nodes - 1))
+  use dst <- qcheck.map(qcheck.bounded_int(0, num_nodes - 1))
+  #(src, dst)
+}
+
+/// Generate an unweighted graph (all edge weights are 1)
+pub fn unweighted_graph_generator(kind: GraphType) {
+  use num_nodes <- qcheck.bind(qcheck.bounded_int(1, 15))
+  use num_edges <- qcheck.bind(qcheck.bounded_int(0, 30))
+
+  use edges <- qcheck.bind(qcheck.fixed_length_list_from(
+    unweighted_edge_generator(num_nodes),
+    num_edges,
+  ))
+
+  let graph = build_nodes(model.new(kind), 0, num_nodes - 1)
+
+  let graph =
+    edges
+    |> list.fold(graph, fn(g, edge) {
+      let #(src, dst) = edge
+      let assert Ok(g) = model.add_edge(g, from: src, to: dst, with: 1)
+      g
+    })
+
+  qcheck.return(graph)
+}
+
+/// Generate a graph with potentially negative weights (-20 to 50)
+pub fn graph_generator_negative_weights(kind: GraphType) {
+  use num_nodes <- qcheck.bind(qcheck.bounded_int(3, 10))
+  use num_edges <- qcheck.bind(qcheck.bounded_int(0, 20))
+
+  use edges <- qcheck.map(qcheck.fixed_length_list_from(
+    edge_triple_generator_custom(num_nodes, qcheck.bounded_int(-20, 50)),
+    num_edges,
+  ))
+
+  let graph = build_nodes(model.new(kind), 0, num_nodes - 1)
+
+  edges
+  |> list.fold(graph, fn(g, edge) {
+    let #(src, dst, weight) = edge
+    let assert Ok(g) = model.add_edge(g, from: src, to: dst, with: weight)
+    g
+  })
+}
+
+/// Generate a random tree
+pub fn tree_generator() {
+  use num_nodes <- qcheck.bind(qcheck.bounded_int(2, 15))
+  let graph = build_nodes(model.new(model.Undirected), 0, num_nodes - 1)
+
+  // i > 0 connects to some j < i
+  add_tree_edges(graph, 1, num_nodes)
+}
+
+fn add_tree_edges(g, i, n) {
+  case i >= n {
+    True -> qcheck.return(g)
+    False -> {
+      use parent <- qcheck.bind(qcheck.bounded_int(0, i - 1))
+      let assert Ok(next_g) = model.add_edge(g, from: parent, to: i, with: 1)
+      add_tree_edges(next_g, i + 1, n)
+    }
+  }
 }
