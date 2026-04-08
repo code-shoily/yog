@@ -1,20 +1,144 @@
-////
-//// Aggressive property tests - trying to find bugs by testing edge cases
-////
-
+import gleam/dict
+import gleam/int
 import gleam/list
 import gleeunit
 import pbt/qcheck_generators
 import qcheck
-import yog/model
-import yog/transform
+import yog/model.{type Graph, type NodeId}
 
 pub fn main() {
   gleeunit.main()
 }
 
 // ============================================================================
-// EDGE CASE: Empty Graphs
+// HELPERS
+// ============================================================================
+
+/// Count edges manually by iterating through out_edges
+fn count_edges_manual(graph: Graph(n, e)) -> Int {
+  dict.fold(graph.out_edges, 0, fn(acc, _src, targets) {
+    acc + dict.size(targets)
+  })
+}
+
+/// Sort a list of tuples by first element
+fn sort_node_list(nodes: List(#(NodeId, e))) -> List(#(NodeId, e)) {
+  list.sort(nodes, fn(a, b) { int.compare(a.0, b.0) })
+}
+
+// ============================================================================
+// STRUCTURAL INVARIANTS
+// ============================================================================
+
+pub fn edge_count_consistency_test() {
+  use graph <- qcheck.given(qcheck_generators.graph_generator())
+
+  let declared_count = model.edge_count(graph)
+  let actual_count = count_edges_manual(graph)
+
+  let expected = case graph.kind {
+    model.Directed -> actual_count
+    model.Undirected -> actual_count / 2
+  }
+
+  assert declared_count == expected
+}
+
+pub fn undirected_symmetry_test() {
+  use graph <- qcheck.given(qcheck_generators.undirected_graph_generator())
+
+  let all_nodes = model.all_nodes(graph)
+
+  // Check symmetry for each node
+  let is_symmetric =
+    list.all(all_nodes, fn(node) {
+      let successors = sort_node_list(model.successors(graph, node))
+      let predecessors = sort_node_list(model.predecessors(graph, node))
+      successors == predecessors
+    })
+
+  assert is_symmetric
+}
+
+pub fn undirected_neighbors_equal_successors_test() {
+  use graph <- qcheck.given(qcheck_generators.undirected_graph_generator())
+  use node <- qcheck.given(qcheck.bounded_int(0, 20))
+
+  // Only test if node exists in graph
+  case dict.has_key(graph.nodes, node) {
+    False -> Nil
+    True -> {
+      let neighbors = sort_node_list(model.neighbors(graph, node))
+      let successors = sort_node_list(model.successors(graph, node))
+
+      assert neighbors == successors
+    }
+  }
+}
+
+// ============================================================================
+// MUTATION INVARIANTS
+// ============================================================================
+
+pub fn add_remove_edge_inverse_directed_test() {
+  use #(graph, #(src, dst, weight)) <- qcheck.given(
+    qcheck_generators.graph_and_edge_generator(model.Directed),
+  )
+
+  case model.order(graph) {
+    0 -> Nil
+    _ -> {
+      let assert Ok(with_edge) =
+        model.add_edge(graph, from: src, to: dst, with: weight)
+
+      let edge_exists =
+        model.successors(with_edge, src)
+        |> list.any(fn(pair) { pair.0 == dst })
+      assert edge_exists
+
+      let removed = model.remove_edge(with_edge, src, dst)
+
+      let edge_gone =
+        model.successors(removed, src)
+        |> list.all(fn(pair) { pair.0 != dst })
+      assert edge_gone
+    }
+  }
+}
+
+pub fn add_remove_edge_inverse_undirected_test() {
+  use #(graph, #(src, dst, weight)) <- qcheck.given(
+    qcheck_generators.graph_and_edge_generator(model.Undirected),
+  )
+
+  case model.order(graph) {
+    0 -> Nil
+    _ -> {
+      let assert Ok(with_edge) =
+        model.add_edge(graph, from: src, to: dst, with: weight)
+
+      // Both directions should exist
+      let forward_exists =
+        model.successors(with_edge, src)
+        |> list.any(fn(pair) { pair.0 == dst })
+      let backward_exists =
+        model.successors(with_edge, dst)
+        |> list.any(fn(pair) { pair.0 == src })
+      assert forward_exists && backward_exists
+
+      // Remove one direction
+      let removed = model.remove_edge(with_edge, src, dst)
+
+      let forward_gone =
+        model.successors(removed, src)
+        |> list.all(fn(pair) { pair.0 != dst })
+      assert forward_gone
+    }
+  }
+}
+
+// ============================================================================
+// EDGE CASES (Aggressive)
 // ============================================================================
 
 pub fn empty_graph_edge_count_test() {
@@ -26,18 +150,6 @@ pub fn empty_graph_edge_count_test() {
   assert model.order(directed) == 0
   assert model.order(undirected) == 0
 }
-
-pub fn empty_graph_transpose_test() {
-  let directed = model.new(model.Directed)
-  let transposed = transform.transpose(directed)
-
-  assert model.order(transposed) == 0
-  assert model.edge_count(transposed) == 0
-}
-
-// ============================================================================
-// EDGE CASE: Self-Loops
-// ============================================================================
 
 pub fn self_loop_directed_test() {
   use graph <- qcheck.given(qcheck_generators.directed_graph_generator())
@@ -66,10 +178,6 @@ pub fn self_loop_undirected_test() {
 
   assert succ_count >= 1
 }
-
-// ============================================================================
-// EDGE CASE: Multiple Edges Between Same Nodes
-// ============================================================================
 
 pub fn multiple_edges_same_pair_test() {
   use #(graph, #(src, dst, _weight)) <- qcheck.given(
@@ -101,10 +209,6 @@ pub fn multiple_edges_same_pair_test() {
   }
 }
 
-// ============================================================================
-// EDGE CASE: Remove Edge That Doesn't Exist
-// ============================================================================
-
 pub fn remove_nonexistent_edge_test() {
   use graph <- qcheck.given(qcheck_generators.graph_generator())
 
@@ -116,10 +220,6 @@ pub fn remove_nonexistent_edge_test() {
   assert model.edge_count(removed) == model.edge_count(graph)
   assert model.order(removed) == model.order(graph)
 }
-
-// ============================================================================
-// EDGE CASE: Undirected Edge Removal Symmetry
-// ============================================================================
 
 pub fn undirected_edge_removal_symmetry_test() {
   use #(graph, #(src, dst, weight)) <- qcheck.given(
@@ -153,45 +253,6 @@ pub fn undirected_edge_removal_symmetry_test() {
     }
   }
 }
-
-// ============================================================================
-// EDGE CASE: Filter Nodes Edge Cases
-// ============================================================================
-
-pub fn filter_all_nodes_test() {
-  use graph <- qcheck.given(qcheck_generators.graph_generator())
-
-  // Filter out all nodes
-  let empty = transform.filter_nodes(graph, fn(_) { False })
-
-  assert model.order(empty) == 0
-  assert model.edge_count(empty) == 0
-}
-
-// ============================================================================
-// EDGE CASE: Transpose on Graph with Self-Loop
-// ============================================================================
-
-pub fn transpose_with_self_loop_test() {
-  use graph <- qcheck.given(qcheck_generators.directed_graph_generator())
-
-  let next_id = model.order(graph)
-  let graph_with_loop =
-    graph
-    |> model.add_node(next_id, next_id)
-  let assert Ok(graph_with_loop) =
-    model.add_edge(graph_with_loop, from: next_id, to: next_id, with: 10)
-
-  let transposed = transform.transpose(graph_with_loop)
-
-  // Self-loop should remain a self-loop
-  let successors = model.successors(transposed, next_id)
-  assert list.any(successors, fn(pair) { pair.0 == next_id })
-}
-
-// ============================================================================
-// EDGE CASE: Node with No Edges
-// ============================================================================
 
 pub fn isolated_node_test() {
   use graph <- qcheck.given(qcheck_generators.graph_generator())

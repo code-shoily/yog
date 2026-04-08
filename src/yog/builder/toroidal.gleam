@@ -363,6 +363,33 @@ pub fn to_graph(grid: ToroidalGrid(cell_data, e)) -> Graph(cell_data, e) {
   grid.graph
 }
 
+/// Converts the toroidal grid to a standard `Grid`.
+///
+/// The resulting grid maintains the same graph structure with all
+/// wrapping connections as edges. Useful for using grid-specific
+/// functionality like ASCII rendering.
+///
+/// ## Example
+///
+/// ```gleam
+/// let toroidal_grid = // ... create toroidal grid
+/// let grid = toroidal.to_grid(toroidal_grid)
+/// io.println(ascii.grid_to_string(grid))
+/// ```
+pub fn to_grid(grid: ToroidalGrid(cell_data, e)) -> grid.Grid(cell_data, e) {
+  grid.Grid(graph: grid.graph, rows: grid.rows, cols: grid.cols)
+}
+
+/// Gets the number of rows in the toroidal grid.
+pub fn rows(grid: ToroidalGrid(cell_data, e)) -> Int {
+  grid.rows
+}
+
+/// Gets the number of columns in the toroidal grid.
+pub fn cols(grid: ToroidalGrid(cell_data, e)) -> Int {
+  grid.cols
+}
+
 /// Gets the cell data at the specified grid coordinate.
 ///
 /// Returns `Ok(cell_data)` if the coordinate is valid, `Error(Nil)` otherwise.

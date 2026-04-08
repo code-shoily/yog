@@ -319,12 +319,17 @@ pub fn path_to_options(
 
 // Helper to convert a list of nodes to a list of edges
 fn path_to_edges(nodes: List(NodeId)) -> List(#(NodeId, NodeId)) {
+  do_path_to_edges(nodes, [])
+}
+
+fn do_path_to_edges(
+  nodes: List(NodeId),
+  acc: List(#(NodeId, NodeId)),
+) -> List(#(NodeId, NodeId)) {
   case nodes {
-    [] | [_] -> []
-    [first, second, ..rest] -> [
-      #(first, second),
-      ..path_to_edges([second, ..rest])
-    ]
+    [] | [_] -> list.reverse(acc)
+    [first, second, ..rest] ->
+      do_path_to_edges([second, ..rest], [#(first, second), ..acc])
   }
 }
 
@@ -355,6 +360,7 @@ fn css_length_to_string(length: CssLength) -> String {
 
 /// Helper to convert NodeShape to Mermaid bracket syntax
 fn node_shape_brackets(shape: NodeShape, label: String) -> String {
+  let label = escape_quotes(label)
   case shape {
     RoundedRect -> "[\"" <> label <> "\"]"
     Stadium -> "([\"" <> label <> "\"])"
@@ -369,4 +375,8 @@ fn node_shape_brackets(shape: NodeShape, label: String) -> String {
     Trapezoid -> "[/\"" <> label <> "\"\\]"
     TrapezoidAlt -> "[\\\"" <> label <> "\"/]"
   }
+}
+
+fn escape_quotes(s: String) -> String {
+  string.replace(s, each: "\"", with: "#quot;")
 }

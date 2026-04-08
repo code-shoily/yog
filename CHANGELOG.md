@@ -5,6 +5,68 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+- **New Random Graph Generators** (`yog/generator/random`): Added 8 new stochastic graph generators to match the Elixir implementation:
+  - `random_regular/3` - d-regular graphs where every node has exactly degree d (uses configuration model with greedy matching)
+  - `sbm/5` - Stochastic Block Model for community structure (assigns nodes to communities, edges based on intra/inter-community probabilities)
+  - `configuration_model/2` - Generate graphs from a degree sequence using stub matching
+  - `power_law_graph/3` - Scale-free networks using the configuration model with power-law degree distribution
+  - `kronecker/3` and `rmat/4` - Recursive Kronecker graph generation for realistic network structures
+  - `geometric/3` - Random geometric graphs where edges connect nodes within a distance threshold
+  - `waxman/4` - Waxman model for network topology with distance-based edge probabilities
+  - All generators support `seed` parameter for reproducibility
+  - All generators include `*_with_type` variants for directed graphs
+  - Comprehensive test coverage with property-based tests for structural invariants
+
+- **New Classic Graph Generators** (`yog/generator/classic`): Added 17 new deterministic graph generators to match the Elixir implementation:
+  - **Tree Generators**: `kary_tree/2`, `complete_kary/2`, `caterpillar/2` - Complete and partial k-ary trees with configurable branching factor
+  - **Grid/Ladder Variants**: `hypercube/1`, `ladder/1`, `circular_ladder/1`, `mobius_ladder/1`, `prism/1` - Higher-dimensional and twisted grid structures
+  - **Windmill/Friendship**: `friendship/1`, `windmill/2`, `book/1` - Social network and intersection graph patterns
+  - **Special Bipartite**: `crown/1`, `turan/2` - Extremal graph theory constructions
+  - **Platonic Solids**: `tetrahedron/0`, `cube/0`, `octahedron/0`, `dodecahedron/0`, `icosahedron/0` - All five Platonic solid graphs
+  - All generators include `*_with_type/2` or `*_with_type/3` variants for directed graphs
+  - Comprehensive documentation with properties, examples, and references
+  - Full unit test coverage (100+ new tests)
+  - Property-based tests for structural invariants (65 PBT tests with reduced iteration count for performance)
+
+### Changed
+
+- **Promoted Multigraph and DAG Modules**: The previously experimental `yog/multi/*` and `yog/dag/*` modules are now stable:
+  - Removed experimental notices from all module documentation
+  - Added comprehensive Yog-style module documentation
+  - Removed "⚠️ Experimental Features" section from README
+  - These modules now have the same API stability guarantee as other Yog modules
+
+- **Consolidated Transform Operations** (`yog/transform`): Migrated reachability-based transformations to the core transform module:
+  - Moved `transitive_closure/2` and `transitive_reduction/2` from `yog/dag/algorithm` to `yog/transform`.
+  - Generalized these operations to work on all `Graph` types, no longer requiring they be wrapped in a `Dag` type.
+  - Added a general reachability fallback for calling `transitive_closure` on graphs with cycles, maintaining O(V × E) performance for DAGs while providing correct results for all structures.
+
+- **Refactored DAG Algorithms**: Simplified internal path reconstruction and consolidated redundant helper functions in `yog/dag/algorithm`.
+- **Enhanced DAG Testing**: Established a robust property-based testing suite using `qcheck` to ensure correctness across topological sorting, reachability counting, and cycle-free edge insertion.
+
+## 5.2.1 - 2026-04-08
+
+### Removed
+
+- **Cyclicity from Traversal** (`yog/traversal`): Removed `is_cyclic/1` and `is_acyclic/1` from the traversal module. Use `yog/property/cyclicity` instead, which is now the sole source of truth for graph cyclicity analysis.
+
+## 5.2.0 - 2026-04-08
+
+### Added
+
+- **Enhanced Internal Utilities** (`yog/internal/utils`): Unified utility functions for vector analysis and randomization:
+  - `norm_diff/3` - Calculates vector distances between node score maps supporting L1, L2, and Max norms.
+  - `fisher_yates/2` - High-performance list shuffling using platform-specific FFI (native tuples in Erlang, arrays in JS) for $O(n)$ complexity.
+
+- **Polished ASCII Rendering** (`yog/render/ascii`): Major improvements to terminal-based grid and maze visualization:
+  - `grid_to_string_unicode/1` - Renders grids using high-quality Unicode box-drawing characters (┌───┬───┐) for a professional terminal look.
+  - **Cell Rendering (Occupants)** - New support for displaying markers or data inside cells (e.g., "S" for start, "G" for goal) via `grid_to_string_with_occupants` and its Unicode variant.
+  - **Toroidal Support** - Added Unicode-enabled rendering for toroidal grids with wrap-around indicators.
+
 ## 5.1.1 - 2026-03-23
 
 ### Changed

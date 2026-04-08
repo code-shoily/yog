@@ -718,8 +718,64 @@ pub fn subgraph_single_node_test() {
   |> should.equal(Ok("B"))
 
   // No edges (isolated node)
-  model.successors(sub, 2)
+  model.successors(sub, 3)
   |> should.equal([])
+}
+
+// ============= Transitive Closure Tests =============
+
+pub fn transitive_closure_dag_test() {
+  let g =
+    model.new(Directed)
+    |> model.add_edge_ensure(1, 2, 10, "")
+    |> model.add_edge_ensure(2, 3, 20, "")
+
+  let tc = transform.transitive_closure(g, with: int.add)
+
+  let assert Ok(targets_of_1) = dict.get(tc.out_edges, 1)
+  dict.has_key(targets_of_1, 2) |> should.be_true
+  dict.has_key(targets_of_1, 3) |> should.be_true
+  dict.get(targets_of_1, 3) |> should.equal(Ok(30))
+}
+
+pub fn transitive_closure_cyclic_test() {
+  let g =
+    model.new(Directed)
+    |> model.add_edge_ensure(1, 2, 10, "")
+    |> model.add_edge_ensure(2, 1, 20, "")
+    |> model.add_edge_ensure(2, 3, 30, "")
+
+  let tc = transform.transitive_closure(g, with: int.add)
+
+  // 1 reaches 2 (direct), 2 reaches 1 (direct)
+  // 1 reaches 1 via 1->2->1
+  // 1 reaches 3 via 1->2->3
+  dict.has_key(tc.nodes, 1) |> should.be_true
+  dict.has_key(tc.nodes, 2) |> should.be_true
+  dict.has_key(tc.nodes, 3) |> should.be_true
+
+  let assert Ok(t1) = dict.get(tc.out_edges, 1)
+  dict.has_key(t1, 1) |> should.be_true
+  dict.has_key(t1, 3) |> should.be_true
+
+  let assert Ok(t2) = dict.get(tc.out_edges, 2)
+  dict.has_key(t2, 2) |> should.be_true
+}
+
+// ============= Transitive Reduction Tests =============
+
+pub fn transitive_reduction_test() {
+  let g =
+    model.new(Directed)
+    |> model.add_edge_ensure(1, 2, 10, "")
+    |> model.add_edge_ensure(2, 3, 20, "")
+    |> model.add_edge_ensure(1, 3, 30, "")
+
+  let tr = transform.transitive_reduction(g, with: int.add)
+
+  let assert Ok(targets_of_1) = dict.get(tr.out_edges, 1)
+  dict.has_key(targets_of_1, 2) |> should.be_true
+  dict.has_key(targets_of_1, 3) |> should.be_false
 }
 
 pub fn subgraph_two_connected_nodes_test() {

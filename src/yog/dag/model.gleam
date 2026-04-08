@@ -1,14 +1,42 @@
-//// # ⚠️ Experimental Module
+//// Type-safe Directed Acyclic Graph (DAG) model with compile-time acyclicity guarantees.
 ////
-//// This module is experimental and provides minimal, working functionality.
-//// The implementation is functional but may not be fully optimized for performance.
+//// This module provides an opaque `Dag` type that wraps a regular `Graph` with a
+//// compile-time guarantee of acyclicity. This enables total functions for operations
+//// like topological sorting and linear-time algorithms for path finding.
 ////
-//// **Expected changes:**
-//// - Additional features and algorithms will be added
-//// - Performance enhancements and optimizations
-//// - API may be subject to change in future versions
+//// ## Key Features
 ////
-//// Use with caution in production environments.
+//// - **Type Safety**: The `Dag` type proves acyclicity at compile time
+//// - **Total Functions**: Operations like `topological_sort/1` cannot fail
+//// - **Linear Algorithms**: Pathfinding runs in O(V+E) vs O((V+E) log V) for Dijkstra
+//// - **Safe Construction**: Conversion from `Graph` validates acyclicity
+////
+//// ## Construction
+////
+//// Create a `Dag` from an existing graph using `from_graph()`:
+////
+//// ```gleam
+//// import yog/dag/model
+////
+//// case model.from_graph(my_graph) {
+////   Ok(dag) -> // Safe to use DAG-only operations
+////   Error(model.CycleDetected) -> // Handle cyclic graph
+//// }
+//// ```
+////
+//// ## Safe Modifications
+////
+//// | Operation | Safety | Returns |
+//// |-----------|--------|---------|
+//// | `add_node/3` | Safe | `Dag` directly |
+//// | `remove_node/2` | Safe | `Dag` directly |
+//// | `remove_edge/3` | Safe | `Dag` directly |
+//// | `add_edge/5` | Validated | `Result(Dag, DagError)` |
+////
+//// ## References
+////
+//// - [Wikipedia: Directed acyclic graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph)
+//// - [DAG Data Structures](https://en.wikipedia.org/wiki/Directed_acyclic_graph#Data_structures)
 
 import yog/model.{type Graph}
 import yog/property/cyclicity as properties

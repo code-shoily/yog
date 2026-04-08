@@ -139,7 +139,8 @@ pub fn union(disjoint_set: DisjointSet(a), x: a, y: a) -> DisjointSet(a) {
 /// // Results in: {1,2,3,4} as one set
 /// ```
 pub fn from_pairs(pairs: List(#(a, a))) -> DisjointSet(a) {
-  list.fold(pairs, new(), fn(dsu, pair) { union(dsu, pair.0, pair.1) })
+  use dsu, pair <- list.fold(pairs, new())
+  dsu |> union(pair.0, pair.1)
 }
 
 /// Checks if two elements are in the same set (connected).
@@ -195,8 +196,9 @@ pub fn count_sets(dsu: DisjointSet(a)) -> Int {
 pub fn to_lists(dsu: DisjointSet(a)) -> List(List(a)) {
   dict.keys(dsu.parents)
   |> list.fold(dict.new(), fn(acc, element) {
-    let root = find_root_readonly(dsu, element)
-    dict.upsert(acc, root, fn(existing) {
+    dsu
+    |> find_root_readonly(element)
+    |> dict.upsert(acc, _, fn(existing) {
       case existing {
         Some(members) -> [element, ..members]
         None -> [element]

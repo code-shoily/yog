@@ -2,6 +2,7 @@ import gleam/dict
 import gleam/float
 import gleam/int
 import gleam/list
+import gleam/option.{Some}
 import yog
 import yog/generator/classic
 import yog/generator/random
@@ -47,11 +48,11 @@ pub fn density_to_probability(density: GraphDensity) -> Float {
 pub fn random_graph(
   size: GraphSize,
   density: GraphDensity,
-  _seed: Int,
+  seed: Int,
 ) -> Graph(Nil, Int) {
   let nodes = size_to_nodes(size)
   let prob = density_to_probability(density)
-  random.erdos_renyi_gnp(nodes, prob)
+  random.erdos_renyi_gnp(nodes, prob, seed: Some(seed))
 }
 
 /// Generate a grid graph (useful for pathfinding benchmarks)

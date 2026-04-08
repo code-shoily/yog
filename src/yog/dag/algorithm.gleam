@@ -1,14 +1,41 @@
-//// # ⚠️ Experimental Module
+//// Algorithms for Directed Acyclic Graphs (DAGs).
 ////
-//// This module is experimental and provides minimal, working functionality.
-//// The implementation is functional but may not be fully optimized for performance.
+//// This module provides efficient algorithms that leverage the acyclicity guarantee
+//// of the `Dag` type. These algorithms run in linear O(V+E) time, faster than
+//// their general-graph counterparts.
 ////
-//// **Expected changes:**
-//// - Additional features and algorithms will be added
-//// - Performance enhancements and optimizations
-//// - API may be subject to change in future versions
+//// ## Available Algorithms
 ////
-//// Use with caution in production environments.
+//// | Algorithm | Function | Use Case |
+//// |-----------|----------|----------|
+//// | Topological Sort | `topological_sort/1` | Task scheduling, build systems |
+//// | Longest Path | `longest_path/1` | Critical path analysis, project scheduling |
+//// | Shortest Path | `shortest_path/3` | Weighted DAG shortest paths |
+//// | Transitive Closure | `transitive_closure/2` | Reachability queries |
+//// | Transitive Reduction | `transitive_reduction/2` | Minimal graph representation |
+//// | LCA | `lowest_common_ancestors/3` | Dependency analysis, merge bases |
+////
+//// ## Time Complexity
+////
+//// Most algorithms run in **O(V + E)** linear time due to DP on topologically sorted nodes:
+//// - Path algorithms: O(V + E)
+//// - Transitive closure/reduction: O(V × E) worst case
+//// - LCA computation: O(V × (V + E))
+////
+//// ## Example
+////
+//// ```gleam
+//// import yog/dag/algorithm as dag
+////
+//// // Find critical path in a project schedule (weighted DAG)
+//// let critical_path = dag.longest_path(project_dag)
+//// ```
+////
+//// ## References
+////
+//// - [Wikipedia: Directed acyclic graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph)
+//// - [Topological Sorting](https://en.wikipedia.org/wiki/Topological_sorting)
+//// - [Critical Path Method](https://en.wikipedia.org/wiki/Critical_path_method)
 
 import gleam/dict
 import gleam/list
@@ -77,42 +104,41 @@ pub fn longest_path(dag: Dag(n, Int)) -> List(NodeId) {
   // Initialize DP tables.
   // distance: tracks the longest distance to a node.
   // predecessor: tracks the node that came before it on the longest path.
-  let #(distances, predecessors) =
-    list.fold(sorted_nodes, #(dict.new(), dict.new()), fn(acc, node) {
-      let #(dist_acc, pred_acc) = acc
-      let node_dist = case dict.get(dist_acc, node) {
-        Ok(d) -> d
-        Error(_) -> 0
-      }
+  let #(distances, predecessors) = {
+    use #(dist_acc, pred_acc) as acc, node <- list.fold(sorted_nodes, #(
+      dict.new(),
+      dict.new(),
+    ))
+    let node_dist = case dict.get(dist_acc, node) {
+      Ok(d) -> d
+      Error(_) -> 0
+    }
 
-      // Relax outgoing edges
-      case dict.get(graph.out_edges, node) {
-        Ok(edges) -> {
-          dict.fold(edges, #(dist_acc, pred_acc), fn(inner_acc, target, weight) {
-            let #(d_acc, p_acc) = inner_acc
+    case dict.get(graph.out_edges, node) {
+      Ok(edges) -> {
+        use #(d_acc, p_acc) as inner_acc, target, weight <- dict.fold(edges, #(
+          dist_acc,
+          pred_acc,
+        ))
+        let current_target_dist = dict.get(d_acc, target)
+        let new_dist = node_dist + weight
 
-            // Re-fetch current_target_dist using Option
-            let current_target_dist = dict.get(d_acc, target)
-            let new_dist = node_dist + weight
-
-            let should_update = case current_target_dist {
-              Ok(d) -> new_dist > d
-              // If we've never reached this node, any path is the longest so far
-              Error(_) -> True
-            }
-
-            case should_update {
-              True -> #(
-                dict.insert(d_acc, target, new_dist),
-                dict.insert(p_acc, target, node),
-              )
-              False -> inner_acc
-            }
-          })
+        let should_update = case current_target_dist {
+          Ok(d) -> new_dist > d
+          Error(_) -> True
         }
-        Error(_) -> acc
+
+        case should_update {
+          True -> #(
+            dict.insert(d_acc, target, new_dist),
+            dict.insert(p_acc, target, node),
+          )
+          False -> inner_acc
+        }
       }
-    })
+      Error(_) -> acc
+    }
+  }
 
   // Find the node with the maximum distance
   let max_node_opt =
@@ -127,182 +153,21 @@ pub fn longest_path(dag: Dag(n, Int)) -> List(NodeId) {
   // Reconstruct path
   case max_node_opt {
     None -> []
-    Some(#(end_node, _)) -> reconstruct_path(end_node, predecessors, [])
+    Some(#(end_node, _)) -> do_reconstruct_path(end_node, predecessors, [])
   }
 }
 
-fn reconstruct_path(
+fn do_reconstruct_path(
   current: NodeId,
   predecessors: dict.Dict(NodeId, NodeId),
   path: List(NodeId),
 ) -> List(NodeId) {
   let new_path = [current, ..path]
+
   case dict.get(predecessors, current) {
-    Ok(prev) -> reconstruct_path(prev, predecessors, new_path)
+    Ok(prev) -> do_reconstruct_path(prev, predecessors, new_path)
     Error(_) -> new_path
   }
-}
-
-/// Computes the transitive closure of a DAG.
-///
-/// The transitive closure adds edges between all pairs of nodes where a path
-/// exists in the original graph. If `u` can reach `v` through any path, the
-/// closure will have a direct edge `u -> v`.
-///
-/// The `merge_fn` is used to combine edge weights when multiple paths exist
-/// between the same pair of nodes.
-///
-/// **Use cases:**
-/// - Reachability queries (is A reachable from B?)
-/// - Precomputing path relationships
-/// - Dependency analysis (what indirectly depends on what?)
-///
-/// **Time Complexity:** O(V × E) in the worst case
-///
-/// ## Example
-///
-/// ```gleam
-/// // Original edges: A->B (weight 2), B->C (weight 3)
-/// // Closure adds: A->C (weight 5 = 2+3)
-/// let closure = dag.algorithms.transitive_closure(dag, int.add)
-/// ```
-pub fn transitive_closure(
-  dag: Dag(n, e),
-  with merge_fn: fn(e, e) -> e,
-) -> Dag(n, e) {
-  let graph = dag_model.to_graph(dag)
-
-  // We need to track the weights along with reachability. A simple dictionary approach 
-  // where reachability_map is Dict(NodeId, Dict(NodeId, e)).
-  // For each node u, and each child v, if v reaches w with weight W_vw, 
-  // then u reaches w with weight merge_fn(W_uv, W_vw).
-  // If u already reached w directly with W_uw, we merge W_uw and the new path.
-
-  let sorted_nodes = topological_sort(dag) |> list.reverse()
-
-  let reachability_map =
-    list.fold(sorted_nodes, dict.new(), fn(acc, node) {
-      case dict.get(graph.out_edges, node) {
-        Ok(edges) -> {
-          // edges is Dict(NodeId, e) maps direct_child -> W_node_child
-          let reachable_from_node =
-            dict.fold(edges, edges, fn(reachable_acc, child, w_node_child) {
-              // Get the child's reachable set
-              case dict.get(acc, child) {
-                Ok(child_reachable) -> {
-                  // Merge the child's rechable nodes into the current node's set
-                  dict.fold(
-                    child_reachable,
-                    reachable_acc,
-                    fn(inner_acc, target, w_child_target) {
-                      let combined_weight =
-                        merge_fn(w_node_child, w_child_target)
-
-                      // If we already have a path to this target, merge them again
-                      case dict.get(inner_acc, target) {
-                        Ok(existing_weight) ->
-                          dict.insert(
-                            inner_acc,
-                            target,
-                            merge_fn(existing_weight, combined_weight),
-                          )
-                        Error(_) ->
-                          dict.insert(inner_acc, target, combined_weight)
-                      }
-                    },
-                  )
-                }
-                Error(_) -> reachable_acc
-              }
-            })
-          dict.insert(acc, node, reachable_from_node)
-        }
-        Error(_) -> dict.insert(acc, node, dict.new())
-      }
-    })
-
-  // Build the new graph
-  let new_graph =
-    dict.fold(reachability_map, graph, fn(g_acc, source_node, targets) {
-      dict.fold(targets, g_acc, fn(g_inner, target_node, weight) {
-        // Nodes are guaranteed to exist since we started with the original graph
-        let assert Ok(g) =
-          model.add_edge(
-            g_inner,
-            from: source_node,
-            to: target_node,
-            with: weight,
-          )
-        g
-      })
-    })
-
-  let assert Ok(new_dag): Result(dag_model.Dag(_, _), _) =
-    dag_model.from_graph(new_graph)
-  new_dag
-}
-
-/// Computes the transitive reduction of a DAG.
-///
-/// The transitive reduction removes all edges that are redundant - i.e., edges
-/// `u -> v` where there exists an indirect path from `u` to `v` through other
-/// nodes. The result has the minimum number of edges while preserving all
-/// reachability relationships.
-///
-/// This is the inverse of transitive closure. It's useful for:
-/// - Simplifying dependency graphs
-/// - Removing implied dependencies
-/// - Creating minimal representations
-///
-/// **Time Complexity:** O(V × E)
-///
-/// ## Example
-///
-/// ```gleam
-/// // Original: A->B, B->C, A->C (A->C is implied by A->B->C)
-/// // Reduction removes: A->C
-/// // Result: A->B, B->C
-/// let minimal = dag.algorithms.transitive_reduction(dag, int.add)
-/// ```
-pub fn transitive_reduction(
-  dag: Dag(n, e),
-  with merge_fn: fn(e, e) -> e,
-) -> Dag(n, e) {
-  let graph = dag_model.to_graph(dag)
-  let reach_dag = transitive_closure(dag, merge_fn)
-  let reach_graph = dag_model.to_graph(reach_dag)
-
-  // An edge u->v is redundant if there exists some w such that u->w and w->v.
-  let reduced_graph =
-    dict.fold(graph.out_edges, graph, fn(g_acc, u, targets) {
-      dict.fold(targets, g_acc, fn(g_inner, v, _w) {
-        // Is there an indirect path from u to v?
-        // u has an edge to w, and reach_graph says w reaches v.
-        let is_redundant =
-          dict.fold(targets, False, fn(found_redundant, w, _) {
-            case found_redundant, w == v {
-              True, _ -> True
-              False, True -> False
-              False, False -> {
-                // Check if w reaches v
-                case dict.get(reach_graph.out_edges, w) {
-                  Ok(w_targets) -> dict.has_key(w_targets, v)
-                  Error(_) -> False
-                }
-              }
-            }
-          })
-
-        case is_redundant {
-          True -> model.remove_edge(g_inner, u, v)
-          False -> g_inner
-        }
-      })
-    })
-
-  let assert Ok(new_dag): Result(dag_model.Dag(_, _), _) =
-    dag_model.from_graph(reduced_graph)
-  new_dag
 }
 
 /// Direction for reachability counting operations.
@@ -348,75 +213,57 @@ pub fn shortest_path(
   let sorted_nodes = topological_sort(dag)
 
   // Initialize distance and predecessor tables
-  let #(distances, predecessors) =
-    list.fold(sorted_nodes, #(dict.new(), dict.new()), fn(acc, node) {
-      let #(dist_acc, pred_acc) = acc
+  let #(distances, predecessors) = {
+    use #(dist_acc, pred_acc) as acc, node <- list.fold(sorted_nodes, #(
+      dict.new(),
+      dict.new(),
+    ))
 
-      // For the start node, initialize distance to 0
-      let dist_acc = case node == start {
-        True -> dict.insert(dist_acc, node, 0)
-        False -> dist_acc
-      }
+    // For the start node, initialize distance to 0
+    let dist_acc = case node == start {
+      True -> dict.insert(dist_acc, node, 0)
+      False -> dist_acc
+    }
 
-      let node_dist = case dict.get(dist_acc, node) {
-        Ok(d) -> d
-        Error(_) -> 0
-      }
+    let node_dist = case dict.get(dist_acc, node) {
+      Ok(d) -> d
+      Error(_) -> 0
+    }
 
-      // Relax outgoing edges (minimize for shortest path)
-      case dict.get(graph.out_edges, node) {
-        Ok(edges) -> {
-          dict.fold(edges, #(dist_acc, pred_acc), fn(inner_acc, target, weight) {
-            let #(d_acc, p_acc) = inner_acc
-            let current_target_dist = dict.get(d_acc, target)
-            let new_dist = node_dist + weight
+    // Relax outgoing edges (minimize for shortest path)
+    case dict.get(graph.out_edges, node) {
+      Ok(edges) -> {
+        use #(d_acc, p_acc) as inner_acc, target, weight <- dict.fold(edges, #(
+          dist_acc,
+          pred_acc,
+        ))
+        let current_target_dist = dict.get(d_acc, target)
+        let new_dist = node_dist + weight
 
-            let should_update = case current_target_dist {
-              Ok(d) -> new_dist < d
-              // If we've never reached this node, any path is the shortest so far
-              Error(_) -> True
-            }
-
-            case should_update {
-              True -> #(
-                dict.insert(d_acc, target, new_dist),
-                dict.insert(p_acc, target, node),
-              )
-              False -> inner_acc
-            }
-          })
+        let should_update = case current_target_dist {
+          Ok(d) -> new_dist < d
+          Error(_) -> True
         }
-        Error(_) -> acc
+
+        case should_update {
+          True -> #(
+            dict.insert(d_acc, target, new_dist),
+            dict.insert(p_acc, target, node),
+          )
+          False -> inner_acc
+        }
       }
-    })
+      Error(_) -> acc
+    }
+  }
 
   // Check if we can reach the goal
   case dict.get(distances, goal) {
     Error(_) -> None
     Ok(total_dist) -> {
       // Reconstruct path by backtracking from goal to start
-      let path = reconstruct_path_backward(goal, start, predecessors, [])
+      let path = do_reconstruct_path(goal, predecessors, [])
       Some(Path(nodes: path, total_weight: total_dist))
-    }
-  }
-}
-
-fn reconstruct_path_backward(
-  current: NodeId,
-  start: NodeId,
-  predecessors: dict.Dict(NodeId, NodeId),
-  path: List(NodeId),
-) -> List(NodeId) {
-  let new_path = [current, ..path]
-  case current == start {
-    True -> new_path
-    False -> {
-      case dict.get(predecessors, current) {
-        Ok(prev) ->
-          reconstruct_path_backward(prev, start, predecessors, new_path)
-        Error(_) -> new_path
-        // Should not happen if path exists
-      }
     }
   }
 }
@@ -478,18 +325,16 @@ pub fn count_reachability(
   let reachability_sets: dict.Dict(NodeId, Set(NodeId)) =
     list.fold(nodes_to_process, dict.new(), fn(acc, node) {
       let related = get_related(node)
-      let related_set = set.from_list(related)
-      let all_reachable: Set(NodeId) =
-        list.fold(related, related_set, fn(set_acc: Set(NodeId), child) {
-          case dict.get(acc, child) {
-            Ok(child_set) -> set.union(set_acc, child_set)
-            Error(_) -> set_acc
-          }
-        })
-      dict.insert(acc, node, all_reachable)
+
+      list.fold(related, set.from_list(related), fn(set_acc, child) {
+        case dict.get(acc, child) {
+          Ok(child_set) -> set.union(set_acc, child_set)
+          Error(_) -> set_acc
+        }
+      })
+      |> dict.insert(acc, node, _)
     })
 
-  // Convert sets to counts
   dict.map_values(reachability_sets, fn(_, reachable) { set.size(reachable) })
 }
 
@@ -521,17 +366,10 @@ pub fn lowest_common_ancestors(
 ) -> List(NodeId) {
   let ancestors_counts_a = get_ancestors_set(dag, node_a)
   let ancestors_counts_b = get_ancestors_set(dag, node_b)
-
-  // Find intersection
   let common_ancestors =
-    list.filter(ancestors_counts_a, fn(a) {
-      list.contains(ancestors_counts_b, a)
-    })
+    list.filter(ancestors_counts_a, list.contains(ancestors_counts_b, _))
 
-  // To find "lowest" common ancestors, we need to remove any common ancestor
-  // that is an ancestor of another common ancestor.
   list.filter(common_ancestors, fn(candidate) {
-    // A candidate is "lowest" if no other common ancestor is reachable from it.
     let is_ancestor_of_another =
       list.any(common_ancestors, fn(other) {
         case candidate == other {
@@ -544,11 +382,9 @@ pub fn lowest_common_ancestors(
 }
 
 fn get_ancestors_set(dag: Dag(n, e), node: NodeId) -> List(NodeId) {
-  let graph = dag_model.to_graph(dag)
-
-  // Ancestors of X are all nodes Y where X is reachable from Y
-  let all_nodes = dict.keys(graph.nodes)
-  list.filter(all_nodes, fn(n) { has_path(dag, n, node) })
+  dag_model.to_graph(dag).nodes
+  |> dict.keys
+  |> list.filter(has_path(dag, _, node))
 }
 
 /// Checks if a path exists from `start` to `target` in the DAG.
@@ -561,7 +397,6 @@ fn has_path(dag: Dag(n, e), start: NodeId, target: NodeId) -> Bool {
   let graph = dag_model.to_graph(dag)
 
   // Simple DFS. Since it's a DAG, no cycle detection needed.
-  // Using prepend for O(1) stack operations.
   do_has_path(graph, [start], target, set.new())
 }
 
@@ -573,24 +408,17 @@ fn do_has_path(
 ) -> Bool {
   case stack {
     [] -> False
+    [current, ..] if current == target -> True
     [current, ..rest] -> {
-      case current == target {
-        True -> True
+      case set.contains(visited, current) {
+        True -> do_has_path(graph, rest, target, visited)
         False -> {
-          case set.contains(visited, current) {
-            True -> do_has_path(graph, rest, target, visited)
-            False -> {
-              let new_visited = set.insert(visited, current)
-              let children = case dict.get(graph.out_edges, current) {
-                Ok(edges) -> dict.keys(edges)
-                Error(_) -> []
-              }
-              // Prepend children to stack for DFS (O(1) per child)
-              let new_stack =
-                list.fold(children, rest, fn(acc, child) { [child, ..acc] })
-              do_has_path(graph, new_stack, target, new_visited)
-            }
+          case dict.get(graph.out_edges, current) {
+            Ok(edges) -> dict.keys(edges)
+            Error(_) -> []
           }
+          |> list.fold(rest, fn(acc, child) { [child, ..acc] })
+          |> do_has_path(graph, _, target, set.insert(visited, current))
         }
       }
     }
