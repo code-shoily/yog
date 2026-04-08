@@ -1,14 +1,44 @@
-//// # ⚠️ Experimental Module
+//// Multigraph data structure and operations for graphs with parallel edges.
 ////
-//// This module is experimental and provides minimal, working functionality.
-//// The implementation is functional but may not be fully optimized for performance.
+//// A [multigraph](https://en.wikipedia.org/wiki/Multigraph) extends the standard graph model by allowing
+//// multiple edges between the same pair of nodes. This is useful for modeling scenarios like:
+//// - Multiple flights between cities
+//// - Redundant network connections
+//// - Parallel relationships in social networks
 ////
-//// **Expected changes:**
-//// - Additional features and algorithms will be added
-//// - Performance enhancements and optimizations
-//// - API may be subject to change in future versions
+//// ## Key Features
 ////
-//// Use with caution in production environments.
+//// - **Edge IDs**: Each edge has a unique `EdgeId` for individual reference
+//// - **Parallel Edges**: Multiple edges between the same nodes are stored separately
+//// - **Type Support**: Both directed and undirected multigraphs
+//// - **Conversion**: Convert to simple graphs with configurable edge merging strategies
+////
+//// ## Quick Start
+////
+//// ```gleam
+//// import yog/multi/model as multi
+////
+//// // Create a multigraph
+//// let graph = multi.directed()
+////   |> multi.add_node(1, "A")
+////   |> multi.add_node(2, "B")
+////
+//// // Add parallel edges (each gets a unique EdgeId)
+//// let #(graph, e1) = multi.add_edge(graph, from: 1, to: 2, with: "edge_1")
+//// let #(graph, e2) = multi.add_edge(graph, from: 1, to: 2, with: "edge_2")
+//// // e1 != e2 — two independent parallel edges
+//// ```
+////
+//// ## Conversion to Simple Graphs
+////
+//// | Function | Use For | Example |
+//// |----------|---------|---------|
+//// | `to_simple_graph_min_edges/2` | Shortest path, MST | Keep minimum weight edge |
+//// | `to_simple_graph_sum_edges/2` | Max flow, min cut | Sum parallel edge capacities |
+////
+//// ## References
+////
+//// - [Wikipedia: Multigraph](https://en.wikipedia.org/wiki/Multigraph)
 
 import gleam/dict.{type Dict}
 import gleam/list

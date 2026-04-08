@@ -1,14 +1,32 @@
-//// # ⚠️ Experimental Module
+//// Eulerian path and circuit algorithms for multigraphs.
 ////
-//// This module is experimental and provides minimal, working functionality.
-//// The implementation is functional but may not be fully optimized for performance.
+//// This module provides algorithms for detecting and finding [Eulerian paths](https://en.wikipedia.org/wiki/Eulerian_path)
+//// and circuits in multigraphs. An Eulerian circuit is a closed walk that traverses every edge
+//// exactly once; an Eulerian path is an open walk with the same property.
 ////
-//// **Expected changes:**
-//// - Additional features and algorithms will be added
-//// - Performance enhancements and optimizations
-//// - API may be subject to change in future versions
+//// ## Conditions for Existence
 ////
-//// Use with caution in production environments.
+//// | Graph Type | Circuit Exists | Path Exists |
+//// |------------|----------------|-------------|
+//// | **Undirected** | All nodes have even degree | 0 or 2 nodes have odd degree |
+//// | **Directed** | All nodes balanced (in = out) | At most 1 start (out-in=1) and 1 end (in-out=1) |
+////
+//// ## Available Functions
+////
+//// - `has_eulerian_circuit/1` - Check if an Eulerian circuit exists
+//// - `has_eulerian_path/1` - Check if an Eulerian path exists
+//// - `find_eulerian_circuit/1` - Find a circuit using Hierholzer's algorithm
+//// - `find_eulerian_path/1` - Find a path using Hierholzer's algorithm
+////
+//// ## Time Complexity
+////
+//// - Existence checks: **O(V + E)**
+//// - Finding circuits/paths: **O(E)**
+////
+//// ## References
+////
+//// - [Wikipedia: Eulerian path](https://en.wikipedia.org/wiki/Eulerian_path)
+//// - [Hierholzer's Algorithm](https://en.wikipedia.org/wiki/Eulerian_path#Hierholzer's_algorithm)
 
 import gleam/dict
 import gleam/list

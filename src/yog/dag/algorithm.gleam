@@ -1,14 +1,41 @@
-//// # ⚠️ Experimental Module
+//// Algorithms for Directed Acyclic Graphs (DAGs).
 ////
-//// This module is experimental and provides minimal, working functionality.
-//// The implementation is functional but may not be fully optimized for performance.
+//// This module provides efficient algorithms that leverage the acyclicity guarantee
+//// of the `Dag` type. These algorithms run in linear O(V+E) time, faster than
+//// their general-graph counterparts.
 ////
-//// **Expected changes:**
-//// - Additional features and algorithms will be added
-//// - Performance enhancements and optimizations
-//// - API may be subject to change in future versions
+//// ## Available Algorithms
 ////
-//// Use with caution in production environments.
+//// | Algorithm | Function | Use Case |
+//// |-----------|----------|----------|
+//// | Topological Sort | `topological_sort/1` | Task scheduling, build systems |
+//// | Longest Path | `longest_path/1` | Critical path analysis, project scheduling |
+//// | Shortest Path | `shortest_path/3` | Weighted DAG shortest paths |
+//// | Transitive Closure | `transitive_closure/2` | Reachability queries |
+//// | Transitive Reduction | `transitive_reduction/2` | Minimal graph representation |
+//// | LCA | `lowest_common_ancestors/3` | Dependency analysis, merge bases |
+////
+//// ## Time Complexity
+////
+//// Most algorithms run in **O(V + E)** linear time due to DP on topologically sorted nodes:
+//// - Path algorithms: O(V + E)
+//// - Transitive closure/reduction: O(V × E) worst case
+//// - LCA computation: O(V × (V + E))
+////
+//// ## Example
+////
+//// ```gleam
+//// import yog/dag/algorithm as dag
+////
+//// // Find critical path in a project schedule (weighted DAG)
+//// let critical_path = dag.longest_path(project_dag)
+//// ```
+////
+//// ## References
+////
+//// - [Wikipedia: Directed acyclic graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph)
+//// - [Topological Sorting](https://en.wikipedia.org/wiki/Topological_sorting)
+//// - [Critical Path Method](https://en.wikipedia.org/wiki/Critical_path_method)
 
 import gleam/dict
 import gleam/list

@@ -1,14 +1,37 @@
-//// # ⚠️ Experimental Module
+//// Graph traversal algorithms for multigraphs.
 ////
-//// This module is experimental and provides minimal, working functionality.
-//// The implementation is functional but may not be fully optimized for performance.
+//// This module provides [BFS](https://en.wikipedia.org/wiki/Breadth-first_search) and [DFS](https://en.wikipedia.org/wiki/Depth-first_search)
+//// traversal algorithms adapted for multigraphs. Unlike simple graph traversals, these
+//// algorithms use edge IDs to correctly handle parallel edges.
 ////
-//// **Expected changes:**
-//// - Additional features and algorithms will be added
-//// - Performance enhancements and optimizations
-//// - API may be subject to change in future versions
+//// ## Key Differences from Simple Graph Traversal
 ////
-//// Use with caution in production environments.
+//// - **Edge-based tracking**: Uses `EdgeId` instead of just node IDs to track visited edges
+//// - **Parallel edge handling**: Each edge is traversed at most once, but nodes may be
+////   reached through multiple different edges
+//// - **Metadata includes EdgeId**: The `WalkMetadata` type includes the specific edge
+////   used to reach each node
+////
+//// ## Available Functions
+////
+//// - `bfs/2` - Breadth-first search returning nodes in BFS order
+//// - `dfs/2` - Depth-first search returning nodes in DFS pre-order
+//// - `fold_walk/5` - Generic fold traversal with metadata and flow control
+////
+//// ## Walk Control
+////
+//// The `fold_walk` function provides fine-grained control:
+//// - `Continue` - Explore successors of the current node
+//// - `Stop` - Skip successors of this node, but continue with other queued nodes
+//// - `Halt` - Stop the entire traversal immediately
+////
+//// ## Time Complexity
+////
+//// All traversals run in **O(V + E)** linear time.
+////
+//// ## References
+////
+//// - [Wikipedia: Graph Traversal](https://en.wikipedia.org/wiki/Graph_traversal)
 
 import gleam/list
 import gleam/option.{type Option, None, Some}
