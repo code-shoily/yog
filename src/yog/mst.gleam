@@ -59,25 +59,19 @@ pub fn kruskal(
   in graph: Graph(n, e),
   with_compare compare: fn(e, e) -> Order,
 ) -> List(Edge(e)) {
-  let edges =
-    dict.fold(graph.out_edges, [], fn(acc, from_id, targets) {
-      let inner_edges =
-        dict.fold(targets, [], fn(inner_acc, to_id, weight) {
-          case graph.kind == Undirected && from_id > to_id {
-            True -> inner_acc
-            False -> [
-              Edge(from: from_id, to: to_id, weight: weight),
-              ..inner_acc
-            ]
-          }
-        })
-      list.flatten([inner_edges, acc])
-    })
-    |> list.sort(fn(a, b) { compare(a.weight, b.weight) })
-
-  let initial_disjoint_set = disjoint_set.new()
-
-  do_kruskal(edges, initial_disjoint_set, [])
+  {
+    use acc, from_id, targets <- dict.fold(graph.out_edges, [])
+    let inner_edges = {
+      use inner_acc, to_id, weight <- dict.fold(targets, [])
+      case graph.kind == Undirected && from_id > to_id {
+        True -> inner_acc
+        False -> [Edge(from: from_id, to: to_id, weight: weight), ..inner_acc]
+      }
+    }
+    list.flatten([inner_edges, acc])
+  }
+  |> list.sort(fn(a, b) { compare(a.weight, b.weight) })
+  |> do_kruskal(disjoint_set.new(), [])
 }
 
 fn do_kruskal(
@@ -89,15 +83,19 @@ fn do_kruskal(
     [] -> list.reverse(acc)
     [edge, ..rest] -> {
       let #(disjoint_set1, root_from) =
-        disjoint_set.find(disjoint_set_state, edge.from)
-      let #(disjoint_set2, root_to) = disjoint_set.find(disjoint_set1, edge.to)
+        disjoint_set_state
+        |> disjoint_set.find(edge.from)
+
+      let #(disjoint_set2, root_to) =
+        disjoint_set1
+        |> disjoint_set.find(edge.to)
 
       case root_from == root_to {
         True -> do_kruskal(rest, disjoint_set2, acc)
         False -> {
-          let next_disjoint_set =
-            disjoint_set.union(disjoint_set2, edge.from, edge.to)
-          do_kruskal(rest, next_disjoint_set, [edge, ..acc])
+          disjoint_set2
+          |> disjoint_set.union(edge.from, edge.to)
+          |> do_kruskal(rest, _, [edge, ..acc])
         }
       }
     }
@@ -126,24 +124,18 @@ pub fn prim(
   in graph: Graph(n, e),
   with_compare compare: fn(e, e) -> Order,
 ) -> List(Edge(e)) {
-  let node_ids = dict.keys(graph.nodes)
-
-  case node_ids {
+  case dict.keys(graph.nodes) {
     [] -> []
     [start, ..] -> {
-      let edge_compare = fn(a: Edge(e), b: Edge(e)) {
-        compare(a.weight, b.weight)
-      }
-
-      let initial_pq = priority_queue.new(edge_compare)
-      let initial_visited = set.from_list([start])
-      let initial_edges = get_all_edges_from_node(graph, start)
-      let pq_with_initial_edges =
-        list.fold(initial_edges, initial_pq, fn(pq, edge) {
-          priority_queue.push(pq, edge)
+      let initial_pq =
+        priority_queue.new(fn(a: Edge(e), b: Edge(e)) {
+          compare(a.weight, b.weight)
         })
 
-      do_prim(graph, pq_with_initial_edges, initial_visited, [])
+      graph
+      |> get_all_edges_from_node(start)
+      |> list.fold(initial_pq, fn(pq, edge) { priority_queue.push(pq, edge) })
+      |> do_prim(graph, _, set.from_list([start]), [])
     }
   }
 }
@@ -161,18 +153,12 @@ fn do_prim(
         True -> do_prim(graph, rest_pq, visited, acc)
         False -> {
           let new_visited = set.insert(visited, edge.to)
-          let new_acc = [edge, ..acc]
 
-          let new_edges = get_all_edges_from_node(graph, edge.to)
-          let filtered_edges =
-            list.filter(new_edges, fn(e) { !set.contains(new_visited, e.to) })
-
-          let new_pq =
-            list.fold(filtered_edges, rest_pq, fn(pq, e) {
-              priority_queue.push(pq, e)
-            })
-
-          do_prim(graph, new_pq, new_visited, new_acc)
+          graph
+          |> get_all_edges_from_node(edge.to)
+          |> list.filter(fn(e) { !set.contains(new_visited, e.to) })
+          |> list.fold(rest_pq, fn(pq, e) { priority_queue.push(pq, e) })
+          |> do_prim(graph, _, new_visited, [edge, ..acc])
         }
       }
     }
@@ -184,10 +170,10 @@ fn do_prim(
 // to expand its frontier. The visited set already prevents revisiting nodes.
 fn get_all_edges_from_node(graph: Graph(n, e), from: NodeId) -> List(Edge(e)) {
   case dict.get(graph.out_edges, from) {
-    Ok(targets) ->
-      dict.fold(targets, [], fn(acc, to_id, weight) {
-        [Edge(from: from, to: to_id, weight: weight), ..acc]
-      })
+    Ok(targets) -> {
+      use acc, to_id, weight <- dict.fold(targets, [])
+      [Edge(from: from, to: to_id, weight: weight), ..acc]
+    }
     Error(Nil) -> []
   }
 }
