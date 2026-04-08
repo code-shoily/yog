@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **New Random Graph Generators** (`yog/generator/random`): Added 8 new stochastic graph generators to match the Elixir implementation:
+  - `random_regular/3` - d-regular graphs where every node has exactly degree d (uses configuration model with greedy matching)
+  - `sbm/5` - Stochastic Block Model for community structure (assigns nodes to communities, edges based on intra/inter-community probabilities)
+  - `configuration_model/2` - Generate graphs from a degree sequence using stub matching
+  - `power_law_graph/3` - Scale-free networks using the configuration model with power-law degree distribution
+  - `kronecker/3` and `rmat/4` - Recursive Kronecker graph generation for realistic network structures
+  - `geometric/3` - Random geometric graphs where edges connect nodes within a distance threshold
+  - `waxman/4` - Waxman model for network topology with distance-based edge probabilities
+  - All generators support `seed` parameter for reproducibility
+  - All generators include `*_with_type` variants for directed graphs
+  - Comprehensive test coverage with property-based tests for structural invariants
+
 - **New Classic Graph Generators** (`yog/generator/classic`): Added 17 new deterministic graph generators to match the Elixir implementation:
   - **Tree Generators**: `kary_tree/2`, `complete_kary/2`, `caterpillar/2` - Complete and partial k-ary trees with configurable branching factor
   - **Grid/Ladder Variants**: `hypercube/1`, `ladder/1`, `circular_ladder/1`, `mobius_ladder/1`, `prism/1` - Higher-dimensional and twisted grid structures
