@@ -27,7 +27,9 @@
 
 Yog is a comprehensive graph algorithm library for Gleam, providing implementations of classic and research-grade graph algorithms with a functional API.
 
-🔷 **[YogEx](https://github.com/code-shoily/yog_ex)** - Elixir implementation of Yog with a superset of features. | 📊 **[Gleam vs Elixir Comparison](GLEAM_ELIXIR_COMPARISON.md)** - Detailed feature comparison.
+**[YogEx](https://github.com/code-shoily/yog_ex)** - Elixir implementation of Yog with a superset of features.
+
+**[Gleam vs Elixir Comparison](GLEAM_ELIXIR_COMPARISON.md)** - Detailed feature comparison.
 
 ## Features
 
