@@ -10,6 +10,9 @@ pub fn main() {
   gleeunit.main()
 }
 
+/// Generate a random list of integers for heap testing.
+///
+/// **Generates:** `List(Int)` with length 0-50 and values -100 to 100.
 fn int_list_generator() {
   use length <- qcheck.bind(qcheck.bounded_int(0, 50))
   qcheck.fixed_length_list_from(qcheck.bounded_int(-100, 100), length)
@@ -26,6 +29,9 @@ fn extract_all(h, acc) {
   }
 }
 
+/// Generate a triple of random integer lists.
+///
+/// **Generates:** `#(List(Int), List(Int), List(Int))`
 fn triple_generator() {
   use items1 <- qcheck.bind(int_list_generator())
   use items2 <- qcheck.bind(int_list_generator())

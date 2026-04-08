@@ -1,10 +1,11 @@
 import gleam/dict
 import gleam/list
 import gleam/option.{None, Some}
+import gleam/result
 import gleeunit/should
 import pbt/qcheck_generators
 import qcheck
-import yog/model
+import yog/model.{type Graph, type NodeId}
 import yog/pathfinding/a_star
 import yog/pathfinding/bellman_ford
 import yog/pathfinding/bidirectional
@@ -52,6 +53,39 @@ fn reconstruct_path_helper(parents, src, current, acc) {
       }
     }
   }
+}
+
+// Helpers from algorithm_property_test
+fn is_valid_path(graph: Graph(n, Int), path: List(NodeId)) -> Bool {
+  case path {
+    [] | [_] -> True
+    [first, second, ..rest] -> {
+      let edge_exists =
+        model.successors(graph, first)
+        |> list.any(fn(pair) { pair.0 == second })
+      edge_exists && is_valid_path(graph, [second, ..rest])
+    }
+  }
+}
+
+fn calculate_path_weight(graph: Graph(n, Int), path: List(NodeId)) -> Int {
+  case path {
+    [] | [_] -> 0
+    [first, second, ..rest] -> {
+      let edge_weight =
+        model.successors(graph, first)
+        |> list.find(fn(pair) { pair.0 == second })
+        |> result.map(fn(pair) { pair.1 })
+        |> result.unwrap(0)
+
+      edge_weight + calculate_path_weight(graph, [second, ..rest])
+    }
+  }
+}
+
+fn is_reachable(graph: Graph(n, e), from: NodeId, to: NodeId) -> Bool {
+  let visited = traversal.walk(graph, from: from, using: traversal.BreadthFirst)
+  list.contains(visited, to)
 }
 
 /// Dijkstra vs BFS: On unweighted graphs, Dijkstra weight should be (path_length - 1).
@@ -212,5 +246,100 @@ pub fn bellman_ford_vs_floyd_warshall_test() {
       }
     }
     _, Error(Nil) -> should.be_true(True)
+  }
+}
+
+// ============================================================================
+// DIJKSTRA: VALIDITY & INVARIANTS
+// ============================================================================
+
+pub fn dijkstra_path_validity_test() {
+  use #(graph, #(src, dst, _w)) <- qcheck.given(
+    qcheck_generators.graph_and_edge_generator(model.Directed),
+  )
+
+  case model.order(graph) {
+    0 -> Nil
+    _ -> {
+      case dijkstra.shortest_path_int(in: graph, from: src, to: dst) {
+        Some(path) -> {
+          assert list.first(path.nodes) == Ok(src)
+          assert list.last(path.nodes) == Ok(dst)
+          assert is_valid_path(graph, path.nodes)
+
+          let calculated = calculate_path_weight(graph, path.nodes)
+          assert path.total_weight == calculated
+        }
+        None -> Nil
+      }
+    }
+  }
+}
+
+pub fn dijkstra_no_path_confirmed_by_bfs_test() {
+  use #(graph, #(src, dst, _w)) <- qcheck.given(
+    qcheck_generators.graph_and_edge_generator(model.Directed),
+  )
+
+  case model.order(graph) {
+    0 -> Nil
+    _ -> {
+      case dijkstra.shortest_path_int(in: graph, from: src, to: dst) {
+        None -> {
+          assert !is_reachable(graph, src, dst)
+        }
+        Some(_) -> Nil
+      }
+    }
+  }
+}
+
+pub fn undirected_paths_symmetric_test() {
+  use #(graph, #(src, dst, _w)) <- qcheck.given(
+    qcheck_generators.graph_and_edge_generator(model.Undirected),
+  )
+
+  case model.order(graph) {
+    0 -> Nil
+    _ -> {
+      let forward = dijkstra.shortest_path_int(in: graph, from: src, to: dst)
+      let backward = dijkstra.shortest_path_int(in: graph, from: dst, to: src)
+
+      case forward, backward {
+        Some(f_path), Some(b_path) -> {
+          assert f_path.total_weight == b_path.total_weight
+        }
+        None, None -> Nil
+        _, _ -> panic as "Symmetric paths should both exist or both not exist!"
+      }
+    }
+  }
+}
+
+pub fn triangle_inequality_test() {
+  use #(graph, #(src, dst, _w)) <- qcheck.given(
+    qcheck_generators.graph_and_edge_generator(model.Directed),
+  )
+
+  case model.order(graph) {
+    0 -> Nil
+    _ -> {
+      let n = model.order(graph)
+      let via_node = { src + dst } % n
+
+      let direct = dijkstra.shortest_path_int(in: graph, from: src, to: dst)
+      let via_1_part1 =
+        dijkstra.shortest_path_int(in: graph, from: src, to: via_node)
+      let via_1_part2 =
+        dijkstra.shortest_path_int(in: graph, from: via_node, to: dst)
+
+      case direct, via_1_part1, via_1_part2 {
+        Some(d), Some(p1), Some(p2) -> {
+          let via_weight = p1.total_weight + p2.total_weight
+          assert d.total_weight <= via_weight
+        }
+        _, _, _ -> Nil
+      }
+    }
   }
 }

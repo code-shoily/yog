@@ -5,6 +5,8 @@ import yog/model.{type Graph, type GraphType}
 import yog/traversal
 
 /// Generate a random GraphType (Directed or Undirected)
+///
+/// **Generates:** `model.Directed` | `model.Undirected`
 pub fn graph_type_generator() {
   use is_directed <- qcheck.map(qcheck.bool())
   case is_directed {
@@ -16,6 +18,8 @@ pub fn graph_type_generator() {
 /// Generate a random graph with Int node data and Int edge weights
 /// - Nodes: 0 to max_nodes-1
 /// - Edges: Random connections with positive weights
+///
+/// **Generates:** `Graph(Int, Int)` with 0-15 nodes and 0-30 edges.
 pub fn graph_generator() {
   use kind <- qcheck.bind(graph_type_generator())
   use num_nodes <- qcheck.bind(qcheck.bounded_int(0, 15))
@@ -33,6 +37,8 @@ fn build_nodes(graph: Graph(Int, e), current: Int, max: Int) -> Graph(Int, e) {
 }
 
 /// Generate a graph with specific parameters
+///
+/// **Generates:** `Graph(Int, Int)` with `num_nodes` and `num_edges`.
 pub fn graph_generator_custom(
   kind: GraphType,
   num_nodes: Int,
@@ -60,6 +66,8 @@ pub fn graph_generator_custom(
 }
 
 /// Generate an undirected graph
+///
+/// **Generates:** `Graph(Int, Int)` with `model.Undirected` kind.
 pub fn undirected_graph_generator() {
   use num_nodes <- qcheck.bind(qcheck.bounded_int(0, 15))
   use num_edges <- qcheck.bind(qcheck.bounded_int(0, 30))
@@ -68,6 +76,8 @@ pub fn undirected_graph_generator() {
 }
 
 /// Generate a directed graph
+///
+/// **Generates:** `Graph(Int, Int)` with `model.Directed` kind.
 pub fn directed_graph_generator() {
   use num_nodes <- qcheck.bind(qcheck.bounded_int(0, 15))
   use num_edges <- qcheck.bind(qcheck.bounded_int(0, 30))
@@ -76,6 +86,8 @@ pub fn directed_graph_generator() {
 }
 
 /// Generate an edge triple #(src, dst, weight) with a custom weight generator
+///
+/// **Generates:** `#(Int, Int, Int)` where `src`, `dst` < `num_nodes`.
 pub fn edge_triple_generator_custom(
   num_nodes: Int,
   weight_gen: qcheck.Generator(Int),
@@ -91,11 +103,16 @@ pub fn edge_triple_generator_custom(
   }
 }
 
+/// Generate a standard edge triple #(src, dst, weight).
+///
+/// **Generates:** `#(Int, Int, Int)` with weight in range `[1, 100]`.
 pub fn edge_triple_generator(num_nodes: Int) {
   edge_triple_generator_custom(num_nodes, qcheck.bounded_int(1, 100))
 }
 
 /// Generate a traversal order (BFS or DFS)
+///
+/// **Generates:** `traversal.BreadthFirst` | `traversal.DepthFirst`
 pub fn traversal_order_generator() {
   use is_bfs <- qcheck.map(qcheck.bool())
   case is_bfs {
@@ -104,6 +121,9 @@ pub fn traversal_order_generator() {
   }
 }
 
+/// Generate a graph and a single edge triple compatible with it.
+///
+/// **Generates:** `#(Graph(Int, Int), #(Int, Int, Int))`
 pub fn graph_and_edge_generator(kind: GraphType) {
   use num_nodes <- qcheck.bind(qcheck.bounded_int(1, 15))
   use num_edges <- qcheck.bind(qcheck.bounded_int(0, 30))
@@ -113,7 +133,10 @@ pub fn graph_and_edge_generator(kind: GraphType) {
 }
 
 /// Generate a star graph with a center and leaves
-/// Returns #(graph, center_id, leaf_ids)
+///
+/// **Generates:** `#(Graph(Int, Int), center_id, leaf_ids)`
+/// - Center: `0`
+/// - Leaves: `1` to `num_nodes - 1`
 pub fn star_graph_generator() {
   use num_nodes <- qcheck.bind(qcheck.bounded_int(3, 10))
   let center = 0
@@ -137,6 +160,8 @@ fn unweighted_edge_generator(num_nodes: Int) {
 }
 
 /// Generate an unweighted graph (all edge weights are 1)
+///
+/// **Generates:** `Graph(Int, Int)` with all edge weights set to `1`.
 pub fn unweighted_graph_generator(kind: GraphType) {
   use num_nodes <- qcheck.bind(qcheck.bounded_int(1, 15))
   use num_edges <- qcheck.bind(qcheck.bounded_int(0, 30))
@@ -160,6 +185,8 @@ pub fn unweighted_graph_generator(kind: GraphType) {
 }
 
 /// Generate a graph with potentially negative weights (-20 to 50)
+///
+/// **Generates:** `Graph(Int, Int)` with weights in range `[-20, 50]`.
 pub fn graph_generator_negative_weights(kind: GraphType) {
   use num_nodes <- qcheck.bind(qcheck.bounded_int(3, 10))
   use num_edges <- qcheck.bind(qcheck.bounded_int(0, 20))
@@ -180,6 +207,8 @@ pub fn graph_generator_negative_weights(kind: GraphType) {
 }
 
 /// Generate a random tree
+///
+/// **Generates:** A connected, acyclic undirected `Graph(Int, Int)`.
 pub fn tree_generator() {
   use num_nodes <- qcheck.bind(qcheck.bounded_int(2, 15))
   let graph = build_nodes(model.new(model.Undirected), 0, num_nodes - 1)

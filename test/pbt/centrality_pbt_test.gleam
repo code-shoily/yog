@@ -1,10 +1,12 @@
 import gleam/dict
 import gleam/float
+import gleam/int
 import gleam/list
 import gleeunit/should
 import pbt/qcheck_generators
 import qcheck
 import yog/centrality
+import yog/model
 
 /// Star Graph Invariant: The center node must have strictly higher centrality than any leaf.
 pub fn star_graph_invariant_test() {
@@ -83,4 +85,39 @@ pub fn centrality_non_negative_test() {
   all_non_negative(betweenness) |> should.be_true()
   all_non_negative(pagerank) |> should.be_true()
   all_non_negative(eigenvector) |> should.be_true()
+}
+
+pub fn degree_centrality_correctness_test() {
+  use graph <- qcheck.given(qcheck_generators.directed_graph_generator())
+
+  let out_degrees = centrality.degree(graph, centrality.OutDegree)
+
+  case model.order(graph) {
+    0 | 1 -> Nil
+    _ -> {
+      let max_possible = model.order(graph) - 1
+
+      // Centrality score must be between 0.0 and infinity (normalized against order-1, could be >1.0 with loops/parallel edges)
+      let valid_range =
+        dict.values(out_degrees)
+        |> list.all(fn(score) { score >=. 0.0 })
+
+      assert valid_range
+
+      // Compare scores
+      let all_match =
+        list.all(model.all_nodes(graph), fn(node) {
+          let expected_degree = list.length(model.successors(graph, node))
+          let expected_score =
+            int.to_float(expected_degree) /. int.to_float(max_possible)
+
+          case dict.get(out_degrees, node) {
+            Ok(score) -> score == expected_score
+            Error(_) -> False
+          }
+        })
+
+      assert all_match
+    }
+  }
 }

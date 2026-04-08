@@ -9,6 +9,9 @@ pub fn main() {
   gleeunit.main()
 }
 
+/// Generate a random list of integers for queue testing.
+///
+/// **Generates:** `List(Int)` with length 0-50 and values -100 to 100.
 fn int_list_generator() {
   use length <- qcheck.bind(qcheck.bounded_int(0, 50))
   qcheck.fixed_length_list_from(qcheck.bounded_int(-100, 100), length)
