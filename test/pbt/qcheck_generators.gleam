@@ -1,3 +1,4 @@
+import gleam/int
 import gleam/list
 import qcheck
 import yog/internal/utils
@@ -226,4 +227,39 @@ fn add_tree_edges(g, i, n) {
       add_tree_edges(next_g, i + 1, n)
     }
   }
+}
+
+/// Generate a Directed Acyclic Graph (DAG)
+///
+/// **Generates:** A directed graph where all edges (u, v) satisfy u < v.
+pub fn dag_generator() {
+  use num_nodes <- qcheck.bind(qcheck.bounded_int(1, 15))
+  // A DAG with N nodes has at most N*(N-1)/2 edges
+  let max_edges = { num_nodes * { num_nodes - 1 } } / 2
+  use num_edges <- qcheck.bind(qcheck.bounded_int(0, int.min(max_edges, 30)))
+
+  let graph = build_nodes(model.new(model.Directed), 0, num_nodes - 1)
+
+  case num_nodes < 2 {
+    True -> qcheck.return(graph)
+    False -> {
+      use edges <- qcheck.map(qcheck.fixed_length_list_from(
+        dag_edge_generator(num_nodes),
+        num_edges,
+      ))
+
+      edges
+      |> list.fold(graph, fn(g, edge) {
+        let #(src, dst, weight) = edge
+        let assert Ok(g) = model.add_edge(g, from: src, to: dst, with: weight)
+        g
+      })
+    }
+  }
+}
+
+fn dag_edge_generator(num_nodes: Int) {
+  use u <- qcheck.bind(qcheck.bounded_int(0, num_nodes - 2))
+  use v <- qcheck.map(qcheck.bounded_int(u + 1, num_nodes - 1))
+  #(u, v, 1)
 }

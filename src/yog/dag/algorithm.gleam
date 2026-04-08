@@ -127,18 +127,18 @@ pub fn longest_path(dag: Dag(n, Int)) -> List(NodeId) {
   // Reconstruct path
   case max_node_opt {
     None -> []
-    Some(#(end_node, _)) -> reconstruct_path(end_node, predecessors, [])
+    Some(#(end_node, _)) -> do_reconstruct_path(end_node, predecessors, [])
   }
 }
 
-fn reconstruct_path(
+fn do_reconstruct_path(
   current: NodeId,
   predecessors: dict.Dict(NodeId, NodeId),
   path: List(NodeId),
 ) -> List(NodeId) {
   let new_path = [current, ..path]
   case dict.get(predecessors, current) {
-    Ok(prev) -> reconstruct_path(prev, predecessors, new_path)
+    Ok(prev) -> do_reconstruct_path(prev, predecessors, new_path)
     Error(_) -> new_path
   }
 }
@@ -395,28 +395,8 @@ pub fn shortest_path(
     Error(_) -> None
     Ok(total_dist) -> {
       // Reconstruct path by backtracking from goal to start
-      let path = reconstruct_path_backward(goal, start, predecessors, [])
+      let path = do_reconstruct_path(goal, predecessors, [])
       Some(Path(nodes: path, total_weight: total_dist))
-    }
-  }
-}
-
-fn reconstruct_path_backward(
-  current: NodeId,
-  start: NodeId,
-  predecessors: dict.Dict(NodeId, NodeId),
-  path: List(NodeId),
-) -> List(NodeId) {
-  let new_path = [current, ..path]
-  case current == start {
-    True -> new_path
-    False -> {
-      case dict.get(predecessors, current) {
-        Ok(prev) ->
-          reconstruct_path_backward(prev, start, predecessors, new_path)
-        Error(_) -> new_path
-        // Should not happen if path exists
-      }
     }
   }
 }
