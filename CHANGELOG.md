@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 5.2.0 - 2026-04-08
+
+### Added
+
+- **Enhanced Internal Utilities** (`yog/internal/utils`): Unified utility functions for vector analysis and randomization:
+  - `norm_diff/3` - Calculates vector distances between node score maps supporting L1, L2, and Max norms.
+  - `fisher_yates/2` - High-performance list shuffling using platform-specific FFI (native tuples in Erlang, arrays in JS) for $O(n)$ complexity.
+
+- **Polished ASCII Rendering** (`yog/render/ascii`): Major improvements to terminal-based grid and maze visualization:
+  - `grid_to_string_unicode/1` - Renders grids using high-quality Unicode box-drawing characters (┌───┬───┐) for a professional terminal look.
+  - **Cell Rendering (Occupants)** - New support for displaying markers or data inside cells (e.g., "S" for start, "G" for goal) via `grid_to_string_with_occupants` and its Unicode variant.
+  - **Toroidal Support** - Added Unicode-enabled rendering for toroidal grids with wrap-around indicators.
+
 ## 5.1.1 - 2026-03-23
 
 ### Changed
