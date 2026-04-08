@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- **New Classic Graph Generators** (`yog/generator/classic`): Added 17 new deterministic graph generators to match the Elixir implementation:
+  - **Tree Generators**: `kary_tree/2`, `complete_kary/2`, `caterpillar/2` - Complete and partial k-ary trees with configurable branching factor
+  - **Grid/Ladder Variants**: `hypercube/1`, `ladder/1`, `circular_ladder/1`, `mobius_ladder/1`, `prism/1` - Higher-dimensional and twisted grid structures
+  - **Windmill/Friendship**: `friendship/1`, `windmill/2`, `book/1` - Social network and intersection graph patterns
+  - **Special Bipartite**: `crown/1`, `turan/2` - Extremal graph theory constructions
+  - **Platonic Solids**: `tetrahedron/0`, `cube/0`, `octahedron/0`, `dodecahedron/0`, `icosahedron/0` - All five Platonic solid graphs
+  - All generators include `*_with_type/2` or `*_with_type/3` variants for directed graphs
+  - Comprehensive documentation with properties, examples, and references
+  - Full unit test coverage (100+ new tests)
+  - Property-based tests for structural invariants (65 PBT tests with reduced iteration count for performance)
+
 ### Changed
 
 - **Promoted Multigraph and DAG Modules**: The previously experimental `yog/multi/*` and `yog/dag/*` modules are now stable:
