@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed "⚠️ Experimental Features" section from README
   - These modules now have the same API stability guarantee as other Yog modules
 
+- **Consolidated Transform Operations** (`yog/transform`): Migrated reachability-based transformations to the core transform module:
+  - Moved `transitive_closure/2` and `transitive_reduction/2` from `yog/dag/algorithm` to `yog/transform`.
+  - Generalized these operations to work on all `Graph` types, no longer requiring they be wrapped in a `Dag` type.
+  - Added a general reachability fallback for calling `transitive_closure` on graphs with cycles, maintaining O(V × E) performance for DAGs while providing correct results for all structures.
+
+- **Refactored DAG Algorithms**: Simplified internal path reconstruction and consolidated redundant helper functions in `yog/dag/algorithm`.
+- **Enhanced DAG Testing**: Established a robust property-based testing suite using `qcheck` to ensure correctness across topological sorting, reachability counting, and cycle-free edge insertion.
+
 ## 5.2.1 - 2026-04-08
 
 ### Removed

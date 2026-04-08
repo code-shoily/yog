@@ -1,5 +1,4 @@
 import gleam/dict
-import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleeunit/should
@@ -90,36 +89,6 @@ pub fn shortest_path_same_node_test() {
   let assert Some(p) = path
   p.nodes |> should.equal([1])
   p.total_weight |> should.equal(0)
-}
-
-pub fn transitive_closure_test() {
-  let g =
-    model.new(Directed)
-    |> model.add_edge_ensure(1, 2, 10, "")
-    |> model.add_edge_ensure(2, 3, 20, "")
-
-  let assert Ok(d) = dag_model.from_graph(g)
-  let tc = algorithm.transitive_closure(d, with: int.add) |> dag_model.to_graph
-
-  let assert Ok(targets_of_1) = dict.get(tc.out_edges, 1)
-  dict.has_key(targets_of_1, 2) |> should.be_true
-  dict.has_key(targets_of_1, 3) |> should.be_true
-}
-
-pub fn transitive_reduction_test() {
-  let g =
-    model.new(Directed)
-    |> model.add_edge_ensure(1, 2, 10, "")
-    |> model.add_edge_ensure(2, 3, 20, "")
-    |> model.add_edge_ensure(1, 3, 30, "")
-
-  let assert Ok(d) = dag_model.from_graph(g)
-  let tr =
-    algorithm.transitive_reduction(d, with: int.add) |> dag_model.to_graph
-
-  let assert Ok(targets_of_1) = dict.get(tr.out_edges, 1)
-  dict.has_key(targets_of_1, 2) |> should.be_true
-  dict.has_key(targets_of_1, 3) |> should.be_false
 }
 
 pub fn count_reachability_test() {

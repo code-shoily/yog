@@ -13,6 +13,8 @@
 //// | Map Edges | `map_edges/2` | O(E) | Transform edge weights |
 //// | Filter Nodes | `filter_nodes/2` | O(V) | Subgraph extraction |
 //// | Filter Edges | `filter_edges/2` | O(E) | Remove unwanted edges |
+//// | Transitive Closure | `transitive_closure/2` | O(V × E) | Add all reachable edges |
+//// | Transitive Reduction | `transitive_reduction/2` | O(V × E) | Remove redundant edges |
 ////
 //// ## The O(1) Transpose Operation
 ////
@@ -38,6 +40,7 @@ import gleam/list
 import gleam/result
 import gleam/set
 import yog/model.{type Graph, type NodeId, Directed, Graph, Undirected}
+import yog/traversal
 
 /// Reverses the direction of every edge in the graph (graph transpose).
 ///
@@ -645,4 +648,199 @@ pub fn to_undirected(
       )
     }
   }
+}
+
+/// Computes the transitive closure of a graph.
+///
+/// The transitive closure adds edges between all pairs of nodes where a path
+/// exists in the original graph. If `u` can reach `v` through any path, the
+/// closure will have a direct edge `u -> v`.
+///
+/// The `merge_fn` is used to combine edge weights when multiple paths exist
+/// between the same pair of nodes.
+///
+/// **Complexity:**
+/// - For DAGs: O(V × E) using topological sort
+/// - For general graphs: O(V × (V + E)) using multiple traversals
+///
+/// ## Example
+///
+/// ```gleam
+/// // Original edges: A->B (weight 2), B->C (weight 3)
+/// // Closure adds: A->C (weight 5 = 2+3)
+/// let closure = transform.transitive_closure(graph, int.add)
+/// ```
+pub fn transitive_closure(
+  graph: Graph(n, e),
+  with merge_fn: fn(e, e) -> e,
+) -> Graph(n, e) {
+  case traversal.topological_sort(graph) {
+    Ok(sorted) -> do_transitive_closure_dag(graph, sorted, merge_fn)
+    Error(Nil) -> do_transitive_closure_general(graph, merge_fn)
+  }
+}
+
+fn do_transitive_closure_dag(
+  graph: Graph(n, e),
+  sorted: List(NodeId),
+  merge_fn: fn(e, e) -> e,
+) -> Graph(n, e) {
+  let reversed_sorted = list.reverse(sorted)
+
+  let reachability_map =
+    list.fold(reversed_sorted, dict.new(), fn(acc, node) {
+      case dict.get(graph.out_edges, node) {
+        Ok(edges) -> {
+          let reachable_from_node =
+            dict.fold(edges, edges, fn(reachable_acc, child, w_node_child) {
+              case dict.get(acc, child) {
+                Ok(child_reachable) -> {
+                  dict.fold(
+                    child_reachable,
+                    reachable_acc,
+                    fn(inner_acc, target, w_child_target) {
+                      let combined_weight =
+                        merge_fn(w_node_child, w_child_target)
+
+                      case dict.get(inner_acc, target) {
+                        Ok(existing_weight) ->
+                          dict.insert(
+                            inner_acc,
+                            target,
+                            merge_fn(existing_weight, combined_weight),
+                          )
+                        Error(_) ->
+                          dict.insert(inner_acc, target, combined_weight)
+                      }
+                    },
+                  )
+                }
+                Error(_) -> reachable_acc
+              }
+            })
+          dict.insert(acc, node, reachable_from_node)
+        }
+        Error(_) -> dict.insert(acc, node, dict.new())
+      }
+    })
+
+  dict.fold(reachability_map, graph, fn(g_acc, source_node, targets) {
+    dict.fold(targets, g_acc, fn(g_inner, target_node, weight) {
+      let assert Ok(g) =
+        model.add_edge(
+          g_inner,
+          from: source_node,
+          to: target_node,
+          with: weight,
+        )
+      g
+    })
+  })
+}
+
+// Fallback for graphs with cycles - BFS/DFS from every node
+fn do_transitive_closure_general(
+  graph: Graph(n, e),
+  merge_fn: fn(e, e) -> e,
+) -> Graph(n, e) {
+  model.all_nodes(graph)
+  |> list.fold(graph, fn(acc_graph, start_node) {
+    let reachable = find_all_reachable_weighted(graph, start_node, merge_fn)
+    dict.fold(reachable, acc_graph, fn(inner_graph, target_node, weight) {
+      let assert Ok(g) =
+        model.add_edge(
+          inner_graph,
+          from: start_node,
+          to: target_node,
+          with: weight,
+        )
+      g
+    })
+  })
+}
+
+fn find_all_reachable_weighted(
+  graph: Graph(n, e),
+  start: NodeId,
+  merge_fn: fn(e, e) -> e,
+) -> dict.Dict(NodeId, e) {
+  let neighbors = model.successors(graph, start)
+  let initial_queue = list.map(neighbors, fn(nb) { #(nb.0, nb.1) })
+  do_weighted_reachability(graph, initial_queue, dict.new(), merge_fn)
+}
+
+fn do_weighted_reachability(
+  graph: Graph(n, e),
+  queue: List(#(NodeId, e)),
+  visited: dict.Dict(NodeId, e),
+  merge_fn: fn(e, e) -> e,
+) -> dict.Dict(NodeId, e) {
+  case queue {
+    [] -> visited
+    [#(current, weight_to_current), ..rest] -> {
+      case dict.get(visited, current) {
+        Ok(_) -> do_weighted_reachability(graph, rest, visited, merge_fn)
+        Error(_) -> {
+          let new_visited = dict.insert(visited, current, weight_to_current)
+          let neighbors = model.successors(graph, current)
+          let next_steps =
+            list.map(neighbors, fn(nb) {
+              #(nb.0, merge_fn(weight_to_current, nb.1))
+            })
+          let next_queue = list.append(rest, next_steps)
+          do_weighted_reachability(graph, next_queue, new_visited, merge_fn)
+        }
+      }
+    }
+  }
+}
+
+/// Computes the transitive reduction of a graph.
+///
+/// The transitive reduction removes all edges that are redundant - i.e., edges
+/// `u -> v` where there exists an indirect path from `u` to `v` through other
+/// nodes.
+///
+/// **Note:** For graphs with cycles (non-DAGs), the transitive reduction
+/// is not always unique and can be more complex to compute. This implementation
+/// focuses on the DAG case.
+///
+/// **Time Complexity:** O(V × E)
+///
+/// ## Example
+///
+/// ```gleam
+/// // Original: A->B, B->C, A->C (A->C is implied by A->B->C)
+/// // Reduction removes: A->C
+/// // Result: A->B, B->C
+/// let minimal = transform.transitive_reduction(graph, int.add)
+/// ```
+pub fn transitive_reduction(
+  graph: Graph(n, e),
+  with merge_fn: fn(e, e) -> e,
+) -> Graph(n, e) {
+  let reach_graph = transitive_closure(graph, merge_fn)
+
+  dict.fold(graph.out_edges, graph, fn(g_acc, u, targets) {
+    dict.fold(targets, g_acc, fn(g_inner, v, _w) {
+      let is_redundant =
+        dict.fold(targets, False, fn(found_redundant, w, _) {
+          case found_redundant, w == v {
+            True, _ -> True
+            False, True -> False
+            False, False -> {
+              case dict.get(reach_graph.out_edges, w) {
+                Ok(w_targets) -> dict.has_key(w_targets, v)
+                Error(_) -> False
+              }
+            }
+          }
+        })
+
+      case is_redundant {
+        True -> model.remove_edge(g_inner, u, v)
+        False -> g_inner
+      }
+    })
+  })
 }
