@@ -786,8 +786,16 @@ fn merge_attributes_list(
 fn format_attributes_list(attrs: List(#(String, String))) -> String {
   attrs
   |> list.reverse()
-  |> list.map(fn(pair) { pair.0 <> "=\"" <> pair.1 <> "\"" })
+  |> list.map(fn(pair) {
+    let key = pair.0
+    let val = escape_quotes(pair.1)
+    key <> "=\"" <> val <> "\""
+  })
   |> string.join(", ")
+}
+
+fn escape_quotes(s: String) -> String {
+  string.replace(s, each: "\"", with: "\\\"")
 }
 
 /// Converts a shortest path result to highlighted DOT options.
@@ -822,12 +830,17 @@ pub fn path_to_dot_options(
 
 // Helper to convert a list of nodes to a list of edges
 fn path_to_edges(nodes: List(NodeId)) -> List(#(NodeId, NodeId)) {
+  do_path_to_edges(nodes, [])
+}
+
+fn do_path_to_edges(
+  nodes: List(NodeId),
+  acc: List(#(NodeId, NodeId)),
+) -> List(#(NodeId, NodeId)) {
   case nodes {
-    [] | [_] -> []
-    [first, second, ..rest] -> [
-      #(first, second),
-      ..path_to_edges([second, ..rest])
-    ]
+    [] | [_] -> list.reverse(acc)
+    [first, second, ..rest] ->
+      do_path_to_edges([second, ..rest], [#(first, second), ..acc])
   }
 }
 
