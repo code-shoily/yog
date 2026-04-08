@@ -1,4 +1,4 @@
-# Yog
+# Yog 🌳
 
 > **যোগ** • (*jōg*)
 > *noun*
@@ -25,22 +25,35 @@
 [![Package Version](https://img.shields.io/hexpm/v/yog)](https://hex.pm/packages/yog)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/yog/)
 
-A graph algorithm library for Gleam, providing implementations of classic graph algorithms with a functional API.
+Yog is a comprehensive graph algorithm library for Gleam, providing implementations of classic and research-grade graph algorithms with a functional API.
 
-🔷 **[F# Port](https://github.com/code-shoily/yog-fsharp)** - Also available for F# with similar functional APIs | 📊 **[Gleam vs F# Comparison](GLEAM_FSHARP_COMPARISON.md)** - Detailed feature comparison
+🔷 **[YogEx](https://github.com/code-shoily/yog_ex)** - Elixir implementation of Yog with a superset of features. | 📊 **[Gleam vs Elixir Comparison](GLEAM_ELIXIR_COMPARISON.md)** - Detailed feature comparison.
 
 ## Features
 
-- **Graph Data Structures**: Directed and undirected graphs with generic node and edge data
-- **Pathfinding Algorithms**: Dijkstra, A*, Bellman-Ford, Floyd-Warshall, Johnson's, and **Implicit Variants** (state-space search)
-- **Maximum Flow**: Highly optimized Edmonds-Karp and Network Simplex for Min-Cost Flow
-- **Graph Generators**: 40+ deterministic and stochastic generators including classic structures (Platonic solids, multi-partite, twisted ladders) and network models (SBM, Kronecker, Waxman, Geometric)
-- **Graph Traversal**: BFS and DFS with early termination and **Implicit Variants** for infinite state-space search
-- **Graph Transformations**: Transpose (O(1)!), map, filter, merge, subgraph extraction, and generalized reachability (transitive closure/reduction)
-- **Graph Visualization**: Mermaid, DOT (Graphviz), and high-quality ASCII/Unicode grid rendering
-- **Directed Acyclic Graphs (DAG)**: Stable `Dag(n, e)` wrapper with O(V+E) DP routines like `longest_path` (Critical Path) and LCA
-- **Efficiency**: Disjoint Set (Union-Find) with path compression, Pairing Heaps, and two-list Queues
-- **Property-Based Testing**: Exhaustively tested across core graph operations and invariants using `qcheck`
+Yog provides balanced graph algorithms across multiple domains:
+
+### Core Capabilities
+
+**[Pathfinding & Flow](ALGORITHMS.md#pathfinding--traversal)** — Shortest paths (Dijkstra, A*, Bellman-Ford, Floyd-Warshall, Johnson's), maximum flow (Edmonds-Karp), min-cost flow (Network Simplex), min-cut (Stoer-Wagner), and implicit state-space search.
+
+**[Network Analysis](ALGORITHMS.md#network-analysis--centrality)** — Centrality measures (PageRank, betweenness, closeness, eigenvector, Katz), community detection (Louvain, Leiden, Infomap, Walktrap), and network metrics (assortativity, diameter).
+
+**[Connectivity & Structure](ALGORITHMS.md#connectivity--structure)** — SCCs (Tarjan/Kosaraju), bridges, articulation points, cyclicity detection, and reachability (transitive closure/reduction).
+
+**[Graph Operations](ALGORITHMS.md#graph-transformations)** — Mapping, filtering, subgraph extraction, merge, and O(1) transpose.
+
+**[Directed Acyclic Graphs (DAG)](ALGORITHMS.md#directed-acyclic-graphs-dag)** — Stable `Dag(n, e)` wrapper with strictly-enforced acyclicity and O(V+E) DP routines like `longest_path` (Critical Path).
+
+### Developer Experience
+
+**[Generators & Builders](ALGORITHMS.md#graph-generators)** — 40+ generators including classic patterns (complete, grid, trees, Platonic solids) and random models (Erdős-Rényi, Barabási-Albert, Watts-Strogatz).
+
+**[I/O & Visualization](ALGORITHMS.md)** — Mermaid, DOT (Graphviz), and high-quality ASCII/Unicode grid rendering for terminal diagnostic.
+
+**[Efficient Data Structures](ALGORITHMS.md)** — Built-in Pairing Heaps for priority queues, Disjoint Set (Union-Find) with path compression, and optimized two-list Queues.
+
+**[Complete Algorithm Catalog](ALGORITHMS.md)** — See all 60+ algorithms, selection guidance, and Big-O complexities.
 
 ## Installation
 
@@ -92,11 +105,6 @@ pub fn main() {
 ```
 
 ## Examples
-
-We have some real-world projects that use Yog for graph algorithms:
-
-- [Lustre Graph Generator](https://github.com/code-shoily/lustre_graph_generator) ([Demo](https://code-shoily.github.io/lustre_graph_generator/)) - Showcases graph generation, topological sort and shortest distance feature of Yog.
-- [Advent of Code Solutions](https://github.com/code-shoily/aocgl/blob/main/wiki/tags/graph.md) - Multiple AoC puzzles solved using Yog's graph capabilities.
 
 Detailed examples are located in the [test/examples/](https://github.com/code-shoily/yog/tree/main/test/examples) directory:
 
