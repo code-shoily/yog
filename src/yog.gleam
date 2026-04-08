@@ -118,6 +118,7 @@
 
 import gleam/list
 import yog/model
+import yog/property/cyclicity
 import yog/transform
 import yog/traversal
 
@@ -540,7 +541,7 @@ pub fn successor_ids(graph: Graph(n, e), id: NodeId) -> List(NodeId) {
 /// // => True // Cycle detected
 /// ```
 pub fn is_cyclic(graph: Graph(n, e)) -> Bool {
-  traversal.is_cyclic(graph)
+  cyclicity.is_cyclic(graph)
 }
 
 /// Determines if a graph is acyclic (contains no cycles).
@@ -557,7 +558,7 @@ pub fn is_cyclic(graph: Graph(n, e)) -> Bool {
 /// // => True // Valid DAG or undirected forest
 /// ```
 pub fn is_acyclic(graph: Graph(n, e)) -> Bool {
-  traversal.is_acyclic(graph)
+  cyclicity.is_acyclic(graph)
 }
 
 // Re-export traversal operations

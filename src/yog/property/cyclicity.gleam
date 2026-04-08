@@ -1,4 +1,4 @@
-//// Graph [cyclicity](https://en.wikipedia.org/wiki/Cycle_(graph_theory)) and 
+//// Graph [cyclicity](https://en.wikipedia.org/wiki/Cycle_(graph_theory)) and
 //// [Directed Acyclic Graph (DAG)](https://en.wikipedia.org/wiki/Directed_acyclic_graph) analysis.
 ////
 //// This module provides efficient algorithms for detecting cycles in graphs,
@@ -54,7 +54,11 @@
 //// - [Wikipedia: Kahn's Algorithm](https://en.wikipedia.org/wiki/Topological_sorting#Kahn's_algorithm)
 //// - [CP-Algorithms: Finding Cycles](https://cp-algorithms.com/graph/finding-cycle.html)
 
-import yog/model.{type Graph}
+import gleam/list
+import gleam/option.{type Option, None, Some}
+import gleam/result
+import gleam/set.{type Set}
+import yog/model.{type Graph, type NodeId}
 import yog/traversal
 
 /// Checks if the graph is a Directed Acyclic Graph (DAG) or has no cycles if undirected.
@@ -65,7 +69,7 @@ import yog/traversal
 ///
 /// **Time Complexity:** O(V + E)
 pub fn is_acyclic(graph: Graph(n, e)) -> Bool {
-  traversal.is_acyclic(graph)
+  !is_cyclic(graph)
 }
 
 /// Checks if the graph contains at least one cycle.
@@ -74,5 +78,67 @@ pub fn is_acyclic(graph: Graph(n, e)) -> Bool {
 ///
 /// **Time Complexity:** O(V + E)
 pub fn is_cyclic(graph: Graph(n, e)) -> Bool {
-  traversal.is_cyclic(graph)
+  case graph.kind {
+    model.Directed -> result.is_error(traversal.topological_sort(graph))
+    model.Undirected ->
+      do_has_undirected_cycle(graph, model.all_nodes(graph), set.new())
+  }
+}
+
+fn do_has_undirected_cycle(
+  graph: Graph(n, e),
+  nodes: List(NodeId),
+  visited: Set(NodeId),
+) -> Bool {
+  case nodes {
+    [] -> False
+    [node, ..rest] -> {
+      case set.contains(visited, node) {
+        True -> do_has_undirected_cycle(graph, rest, visited)
+        False -> {
+          let #(cycle, new_visited) =
+            check_undirected_cycle(graph, node, None, visited)
+          case cycle {
+            True -> True
+            False -> do_has_undirected_cycle(graph, rest, new_visited)
+          }
+        }
+      }
+    }
+  }
+}
+
+fn check_undirected_cycle(
+  graph: Graph(n, e),
+  node: NodeId,
+  parent: Option(NodeId),
+  visited: Set(NodeId),
+) -> #(Bool, Set(NodeId)) {
+  let new_visited = set.insert(visited, node)
+  let neighbors = model.successor_ids(graph, node)
+
+  use #(_, current_visited), neighbor <- list.fold_until(neighbors, #(
+    False,
+    new_visited,
+  ))
+  case set.contains(current_visited, neighbor) {
+    True -> {
+      let is_parent = case parent {
+        Some(p) -> p == neighbor
+        None -> False
+      }
+      case is_parent {
+        True -> list.Continue(#(False, current_visited))
+        False -> list.Stop(#(True, current_visited))
+      }
+    }
+    False -> {
+      let #(has_cycle, next_visited) =
+        check_undirected_cycle(graph, neighbor, Some(node), current_visited)
+      case has_cycle {
+        True -> list.Stop(#(True, next_visited))
+        False -> list.Continue(#(False, next_visited))
+      }
+    }
+  }
 }
