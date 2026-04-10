@@ -30,6 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `dcsbm`, `hsbm`, `sbm` - Advanced Stochastic Block Models for hierarchical and degree-controlled community structure.
   - `configuration_model`, `randomize_degree_sequence` - Degree-preserving graph generation and randomization.
   - All generators support `seed` for reproducibility and include `*_with_type` variants.
+  - **Maze Generation Algorithms** (`yog/generator/maze`): New module for creating perfect mazes on grids:
+    - **P0**: `binary_tree`, `sidewinder`, `recursive_backtracker`, `hunt_and_kill`.
+    - **P1**: `aldous_broder`, `wilson`, `kruskal`, `growing_tree` (with `Last`, `First`, `Random`, `Middle` selectors).
+    - **P2**: `prim_simplified`, `prim_true`, `ellers`, `recursive_division`.
+    - All algorithms return `Grid` types, fully integrated with pathfinding and ASCII renderers.
 
 - **Classic Graph Generators** (`yog/generator/classic`): Fully synchronized with Elixir's suite:
   - **Platonic Solids**: `tetrahedron`, `cube`, `octahedron`, `dodecahedron`, `icosahedron`.
@@ -50,6 +55,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Re-implemented `union`, `intersection`, `difference`, and `symmetric_difference` as declarative pipelines for $O(V+E)$ complexity.
   - Optimized `cartesian_product` and `power` (k-th graph power) implementations.
 
+- **Graph Structure Properties** (`yog/property/structure`): New module for checking broad graph class memberships, ported from Elixir:
+  - `is_tree/1` - Checks if an undirected graph is a tree (connected, acyclic, `|E| = |V| - 1`).
+  - `is_arborescence/1` - Checks if a directed graph is an arborescence (single root, all others have in-degree 1, `|E| = |V| - 1`).
+  - `is_complete/1` - Checks if every pair of distinct nodes is connected by a unique edge.
+  - `is_regular/2` - Checks if every node has exactly degree `k`.
+  - `is_connected/1`, `is_strongly_connected/1`, `is_weakly_connected/1` - Connectivity wrappers delegating to `yog/connectivity`.
+  - `is_planar/1` - Necessary-condition planarity check using Euler's formula and bipartite edge bounds.
+  - `is_chordal/1` - Chordal graph detection via Maximum Cardinality Search (MCS) and Perfect Elimination Order (PEO) verification.
+
 - **Core Model Enhancements** (`yog/model`):
   - `add_edge_with/5` - Adds an edge while ensuring endpoints exist with a generator function.
   - Migrated core creation functions (`from_edges`, `from_unweighted_edges`, `from_adjacency_list`) to the model module.
@@ -64,6 +78,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Edge Pruning Consistency** (`yog/transform`): Fixed a bug in `filter_edges` where inbound edges in directed graphs were not being correctly pruned.
 - **Enhanced DAG Testing**: Established a robust property-based testing suite using `qcheck` to ensure correctness across topological sorting and reachability analysis.
+
+- **Deterministic Label Propagation** (`yog/community/label_propagation`): Fixed a critical source of non-determinism where `most_frequent` tie-breaking used an unseeded `float.random()` instead of the algorithm's RNG. LPA is now fully deterministic for a given seed, and the default seed has been updated to `42` for reliable behavior in tests and documentation examples.
 
 ## 5.2.1 - 2026-04-08
 
