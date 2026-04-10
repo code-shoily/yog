@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 6.1.0 - 2026-04-10
+## 6.0.0 (Unreleased)
 
 ### Breaking Changes
 
@@ -20,78 +20,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Relocated Dijkstra Traversal** (`yog/traversal`):
   - Removed `implicit_dijkstra` from the generic traversal module. This function has been relocated to `yog/pathfinding/dijkstra` as `fold` to better align with the library's module-based organization of algorithms.
 
+- **Edge Addition API Changes**: `add_edge()` and `add_edge_with_combine()` now return `Result(Graph, String)` instead of `Graph` to prevent "ghost nodes". For auto-creation of missing nodes, use `add_edge_ensure()` or `add_edge_with()`.
+
 ### Added
+
+- **Stochastic Graph Generators** (`yog/generator/random`): Added full parity with Elixir implementation:
+  - `rmat`, `kronecker` - Recursive Kronecker graph generation for realistic network structures.
+  - `geometric` - Random geometric graphs connection nodes within distance thresholds.
+  - `dcsbm`, `hsbm`, `sbm` - Advanced Stochastic Block Models for hierarchical and degree-controlled community structure.
+  - `configuration_model`, `randomize_degree_sequence` - Degree-preserving graph generation and randomization.
+  - All generators support `seed` for reproducibility and include `*_with_type` variants.
+
+- **Classic Graph Generators** (`yog/generator/classic`): Fully synchronized with Elixir's suite:
+  - **Platonic Solids**: `tetrahedron`, `cube`, `octahedron`, `dodecahedron`, `icosahedron`.
+  - **Special Bipartite**: `crown`, `turan`.
+  - **Trees & Structures**: `kary_tree`, `complete_kary`, `caterpillar`, `friendship`, `windmill`, `book`.
+  - Grid/Ladder Variants: `hypercube`, `ladder`, `circular_ladder`, `mobius_ladder`.
+
+- **Pathfinding Optimizations** (`yog/pathfinding`):
+  - **Dijkstra Refactor**: Now implemented as a 0-heuristic application of the A* engine for unified code paths.
+  - **Bellman-Ford**: Optimized with early-exit (Syme-opt) logic, matching Elixir's performance on graphs without negative cycles.
+  - **Unweighted Pathfinding**: New BFS-based `shortest_path`, `single_source_distances`, and `all_pairs_shortest_paths` (APSP) for high-speed topological analysis.
+
 - **New Traversal Algorithms** (`yog/traversal`):
-  - Added `best_first_walk` and `best_first_fold` for Greedy Best-First Search exploration using custom node-based scoring functions.
-  - Added `random_walk` for stochastic path simulation, with support for seeded reproducible walks.
-  - Introduced internal `Rng` state for deterministic random operations.
+  - Added `best_first_walk` and `best_first_fold` for Greedy Best-First Search exploration.
+  - Added `random_walk` for stochastic path simulation.
 
 - **High-Performance Set Operations** (`yog/operation`):
-  - Re-implemented `union`, `intersection`, `difference`, and `symmetric_difference` as declarative pipelines for $O(V+E)$ complexity and improved readability.
-  - `cartesian_product/2` - Optimized builder-based implementation for combining graph structures.
-  - `power/2` - Optimized k-th graph power calculation using traversal-based reachability folds.
-  - `is_isomorphic/2` - Enhanced with early-exit guards and consistent degree-sequence validation.
-
-### Fixed
-
-- **Edge Pruning Consistency** (`yog/transform`):
-  - Fixed a bug in `filter_edges` where inbound edges in directed graphs were not being correctly pruned due to swapped source/destination arguments in internal dictionary mapping.
-
-## 6.1.0-rc1 - 2026-04-10
-
-(Previous content from version 6.0.0 can be merged here or kept separate)
-
-## 6.0.0 - 2026-05-05
-
-### Added
+  - Re-implemented `union`, `intersection`, `difference`, and `symmetric_difference` as declarative pipelines for $O(V+E)$ complexity.
+  - Optimized `cartesian_product` and `power` (k-th graph power) implementations.
 
 - **Core Model Enhancements** (`yog/model`):
-  - `add_edge_with/5` - Adds an edge while ensuring endpoints exist, using a provided generator function for missing nodes.
-  - Migrated core creation functions (`from_edges`, `from_unweighted_edges`, `from_adjacency_list`) from the main `yog` module to provide a cleaner model-first API.
-
-- **Advanced Transformations** (`yog/transform`):
-  - `map_edges_indexed/2` - Maps over edges with access to both source and destination node IDs.
-  - `update_node/3` - Updates a node's data using a transformation function ($O(1)$).
-  - `update_edge/4` - Updates an edge's weight using a transformation function ($O(1)$).
-
-- **New Random Graph Generators** (`yog/generator/random`): Added 8 new stochastic graph generators to match the Elixir implementation:
-  - `random_regular/3` - d-regular graphs where every node has exactly degree d (uses configuration model with greedy matching)
-  - `sbm/5` - Stochastic Block Model for community structure (assigns nodes to communities, edges based on intra/inter-community probabilities)
-  - `configuration_model/2` - Generate graphs from a degree sequence using stub matching
-  - `power_law_graph/3` - Scale-free networks using the configuration model with power-law degree distribution
-  - `kronecker/3` and `rmat/4` - Recursive Kronecker graph generation for realistic network structures
-  - `geometric/3` - Random geometric graphs where edges connect nodes within a distance threshold
-  - `waxman/4` - Waxman model for network topology with distance-based edge probabilities
-  - All generators support `seed` parameter for reproducibility
-  - All generators include `*_with_type` variants for directed graphs
-  - Comprehensive test coverage with property-based tests for structural invariants
-
-- **New Classic Graph Generators** (`yog/generator/classic`): Added 17 new deterministic graph generators to match the Elixir implementation:
-  - **Tree Generators**: `kary_tree/2`, `complete_kary/2`, `caterpillar/2` - Complete and partial k-ary trees with configurable branching factor
-  - **Grid/Ladder Variants**: `hypercube/1`, `ladder/1`, `circular_ladder/1`, `mobius_ladder/1`, `prism/1` - Higher-dimensional and twisted grid structures
-  - **Windmill/Friendship**: `friendship/1`, `windmill/2`, `book/1` - Social network and intersection graph patterns
-  - **Special Bipartite**: `crown/1`, `turan/2` - Extremal graph theory constructions
-  - **Platonic Solids**: `tetrahedron/0`, `cube/0`, `octahedron/0`, `dodecahedron/0`, `icosahedron/0` - All five Platonic solid graphs
-  - All generators include `*_with_type/2` or `*_with_type/3` variants for directed graphs
-  - Comprehensive documentation with properties, examples, and references
-  - Full unit test coverage (100+ new tests)
-  - Property-based tests for structural invariants (65 PBT tests with reduced iteration count for performance)
+  - `add_edge_with/5` - Adds an edge while ensuring endpoints exist with a generator function.
+  - Migrated core creation functions (`from_edges`, `from_unweighted_edges`, `from_adjacency_list`) to the model module.
 
 ### Changed
 
-- **Promoted Multigraph and DAG Modules**: The previously experimental `yog/multi/*` and `yog/dag/*` modules are now stable:
-  - Removed experimental notices from all module documentation
-  - Added comprehensive Yog-style module documentation
-  - Removed "⚠️ Experimental Features" section from README
-  - These modules now have the same API stability guarantee as other Yog modules
+- **Promoted Multigraph and DAG Modules**: The `yog/multi/*` and `yog/dag/*` modules are now mature, stable, and fully documented.
+- **Consolidated Transform Operations** (`yog/transform`): Migrated reachability-based transformations (`transitive_closure`, `transitive_reduction`) from DAG-specific algorithms to the core transform module for use on all graph types.
+- **Refactored DAG Algorithms**: Simplified internal path reconstruction and consolidated redundant helper functions.
 
-- **Consolidated Transform Operations** (`yog/transform`): Migrated reachability-based transformations to the core transform module:
-  - Moved `transitive_closure/2` and `transitive_reduction/2` from `yog/dag/algorithm` to `yog/transform`.
-  - Generalized these operations to work on all `Graph` types, no longer requiring they be wrapped in a `Dag` type.
-  - Added a general reachability fallback for calling `transitive_closure` on graphs with cycles, maintaining O(V × E) performance for DAGs while providing correct results for all structures.
+### Fixed
 
-- **Refactored DAG Algorithms**: Simplified internal path reconstruction and consolidated redundant helper functions in `yog/dag/algorithm`.
-- **Enhanced DAG Testing**: Established a robust property-based testing suite using `qcheck` to ensure correctness across topological sorting, reachability counting, and cycle-free edge insertion.
+- **Edge Pruning Consistency** (`yog/transform`): Fixed a bug in `filter_edges` where inbound edges in directed graphs were not being correctly pruned.
+- **Enhanced DAG Testing**: Established a robust property-based testing suite using `qcheck` to ensure correctness across topological sorting and reachability analysis.
 
 ## 5.2.1 - 2026-04-08
 
