@@ -1,6 +1,7 @@
 import gleam/dict.{type Dict}
 import gleam/float
 import gleam/list
+import gleam/order.{type Order, Lt}
 import gleam/result
 import yog/internal/random
 
@@ -190,6 +191,54 @@ fn do_shuffle(arr: Array(a), i: Int, rng: random.Rng) -> #(Array(a), random.Rng)
         |> array_set(j, temp_i)
       do_shuffle(swapped, i - 1, next_rng)
     }
+  }
+}
+
+// =============================================================================
+// PATHFINDING INTERNAL HELPERS
+// =============================================================================
+
+/// Compares two frontier entries by their priority value.
+pub fn compare_frontier(
+  a: #(e, List(a)),
+  b: #(e, List(a)),
+  cmp: fn(e, e) -> Order,
+) -> Order {
+  cmp(a.0, b.0)
+}
+
+/// Compares two distance-based frontier entries.
+pub fn compare_distance_frontier(
+  a: #(e, b),
+  b: #(e, b),
+  cmp: fn(e, e) -> Order,
+) -> Order {
+  cmp(a.0, b.0)
+}
+
+/// Compares two A* frontier entries by their f-score.
+pub fn compare_a_star_frontier(
+  a: #(e, e, List(b)),
+  b: #(e, e, List(b)),
+  cmp: fn(e, e) -> Order,
+) -> Order {
+  cmp(a.0, b.0)
+}
+
+/// Determines if a node should be explored based on distance comparison.
+pub fn should_explore_node(
+  visited: Dict(k, e),
+  node: k,
+  new_dist: e,
+  compare: fn(e, e) -> Order,
+) -> Bool {
+  case dict.get(visited, node) {
+    Ok(prev_dist) ->
+      case compare(new_dist, prev_dist) {
+        Lt -> True
+        _ -> False
+      }
+    Error(Nil) -> True
   }
 }
 
