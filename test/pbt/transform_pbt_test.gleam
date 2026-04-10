@@ -82,7 +82,7 @@ pub fn map_nodes_preserves_structure_test() {
   use graph <- qcheck.run(config(), qcheck_generators.graph_generator())
 
   // Map node data: n -> n * 2
-  let mapped = transform.map_nodes(graph, fn(n) { n * 2 })
+  let mapped = transform.map_nodes(graph, fn(_, n) { n * 2 })
 
   // Same number of nodes and edges
   assert model.order(mapped) == model.order(graph)
@@ -111,7 +111,7 @@ pub fn map_edges_preserves_structure_test() {
   use graph <- qcheck.run(config(), qcheck_generators.graph_generator())
 
   // Map edge weights: w -> w * 2
-  let mapped = transform.map_edges(graph, fn(w) { w * 2 })
+  let mapped = transform.map_edges(graph, fn(_, _, w) { w * 2 })
 
   // Same number of nodes and edges
   assert model.order(mapped) == model.order(graph)
@@ -150,7 +150,7 @@ pub fn filter_nodes_removes_incident_edges_test() {
   )
 
   // Filter: keep nodes with data > threshold
-  let filtered = transform.filter_nodes(graph, fn(n) { n > threshold })
+  let filtered = transform.filter_nodes(graph, fn(_, n) { n > threshold })
 
   let kept_nodes = set.from_list(model.all_nodes(filtered))
 
@@ -211,7 +211,7 @@ pub fn filter_all_nodes_test() {
   use graph <- qcheck.run(config(), qcheck_generators.graph_generator())
 
   // Filter out all nodes
-  let empty = transform.filter_nodes(graph, fn(_) { False })
+  let empty = transform.filter_nodes(graph, fn(_, _) { False })
 
   assert model.order(empty) == 0
   assert model.edge_count(empty) == 0
@@ -404,6 +404,6 @@ pub fn update_edge_property_test() {
 
 pub fn map_edges_indexed_identity_test() {
   use graph <- qcheck.run(config(), qcheck_generators.graph_generator())
-  let mapped = transform.map_edges_indexed(graph, fn(_, _, w) { w })
+  let mapped = transform.map_edges(graph, fn(_, _, w) { w })
   assert graphs_equal(graph, mapped)
 }

@@ -20,7 +20,7 @@ pub fn main() {
   io.println("--- Basic Mermaid Output ---")
   let mermaid_basic =
     mermaid.to_mermaid(
-      graph |> transform.map_edges(int.to_string),
+      graph |> transform.map_edges(fn(_, _, w) { int.to_string(w) }),
       mermaid.default_options(),
     )
   io.println("```mermaid")
@@ -41,7 +41,10 @@ pub fn main() {
         )
       let options = mermaid.path_to_options(path, base_options)
       let mermaid_custom =
-        mermaid.to_mermaid(graph |> transform.map_edges(int.to_string), options)
+        mermaid.to_mermaid(
+          graph |> transform.map_edges(fn(_, _, w) { int.to_string(w) }),
+          options,
+        )
       io.println("```mermaid")
       io.println(mermaid_custom)
       io.println("```")

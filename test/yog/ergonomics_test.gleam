@@ -27,7 +27,7 @@ pub fn transform_reexport_test() {
   let graph = yog.undirected() |> yog.add_edge_ensure(1, 2, 5, default: Nil)
 
   // Re-exported map_nodes
-  let graph2 = yog.map_nodes(graph, fn(_) { "data" })
+  let graph2 = yog.map_nodes(graph, fn(_, _) { "data" })
   yog.all_nodes(graph2) |> should.equal([1, 2])
 
   // Re-exported filter_edges

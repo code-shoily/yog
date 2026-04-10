@@ -5,9 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 6.1.0 - 2026-04-10
+
+### Breaking Changes
+
+- **Unified Transformation API** (`yog/transform`, `yog`):
+  - Consolidated `map_nodes`, `map_edges`, and `filter_nodes` to always include node and edge identifiers in their callbacks by default. This provides 
+    immediate topological context to all transformation operations.
+  - Removed redundant `_indexed` variants: `map_nodes_indexed`, `map_edges_indexed`, and `filter_nodes_indexed` are now fully merged into their base functions.
+  - Updated signatures:
+    - `map_nodes` / `filter_nodes`: `fn(NodeId, n) -> m / Bool`
+    - `map_edges`: `fn(NodeId, NodeId, e) -> m`
+
+### Added
+
+- **High-Performance Set Operations** (`yog/operation`):
+  - Re-implemented `union`, `intersection`, `difference`, and `symmetric_difference` as declarative pipelines for $O(V+E)$ complexity and improved readability.
+  - `cartesian_product/2` - Optimized builder-based implementation for combining graph structures.
+  - `power/2` - Optimized k-th graph power calculation using traversal-based reachability folds.
+  - `is_isomorphic/2` - Enhanced with early-exit guards and consistent degree-sequence validation.
+
+### Fixed
+
+- **Edge Pruning Consistency** (`yog/transform`):
+  - Fixed a bug in `filter_edges` where inbound edges in directed graphs were not being correctly pruned due to swapped source/destination arguments in internal dictionary mapping.
+
+## 6.1.0-rc1 - 2026-04-10
+
+(Previous content from version 6.0.0 can be merged here or kept separate)
+
 ## 6.0.0 - 2026-05-05
 
 ### Added
+
+- **Core Model Enhancements** (`yog/model`):
+  - `add_edge_with/5` - Adds an edge while ensuring endpoints exist, using a provided generator function for missing nodes.
+  - Migrated core creation functions (`from_edges`, `from_unweighted_edges`, `from_adjacency_list`) from the main `yog` module to provide a cleaner model-first API.
+
+- **Advanced Transformations** (`yog/transform`):
+  - `map_edges_indexed/2` - Maps over edges with access to both source and destination node IDs.
+  - `update_node/3` - Updates a node's data using a transformation function ($O(1)$).
+  - `update_edge/4` - Updates an edge's weight using a transformation function ($O(1)$).
 
 - **New Random Graph Generators** (`yog/generator/random`): Added 8 new stochastic graph generators to match the Elixir implementation:
   - `random_regular/3` - d-regular graphs where every node has exactly degree d (uses configuration model with greedy matching)

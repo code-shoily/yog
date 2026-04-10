@@ -119,7 +119,7 @@ pub fn transpose_preserves_nodes_test() {
 
 pub fn map_nodes_empty_graph_test() {
   let graph = model.new(Directed)
-  let mapped = transform.map_nodes(graph, string.uppercase)
+  let mapped = transform.map_nodes(graph, fn(_, s) { string.uppercase(s) })
 
   mapped.nodes
   |> should.equal(dict.new())
@@ -132,7 +132,7 @@ pub fn map_nodes_transforms_all_test() {
     |> model.add_node(2, "bob")
     |> model.add_node(3, "carol")
 
-  let mapped = transform.map_nodes(graph, string.uppercase)
+  let mapped = transform.map_nodes(graph, fn(_, s) { string.uppercase(s) })
 
   dict.get(mapped.nodes, 1)
   |> should.equal(Ok("ALICE"))
@@ -151,7 +151,7 @@ pub fn map_nodes_preserves_structure_test() {
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 2, with: 10)
 
-  let mapped = transform.map_nodes(graph, fn(s) { s <> "!" })
+  let mapped = transform.map_nodes(graph, fn(_, s) { s <> "!" })
 
   // Edges should be unchanged
   model.successors(mapped, 1)
@@ -171,7 +171,7 @@ pub fn map_nodes_with_type_change_test() {
 
   // Parse strings to integers
   let mapped =
-    transform.map_nodes(graph, fn(s) {
+    transform.map_nodes(graph, fn(_, s) {
       case int.parse(s) {
         Ok(n) -> n
         Error(_) -> 0
@@ -194,12 +194,12 @@ pub fn map_nodes_functor_composition_test() {
   // map(f . g) == map(f) . map(g)
   let composed =
     graph
-    |> transform.map_nodes(fn(x) { x * 2 })
-    |> transform.map_nodes(fn(x) { x + 1 })
+    |> transform.map_nodes(fn(_, x) { x * 2 })
+    |> transform.map_nodes(fn(_, x) { x + 1 })
 
   let direct =
     graph
-    |> transform.map_nodes(fn(x) { x * 2 + 1 })
+    |> transform.map_nodes(fn(_, x) { x * 2 + 1 })
 
   composed.nodes
   |> should.equal(direct.nodes)
@@ -209,7 +209,7 @@ pub fn map_nodes_functor_composition_test() {
 
 pub fn map_edges_empty_graph_test() {
   let graph = model.new(Directed)
-  let mapped = transform.map_edges(graph, fn(x) { x * 2 })
+  let mapped = transform.map_edges(graph, fn(_, _, x) { x * 2 })
 
   mapped.out_edges
   |> should.equal(dict.new())
@@ -226,7 +226,7 @@ pub fn map_edges_transforms_all_test() {
     |> model.add_node(3, "C")
     |> model.add_edges([#(1, 2, 10), #(2, 3, 20), #(1, 3, 30)])
 
-  let mapped = transform.map_edges(graph, fn(w) { w * 2 })
+  let mapped = transform.map_edges(graph, fn(_, _, w) { w * 2 })
 
   model.successors(mapped, 1)
   |> dict.from_list()
@@ -249,7 +249,7 @@ pub fn map_edges_preserves_structure_test() {
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 2, with: 10)
 
-  let mapped = transform.map_edges(graph, fn(w) { w + 5 })
+  let mapped = transform.map_edges(graph, fn(_, _, w) { w + 5 })
 
   // Nodes should be unchanged
   mapped.nodes
@@ -272,7 +272,7 @@ pub fn map_edges_with_type_change_test() {
     |> model.add_edge(from: 1, to: 2, with: 10)
 
   // Convert int weights to float
-  let mapped = transform.map_edges(graph, int.to_float)
+  let mapped = transform.map_edges(graph, fn(_, _, w) { int.to_float(w) })
 
   model.successors(mapped, 1)
   |> should.equal([#(2, 10.0)])
@@ -285,7 +285,7 @@ pub fn map_edges_undirected_graph_test() {
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 2, with: 5)
 
-  let mapped = transform.map_edges(graph, fn(w) { w * 3 })
+  let mapped = transform.map_edges(graph, fn(_, _, w) { w * 3 })
 
   // Both directions should be transformed
   model.successors(mapped, 1)
@@ -305,12 +305,12 @@ pub fn map_edges_functor_composition_test() {
   // map(f . g) == map(f) . map(g)
   let composed =
     graph
-    |> transform.map_edges(fn(x) { x * 2 })
-    |> transform.map_edges(fn(x) { x + 5 })
+    |> transform.map_edges(fn(_, _, x) { x * 2 })
+    |> transform.map_edges(fn(_, _, x) { x + 5 })
 
   let direct =
     graph
-    |> transform.map_edges(fn(x) { x * 2 + 5 })
+    |> transform.map_edges(fn(_, _, x) { x * 2 + 5 })
 
   model.successors(composed, 1)
   |> should.equal(model.successors(direct, 1))
@@ -320,7 +320,7 @@ pub fn map_edges_functor_composition_test() {
 
 pub fn filter_nodes_empty_graph_test() {
   let graph = model.new(Directed)
-  let filtered = transform.filter_nodes(graph, fn(_) { True })
+  let filtered = transform.filter_nodes(graph, fn(_, _) { True })
 
   filtered.nodes
   |> should.equal(dict.new())
@@ -333,7 +333,7 @@ pub fn filter_nodes_keep_all_test() {
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 2, with: 10)
 
-  let filtered = transform.filter_nodes(graph, fn(_) { True })
+  let filtered = transform.filter_nodes(graph, fn(_, _) { True })
 
   filtered.nodes
   |> dict.size()
@@ -350,7 +350,7 @@ pub fn filter_nodes_remove_all_test() {
     |> model.add_node(2, "B")
     |> model.add_edge(from: 1, to: 2, with: 10)
 
-  let filtered = transform.filter_nodes(graph, fn(_) { False })
+  let filtered = transform.filter_nodes(graph, fn(_, _) { False })
 
   filtered.nodes
   |> dict.size()
@@ -371,7 +371,7 @@ pub fn filter_nodes_by_predicate_test() {
 
   // Keep only nodes starting with 'a'
   let filtered =
-    transform.filter_nodes(graph, fn(s) { string.starts_with(s, "a") })
+    transform.filter_nodes(graph, fn(_, s) { string.starts_with(s, "a") })
 
   dict.size(filtered.nodes)
   |> should.equal(2)
@@ -394,7 +394,7 @@ pub fn filter_nodes_prunes_edges_test() {
     |> model.add_node(3, "keep")
     |> model.add_edges([#(1, 2, 10), #(2, 3, 20), #(1, 3, 30)])
 
-  let filtered = transform.filter_nodes(graph, fn(s) { s == "keep" })
+  let filtered = transform.filter_nodes(graph, fn(_, s) { s == "keep" })
 
   // Nodes 1 and 3 remain
   dict.size(filtered.nodes)
@@ -425,7 +425,7 @@ pub fn filter_nodes_complex_pruning_test() {
     ])
 
   // Keep only even-numbered nodes
-  let filtered = transform.filter_nodes(graph, fn(n) { n % 2 == 0 })
+  let filtered = transform.filter_nodes(graph, fn(_, n) { n % 2 == 0 })
 
   dict.size(filtered.nodes)
   |> should.equal(2)
@@ -448,7 +448,7 @@ pub fn filter_nodes_preserves_graph_type_test() {
     |> model.add_node(1, "A")
     |> model.add_node(2, "B")
 
-  let filtered = transform.filter_nodes(graph, fn(_) { True })
+  let filtered = transform.filter_nodes(graph, fn(_, _) { True })
 
   filtered.kind
   |> should.equal(Undirected)
@@ -634,8 +634,8 @@ pub fn map_then_filter_test() {
 
   let result =
     graph
-    |> transform.map_nodes(fn(x) { x * 2 })
-    |> transform.filter_nodes(fn(x) { x > 20 })
+    |> transform.map_nodes(fn(_, x) { x * 2 })
+    |> transform.filter_nodes(fn(_, x) { x > 20 })
 
   // Only node 3 (15 * 2 = 30) remains
   dict.size(result.nodes)
@@ -674,7 +674,7 @@ pub fn merge_then_map_edges_test() {
 
   let result =
     transform.merge(g1, g2)
-    |> transform.map_edges(fn(w) { w / 10 })
+    |> transform.map_edges(fn(_, _, w) { w / 10 })
 
   model.successors(result, 1)
   |> should.equal([#(2, 1)])
