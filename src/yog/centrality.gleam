@@ -17,12 +17,15 @@ import gleam/dict.{type Dict}
 import gleam/float
 import gleam/int
 import gleam/list
-import gleam/option
-import gleam/order.{type Order, Gt}
+import gleam/order.{type Order}
 import gleam/result
-import yog/internal/priority_queue as pq
+import yog/internal/brandes
 import yog/model.{type Graph, type NodeId, Directed, Undirected}
 import yog/pathfinding/dijkstra
+
+// =============================================================================
+// Types
+// =============================================================================
 
 /// A mapping of Node IDs to their calculated centrality scores.
 pub type Centrality =
@@ -38,33 +41,42 @@ pub type DegreeMode {
   TotalDegree
 }
 
+// =============================================================================
+// Degree Centrality
+// =============================================================================
+
 /// Calculates the Degree Centrality for all nodes in the graph.
 /// 
 /// For directed graphs, use `mode` to specify which edges to count.
 /// For undirected graphs, the `mode` is ignored.
+///
+/// ## Interpreting Degree Centrality
+///
+/// | Value | Meaning |
+/// |-------|---------|
+/// | `1.0` | The node is connected to every other node (hub) |
+/// | `0.5` | The node is connected to half the other nodes |
+/// | `0.0` | Isolated node — no connections |
 pub fn degree(graph: Graph(n, e), mode: DegreeMode) -> Centrality {
   let n = model.order(graph)
-  let nodes = model.all_nodes(graph)
-
   let factor = case n > 1 {
     True -> int.to_float(n - 1)
     False -> 1.0
   }
 
-  list.fold(nodes, dict.new(), fn(acc, id) {
-    let count = case graph.kind {
-      Undirected -> list.length(model.neighbors(graph, id))
-      Directed ->
-        case mode {
-          InDegree -> list.length(model.predecessors(graph, id))
-          OutDegree -> list.length(model.successors(graph, id))
-          TotalDegree ->
-            list.length(model.successors(graph, id))
-            + list.length(model.predecessors(graph, id))
-        }
-    }
-    dict.insert(acc, id, int.to_float(count) /. factor)
-  })
+  use acc, id <- list.fold(model.all_nodes(graph), dict.new())
+  let count = case graph.kind {
+    Undirected -> list.length(model.neighbors(graph, id))
+    Directed ->
+      case mode {
+        InDegree -> list.length(model.predecessors(graph, id))
+        OutDegree -> list.length(model.successors(graph, id))
+        TotalDegree ->
+          list.length(model.successors(graph, id))
+          + list.length(model.predecessors(graph, id))
+      }
+  }
+  dict.insert(acc, id, int.to_float(count) /. factor)
 }
 
 /// Calculates Closeness Centrality for all nodes.
@@ -100,6 +112,14 @@ pub fn degree(graph: Graph(n, e), mode: DegreeMode) -> Centrality {
 /// )
 /// // => dict.from_list([#(1, 0.666), #(2, 1.0), #(3, 0.666)])
 /// ```
+///
+/// ## Interpreting Closeness Centrality
+///
+/// | Value | Meaning |
+/// |-------|---------|
+/// | `1.0` | The node is one hop away from all others (e.g. center of a star) |
+/// | `0.5` | The node is typically 2 hops away from others |
+/// | `0.0` | The node cannot reach everyone (disconnected or isolated) |
 pub fn closeness(
   graph: Graph(n, e),
   with_zero zero: e,
@@ -114,34 +134,25 @@ pub fn closeness(
     True ->
       list.fold(nodes, dict.new(), fn(acc, id) { dict.insert(acc, id, 0.0) })
     False -> {
-      list.fold(nodes, dict.new(), fn(acc, source) {
-        let distances =
-          dijkstra.single_source_distances(
-            in: graph,
-            from: source,
-            with_zero: zero,
-            with_add: add,
-            with_compare: compare,
-          )
+      use acc, source <- list.fold(nodes, dict.new())
+      let distances =
+        dijkstra.single_source_distances(
+          in: graph,
+          from: source,
+          with_zero: zero,
+          with_add: add,
+          with_compare: compare,
+        )
 
-        case dict.size(distances) == n {
-          False -> {
-            dict.insert(acc, source, 0.0)
-          }
-          True -> {
-            // Sum all distances (including 0 for self, which doesn't affect sum)
-            let total_distance =
-              dict.fold(distances, zero, fn(sum, _node, dist) { add(sum, dist) })
-
-            // Calculate closeness: (n-1) / sum_of_distances_to_others
-            // Note: total_distance includes 0 for self, so it's just sum to others
-            let centrality_score =
-              int.to_float(n - 1) /. to_float(total_distance)
-
-            dict.insert(acc, source, centrality_score)
-          }
+      case dict.size(distances) == n {
+        False -> dict.insert(acc, source, 0.0)
+        True -> {
+          let total_distance =
+            dict.fold(distances, zero, fn(sum, _node, dist) { add(sum, dist) })
+          let centrality_score = int.to_float(n - 1) /. to_float(total_distance)
+          dict.insert(acc, source, centrality_score)
         }
-      })
+      }
     }
   }
 }
@@ -155,6 +166,17 @@ pub fn closeness(
 /// Formula: H(v) = Σ (1 / d(v, u)) / (n - 1) for all u ≠ v
 ///
 /// **Time Complexity:** O(V * (V + E) log V)
+///
+/// ## Interpreting Harmonic Centrality
+///
+/// | Value | Meaning |
+/// |-------|---------|
+/// | `1.0` | The node is directly connected to all others |
+/// | `0.5` | The node is directly connected to half the others |
+/// | `0.0` | Isolated node — cannot reach anyone else |
+///
+/// Unlike closeness, disconnected nodes still receive credit for the
+/// neighbors they *can* reach rather than being penalized with `0.0`.
 pub fn harmonic_centrality(
   graph: Graph(n, e),
   with_zero zero: e,
@@ -171,33 +193,31 @@ pub fn harmonic_centrality(
     False -> {
       let denominator = int.to_float(n - 1)
 
-      list.fold(nodes, dict.new(), fn(acc, source) {
-        let distances =
-          dijkstra.single_source_distances(
-            in: graph,
-            from: source,
-            with_zero: zero,
-            with_add: add,
-            with_compare: compare,
-          )
+      use acc, source <- list.fold(nodes, dict.new())
+      let distances =
+        dijkstra.single_source_distances(
+          in: graph,
+          from: source,
+          with_zero: zero,
+          with_add: add,
+          with_compare: compare,
+        )
 
-        let sum_of_reciprocals =
-          dict.fold(distances, 0.0, fn(sum, node, dist) {
-            case node == source {
-              True -> sum
-              False -> {
-                let d = to_float(dist)
-                // Avoid division by zero if an edge weight is 0
-                case d >. 0.0 {
-                  True -> sum +. { 1.0 /. d }
-                  False -> sum
-                }
+      let sum_of_reciprocals =
+        dict.fold(distances, 0.0, fn(sum, node, dist) {
+          case node == source {
+            True -> sum
+            False -> {
+              let d = to_float(dist)
+              case d >. 0.0 {
+                True -> sum +. { 1.0 /. d }
+                False -> sum
               }
             }
-          })
+          }
+        })
 
-        dict.insert(acc, source, sum_of_reciprocals /. denominator)
-      })
+      dict.insert(acc, source, sum_of_reciprocals /. denominator)
     }
   }
 }
@@ -208,6 +228,17 @@ pub fn harmonic_centrality(
 /// all-pairs shortest paths that pass through v.
 ///
 /// **Time Complexity:** O(VE) for unweighted, O(VE + V²logV) for weighted.
+///
+/// ## Interpreting Betweenness Centrality
+///
+/// | Value | Meaning |
+/// |-------|---------|
+/// | **High** | The node is a bridge or gatekeeper — many shortest paths go through it |
+/// | **Low** | The node is peripheral — most paths bypass it |
+/// | `0.0` | The node lies on no shortest paths between any other pair |
+///
+/// A high betweenness node is critical for network connectivity:
+/// removing it can fragment the graph or severely increase path lengths.
 pub fn betweenness(
   graph: Graph(n, e),
   with_zero zero: e,
@@ -219,155 +250,14 @@ pub fn betweenness(
   let initial =
     list.fold(nodes, dict.new(), fn(acc, id) { dict.insert(acc, id, 0.0) })
 
-  let scores =
-    list.fold(nodes, initial, fn(acc, s) {
-      let discovery = run_discovery(graph, s, zero, add, compare)
-      let dependencies = run_accumulation(discovery)
-
-      merge_scores(acc, dependencies, s)
-    })
+  let scores = {
+    use acc, s <- list.fold(nodes, initial)
+    let discovery = brandes.run_discovery(graph, s, zero, add, compare)
+    let dependencies = brandes.accumulate_node_dependencies(discovery)
+    merge_scores(acc, dependencies, s)
+  }
 
   apply_undirected_scaling(scores, graph.kind)
-}
-
-type BrandesDiscovery =
-  #(List(NodeId), Dict(NodeId, List(NodeId)), Dict(NodeId, Int))
-
-fn run_discovery(
-  graph: Graph(n, e),
-  source: NodeId,
-  zero: e,
-  add: fn(e, e) -> e,
-  compare: fn(e, e) -> Order,
-) -> BrandesDiscovery {
-  let queue =
-    pq.new(fn(a: #(e, NodeId), b: #(e, NodeId)) { compare(a.0, b.0) })
-    |> pq.push(#(zero, source))
-
-  let dists = dict.from_list([#(source, zero)])
-  let sigmas = dict.from_list([#(source, 1)])
-  let preds = dict.new()
-  let stack = []
-
-  do_brandes_dijkstra(graph, queue, dists, sigmas, preds, stack, add, compare)
-}
-
-fn do_brandes_dijkstra(
-  graph: Graph(n, e),
-  queue: pq.Queue(#(e, NodeId)),
-  dists: Dict(NodeId, e),
-  sigmas: Dict(NodeId, Int),
-  preds: Dict(NodeId, List(NodeId)),
-  stack: List(NodeId),
-  add: fn(e, e) -> e,
-  compare: fn(e, e) -> Order,
-) -> BrandesDiscovery {
-  case pq.pop(queue) {
-    Error(Nil) -> #(stack, preds, sigmas)
-    Ok(#(#(d_v, v), rest_q)) -> {
-      let current_best = dict.get(dists, v) |> result.unwrap(d_v)
-      case compare(d_v, current_best) {
-        Gt ->
-          do_brandes_dijkstra(
-            graph,
-            rest_q,
-            dists,
-            sigmas,
-            preds,
-            stack,
-            add,
-            compare,
-          )
-        _ -> {
-          let new_stack = [v, ..stack]
-
-          let #(next_q, next_dists, next_sigmas, next_preds) =
-            model.successors(graph, v)
-            |> list.fold(#(rest_q, dists, sigmas, preds), fn(state, edge) {
-              let #(q, ds, ss, ps) = state
-              let #(w, weight) = edge
-              let new_dist = add(d_v, weight)
-
-              case dict.get(ds, w) {
-                Error(Nil) -> {
-                  let q2 = pq.push(q, #(new_dist, w))
-                  let ds2 = dict.insert(ds, w, new_dist)
-                  let ss2 = dict.insert(ss, w, get_sigma(ss, v))
-                  let ps2 = dict.insert(ps, w, [v])
-                  #(q2, ds2, ss2, ps2)
-                }
-                Ok(old_dist) -> {
-                  case compare(new_dist, old_dist) {
-                    order.Lt -> {
-                      let q2 = pq.push(q, #(new_dist, w))
-                      let ds2 = dict.insert(ds, w, new_dist)
-                      let ss2 = dict.insert(ss, w, get_sigma(ss, v))
-                      let ps2 = dict.insert(ps, w, [v])
-                      #(q2, ds2, ss2, ps2)
-                    }
-                    order.Eq -> {
-                      let ss2 =
-                        dict.upsert(ss, w, fn(curr) {
-                          option.unwrap(curr, 0) + get_sigma(ss, v)
-                        })
-                      let ps2 =
-                        dict.upsert(ps, w, fn(curr) {
-                          [v, ..option.unwrap(curr, [])]
-                        })
-                      #(q, ds, ss2, ps2)
-                    }
-                    order.Gt -> state
-                  }
-                }
-              }
-            })
-
-          do_brandes_dijkstra(
-            graph,
-            next_q,
-            next_dists,
-            next_sigmas,
-            next_preds,
-            new_stack,
-            add,
-            compare,
-          )
-        }
-      }
-    }
-  }
-}
-
-fn get_sigma(sigmas: Dict(NodeId, Int), id: NodeId) -> Int {
-  dict.get(sigmas, id) |> result.unwrap(0)
-}
-
-fn run_accumulation(discovery: BrandesDiscovery) -> Dict(NodeId, Float) {
-  let #(stack, preds, sigmas) = discovery
-  accumulate_dependencies(stack, preds, sigmas)
-}
-
-fn accumulate_dependencies(
-  stack: List(NodeId),
-  preds: Dict(NodeId, List(NodeId)),
-  sigmas: Dict(NodeId, Int),
-) -> Dict(NodeId, Float) {
-  let initial_deltas = dict.new()
-
-  list.fold(stack, initial_deltas, fn(deltas, v) {
-    let sigma_v = int.to_float(get_sigma(sigmas, v))
-    let delta_v = dict.get(deltas, v) |> result.unwrap(0.0)
-    let v_preds = dict.get(preds, v) |> result.unwrap([])
-
-    list.fold(v_preds, deltas, fn(acc_deltas, u) {
-      let sigma_u = int.to_float(get_sigma(sigmas, u))
-      // The core formula: delta[u] += (sigma[u]/sigma[v]) * (1 + delta[v])
-      let fraction = sigma_u /. sigma_v *. { 1.0 +. delta_v }
-      dict.upsert(acc_deltas, u, fn(curr) {
-        option.unwrap(curr, 0.0) +. fraction
-      })
-    })
-  })
 }
 
 fn merge_scores(
@@ -379,7 +269,7 @@ fn merge_scores(
     case node == source {
       True -> acc2
       False -> {
-        let current = dict.get(acc2, node) |> result.unwrap(0.0)
+        let current = dict_get_float(acc2, node)
         dict.insert(acc2, node, current +. delta)
       }
     }
@@ -419,6 +309,10 @@ fn apply_undirected_scaling(
 /// - damping: 0.85
 /// - max_iterations: 100
 /// - tolerance: 0.0001
+// =============================================================================
+// PageRank
+// =============================================================================
+
 pub type PageRankOptions {
   PageRankOptions(damping: Float, max_iterations: Int, tolerance: Float)
 }
@@ -465,6 +359,18 @@ pub type PageRankOptions {
 /// )
 /// let scores = centrality.pagerank(graph, custom)
 /// ```
+///
+/// ## Interpreting PageRank
+///
+/// | Value | Meaning |
+/// |-------|---------|
+/// | **High** | The node is linked to by many other important nodes |
+/// | **Low** | The node has few or low-quality incoming links |
+/// | `1.0` | Single-node graph (trivial case) |
+///
+/// PageRank scores always sum to `1.0` across all nodes. A node with
+/// rank `0.5` in a 2-node graph means it captures half the total
+/// importance in the network.
 pub fn pagerank(graph: Graph(n, e), options: PageRankOptions) -> Centrality {
   let nodes = model.all_nodes(graph)
   let n = list.length(nodes)
@@ -494,25 +400,23 @@ fn iterate_pagerank(
 
       let sink_sum = calculate_sink_sum(graph, ranks, nodes, n_float)
 
-      let new_ranks =
-        list.fold(nodes, dict.new(), fn(acc, node) {
-          let in_neighbors = get_in_neighbors(graph, node)
-          let rank_sum =
-            list.fold(in_neighbors, 0.0, fn(sum, neighbor) {
-              let neighbor_rank =
-                dict.get(ranks, neighbor) |> result.unwrap(0.0)
-              let out_degree = get_out_degree(graph, neighbor)
-              case out_degree > 0 {
-                True -> sum +. neighbor_rank /. int.to_float(out_degree)
-                False -> sum
-              }
-            })
+      let new_ranks = {
+        use acc, node <- list.fold(nodes, dict.new())
+        let rank_sum = {
+          use sum, neighbor <- list.fold(get_in_neighbors(graph, node), 0.0)
+          let neighbor_rank = dict_get_float(ranks, neighbor)
+          let out_degree = get_out_degree(graph, neighbor)
+          case out_degree > 0 {
+            True -> sum +. neighbor_rank /. int.to_float(out_degree)
+            False -> sum
+          }
+        }
 
-          let new_rank =
-            { 1.0 -. damping } /. n_float +. damping *. { sink_sum +. rank_sum }
+        let new_rank =
+          { 1.0 -. damping } /. n_float +. damping *. { sink_sum +. rank_sum }
 
-          dict.insert(acc, node, new_rank)
-        })
+        dict.insert(acc, node, new_rank)
+      }
 
       let l1_norm = calculate_l1_norm(ranks, new_ranks, nodes)
 
@@ -531,41 +435,33 @@ fn calculate_sink_sum(
   nodes: List(NodeId),
   n_float: Float,
 ) -> Float {
-  list.fold(nodes, 0.0, fn(sum, node) {
-    let out_degree = get_out_degree(graph, node)
-    case out_degree == 0 {
-      True -> {
-        let node_rank = dict.get(ranks, node) |> result.unwrap(0.0)
-        sum +. node_rank /. n_float
-      }
-      False -> sum
-    }
-  })
+  use sum, node <- list.fold(nodes, 0.0)
+  let out_degree = get_out_degree(graph, node)
+  case out_degree == 0 {
+    True -> sum +. dict_get_float(ranks, node) /. n_float
+    False -> sum
+  }
 }
 
 fn get_in_neighbors(graph: Graph(n, e), node: NodeId) -> List(NodeId) {
   case graph.kind {
-    Undirected -> {
+    Undirected ->
       model.successors(graph, node)
       |> list.map(fn(edge) { edge.0 })
-    }
-    Directed -> {
+    Directed ->
       model.predecessors(graph, node)
       |> list.map(fn(edge) { edge.0 })
-    }
   }
 }
 
 fn get_out_degree(graph: Graph(n, e), node: NodeId) -> Int {
   case graph.kind {
-    Undirected -> {
+    Undirected ->
       model.neighbors(graph, node)
       |> list.length()
-    }
-    Directed -> {
+    Directed ->
       model.successors(graph, node)
       |> list.length()
-    }
   }
 }
 
@@ -574,15 +470,10 @@ fn calculate_l1_norm(
   new_ranks: Dict(NodeId, Float),
   nodes: List(NodeId),
 ) -> Float {
-  list.fold(nodes, 0.0, fn(sum, node) {
-    let old_val = dict.get(old_ranks, node) |> result.unwrap(0.0)
-    let new_val = dict.get(new_ranks, node) |> result.unwrap(0.0)
-    let diff = case new_val >. old_val {
-      True -> new_val -. old_val
-      False -> old_val -. new_val
-    }
-    sum +. diff
-  })
+  use sum, node <- list.fold(nodes, 0.0)
+  let old_val = dict_get_float(old_ranks, node)
+  let new_val = dict_get_float(new_ranks, node)
+  sum +. float.absolute_value(new_val -. old_val)
 }
 
 // -----------------------------------------------------------------------------
@@ -608,6 +499,17 @@ fn calculate_l1_norm(
 /// centrality.eigenvector(graph, max_iterations: 100, tolerance: 0.0001)
 /// // => dict.from_list([#(1, 0.707), #(2, 1.0), #(3, 0.707)])
 /// ```
+///
+/// ## Interpreting Eigenvector Centrality
+///
+/// | Value | Meaning |
+/// |-------|---------|
+/// | **High** | The node is connected to other highly central nodes |
+/// | **Low** | The node is connected to peripheral or unimportant nodes |
+/// | `0.0` | Isolated node with no connections |
+///
+/// Eigenvector scores are normalized (L2 norm = 1.0), so they represent
+/// relative importance rather than absolute counts.
 pub fn eigenvector(
   graph: Graph(n, e),
   max_iterations: Int,
@@ -620,23 +522,17 @@ pub fn eigenvector(
     True ->
       list.fold(nodes, dict.new(), fn(acc, id) { dict.insert(acc, id, 1.0) })
     False -> {
-      // Initialize with all ones, plus small node-ID-based perturbation
-      // The perturbation must be large enough to break symmetry but small enough
-      // not to bias results toward high-ID nodes
-      let initial_scores =
-        list.fold(nodes, dict.new(), fn(acc, id) {
-          // Use 1.0 + (id / 1000.0) to add 0.1% per node ID
-          // This is sufficient to break oscillation in symmetric graphs
-          let perturbation = int.to_float(id) /. 1000.0
-          dict.insert(acc, id, 1.0 +. perturbation)
-        })
+      let initial_scores = {
+        use acc, id <- list.fold(nodes, dict.new())
+        let perturbation = int.to_float(id) /. 1000.0
+        dict.insert(acc, id, 1.0 +. perturbation)
+      }
 
       iterate_eigenvector_with_oscillation_check(
         graph,
         nodes,
         initial_scores,
         dict.new(),
-        // prev_prev starts empty
         max_iterations,
         tolerance,
         0,
@@ -657,18 +553,15 @@ fn iterate_eigenvector_with_oscillation_check(
   case iteration >= max_iterations {
     True -> scores
     False -> {
-      // Compute new scores: x_v = Σ A_uv * x_u for neighbors u
-      let new_scores =
-        list.fold(nodes, dict.new(), fn(acc, node) {
-          let neighbor_sum =
-            get_in_neighbors(graph, node)
-            |> list.fold(0.0, fn(sum, neighbor) {
-              let neighbor_score =
-                dict.get(scores, neighbor) |> result.unwrap(0.0)
-              sum +. neighbor_score
-            })
-          dict.insert(acc, node, neighbor_sum)
-        })
+      let new_scores = {
+        use acc, node <- list.fold(nodes, dict.new())
+        let neighbor_sum = {
+          use sum, neighbor <- list.fold(get_in_neighbors(graph, node), 0.0)
+          let neighbor_score = dict_get_float(scores, neighbor)
+          sum +. neighbor_score
+        }
+        dict.insert(acc, node, neighbor_sum)
+      }
 
       let l2_norm = calculate_l2_norm(new_scores, nodes)
       let normalized = case l2_norm >. 0.0 {
@@ -677,10 +570,8 @@ fn iterate_eigenvector_with_oscillation_check(
         False -> new_scores
       }
 
-      // Check for convergence against previous iteration
       let l2_diff = calculate_l2_difference(scores, normalized, nodes)
 
-      // Also check for 2-cycle oscillation (compare with prev_prev)
       let is_oscillating = case dict.size(prev_prev_scores) > 0 {
         True -> {
           let l2_diff_2 =
@@ -691,18 +582,14 @@ fn iterate_eigenvector_with_oscillation_check(
       }
 
       case is_oscillating {
-        // Oscillation detected: return average of the two oscillating states
-        // This gives the approximate eigenvector for graphs with symmetric structure
         True -> {
-          let averaged =
-            list.fold(nodes, dict.new(), fn(acc, node) {
-              let val1 = dict.get(normalized, node) |> result.unwrap(0.0)
-              let val2 = dict.get(scores, node) |> result.unwrap(0.0)
-              let avg = { val1 +. val2 } /. 2.0
-              dict.insert(acc, node, avg)
-            })
+          let averaged = {
+            use acc, node <- list.fold(nodes, dict.new())
+            let val1 = dict_get_float(normalized, node)
+            let val2 = dict_get_float(scores, node)
+            dict.insert(acc, node, { val1 +. val2 } /. 2.0)
+          }
 
-          // Renormalize the average
           let avg_norm = calculate_l2_norm(averaged, nodes)
           case avg_norm >. 0.0 {
             True ->
@@ -712,7 +599,6 @@ fn iterate_eigenvector_with_oscillation_check(
         }
         False ->
           case l2_diff <. tolerance {
-            // Normal convergence
             True -> normalized
             False ->
               iterate_eigenvector_with_oscillation_check(
@@ -720,7 +606,6 @@ fn iterate_eigenvector_with_oscillation_check(
                 nodes,
                 normalized,
                 scores,
-                // prev becomes prev_prev
                 max_iterations,
                 tolerance,
                 iteration + 1,
@@ -732,11 +617,12 @@ fn iterate_eigenvector_with_oscillation_check(
 }
 
 fn calculate_l2_norm(scores: Dict(NodeId, Float), nodes: List(NodeId)) -> Float {
-  let sum_squares =
-    list.fold(nodes, 0.0, fn(sum, node) {
-      let score = dict.get(scores, node) |> result.unwrap(0.0)
-      sum +. score *. score
-    })
+  let sum_squares = {
+    use sum, node <- list.fold(nodes, 0.0)
+    let score = dict_get_float(scores, node)
+    sum +. score *. score
+  }
+
   case sum_squares >. 0.0 {
     True -> sum_squares |> float.square_root() |> result.unwrap(0.0)
     False -> 0.0
@@ -748,13 +634,14 @@ fn calculate_l2_difference(
   new_scores: Dict(NodeId, Float),
   nodes: List(NodeId),
 ) -> Float {
-  let sum_squares =
-    list.fold(nodes, 0.0, fn(sum, node) {
-      let old_val = dict.get(old_scores, node) |> result.unwrap(0.0)
-      let new_val = dict.get(new_scores, node) |> result.unwrap(0.0)
-      let diff = new_val -. old_val
-      sum +. diff *. diff
-    })
+  let sum_squares = {
+    use sum, node <- list.fold(nodes, 0.0)
+    let old_val = dict_get_float(old_scores, node)
+    let new_val = dict_get_float(new_scores, node)
+    let diff = new_val -. old_val
+    sum +. diff *. diff
+  }
+
   case sum_squares >. 0.0 {
     True -> sum_squares |> float.square_root() |> result.unwrap(0.0)
     False -> 0.0
@@ -789,6 +676,17 @@ fn calculate_l2_difference(
 /// centrality.katz(graph, alpha: 0.1, beta: 1.0, max_iterations: 100, tolerance: 0.0001)
 /// // => dict.from_list([#(1, 2.5), #(2, 3.0), #(3, 2.5)])
 /// ```
+///
+/// ## Interpreting Katz Centrality
+///
+/// | Value | Meaning |
+/// |-------|---------|
+/// | **High** | The node has many short paths to other important nodes |
+/// | **Low** | The node is distant from the network core |
+/// | `≈ beta` | Isolated node — only receives the baseline score |
+///
+/// Because of the constant `beta` term, even isolated nodes receive a
+/// non-zero score, making Katz more forgiving than eigenvector centrality.
 pub fn katz(
   graph: Graph(n, e),
   alpha: Float,
@@ -802,8 +700,10 @@ pub fn katz(
   case n <= 0 {
     True -> dict.new()
     False -> {
-      let initial_scores =
-        list.fold(nodes, dict.new(), fn(acc, id) { dict.insert(acc, id, beta) })
+      let initial_scores = {
+        use acc, id <- list.fold(nodes, dict.new())
+        dict.insert(acc, id, beta)
+      }
 
       iterate_katz(
         graph,
@@ -832,19 +732,16 @@ fn iterate_katz(
   case iteration >= max_iterations {
     True -> scores
     False -> {
-      // Compute new scores: x_v = α * Σ x_u + β for neighbors u
-      let new_scores =
-        list.fold(nodes, dict.new(), fn(acc, node) {
-          let neighbor_sum =
-            get_in_neighbors(graph, node)
-            |> list.fold(0.0, fn(sum, neighbor) {
-              let neighbor_score =
-                dict.get(scores, neighbor) |> result.unwrap(0.0)
-              sum +. neighbor_score
-            })
-          let new_score = alpha *. neighbor_sum +. beta
-          dict.insert(acc, node, new_score)
-        })
+      let new_scores = {
+        use acc, node <- list.fold(nodes, dict.new())
+        let neighbor_sum = {
+          use sum, neighbor <- list.fold(get_in_neighbors(graph, node), 0.0)
+          let neighbor_score = dict_get_float(scores, neighbor)
+          sum +. neighbor_score
+        }
+        let new_score = alpha *. neighbor_sum +. beta
+        dict.insert(acc, node, new_score)
+      }
 
       let l1_diff = calculate_l1_norm_diff(scores, new_scores, nodes)
       case l1_diff <. tolerance {
@@ -870,15 +767,10 @@ fn calculate_l1_norm_diff(
   new_scores: Dict(NodeId, Float),
   nodes: List(NodeId),
 ) -> Float {
-  list.fold(nodes, 0.0, fn(sum, node) {
-    let old_val = dict.get(old_scores, node) |> result.unwrap(0.0)
-    let new_val = dict.get(new_scores, node) |> result.unwrap(0.0)
-    let diff = case new_val >. old_val {
-      True -> new_val -. old_val
-      False -> old_val -. new_val
-    }
-    sum +. diff
-  })
+  use sum, node <- list.fold(nodes, 0.0)
+  let old_val = dict_get_float(old_scores, node)
+  let new_val = dict_get_float(new_scores, node)
+  sum +. float.absolute_value(new_val -. old_val)
 }
 
 // -----------------------------------------------------------------------------
@@ -908,9 +800,20 @@ fn calculate_l1_norm_diff(
 /// ## Example
 ///
 /// ```gleam
-/// centrality.alpha(graph, alpha: 0.3, initial: 1.0, max_iterations: 100, tolerance: 0.0001)
+/// centrality.alpha_centrality(graph, alpha: 0.3, initial: 1.0, max_iterations: 100, tolerance: 0.0001)
 /// // => dict.from_list([#(1, 2.0), #(2, 3.0), #(3, 2.0)])
 /// ```
+///
+/// ## Interpreting Alpha Centrality
+///
+/// | Value | Meaning |
+/// |-------|---------|
+/// | **High** | The node has many paths from other central nodes |
+/// | **Low** | The node is at the edge of the network with few incoming paths |
+/// | `0.0` | Isolated node — no incoming paths to accumulate influence |
+///
+/// Unlike Katz, alpha centrality has no baseline `beta` term, so isolated
+/// nodes converge to `0.0` rather than retaining a minimum score.
 pub fn alpha_centrality(
   graph: Graph(n, e),
   alpha: Float,
@@ -924,11 +827,10 @@ pub fn alpha_centrality(
   case n <= 0 {
     True -> dict.new()
     False -> {
-      // Initialize with given initial value
-      let initial_scores =
-        list.fold(nodes, dict.new(), fn(acc, id) {
-          dict.insert(acc, id, initial)
-        })
+      let initial_scores = {
+        use acc, id <- list.fold(nodes, dict.new())
+        dict.insert(acc, id, initial)
+      }
 
       iterate_alpha(
         graph,
@@ -955,19 +857,16 @@ fn iterate_alpha(
   case iteration >= max_iterations {
     True -> scores
     False -> {
-      // Compute new scores: x_v = α * Σ x_u for neighbors/predecessors u
-      let new_scores =
-        list.fold(nodes, dict.new(), fn(acc, node) {
-          let neighbor_sum =
-            get_in_neighbors(graph, node)
-            |> list.fold(0.0, fn(sum, neighbor) {
-              let neighbor_score =
-                dict.get(scores, neighbor) |> result.unwrap(0.0)
-              sum +. neighbor_score
-            })
-          let new_score = alpha *. neighbor_sum
-          dict.insert(acc, node, new_score)
-        })
+      let new_scores = {
+        use acc, node <- list.fold(nodes, dict.new())
+        let neighbor_sum = {
+          use sum, neighbor <- list.fold(get_in_neighbors(graph, node), 0.0)
+          let neighbor_score = dict_get_float(scores, neighbor)
+          sum +. neighbor_score
+        }
+        let new_score = alpha *. neighbor_sum
+        dict.insert(acc, node, new_score)
+      }
 
       let l1_diff = calculate_l1_norm_diff(scores, new_scores, nodes)
       case l1_diff <. tolerance {
@@ -990,6 +889,10 @@ fn iterate_alpha(
 // -----------------------------------------------------------------------------
 // Convenience Wrappers
 // -----------------------------------------------------------------------------
+
+// =============================================================================
+// Convenience Wrappers
+// =============================================================================
 
 /// Degree centrality with default options for undirected graphs.
 /// Uses TotalDegree mode.
@@ -1068,4 +971,8 @@ pub fn betweenness_float(graph: Graph(n, Float)) -> Centrality {
 /// Default PageRank options (damping=0.85, max_iterations=100, tolerance=0.0001).
 pub fn default_pagerank_options() -> PageRankOptions {
   PageRankOptions(damping: 0.85, max_iterations: 100, tolerance: 0.0001)
+}
+
+fn dict_get_float(dict: Dict(NodeId, Float), key: NodeId) -> Float {
+  dict.get(dict, key) |> result.unwrap(0.0)
 }
