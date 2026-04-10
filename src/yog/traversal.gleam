@@ -37,7 +37,6 @@
 //// - [Wikipedia: Topological Sorting](https://en.wikipedia.org/wiki/Topological_sorting)
 
 import gleam/dict
-import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/order
@@ -265,59 +264,6 @@ fn do_walk_dfs(
         }
       }
     }
-  }
-}
-
-/// Traverses an *implicit* weighted graph using Dijkstra's algorithm.
-pub fn implicit_dijkstra(
-  from start: nid,
-  initial acc: a,
-  successors_of successors: fn(nid) -> List(#(nid, Int)),
-  with folder: fn(a, nid, Int) -> #(WalkControl, a),
-) -> a {
-  let frontier =
-    priority_queue.new(fn(a: #(Int, nid), b: #(Int, nid)) {
-      int.compare(a.0, b.0)
-    })
-    |> priority_queue.push(#(0, start))
-  do_implicit_dijkstra(frontier, dict.new(), acc, successors, folder)
-}
-
-fn do_implicit_dijkstra(frontier, best, acc, successors, folder) {
-  case priority_queue.pop(frontier) {
-    Error(Nil) -> acc
-    Ok(#(#(cost, node), rest)) ->
-      case dict.get(best, node) {
-        Ok(prev) if prev < cost ->
-          do_implicit_dijkstra(rest, best, acc, successors, folder)
-        _ -> {
-          let new_best = dict.insert(best, node, cost)
-          let #(control, new_acc) = folder(acc, node, cost)
-          case control {
-            Halt -> new_acc
-            Stop ->
-              do_implicit_dijkstra(rest, new_best, new_acc, successors, folder)
-            Continue -> {
-              let next_frontier =
-                list.fold(successors(node), rest, fn(q, neighbor) {
-                  let #(nb_node, edge_cost) = neighbor
-                  let new_cost = cost + edge_cost
-                  case dict.get(new_best, nb_node) {
-                    Ok(prev_cost) if prev_cost <= new_cost -> q
-                    _ -> priority_queue.push(q, #(new_cost, nb_node))
-                  }
-                })
-              do_implicit_dijkstra(
-                next_frontier,
-                new_best,
-                new_acc,
-                successors,
-                folder,
-              )
-            }
-          }
-        }
-      }
   }
 }
 

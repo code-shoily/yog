@@ -61,6 +61,7 @@ import yog/pathfinding/utils.{
   type Path, Path, compare_distance_frontier, compare_frontier,
   should_explore_node,
 }
+import yog/traversal.{type WalkControl}
 
 /// Finds the shortest path between two nodes using Dijkstra's algorithm.
 ///
@@ -387,6 +388,77 @@ fn do_implicit_dijkstra_by(
                 is_goal,
                 add,
                 compare,
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/// Folds over an implicit weighted graph using Dijkstra's algorithm.
+///
+/// Like `implicit_dijkstra` but visits nodes in order of increasing cost and
+/// accumulates state. Provides control over traversal via `WalkControl`.
+///
+/// **Time Complexity:** O((V + E) log V)
+pub fn fold(
+  from start: nid,
+  initial acc: a,
+  successors_of successors: fn(nid) -> List(#(nid, e)),
+  with_zero zero: e,
+  with_add add: fn(e, e) -> e,
+  with_compare compare: fn(e, e) -> Order,
+  with folder: fn(a, nid, e) -> #(WalkControl, a),
+) -> a {
+  let frontier =
+    priority_queue.new(fn(a: #(e, nid), b: #(e, nid)) { compare(a.0, b.0) })
+    |> priority_queue.push(#(zero, start))
+
+  do_fold(frontier, dict.new(), acc, successors, add, compare, folder)
+}
+
+fn do_fold(frontier, best, acc, successors, add, compare, folder) {
+  case priority_queue.pop(frontier) {
+    Error(Nil) -> acc
+    Ok(#(#(cost, node), rest)) -> {
+      let is_stale = case dict.get(best, node) {
+        Ok(prev) -> compare(prev, cost) != order.Gt
+        _ -> False
+      }
+
+      case is_stale {
+        True -> do_fold(rest, best, acc, successors, add, compare, folder)
+        False -> {
+          let new_best = dict.insert(best, node, cost)
+          let #(control, new_acc) = folder(acc, node, cost)
+          case control {
+            traversal.Halt -> new_acc
+            traversal.Stop ->
+              do_fold(rest, new_best, new_acc, successors, add, compare, folder)
+            traversal.Continue -> {
+              let next_frontier =
+                list.fold(successors(node), rest, fn(q, neighbor) {
+                  let #(nb_node, edge_cost) = neighbor
+                  let new_cost = add(cost, edge_cost)
+                  let is_worse = case dict.get(new_best, nb_node) {
+                    Ok(prev_cost) -> compare(prev_cost, new_cost) != order.Gt
+                    _ -> False
+                  }
+                  case is_worse {
+                    True -> q
+                    False -> priority_queue.push(q, #(new_cost, nb_node))
+                  }
+                })
+              do_fold(
+                next_frontier,
+                new_best,
+                new_acc,
+                successors,
+                add,
+                compare,
+                folder,
               )
             }
           }
