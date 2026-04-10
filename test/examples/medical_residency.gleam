@@ -3,7 +3,7 @@ import gleam/int
 import gleam/io
 import gleam/list
 import gleam/option
-import yog/internal/utils
+import yog/internal/util
 import yog/property/bipartite
 
 pub fn main() {
@@ -132,7 +132,7 @@ pub fn main() {
 
 // Helper: Get name from list
 fn get_name(names: List(String), index: Int) -> String {
-  case utils.list_at(names, index) {
+  case util.list_at(names, index) {
     Ok(name) -> name
     Error(_) -> "Unknown"
   }

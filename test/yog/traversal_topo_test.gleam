@@ -526,18 +526,18 @@ pub fn topo_sort_build_deps_test() {
     model.new(Directed)
     |> model.add_node(1, "main.o")
     |> model.add_node(2, "main.c")
-    |> model.add_node(3, "utils.o")
-    |> model.add_node(4, "utils.c")
+    |> model.add_node(3, "util.o")
+    |> model.add_node(4, "util.c")
     |> model.add_node(5, "app")
     |> model.add_edges([
       #(2, 1, 1),
       // main.c -> main.o
       #(4, 3, 1),
-      // utils.c -> utils.o
+      // util.c -> util.o
       #(1, 5, 1),
       // main.o -> app
       #(3, 5, 1),
-      // utils.o -> app
+      // util.o -> app
     ])
   let result = topo.topological_sort(graph)
 

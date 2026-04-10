@@ -1,11 +1,11 @@
 import gleam/list
-import yog/internal/utils
+import yog/internal/util
 import yog/model.{type Graph, Undirected}
 
 pub fn karate_club_graph() -> Graph(Nil, Int) {
   let g = model.new(Undirected)
   let g =
-    list.fold(over: utils.range(0, 33), from: g, with: fn(acc, i) {
+    list.fold(over: util.range(0, 33), from: g, with: fn(acc, i) {
       model.add_node(acc, i, Nil)
     })
 

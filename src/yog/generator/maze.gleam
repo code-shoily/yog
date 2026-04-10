@@ -53,7 +53,7 @@ import yog/builder/grid.{type Grid, Grid}
 import yog/disjoint_set
 import yog/internal/priority_queue
 import yog/internal/random
-import yog/internal/utils
+import yog/internal/util
 import yog/model.{Undirected}
 
 /// Direction bias for the Binary Tree algorithm.
@@ -112,8 +112,8 @@ pub fn binary_tree_with_options(
   let base_grid = create_empty_grid(rows, cols)
 
   let #(final_grid, _) = {
-    use acc, row <- list.fold(utils.range(0, rows - 1), #(base_grid, rng))
-    use inner_acc, col <- list.fold(utils.range(0, cols - 1), acc)
+    use acc, row <- list.fold(util.range(0, rows - 1), #(base_grid, rng))
+    use inner_acc, col <- list.fold(util.range(0, cols - 1), acc)
     let #(g, curr_rng) = inner_acc
     let neighbors = valid_binary_tree_neighbors(row, col, rows, cols, bias)
 
@@ -125,7 +125,7 @@ pub fn binary_tree_with_options(
       }
       _ -> {
         let #(idx, next_rng) = random.next_int(curr_rng, list.length(neighbors))
-        let neighbor = case utils.list_at(neighbors, idx) {
+        let neighbor = case util.list_at(neighbors, idx) {
           Ok(n) -> n
           Error(_) -> #(0, 0)
         }
@@ -238,7 +238,7 @@ pub fn sidewinder_with_options(
   let base_grid = create_empty_grid(rows, cols)
 
   let #(final_grid, _) = {
-    use acc, row <- list.fold(utils.range(0, rows - 1), #(base_grid, rng))
+    use acc, row <- list.fold(util.range(0, rows - 1), #(base_grid, rng))
     let #(row_grid, row_rng) = acc
     let run = []
     carve_sidewinder_row(row_grid, row, cols, 0, run, row_rng, direction)
@@ -280,7 +280,7 @@ fn carve_sidewinder_row(
       case should_close {
         True -> {
           let #(idx, r2) = random.next_int(next_rng, list.length(run))
-          let cell_col = case utils.list_at(run, idx) {
+          let cell_col = case util.list_at(run, idx) {
             Ok(c) -> c
             Error(_) -> col
           }
@@ -301,7 +301,7 @@ fn carve_sidewinder_row(
           let grid = case is_special_north && at_boundary {
             True -> {
               let #(idx, _) = random.next_int(next_rng, list.length(run))
-              let r_col = case utils.list_at(run, idx) {
+              let r_col = case util.list_at(run, idx) {
                 Ok(c) -> c
                 Error(_) -> col
               }
@@ -379,7 +379,7 @@ fn do_recursive_backtracker(
         [] -> do_recursive_backtracker(grid, rest, visited, rows, cols, rng)
         _ -> {
           let #(idx, next_rng) = random.next_int(rng, list.length(neighbors))
-          let neighbor = case utils.list_at(neighbors, idx) {
+          let neighbor = case util.list_at(neighbors, idx) {
             Ok(n) -> n
             Error(_) -> current
           }
@@ -470,7 +470,7 @@ fn do_hunt_and_kill(
   case unvisited {
     [_, ..] -> {
       let #(idx, next_rng) = random.next_int(rng, list.length(unvisited))
-      let neighbor = case utils.list_at(unvisited, idx) {
+      let neighbor = case util.list_at(unvisited, idx) {
         Ok(n) -> n
         Error(_) -> current
       }
@@ -524,11 +524,11 @@ fn hunt(
   case scan_mode {
     ScanSequential -> {
       let result = {
-        use acc, r <- list.fold(utils.range(0, rows - 1), option.None)
+        use acc, r <- list.fold(util.range(0, rows - 1), option.None)
         case acc {
           option.Some(_) -> acc
           option.None -> {
-            use inner_acc, c <- list.fold(utils.range(0, cols - 1), option.None)
+            use inner_acc, c <- list.fold(util.range(0, cols - 1), option.None)
             case inner_acc {
               option.Some(_) -> inner_acc
               option.None -> {
@@ -552,7 +552,7 @@ fn hunt(
       case result {
         option.Some(#(cell, vn)) -> {
           let #(idx, next_rng) = random.next_int(rng, list.length(vn))
-          let neighbor = case utils.list_at(vn, idx) {
+          let neighbor = case util.list_at(vn, idx) {
             Ok(n) -> n
             Error(_) -> #(0, 0)
           }
@@ -563,9 +563,9 @@ fn hunt(
     }
     ScanRandom -> {
       let unvisited = {
-        utils.range(0, rows - 1)
+        util.range(0, rows - 1)
         |> list.map(fn(r) {
-          utils.range(0, cols - 1)
+          util.range(0, cols - 1)
           |> list.map(fn(c) { #(r, c) })
         })
         |> list.flatten()
@@ -583,7 +583,7 @@ fn hunt(
         Ok(cell) -> {
           let vn = visited_neighbors(cell, visited, rows, cols)
           let #(idx, final_rng) = random.next_int(next_rng, list.length(vn))
-          let neighbor = case utils.list_at(vn, idx) {
+          let neighbor = case util.list_at(vn, idx) {
             Ok(n) -> n
             Error(_) -> #(0, 0)
           }
@@ -682,7 +682,7 @@ fn do_aldous_broder(
       let ns = neighbors(current.0, current.1, rows, cols)
       let len = list.length(ns)
       let #(idx, next_rng) = random.next_int(rng, len)
-      let neighbor = case utils.list_at(ns, idx) {
+      let neighbor = case util.list_at(ns, idx) {
         Ok(n) -> n
         Error(_) -> current
       }
@@ -742,8 +742,8 @@ pub fn wilson(rows: Int, cols: Int, seed seed: Option(Int)) -> Grid(Nil, Int) {
   let base_grid = create_empty_grid(rows, cols)
   let cells =
     {
-      use r <- list.map(utils.range(0, rows - 1))
-      use c <- list.map(utils.range(0, cols - 1))
+      use r <- list.map(util.range(0, rows - 1))
+      use c <- list.map(util.range(0, cols - 1))
       #(r, c)
     }
     |> list.flatten()
@@ -778,7 +778,7 @@ fn do_wilson(
       // Pick a random unvisited cell
       let unvisited_len = list.length(unvisited)
       let #(idx, next_rng) = random.next_int(rng, unvisited_len)
-      let start_cell = case utils.list_at(unvisited, idx) {
+      let start_cell = case util.list_at(unvisited, idx) {
         Ok(c) -> c
         Error(_) -> #(0, 0)
       }
@@ -821,7 +821,7 @@ fn random_walk_to_visited(
   let ns = neighbors(current.0, current.1, rows, cols)
   let ns_len = list.length(ns)
   let #(idx, next_rng) = random.next_int(rng, ns_len)
-  let neighbor = case utils.list_at(ns, idx) {
+  let neighbor = case util.list_at(ns, idx) {
     Ok(n) -> n
     Error(_) -> current
   }
@@ -929,7 +929,7 @@ fn do_growing_tree(
         }
       }
 
-      let cell = case utils.list_at(active, idx) {
+      let cell = case util.list_at(active, idx) {
         Ok(c) -> c
         Error(_) -> #(0, 0)
       }
@@ -952,7 +952,7 @@ fn do_growing_tree(
         _ -> {
           let unvisited_len = list.length(unvisited)
           let #(idx2, final_rng) = random.next_int(next_rng, unvisited_len)
-          let neighbor = case utils.list_at(unvisited, idx2) {
+          let neighbor = case util.list_at(unvisited, idx2) {
             Ok(n) -> n
             Error(_) -> cell
           }
@@ -995,16 +995,16 @@ pub fn kruskal(rows: Int, cols: Int, seed seed: Option(Int)) -> Grid(Nil, Int) {
 
   // Build edge list in a single pass to avoid intermediate lists
   let edges =
-    utils.range(0, rows - 1)
+    util.range(0, rows - 1)
     |> list.fold([], fn(acc, r) {
       // Horizontal edges
       let h_edges =
-        utils.range(0, cols - 2)
+        util.range(0, cols - 2)
         |> list.fold(acc, fn(h_acc, c) { [#(#(r, c), #(r, c + 1)), ..h_acc] })
       // Vertical edges
       case r < rows - 1 {
         True ->
-          utils.range(0, cols - 1)
+          util.range(0, cols - 1)
           |> list.fold(h_edges, fn(v_acc, c) {
             [#(#(r, c), #(r + 1, c)), ..v_acc]
           })
@@ -1078,7 +1078,7 @@ fn do_prim_simplified(
     _ -> {
       let frontier_len = list.length(frontier)
       let #(idx, next_rng) = random.next_int(rng, frontier_len)
-      let cell = case utils.list_at(frontier, idx) {
+      let cell = case util.list_at(frontier, idx) {
         Ok(c) -> c
         Error(_) -> #(0, 0)
       }
@@ -1152,13 +1152,13 @@ pub fn recursive_division(
 fn create_full_grid(rows: Int, cols: Int) -> Grid(Nil, Int) {
   let empty_grid = create_empty_grid(rows, cols)
 
-  utils.range(0, rows - 1)
+  util.range(0, rows - 1)
   |> list.fold(empty_grid, fn(acc_r, r) {
-    utils.range(0, cols - 2)
+    util.range(0, cols - 2)
     |> list.fold(acc_r, fn(acc_c, c) { add_passage(acc_c, r, c, r, c + 1) })
   })
-  |> list.fold(utils.range(0, rows - 2), _, fn(acc_r, r) {
-    utils.range(0, cols - 1)
+  |> list.fold(util.range(0, rows - 2), _, fn(acc_r, r) {
+    util.range(0, cols - 1)
     |> list.fold(acc_r, fn(acc_c, c) { add_passage(acc_c, r, c, r + 1, c) })
   })
 }
@@ -1208,7 +1208,7 @@ fn divide_horizontally(
   let passage_col = col + passage_offset
 
   let grid =
-    utils.range(col, col + width - 1)
+    util.range(col, col + width - 1)
     |> list.fold(grid, fn(acc, c) {
       case c == passage_col {
         True -> acc
@@ -1234,7 +1234,7 @@ fn divide_vertically(
   let passage_row = row + passage_offset
 
   let grid =
-    list.fold(utils.range(row, row + height - 1), grid, fn(acc, r) {
+    list.fold(util.range(row, row + height - 1), grid, fn(acc, r) {
       case r == passage_row {
         True -> acc
         False -> remove_passage(acc, r, wall_col, r, wall_col + 1)
@@ -1274,8 +1274,8 @@ pub fn prim_true(rows: Int, cols: Int, seed seed: Option(Int)) -> Grid(Nil, Int)
 
   let #(weights, next_rng) =
     {
-      use r <- list.map(utils.range(0, rows - 1))
-      use c <- list.map(utils.range(0, cols - 1))
+      use r <- list.map(util.range(0, rows - 1))
+      use c <- list.map(util.range(0, cols - 1))
       #(r, c)
     }
     |> list.flatten()
@@ -1388,7 +1388,7 @@ fn do_ellers(
     True -> {
       let #(row_state, _) = assign_sets(row_state, cols, next_set_id)
       let #(final_grid, _) = {
-        use acc, c <- list.fold(utils.range(0, cols - 2), #(grid, row_state))
+        use acc, c <- list.fold(util.range(0, cols - 2), #(grid, row_state))
         let #(g_acc, s_acc) = acc
         let set1 = dict.get(s_acc, c) |> result.unwrap(-1)
         let set2 = dict.get(s_acc, c + 1) |> result.unwrap(-2)
@@ -1409,7 +1409,7 @@ fn do_ellers(
         assign_sets(row_state, cols, next_set_id)
 
       let #(grid_0, row_state_2, rng_1) = {
-        use acc, c <- list.fold(utils.range(0, cols - 2), #(
+        use acc, c <- list.fold(util.range(0, cols - 2), #(
           grid,
           row_state_1,
           rng,
@@ -1470,7 +1470,7 @@ fn assign_sets(
   cols: Int,
   next_set_id: Int,
 ) -> #(dict.Dict(Int, Int), Int) {
-  use #(s_acc, id_acc), c <- list.fold(utils.range(0, cols - 1), #(
+  use #(s_acc, id_acc), c <- list.fold(util.range(0, cols - 1), #(
     row_state,
     next_set_id,
   ))
@@ -1508,8 +1508,8 @@ fn random_take_random(
 
 fn create_empty_grid(rows: Int, cols: Int) -> Grid(Nil, Int) {
   {
-    use acc_r, r <- list.fold(utils.range(0, rows - 1), model.new(Undirected))
-    use acc_c, c <- list.fold(utils.range(0, cols - 1), acc_r)
+    use acc_r, r <- list.fold(util.range(0, rows - 1), model.new(Undirected))
+    use acc_c, c <- list.fold(util.range(0, cols - 1), acc_r)
     let id = grid.coord_to_id(r, c, cols)
     model.add_node(acc_c, id, Nil)
   }

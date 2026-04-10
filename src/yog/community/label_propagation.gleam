@@ -60,7 +60,7 @@ import gleam/set
 import yog
 import yog/community.{type Communities, Communities}
 import yog/internal/random
-import yog/internal/utils
+import yog/internal/util
 import yog/model.{type Graph, type NodeId}
 
 /// Options for Label Propagation Algorithm.
@@ -112,7 +112,7 @@ fn run_lpa(
     True -> labels
     False -> {
       // 2. Randomize node order using Fisher-Yates shuffle
-      let #(shuffled_nodes, next_rng) = utils.shuffle(nodes, rng)
+      let #(shuffled_nodes, next_rng) = util.shuffle(nodes, rng)
 
       // 3. Update labels
       let #(new_labels, changed, final_rng) =

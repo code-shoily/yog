@@ -3,7 +3,7 @@ import gleam/list
 import gleeunit
 import qcheck
 import yog/generator/classic as generators
-import yog/internal/utils
+import yog/internal/util
 import yog/model
 
 // Reduced test count since there are 65 PBT tests in this file
@@ -223,7 +223,7 @@ pub fn star_graph_leaves_have_degree_1_test() {
   let graph = generators.star(n)
 
   // All non-center nodes should have degree 1
-  let leaves = utils.range(1, n - 1) |> list.map(fn(x) { x })
+  let leaves = util.range(1, n - 1) |> list.map(fn(x) { x })
 
   let all_leaves_degree_1 =
     list.all(leaves, fn(leaf) {
@@ -284,7 +284,7 @@ pub fn wheel_graph_rim_nodes_have_degree_3_test() {
   let graph = generators.wheel(n)
 
   // Rim nodes (1 to n-1) should have degree 3
-  let rim_nodes = utils.range(1, n - 1) |> list.map(fn(x) { x })
+  let rim_nodes = util.range(1, n - 1) |> list.map(fn(x) { x })
 
   let all_rim_degree_3 =
     list.all(rim_nodes, fn(node) {
@@ -344,8 +344,8 @@ pub fn complete_bipartite_is_bipartite_test() {
   let graph = generators.complete_bipartite(m, n)
 
   // Left partition nodes (0..m-1) should only connect to right partition
-  let left_partition = utils.range(0, m - 1) |> list.map(fn(x) { x })
-  let right_partition = utils.range(m, m + n - 1) |> list.map(fn(x) { x })
+  let left_partition = util.range(0, m - 1) |> list.map(fn(x) { x })
+  let right_partition = util.range(m, m + n - 1) |> list.map(fn(x) { x })
 
   let is_bipartite =
     list.all(left_partition, fn(left) {

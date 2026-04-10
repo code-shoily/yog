@@ -58,7 +58,7 @@ import gleam/order.{type Order}
 import yog/internal/priority_queue
 import yog/model.{type Graph, type NodeId}
 import yog/pathfinding/a_star
-import yog/pathfinding/utils.{
+import yog/pathfinding/util.{
   type Path, compare_distance_frontier, should_explore_node,
 }
 import yog/traversal.{type WalkControl}

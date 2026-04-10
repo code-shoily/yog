@@ -121,23 +121,23 @@ fn norm_diff_max(m1: Dict(k, Float), m2: Dict(k, Float)) -> Float {
 pub type Array(a)
 
 /// Creates an array from a list.
-@external(erlang, "yog_internal_utils", "array_from_list")
-@external(javascript, "./utils_ffi.mjs", "arrayFromList")
+@external(erlang, "yog_internal_util", "array_from_list")
+@external(javascript, "./util_ffi.mjs", "arrayFromList")
 pub fn array_from_list(list: List(a)) -> Array(a)
 
 /// Converts an array back to a list.
-@external(erlang, "yog_internal_utils", "array_to_list")
-@external(javascript, "./utils_ffi.mjs", "arrayToList")
+@external(erlang, "yog_internal_util", "array_to_list")
+@external(javascript, "./util_ffi.mjs", "arrayToList")
 pub fn array_to_list(arr: Array(a), size: Int) -> List(a)
 
 /// Gets an element at the specified index (0-based).
-@external(erlang, "yog_internal_utils", "array_get")
-@external(javascript, "./utils_ffi.mjs", "arrayGet")
+@external(erlang, "yog_internal_util", "array_get")
+@external(javascript, "./util_ffi.mjs", "arrayGet")
 pub fn array_get(arr: Array(a), index: Int) -> a
 
 /// Sets an element at the specified index (0-based).
-@external(erlang, "yog_internal_utils", "array_set")
-@external(javascript, "./utils_ffi.mjs", "arraySet")
+@external(erlang, "yog_internal_util", "array_set")
+@external(javascript, "./util_ffi.mjs", "arraySet")
 pub fn array_set(arr: Array(a), index: Int, value: a) -> Array(a)
 
 /// Returns the element at the given index in the list, or `Error(Nil)` if the

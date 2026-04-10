@@ -40,7 +40,7 @@ import gleam/option.{None, Some}
 import gleam/pair
 import gleam/result
 import gleam/set
-import yog/internal/utils
+import yog/internal/util
 
 /// Unique identifier for a node in the graph.
 pub type NodeId =
@@ -176,13 +176,13 @@ pub fn remove_node(graph: Graph(n, e), id: NodeId) -> Graph(n, e) {
   let new_out = dict.delete(graph.out_edges, id)
   let new_in_cleaned = {
     use acc_in, #(target_id, _) <- list.fold(targets, graph.in_edges)
-    utils.dict_update_inner(acc_in, target_id, id, dict.delete)
+    util.dict_update_inner(acc_in, target_id, id, dict.delete)
   }
 
   let new_in = dict.delete(new_in_cleaned, id)
   let new_out_cleaned = {
     use acc_out, #(source_id, _) <- list.fold(sources, new_out)
-    utils.dict_update_inner(acc_out, source_id, id, dict.delete)
+    util.dict_update_inner(acc_out, source_id, id, dict.delete)
   }
 
   Graph(..graph, nodes: new_nodes, out_edges: new_out_cleaned, in_edges: new_in)

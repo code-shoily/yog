@@ -91,7 +91,7 @@ import gleam/option.{type Option, Some}
 import gleam/result
 import gleam/set.{type Set}
 import yog/internal/random.{type Rng}
-import yog/internal/utils
+import yog/internal/util
 import yog/model.{type Graph, type GraphType}
 
 // =============================================================================
@@ -150,10 +150,10 @@ pub fn erdos_renyi_gnp_with_type(
         model.Undirected -> {
           // For undirected, only consider i < j pairs
           let #(result, _) =
-            utils.range(0, n - 1)
+            util.range(0, n - 1)
             |> list.fold(#(graph, rng), fn(state, i) {
               let #(g, rng_state) = state
-              utils.range(i + 1, n - 1)
+              util.range(i + 1, n - 1)
               |> list.fold(#(g, rng_state), fn(inner_state, j) {
                 let #(inner_g, inner_rng) = inner_state
                 let #(rand_val, new_rng) = random.next_float(inner_rng)
@@ -177,10 +177,10 @@ pub fn erdos_renyi_gnp_with_type(
         model.Directed -> {
           // For directed, consider all i != j pairs
           let #(result, _) =
-            utils.range(0, n - 1)
+            util.range(0, n - 1)
             |> list.fold(#(graph, rng), fn(state, i) {
               let #(g, rng_state) = state
-              utils.range(0, n - 1)
+              util.range(0, n - 1)
               |> list.fold(#(g, rng_state), fn(inner_state, j) {
                 let #(inner_g, inner_rng) = inner_state
                 case i == j {
@@ -272,17 +272,17 @@ pub fn erdos_renyi_gnm_with_type(
       let all_edges = case graph_type {
         model.Undirected -> {
           list.flatten(
-            utils.range(0, n - 1)
+            util.range(0, n - 1)
             |> list.map(fn(i) {
-              utils.range(i + 1, n - 1) |> list.map(fn(j) { #(i, j) })
+              util.range(i + 1, n - 1) |> list.map(fn(j) { #(i, j) })
             }),
           )
         }
         model.Directed -> {
           list.flatten(
-            utils.range(0, n - 1)
+            util.range(0, n - 1)
             |> list.map(fn(i) {
-              utils.range(0, n - 1)
+              util.range(0, n - 1)
               |> list.filter(fn(j) { i != j })
               |> list.map(fn(j) { #(i, j) })
             }),
@@ -355,7 +355,7 @@ pub fn barabasi_albert_with_type(
       // Start with complete graph on m nodes
       let m0 = int.max(m, 2)
       let initial =
-        utils.range(0, m0 - 1)
+        util.range(0, m0 - 1)
         |> list.fold(model.new(graph_type), fn(g, i) {
           model.add_node(g, i, Nil)
         })
@@ -364,10 +364,10 @@ pub fn barabasi_albert_with_type(
       let initial_with_edges = case graph_type {
         model.Undirected -> {
           let #(result, _) =
-            utils.range(0, m0 - 1)
+            util.range(0, m0 - 1)
             |> list.fold(#(initial, rng), fn(state, i) {
               let #(g, rng_state) = state
-              utils.range(i + 1, m0 - 1)
+              util.range(i + 1, m0 - 1)
               |> list.fold(#(g, rng_state), fn(inner_state, j) {
                 let #(inner_g, inner_rng) = inner_state
                 #(
@@ -386,10 +386,10 @@ pub fn barabasi_albert_with_type(
         }
         model.Directed -> {
           let #(result, _) =
-            utils.range(0, m0 - 1)
+            util.range(0, m0 - 1)
             |> list.fold(#(initial, rng), fn(state, i) {
               let #(g, rng_state) = state
-              utils.range(0, m0 - 1)
+              util.range(0, m0 - 1)
               |> list.fold(#(g, rng_state), fn(inner_state, j) {
                 let #(inner_g, inner_rng) = inner_state
                 case i == j {
@@ -413,7 +413,7 @@ pub fn barabasi_albert_with_type(
 
       // Add remaining nodes with preferential attachment
       let #(final_graph, _) =
-        utils.range(m0, n - 1)
+        util.range(m0, n - 1)
         |> list.fold(#(initial_with_edges, rng), fn(state, new_node) {
           let #(g, rng_state) = state
           add_node_with_preferential_attachment_seeded(
@@ -475,7 +475,7 @@ fn select_preferential_targets_seeded(
       let list_size = list.length(degree_list)
       let #(index, new_rng) = random.next_int(rng, list_size)
 
-      case utils.list_at(degree_list, index) {
+      case util.list_at(degree_list, index) {
         Ok(target) -> {
           let new_selected = set.insert(selected, target)
           select_preferential_targets_seeded(
@@ -548,10 +548,10 @@ pub fn watts_strogatz_with_type(
       // Build ring lattice with probabilistic rewiring
       let half_k = k / 2
       let #(result, _) =
-        utils.range(0, n - 1)
+        util.range(0, n - 1)
         |> list.fold(#(graph, rng), fn(state, i) {
           let #(g, rng_state) = state
-          utils.range(1, half_k)
+          util.range(1, half_k)
           |> list.fold(#(g, rng_state), fn(inner_state, offset) {
             let #(acc, inner_rng) = inner_state
             let #(rand_val, new_rng) = random.next_float(inner_rng)
@@ -688,7 +688,7 @@ fn build_random_tree_seeded(
       let tree_size = list.length(tree_list)
       let #(index, new_rng) = random.next_int(rng, tree_size)
 
-      case utils.list_at(tree_list, index) {
+      case util.list_at(tree_list, index) {
         Ok(parent) -> {
           let new_graph =
             model.add_edge_ensure(
@@ -794,7 +794,7 @@ fn generate_regular(
       // Create stubs: each node i appears d times in the list
       let stubs =
         list.flatten(
-          utils.range(0, n - 1) |> list.map(fn(i) { list.repeat(i, d) }),
+          util.range(0, n - 1) |> list.map(fn(i) { list.repeat(i, d) }),
         )
 
       // Shuffle stubs using Fisher-Yates
@@ -819,7 +819,7 @@ fn create_ring_based_regular(
 ) -> Graph(Nil, Int) {
   let base = model.new(graph_type)
   let graph =
-    utils.range(0, n - 1)
+    util.range(0, n - 1)
     |> list.fold(base, fn(g, i) { model.add_node(g, i, Nil) })
 
   case d {
@@ -828,8 +828,8 @@ fn create_ring_based_regular(
       let half = d / 2
       // Add edges to k nearest neighbors on each side
       let graph_with_ring =
-        list.fold(utils.range(0, n - 1), graph, fn(g, i) {
-          list.fold(utils.range(1, half), g, fn(g2, k) {
+        list.fold(util.range(0, n - 1), graph, fn(g, i) {
+          list.fold(util.range(1, half), g, fn(g2, k) {
             let j = { i + k } % n
             case model.add_edge(g2, i, j, 0) {
               Ok(g3) -> g3
@@ -841,7 +841,7 @@ fn create_ring_based_regular(
       // If d is odd, add a perfect matching (requires even n)
       case int.remainder(d, 2) == Ok(1) && int.remainder(n, 2) == Ok(0) {
         True -> {
-          list.fold(utils.range(0, n / 2 - 1), graph_with_ring, fn(g, i) {
+          list.fold(util.range(0, n / 2 - 1), graph_with_ring, fn(g, i) {
             case model.add_edge(g, i, i + n / 2, 0) {
               Ok(g2) -> g2
               Error(_) -> g
@@ -866,7 +866,7 @@ fn try_pairing(
       // Build the graph
       let base = model.new(graph_type)
       let graph =
-        utils.range(0, n - 1)
+        util.range(0, n - 1)
         |> list.fold(base, fn(g, i) { model.add_node(g, i, Nil) })
 
       let final_graph =
@@ -993,10 +993,10 @@ pub fn sbm_with_type(
       case graph_type {
         model.Undirected -> {
           let #(result, _) =
-            utils.range(0, n - 1)
+            util.range(0, n - 1)
             |> list.fold(#(graph, rng), fn(state, u) {
               let #(g, rng_state) = state
-              utils.range(u + 1, n - 1)
+              util.range(u + 1, n - 1)
               |> list.fold(#(g, rng_state), fn(inner_state, v) {
                 let #(inner_g, inner_rng) = inner_state
                 let comm_u = case dict.get(communities, u) {
@@ -1031,10 +1031,10 @@ pub fn sbm_with_type(
         }
         model.Directed -> {
           let #(result, _) =
-            utils.range(0, n - 1)
+            util.range(0, n - 1)
             |> list.fold(#(graph, rng), fn(state, u) {
               let #(g, rng_state) = state
-              utils.range(0, n - 1)
+              util.range(0, n - 1)
               |> list.fold(#(g, rng_state), fn(inner_state, v) {
                 let #(inner_g, inner_rng) = inner_state
                 case u == v {
@@ -1131,7 +1131,7 @@ pub fn rmat_with_type(
       let #(a, b, c, _) = option.unwrap(probs, #(0.57, 0.19, 0.19, 0.05))
 
       let #(final_graph, _) =
-        utils.range(1, m)
+        util.range(1, m)
         |> list.fold(#(graph, rng), fn(state, _) {
           let #(g, curr_rng) = state
           let #(x, y, next_rng) = rmat_sample_edge(k, a, b, c, 0, 0, curr_rng)
@@ -1230,7 +1230,7 @@ pub fn geometric_with_type(
 
       // Assign random positions to all nodes
       let #(positions, _) =
-        utils.range(0, n - 1)
+        util.range(0, n - 1)
         |> list.fold(#(dict.new(), rng), fn(state, i) {
           let #(d, curr_rng) = state
           let #(x, rng1) = random.next_float(curr_rng)
@@ -1242,10 +1242,10 @@ pub fn geometric_with_type(
       let r_sq = radius *. radius
       case graph_type {
         model.Undirected -> {
-          utils.range(0, n - 1)
+          util.range(0, n - 1)
           |> list.fold(graph, fn(g, i) {
             let pos_i = dict.get(positions, i) |> result.unwrap(#(0.0, 0.0))
-            utils.range(i + 1, n - 1)
+            util.range(i + 1, n - 1)
             |> list.fold(g, fn(acc, j) {
               let pos_j = dict.get(positions, j) |> result.unwrap(#(0.0, 0.0))
               let dx = pos_i.0 -. pos_j.0
@@ -1266,10 +1266,10 @@ pub fn geometric_with_type(
           })
         }
         model.Directed -> {
-          utils.range(0, n - 1)
+          util.range(0, n - 1)
           |> list.fold(graph, fn(g, i) {
             let pos_i = dict.get(positions, i) |> result.unwrap(#(0.0, 0.0))
-            utils.range(0, n - 1)
+            util.range(0, n - 1)
             |> list.fold(g, fn(acc, j) {
               case i == j {
                 True -> acc
@@ -1305,7 +1305,7 @@ fn assign_communities(n: Int, k: Int) -> Dict(Int, Int) {
   let base_size = n / k
   let remainder = n % k
 
-  utils.range(0, n - 1)
+  util.range(0, n - 1)
   |> list.fold(#(dict.new(), 0, 0), fn(state, node) {
     let #(dict, current_comm, count) = state
     let comm_size = case current_comm < remainder {
@@ -1377,14 +1377,14 @@ pub fn dcsbm_with_type(
       }
 
       let #(result_graph, _) =
-        utils.range(0, n - 1)
+        util.range(0, n - 1)
         |> list.fold(#(graph, rng), fn(state, u) {
           let #(g, curr_rng) = state
           let start_v = case graph_type {
             model.Undirected -> u + 1
             model.Directed -> 0
           }
-          utils.range(start_v, n - 1)
+          util.range(start_v, n - 1)
           |> list.fold(#(g, curr_rng), fn(inner_state, v) {
             let #(inner_g, inner_rng) = inner_state
             case u == v {
@@ -1426,7 +1426,7 @@ pub fn dcsbm_with_type(
 fn generate_default_thetas(n: Int) -> List(Float) {
   // Simple power-law like weights 1/sqrt(i+1)
   let raw =
-    utils.range(1, n)
+    util.range(1, n)
     |> list.map(fn(i: Int) {
       let f = int.to_float(i)
       float.square_root(f)
@@ -1439,7 +1439,7 @@ fn generate_default_thetas(n: Int) -> List(Float) {
 }
 
 fn list_at_float(lst: List(Float), index: Int) -> Float {
-  utils.list_at(lst, index) |> result.unwrap(1.0)
+  util.list_at(lst, index) |> result.unwrap(1.0)
 }
 
 // =============================================================================
@@ -1482,14 +1482,14 @@ pub fn hsbm_with_type(
           let graph = create_nodes(model.new(graph_type), n)
 
           let #(result_graph, _) =
-            utils.range(0, n - 1)
+            util.range(0, n - 1)
             |> list.fold(#(graph, rng), fn(state, u) {
               let #(g, curr_rng) = state
               let start_v = case graph_type {
                 model.Undirected -> u + 1
                 model.Directed -> 0
               }
-              utils.range(start_v, n - 1)
+              util.range(start_v, n - 1)
               |> list.fold(#(g, curr_rng), fn(inner_state, v) {
                 let #(inner_g, inner_rng) = inner_state
                 case u == v {
@@ -1676,7 +1676,7 @@ fn create_nodes(graph: Graph(Nil, e), n: Int) -> Graph(Nil, e) {
   case n <= 0 {
     True -> graph
     False ->
-      utils.range(0, n - 1)
+      util.range(0, n - 1)
       |> list.fold(graph, fn(g, i) { model.add_node(g, i, Nil) })
   }
 }
@@ -1705,7 +1705,7 @@ fn do_shuffle(remaining: List(a), acc: List(a), rng: Rng) -> List(a) {
     _ -> {
       let len = list.length(remaining)
       let #(index, new_rng) = random.next_int(rng, len)
-      let selected = utils.list_at(remaining, index)
+      let selected = util.list_at(remaining, index)
       let rest = list_take_remove(remaining, index)
       case selected {
         Ok(val) -> do_shuffle(rest, [val, ..acc], new_rng)

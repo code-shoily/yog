@@ -1,35 +1,35 @@
 import gleam/dict
 import gleam/list
 import gleeunit/should
-import yog/internal/utils
+import yog/internal/util
 
 // Basic range
 pub fn range_basic_test() {
-  utils.range(1, 5)
+  util.range(1, 5)
   |> should.equal([1, 2, 3, 4, 5])
 }
 
 // Range starting from 0
 pub fn range_from_zero_test() {
-  utils.range(0, 3)
+  util.range(0, 3)
   |> should.equal([0, 1, 2, 3])
 }
 
 // Single element range
 pub fn range_single_element_test() {
-  utils.range(5, 5)
+  util.range(5, 5)
   |> should.equal([5])
 }
 
 // Empty range (start > end)
 pub fn range_empty_test() {
-  utils.range(5, 3)
+  util.range(5, 3)
   |> should.equal([])
 }
 
 // Large range
 pub fn range_large_test() {
-  let result = utils.range(1, 100)
+  let result = util.range(1, 100)
 
   // Check length
   list.length(result)
@@ -49,13 +49,13 @@ pub fn range_large_test() {
 
 // Negative numbers
 pub fn range_negative_test() {
-  utils.range(-3, 2)
+  util.range(-3, 2)
   |> should.equal([-3, -2, -1, 0, 1, 2])
 }
 
 // Range with negative start and end
 pub fn range_all_negative_test() {
-  utils.range(-5, -2)
+  util.range(-5, -2)
   |> should.equal([-5, -4, -3, -2])
 }
 
@@ -67,7 +67,7 @@ pub fn dict_update_inner_existing_key_test() {
   let outer = dict.from_list([#("a", inner)])
 
   let result =
-    utils.dict_update_inner(outer, "a", "b", fn(inner_dict, key) {
+    util.dict_update_inner(outer, "a", "b", fn(inner_dict, key) {
       dict.insert(inner_dict, key, 10)
     })
 
@@ -87,7 +87,7 @@ pub fn dict_update_inner_new_inner_key_test() {
   let outer = dict.from_list([#("a", inner)])
 
   let result =
-    utils.dict_update_inner(outer, "a", "c", fn(inner_dict, key) {
+    util.dict_update_inner(outer, "a", "c", fn(inner_dict, key) {
       dict.insert(inner_dict, key, 20)
     })
 
@@ -106,7 +106,7 @@ pub fn dict_update_inner_outer_key_missing_test() {
   let outer = dict.from_list([#("a", inner)])
 
   let result =
-    utils.dict_update_inner(outer, "z", "b", fn(inner_dict, key) {
+    util.dict_update_inner(outer, "z", "b", fn(inner_dict, key) {
       dict.insert(inner_dict, key, 10)
     })
 
@@ -121,7 +121,7 @@ pub fn dict_update_inner_empty_inner_test() {
   let outer = dict.from_list([#("a", inner)])
 
   let result =
-    utils.dict_update_inner(outer, "a", "b", fn(inner_dict, key) {
+    util.dict_update_inner(outer, "a", "b", fn(inner_dict, key) {
       dict.insert(inner_dict, key, 5)
     })
 
@@ -140,7 +140,7 @@ pub fn dict_update_inner_multiple_outer_keys_test() {
   let outer = dict.from_list([#("a", inner1), #("b", inner2)])
 
   let result =
-    utils.dict_update_inner(outer, "a", "x", fn(inner_dict, key) {
+    util.dict_update_inner(outer, "a", "x", fn(inner_dict, key) {
       dict.insert(inner_dict, key, 100)
     })
 

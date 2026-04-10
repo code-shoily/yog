@@ -6,7 +6,7 @@ import gleeunit/should
 import yog/model.{Directed}
 import yog/pathfinding/a_star
 import yog/pathfinding/dijkstra
-import yog/pathfinding/utils
+import yog/pathfinding/util
 
 // ============= A* Search Tests =============
 
@@ -33,7 +33,7 @@ pub fn astar_zero_heuristic_test() {
     )
 
   result
-  |> should.equal(Some(utils.Path(nodes: [1, 2, 3], total_weight: 15)))
+  |> should.equal(Some(util.Path(nodes: [1, 2, 3], total_weight: 15)))
 }
 
 // A* with Manhattan distance heuristic (grid)
@@ -130,7 +130,7 @@ pub fn astar_better_than_greedy_test() {
 
   // Should find path through 3, not 2 (cost 3 vs 101)
   result
-  |> should.equal(Some(utils.Path(nodes: [1, 3, 4], total_weight: 3)))
+  |> should.equal(Some(util.Path(nodes: [1, 3, 4], total_weight: 3)))
 }
 
 // A* with same start and goal
@@ -153,7 +153,7 @@ pub fn astar_same_start_goal_test() {
     )
 
   result
-  |> should.equal(Some(utils.Path(nodes: [1], total_weight: 0)))
+  |> should.equal(Some(util.Path(nodes: [1], total_weight: 0)))
 }
 
 // A* with no path
@@ -224,7 +224,7 @@ pub fn astar_admissible_heuristic_test() {
 
   // Should find optimal path 1->3->4->5 with cost 6
   result
-  |> should.equal(Some(utils.Path(nodes: [1, 3, 4, 5], total_weight: 6)))
+  |> should.equal(Some(util.Path(nodes: [1, 3, 4, 5], total_weight: 6)))
 }
 
 // A* on diamond graph
@@ -258,7 +258,7 @@ pub fn astar_diamond_test() {
     )
 
   result
-  |> should.equal(Some(utils.Path(nodes: [1, 2, 4], total_weight: 6)))
+  |> should.equal(Some(util.Path(nodes: [1, 2, 4], total_weight: 6)))
 }
 
 // A* with cycle detection
@@ -284,7 +284,7 @@ pub fn astar_with_cycle_test() {
     )
 
   result
-  |> should.equal(Some(utils.Path(nodes: [1, 2, 3], total_weight: 2)))
+  |> should.equal(Some(util.Path(nodes: [1, 2, 3], total_weight: 2)))
 }
 
 // A* perfect heuristic (exact distance)
@@ -319,7 +319,7 @@ pub fn astar_perfect_heuristic_test() {
     )
 
   result
-  |> should.equal(Some(utils.Path(nodes: [1, 2, 3, 4], total_weight: 3)))
+  |> should.equal(Some(util.Path(nodes: [1, 2, 3, 4], total_weight: 3)))
 }
 
 // A* consistent heuristic (consistent triangle inequality)
@@ -352,7 +352,7 @@ pub fn astar_consistent_heuristic_test() {
     )
 
   result
-  |> should.equal(Some(utils.Path(nodes: [1, 2, 3], total_weight: 10)))
+  |> should.equal(Some(util.Path(nodes: [1, 2, 3], total_weight: 10)))
 }
 
 // ===== implicit_a_star tests =====
@@ -714,7 +714,7 @@ pub fn astar_undirected_test() {
     )
 
   result
-  |> should.equal(Some(utils.Path(nodes: [3, 2, 1], total_weight: 15)))
+  |> should.equal(Some(util.Path(nodes: [3, 2, 1], total_weight: 15)))
 }
 
 pub fn astar_vs_dijkstra_test() {
@@ -759,7 +759,7 @@ pub fn astar_vs_dijkstra_test() {
 
   astar_result |> should.equal(dijkstra_result)
   astar_result
-  |> should.equal(Some(utils.Path(nodes: [1, 2, 3, 4, 5], total_weight: 6)))
+  |> should.equal(Some(util.Path(nodes: [1, 2, 3, 4, 5], total_weight: 6)))
 }
 
 pub fn astar_empty_graph_test() {

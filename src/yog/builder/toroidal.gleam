@@ -47,7 +47,7 @@ import gleam/dict
 import gleam/int
 import gleam/list
 import yog/builder/grid
-import yog/internal/utils
+import yog/internal/util
 import yog/model.{type Graph, type GraphType, type NodeId}
 
 /// A toroidal grid where edges wrap around to opposite sides.
@@ -422,7 +422,7 @@ pub fn find_node(
   predicate: fn(cell_data) -> Bool,
 ) -> Result(NodeId, Nil) {
   let max_id = grid.rows * grid.cols - 1
-  utils.range(0, max_id)
+  util.range(0, max_id)
   |> list.find_map(fn(id) {
     case dict.get(grid.graph.nodes, id) {
       Ok(data) ->

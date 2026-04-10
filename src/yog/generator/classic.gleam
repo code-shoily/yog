@@ -71,7 +71,7 @@
 
 import gleam/int
 import gleam/list
-import yog/internal/utils
+import yog/internal/util
 import yog/model.{type Graph, type GraphType}
 
 /// Generates a complete graph K_n where every node connects to every other.
@@ -113,9 +113,9 @@ pub fn complete_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
       case graph_type {
         model.Undirected -> {
           // For undirected, only add edge once between each pair
-          utils.range(0, n - 1)
+          util.range(0, n - 1)
           |> list.fold(graph, fn(g, i) {
-            utils.range(i + 1, n - 1)
+            util.range(i + 1, n - 1)
             |> list.fold(g, fn(acc, j) {
               model.add_edge_ensure(acc, from: i, to: j, with: 1, default: Nil)
             })
@@ -123,9 +123,9 @@ pub fn complete_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
         }
         model.Directed -> {
           // For directed, add edge from every node to every other node
-          utils.range(0, n - 1)
+          util.range(0, n - 1)
           |> list.fold(graph, fn(g, i) {
-            utils.range(0, n - 1)
+            util.range(0, n - 1)
             |> list.fold(g, fn(acc, j) {
               case i == j {
                 True -> acc
@@ -180,7 +180,7 @@ pub fn cycle_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
       let graph = create_nodes(model.new(graph_type), n)
 
       // Add edges in a cycle
-      utils.range(0, n - 1)
+      util.range(0, n - 1)
       |> list.fold(graph, fn(g, i) {
         let next = case i == n - 1 {
           True -> 0
@@ -216,7 +216,7 @@ pub fn path_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
         True -> graph
         False -> {
           // Add edges in a line
-          utils.range(0, n - 2)
+          util.range(0, n - 2)
           |> list.fold(graph, fn(g, i) {
             model.add_edge_ensure(g, from: i, to: i + 1, with: 1, default: Nil)
           })
@@ -252,7 +252,7 @@ pub fn star_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
         True -> graph
         False -> {
           // Connect center (0) to all other nodes
-          utils.range(1, n - 1)
+          util.range(1, n - 1)
           |> list.fold(graph, fn(g, i) {
             model.add_edge_ensure(g, from: 0, to: i, with: 1, default: Nil)
           })
@@ -296,7 +296,7 @@ pub fn wheel_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
       let with_star = star_with_type(n, graph_type)
 
       // Add cycle edges around the rim
-      utils.range(1, n - 1)
+      util.range(1, n - 1)
       |> list.fold(with_star, fn(g, i) {
         let next = case i == n - 1 {
           True -> 1
@@ -345,9 +345,9 @@ pub fn complete_bipartite_with_type(
       let graph = create_nodes(model.new(graph_type), total)
 
       // Connect every node in left partition to every node in right partition
-      utils.range(0, m - 1)
+      util.range(0, m - 1)
       |> list.fold(graph, fn(g, left) {
-        utils.range(m, total - 1)
+        util.range(m, total - 1)
         |> list.fold(g, fn(acc, right) {
           model.add_edge_ensure(
             acc,
@@ -462,11 +462,11 @@ pub fn kary_tree_with_type(
           let non_leaf_count = { power(arity, depth) - 1 } / { arity - 1 }
 
           // For each non-leaf node, add edges to its k children
-          utils.range(0, non_leaf_count - 1)
+          util.range(0, non_leaf_count - 1)
           |> list.fold(graph, fn(g, i) {
             let child_start = arity * i + 1
             let child_end = arity * i + arity
-            utils.range(child_start, int.min(child_end, total_nodes - 1))
+            util.range(child_start, int.min(child_end, total_nodes - 1))
             |> list.fold(g, fn(acc, child) {
               model.add_edge_ensure(
                 acc,
@@ -517,13 +517,13 @@ pub fn complete_kary_with_type(
         True -> graph
         False -> {
           // For node i, children are at k*i+1 to k*i+k, if they exist
-          utils.range(0, n - 2)
+          util.range(0, n - 2)
           |> list.fold(graph, fn(g, i) {
             let child_start = arity * i + 1
             let child_end = int.min(arity * i + arity, n - 1)
             case child_start <= child_end {
               True ->
-                utils.range(child_start, child_end)
+                util.range(child_start, child_end)
                 |> list.fold(g, fn(acc, child) {
                   model.add_edge_ensure(
                     acc,
@@ -585,7 +585,7 @@ pub fn caterpillar_with_type(
           // Create spine path (nodes 0 to spine_len-1)
           let graph_with_spine = case spine_len >= 2 {
             True ->
-              utils.range(0, spine_len - 2)
+              util.range(0, spine_len - 2)
               |> list.fold(graph, fn(g, i) {
                 model.add_edge_ensure(
                   g,
@@ -604,7 +604,7 @@ pub fn caterpillar_with_type(
           let extra_leaves = leaf_count % spine_len
 
           let #(_, _, graph_with_leaves) =
-            utils.range(0, spine_len - 1)
+            util.range(0, spine_len - 1)
             |> list.fold(
               #(spine_len, 0, graph_with_spine),
               fn(state, spine_idx) {
@@ -618,7 +618,7 @@ pub fn caterpillar_with_type(
 
                 let new_g = case num_leaves > 0 {
                   True ->
-                    utils.range(0, num_leaves - 1)
+                    util.range(0, num_leaves - 1)
                     |> list.fold(g, fn(acc, i) {
                       model.add_edge_ensure(
                         acc,
@@ -685,9 +685,9 @@ pub fn grid_2d_with_type(
 
       // Add horizontal edges
       let with_horizontal =
-        utils.range(0, rows - 1)
+        util.range(0, rows - 1)
         |> list.fold(graph, fn(g, row) {
-          utils.range(0, cols - 2)
+          util.range(0, cols - 2)
           |> list.fold(g, fn(acc, col) {
             let node = row * cols + col
             model.add_edge_ensure(
@@ -701,9 +701,9 @@ pub fn grid_2d_with_type(
         })
 
       // Add vertical edges
-      utils.range(0, rows - 2)
+      util.range(0, rows - 2)
       |> list.fold(with_horizontal, fn(g, row) {
-        utils.range(0, cols - 1)
+        util.range(0, cols - 1)
         |> list.fold(g, fn(acc, col) {
           let node = row * cols + col
           let below = node + cols
@@ -825,9 +825,9 @@ pub fn hypercube_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
           let graph = create_nodes(model.new(graph_type), num_nodes)
 
           // Add edges: connect nodes that differ by exactly one bit
-          utils.range(0, num_nodes - 1)
+          util.range(0, num_nodes - 1)
           |> list.fold(graph, fn(g, i) {
-            utils.range(0, n - 1)
+            util.range(0, n - 1)
             |> list.fold(g, fn(acc, bit) {
               let j = int.bitwise_exclusive_or(i, power(2, bit))
               // Avoid duplicates for undirected
@@ -890,7 +890,7 @@ pub fn ladder_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
       // Bottom rail edges: (i, i+1) for i in 0..n-2
       let bottom_edges = case n >= 2 {
         True ->
-          utils.range(0, n - 2)
+          util.range(0, n - 2)
           |> list.fold(graph, fn(g, i) {
             model.add_edge_ensure(g, from: i, to: i + 1, with: 1, default: Nil)
           })
@@ -900,7 +900,7 @@ pub fn ladder_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
       // Top rail edges: (i, i+1) for i in n..2n-2
       let top_edges = case n >= 2 {
         True ->
-          utils.range(n, 2 * n - 2)
+          util.range(n, 2 * n - 2)
           |> list.fold(bottom_edges, fn(g, i) {
             model.add_edge_ensure(g, from: i, to: i + 1, with: 1, default: Nil)
           })
@@ -908,7 +908,7 @@ pub fn ladder_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
       }
 
       // Rung edges: (i, i+n) for i in 0..n-1
-      utils.range(0, n - 1)
+      util.range(0, n - 1)
       |> list.fold(top_edges, fn(g, i) {
         model.add_edge_ensure(g, from: i, to: i + n, with: 1, default: Nil)
       })
@@ -970,7 +970,7 @@ pub fn circular_ladder_with_type(
 
       // Inner cycle edges: (i, (i+1) mod n) for i in 0..n-1
       let inner_edges =
-        utils.range(0, n - 1)
+        util.range(0, n - 1)
         |> list.fold(graph, fn(g, i) {
           let next = { i + 1 } % n
           model.add_edge_ensure(g, from: i, to: next, with: 1, default: Nil)
@@ -978,14 +978,14 @@ pub fn circular_ladder_with_type(
 
       // Outer cycle edges: (i+n, ((i+1) mod n)+n) for i in 0..n-1
       let outer_edges =
-        utils.range(0, n - 1)
+        util.range(0, n - 1)
         |> list.fold(inner_edges, fn(g, i) {
           let next = { i + 1 } % n + n
           model.add_edge_ensure(g, from: i + n, to: next, with: 1, default: Nil)
         })
 
       // Rung edges: (i, i+n) for i in 0..n-1
-      utils.range(0, n - 1)
+      util.range(0, n - 1)
       |> list.fold(outer_edges, fn(g, i) {
         model.add_edge_ensure(g, from: i, to: i + n, with: 1, default: Nil)
       })
@@ -1038,7 +1038,7 @@ pub fn mobius_ladder_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int)
 
       // Cycle edges: (i, (i+1) mod 2n) for i in 0..2n-1
       let cycle_edges =
-        utils.range(0, 2 * n - 1)
+        util.range(0, 2 * n - 1)
         |> list.fold(graph, fn(g, i) {
           let next = { i + 1 } % { 2 * n }
           model.add_edge_ensure(g, from: i, to: next, with: 1, default: Nil)
@@ -1046,7 +1046,7 @@ pub fn mobius_ladder_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int)
 
       // Twist edges (rungs with twist): (i, (i+n) mod 2n) for i in 0..n-1
       // These connect opposite vertices in the cycle, creating the twist
-      utils.range(0, n - 1)
+      util.range(0, n - 1)
       |> list.fold(cycle_edges, fn(g, i) {
         let twisted = { i + n } % { 2 * n }
         model.add_edge_ensure(g, from: i, to: twisted, with: 1, default: Nil)
@@ -1100,7 +1100,7 @@ pub fn friendship_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
       let graph = create_nodes(model.new(graph_type), total_vertices)
 
       // Create n triangles: (0, 2i-1, 2i) for i in 1..n
-      utils.range(1, n)
+      util.range(1, n)
       |> list.fold(graph, fn(g, i) {
         let outer1 = 2 * i - 1
         let outer2 = 2 * i
@@ -1167,13 +1167,13 @@ pub fn windmill_with_type(
       let graph = create_nodes(model.new(graph_type), total_vertices)
 
       // For each of the n cliques, add all edges within the clique
-      utils.range(0, n - 1)
+      util.range(0, n - 1)
       |> list.fold(graph, fn(g, i) {
         // Vertices in this clique (excluding center)
         let clique_start = 1 + i * { k - 1 }
         let clique_vertices = [
           0,
-          ..utils.range(clique_start, clique_start + k - 2)
+          ..util.range(clique_start, clique_start + k - 2)
         ]
 
         // Add all pairs in the clique as edges (complete graph)
@@ -1227,7 +1227,7 @@ pub fn book_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
         model.add_edge_ensure(graph, from: 0, to: 1, with: 1, default: Nil)
 
       // Each page vertex forms a triangle with the spine
-      utils.range(2, total_vertices - 1)
+      util.range(2, total_vertices - 1)
       |> list.fold(with_spine, fn(g, i) {
         g
         |> model.add_edge_ensure(from: 0, to: i, with: 1, default: Nil)
@@ -1287,9 +1287,9 @@ pub fn crown_with_type(n: Int, graph_type: GraphType) -> Graph(Nil, Int) {
 
       // All edges between U and V EXCEPT (i, n+i) for i in 0..n-1
       // This removes the perfect matching
-      utils.range(0, n - 1)
+      util.range(0, n - 1)
       |> list.fold(graph, fn(g, i) {
-        utils.range(0, n - 1)
+        util.range(0, n - 1)
         |> list.fold(g, fn(acc, j) {
           // Skip the perfect matching edges where i == j
           case i == j {
@@ -1375,9 +1375,9 @@ pub fn turan_with_type(n: Int, r: Int, graph_type: GraphType) -> Graph(Nil, Int)
       }
 
       // Add edges between nodes in different partitions
-      utils.range(0, n - 1)
+      util.range(0, n - 1)
       |> list.fold(graph, fn(g, i) {
-        utils.range(i + 1, n - 1)
+        util.range(i + 1, n - 1)
         |> list.fold(g, fn(acc, j) {
           case partition_of(i) != partition_of(j) {
             True ->
@@ -1632,7 +1632,7 @@ fn create_nodes(graph: Graph(Nil, e), n: Int) -> Graph(Nil, e) {
   case n <= 0 {
     True -> graph
     False ->
-      utils.range(0, n - 1)
+      util.range(0, n - 1)
       |> list.fold(graph, fn(g, i) { model.add_node(g, i, Nil) })
   }
 }

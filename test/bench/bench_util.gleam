@@ -6,7 +6,7 @@ import gleam/option.{Some}
 import yog
 import yog/generator/classic
 import yog/generator/random
-import yog/internal/utils
+import yog/internal/util
 import yog/model.{type Graph}
 
 /// Graph size configurations for benchmarking
@@ -61,13 +61,13 @@ pub fn grid_graph(width: Int, height: Int) -> Graph(Nil, Int) {
 
   // Create nodes
   let graph =
-    utils.range(0, width * height - 1)
+    util.range(0, width * height - 1)
     |> list.fold(graph, fn(g, id) { yog.add_node(g, id, Nil) })
 
   // Add edges (4-connected grid)
-  utils.range(0, height - 1)
+  util.range(0, height - 1)
   |> list.fold(graph, fn(g, y) {
-    utils.range(0, width - 1)
+    util.range(0, width - 1)
     |> list.fold(g, fn(gg, x) {
       let node = y * width + x
       let gg = case x < width - 1 {
@@ -99,13 +99,13 @@ pub fn random_dag(nodes: Int, seed: Int) -> Graph(Nil, Int) {
 
   // Add nodes
   let graph =
-    utils.range(0, nodes - 1)
+    util.range(0, nodes - 1)
     |> list.fold(graph, fn(g, id) { yog.add_node(g, id, Nil) })
 
   // Add edges only from lower to higher node IDs (ensures DAG property)
-  utils.range(0, nodes - 1)
+  util.range(0, nodes - 1)
   |> list.fold(graph, fn(g, from) {
-    utils.range(from + 1, nodes - 1)
+    util.range(from + 1, nodes - 1)
     |> list.fold(g, fn(gg, to) {
       // Use simple pseudo-random check
       let should_add = { from * 31 + to * 17 + seed } % 10 < 3

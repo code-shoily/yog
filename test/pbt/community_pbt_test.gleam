@@ -12,7 +12,7 @@ import yog/community/label_propagation
 import yog/community/leiden
 import yog/community/louvain
 import yog/community/metrics
-import yog/internal/utils
+import yog/internal/util
 import yog/model
 
 const epsilon = 0.0000001
@@ -164,7 +164,7 @@ pub fn contiguous_community_ids_test() {
         |> list.unique
         |> list.sort(int.compare)
 
-      let expected = utils.range(0, k - 1)
+      let expected = util.range(0, k - 1)
       unique_ids == expected
     }
   }

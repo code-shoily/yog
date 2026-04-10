@@ -1,7 +1,7 @@
 import gleam/list
 import gleeunit
 import qcheck
-import yog/internal/utils
+import yog/internal/util
 
 const test_count = 100
 
@@ -24,7 +24,7 @@ pub fn prop_range_contains_all_integers_test() {
     }),
     fn(pair) {
       let #(start, end) = pair
-      let result = utils.range(start, end)
+      let result = util.range(start, end)
       let expected = generate_range(start, end)
       assert result == expected
     },
@@ -39,7 +39,7 @@ pub fn prop_reverse_range_empty_test() {
     }),
     fn(pair) {
       let #(start, end) = pair
-      let result = utils.range(start, end)
+      let result = util.range(start, end)
       assert result == []
     },
   )
@@ -55,10 +55,10 @@ pub fn prop_range_concatenation_test() {
     }),
     fn(triple) {
       let #(mid, start, end) = triple
-      let range1 = utils.range(start, mid)
-      let range2 = utils.range(mid + 1, end)
+      let range1 = util.range(start, mid)
+      let range2 = util.range(mid + 1, end)
       let combined = list.append(range1, range2)
-      let full_range = utils.range(start, end)
+      let full_range = util.range(start, end)
       assert combined == full_range
     },
   )

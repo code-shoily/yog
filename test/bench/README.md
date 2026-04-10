@@ -17,7 +17,7 @@ gleam run -m bench/my_benchmark
 ## Files
 
 - **`simple_pathfinding.gleam`** - Working example (use as template)
-- **`bench_utils.gleam`** - Graph generators and utilities
+- **`bench_util.gleam`** - Graph generators and utilities
 
 ## Documentation
 
@@ -33,30 +33,30 @@ See **`BENCHMARKING_GUIDE.md`** in the project root for:
 
 ### Graph Sizes
 
-- `bench_utils.Small` = 100 nodes
-- `bench_utils.Medium` = 1,000 nodes
-- `bench_utils.Large` = 10,000 nodes
-- `bench_utils.XLarge` = 100,000 nodes
+- `bench_util.Small` = 100 nodes
+- `bench_util.Medium` = 1,000 nodes
+- `bench_util.Large` = 10,000 nodes
+- `bench_util.XLarge` = 100,000 nodes
 
 ### Graph Densities
 
-- `bench_utils.Sparse` = ~1% edges
-- `bench_utils.MediumDensity` = ~5% edges
-- `bench_utils.Dense` = ~20% edges
+- `bench_util.Sparse` = ~1% edges
+- `bench_util.MediumDensity` = ~5% edges
+- `bench_util.Dense` = ~20% edges
 
 ### Graph Generators
 
 ```gleam
-import yog/internal/bench/bench_utils
+import yog/internal/bench/bench_util
 
 // Random
-bench_utils.random_graph(size, density, seed)
+bench_util.random_graph(size, density, seed)
 
 // Structured
-bench_utils.grid_graph(width, height)
-bench_utils.complete_graph(nodes)
-bench_utils.random_dag(nodes, seed)
-bench_utils.bipartite_graph(left, right)
+bench_util.grid_graph(width, height)
+bench_util.complete_graph(nodes)
+bench_util.random_dag(nodes, seed)
+bench_util.bipartite_graph(left, right)
 ```
 
 ### Basic Template
@@ -64,13 +64,13 @@ bench_utils.bipartite_graph(left, right)
 ```gleam
 import gleam/int
 import gleamy/bench
-import yog/internal/bench/bench_utils
+import yog/internal/bench/bench_util
 import yog/pathfinding
 
 pub fn main() {
-  let graph = bench_utils.random_graph(
-    bench_utils.Medium,
-    bench_utils.Sparse,
+  let graph = bench_util.random_graph(
+    bench_util.Medium,
+    bench_util.Sparse,
     42
   )
 

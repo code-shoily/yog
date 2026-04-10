@@ -1,5 +1,5 @@
 //// Unit tests for norm_diff and fisher_yates functions
-//// in yog/internal/utils.gleam
+//// in yog/internal/util.gleam
 
 import gleam/dict
 import gleam/float
@@ -9,7 +9,7 @@ import gleam/option.{Some}
 import gleam/string
 import gleeunit/should
 import yog/internal/random
-import yog/internal/utils
+import yog/internal/util
 
 // =============================================================================
 // NORM_DIFF TESTS
@@ -20,7 +20,7 @@ pub fn norm_diff_l1_basic_test() {
   let m2 = dict.from_list([#("a", 3.0), #("b", 4.0)])
 
   // L1 = |1-3| + |2-4| = 2 + 2 = 4
-  utils.norm_diff(m1, m2, utils.L1)
+  util.norm_diff(m1, m2, util.L1)
   |> should.equal(4.0)
 }
 
@@ -29,7 +29,7 @@ pub fn norm_diff_l2_basic_test() {
   let m2 = dict.from_list([#("a", 3.0), #("b", 4.0)])
 
   // L2 = sqrt((1-3)^2 + (2-4)^2) = sqrt(4 + 4) = sqrt(8) = 2.828...
-  let result = utils.norm_diff(m1, m2, utils.L2)
+  let result = util.norm_diff(m1, m2, util.L2)
   float.loosely_equals(result, 2.8284271247461903, 0.0001)
   |> should.be_true()
 }
@@ -39,7 +39,7 @@ pub fn norm_diff_max_basic_test() {
   let m2 = dict.from_list([#("a", 3.0), #("b", 4.0)])
 
   // Max = max(|1-3|, |2-4|) = max(2, 2) = 2
-  utils.norm_diff(m1, m2, utils.Max)
+  util.norm_diff(m1, m2, util.Max)
   |> should.equal(2.0)
 }
 
@@ -47,26 +47,26 @@ pub fn norm_diff_identical_vectors_test() {
   let m1 = dict.from_list([#("a", 1.0), #("b", 2.0)])
 
   // Distance from a vector to itself should be 0
-  utils.norm_diff(m1, m1, utils.L1)
+  util.norm_diff(m1, m1, util.L1)
   |> should.equal(0.0)
 
-  utils.norm_diff(m1, m1, utils.L2)
+  util.norm_diff(m1, m1, util.L2)
   |> should.equal(0.0)
 
-  utils.norm_diff(m1, m1, utils.Max)
+  util.norm_diff(m1, m1, util.Max)
   |> should.equal(0.0)
 }
 
 pub fn norm_diff_empty_dicts_test() {
   let empty = dict.new()
 
-  utils.norm_diff(empty, empty, utils.L1)
+  util.norm_diff(empty, empty, util.L1)
   |> should.equal(0.0)
 
-  utils.norm_diff(empty, empty, utils.L2)
+  util.norm_diff(empty, empty, util.L2)
   |> should.equal(0.0)
 
-  utils.norm_diff(empty, empty, utils.Max)
+  util.norm_diff(empty, empty, util.Max)
   |> should.equal(0.0)
 }
 
@@ -76,7 +76,7 @@ pub fn norm_diff_missing_keys_test() {
 
   // Accounts for keys in both dictionaries
   // L1 = |5-2| + |0-3| = 3 + 3 = 6
-  utils.norm_diff(m1, m2, utils.L1)
+  util.norm_diff(m1, m2, util.L1)
   |> should.equal(6.0)
 }
 
@@ -85,9 +85,9 @@ pub fn norm_diff_non_negative_test() {
   let m2 = dict.from_list([#("x", 5.0), #("y", 15.0)])
 
   // All norms should be >= 0
-  let l1 = utils.norm_diff(m1, m2, utils.L1)
-  let l2 = utils.norm_diff(m1, m2, utils.L2)
-  let max_val = utils.norm_diff(m1, m2, utils.Max)
+  let l1 = util.norm_diff(m1, m2, util.L1)
+  let l2 = util.norm_diff(m1, m2, util.L2)
+  let max_val = util.norm_diff(m1, m2, util.Max)
 
   { l1 >=. 0.0 } |> should.be_true()
   { l2 >=. 0.0 } |> should.be_true()
@@ -99,8 +99,8 @@ pub fn norm_diff_l2_less_than_l1_test() {
   let m2 = dict.from_list([#("a", 3.0), #("b", 4.0)])
 
   // L1 = 7, L2 = 5, so L2 < L1
-  let l1 = utils.norm_diff(m1, m2, utils.L1)
-  let l2 = utils.norm_diff(m1, m2, utils.L2)
+  let l1 = util.norm_diff(m1, m2, util.L1)
+  let l2 = util.norm_diff(m1, m2, util.L2)
 
   { l2 <. l1 } |> should.be_true()
 }
@@ -110,8 +110,8 @@ pub fn norm_diff_max_less_than_l1_test() {
   let m2 = dict.from_list([#("a", 3.0), #("b", 4.0)])
 
   // L1 = 7, Max = 4, so Max < L1
-  let l1 = utils.norm_diff(m1, m2, utils.L1)
-  let max_val = utils.norm_diff(m1, m2, utils.Max)
+  let l1 = util.norm_diff(m1, m2, util.L1)
+  let max_val = util.norm_diff(m1, m2, util.Max)
 
   { max_val <. l1 } |> should.be_true()
 }

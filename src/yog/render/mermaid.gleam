@@ -37,7 +37,7 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
 import yog/model.{type Graph, type NodeId, Directed, Undirected}
-import yog/pathfinding/utils.{type Path}
+import yog/pathfinding/util.{type Path}
 
 // =============================================================================
 // TYPES

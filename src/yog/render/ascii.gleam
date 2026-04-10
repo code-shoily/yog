@@ -68,7 +68,7 @@ import gleam/list
 import gleam/string
 import yog/builder/grid.{type Grid}
 import yog/builder/toroidal.{type ToroidalGrid}
-import yog/internal/utils
+import yog/internal/util
 import yog/model.{type Graph, type NodeId}
 
 // =============================================================================
@@ -91,9 +91,9 @@ pub fn grid_to_string(grid: Grid(n, e)) -> String {
     0, _ | _, 0 -> ""
     _, _ -> {
       let top_line = draw_top_border(grid.cols)
-      let col_range = utils.range(0, grid.cols - 1)
+      let col_range = util.range(0, grid.cols - 1)
       let body_lines =
-        utils.range(0, grid.rows - 1)
+        util.range(0, grid.rows - 1)
         |> list.flat_map(fn(row) {
           [
             draw_cell_row(grid.graph, grid.cols, row, dict.new(), col_range),
@@ -132,9 +132,9 @@ pub fn grid_to_string_with_occupants(
     0, _ | _, 0 -> ""
     _, _ -> {
       let top_line = draw_top_border(grid.cols)
-      let col_range = utils.range(0, grid.cols - 1)
+      let col_range = util.range(0, grid.cols - 1)
       let body_lines =
-        utils.range(0, grid.rows - 1)
+        util.range(0, grid.rows - 1)
         |> list.flat_map(fn(row) {
           [
             draw_cell_row(grid.graph, grid.cols, row, occupants, col_range),
@@ -194,7 +194,7 @@ pub fn grid_to_string_unicode_with_occupants(
     0, _ | _, 0 -> ""
     _, _ -> {
       // Render line by line (intersection rows and cell rows)
-      utils.range(0, grid.rows)
+      util.range(0, grid.rows)
       |> list.map(fn(i_r) {
         let intersection_row =
           draw_unicode_intersection_row(grid.graph, grid.rows, grid.cols, i_r)
@@ -350,7 +350,7 @@ fn draw_unicode_intersection_row(
   cols: Int,
   i_r: Int,
 ) -> String {
-  utils.range(0, cols)
+  util.range(0, cols)
   |> list.map(fn(i_c) {
     let intersection = get_unicode_intersection(graph, rows, cols, i_r, i_c)
 
@@ -374,7 +374,7 @@ fn draw_unicode_cell_row(
   r: Int,
   occupants: Dict(NodeId, String),
 ) -> String {
-  utils.range(0, cols)
+  util.range(0, cols)
   |> list.map(fn(c) {
     let wall = case vertical_wall(graph, rows, cols, r, c) {
       True -> "│"

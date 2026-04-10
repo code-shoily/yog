@@ -3,7 +3,7 @@ import gleam/int
 import gleam/list
 import gleeunit/should
 import yog/disjoint_set
-import yog/internal/utils
+import yog/internal/util
 
 // ============= Creation Tests =============
 
@@ -356,7 +356,7 @@ pub fn merge_components_test() {
 
 pub fn large_disjoint_set_test() {
   // Create a disjoint_set with 100 elements
-  let numbers = utils.range(1, 100)
+  let numbers = util.range(1, 100)
 
   let d =
     list.fold(numbers, disjoint_set.new(), fn(acc, n) {
@@ -365,9 +365,9 @@ pub fn large_disjoint_set_test() {
 
   // Union them into 10 components of 10 elements each
   let d2 =
-    utils.range(0, 9)
+    util.range(0, 9)
     |> list.fold(d, fn(acc, group) {
-      utils.range(1, 9)
+      util.range(1, 9)
       |> list.fold(acc, fn(acc2, i) {
         disjoint_set.union(acc2, group * 10 + 1, group * 10 + i + 1)
       })
@@ -390,7 +390,7 @@ pub fn large_disjoint_set_test() {
 
 pub fn union_all_test() {
   // Create disjoint_set and union all elements into one set
-  let numbers = utils.range(1, 50)
+  let numbers = util.range(1, 50)
 
   let d =
     list.fold(numbers, disjoint_set.new(), fn(acc, n) {
@@ -399,7 +399,7 @@ pub fn union_all_test() {
 
   // Union all to element 1
   let d2 =
-    utils.range(2, 50)
+    util.range(2, 50)
     |> list.fold(d, fn(acc, n) { disjoint_set.union(acc, 1, n) })
 
   // All should have same root

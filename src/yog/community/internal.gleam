@@ -28,7 +28,7 @@ import gleam/result
 import gleam/set.{type Set}
 import yog/community.{type CommunityId}
 import yog/internal/random
-import yog/internal/utils
+import yog/internal/util
 import yog/model.{type Graph, type NodeId}
 
 /// Internal state for modularity-based algorithms.
@@ -45,10 +45,10 @@ pub type CommunityState {
 /// Deterministic shuffle using Fisher-Yates algorithm.
 ///
 /// This is an O(N) algorithm that produces an unbiased permutation.
-/// Uses the Fisher-Yates shuffle from yog/internal/utils for optimal performance.
+/// Uses the Fisher-Yates shuffle from yog/internal/util for optimal performance.
 pub fn shuffle(items: List(a), seed: Int) -> List(a) {
   let rng = random.new(Some(seed))
-  let #(shuffled, _) = utils.shuffle(items, rng)
+  let #(shuffled, _) = util.shuffle(items, rng)
   shuffled
 }
 

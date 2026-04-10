@@ -30,7 +30,7 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import yog/internal/queue
 import yog/model.{type Graph, type NodeId}
-import yog/pathfinding/utils.{type Path, Path}
+import yog/pathfinding/util.{type Path, Path}
 
 /// Finds the shortest path (minimum hops) between two nodes in an unweighted graph.
 ///

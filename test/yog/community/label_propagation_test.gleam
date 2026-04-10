@@ -5,7 +5,7 @@ import gleam/option.{Some}
 import gleeunit/should
 import yog/community/label_propagation
 import yog/internal/random
-import yog/internal/utils
+import yog/internal/util
 import yog/model
 
 pub fn complete_graph_test() {
@@ -65,7 +65,7 @@ pub fn disjoint_cliques_test() {
 pub fn ffi_shuffle_test() {
   let l = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
   let rng = random.new(Some(42))
-  let #(s, _) = utils.shuffle(l, rng)
+  let #(s, _) = util.shuffle(l, rng)
   list.length(s) |> should.equal(10)
   list.sort(s, int.compare) |> should.equal(l)
 }

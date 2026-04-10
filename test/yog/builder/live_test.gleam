@@ -5,7 +5,7 @@ import gleeunit/should
 import yog
 import yog/builder/labeled
 import yog/builder/live
-import yog/internal/utils
+import yog/internal/util
 import yog/model
 import yog/pathfinding/dijkstra
 
@@ -380,7 +380,7 @@ pub fn pending_queue_growth_pattern_test() {
 
   // Add 100 edges (chain: 1->2, 2->3, ..., 100->101)
   // int.range is inclusive of both ends, so we use 1 to 100 for 100 edges
-  let numbers = utils.range(1, 100)
+  let numbers = util.range(1, 100)
   let builder =
     list.fold(numbers, initial, fn(b, i) {
       live.add_edge(

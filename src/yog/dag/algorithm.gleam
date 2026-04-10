@@ -43,7 +43,7 @@ import gleam/option.{type Option, None, Some}
 import gleam/set.{type Set}
 import yog/dag/model as dag_model
 import yog/model.{type Graph, type NodeId}
-import yog/pathfinding/utils.{type Path, Path}
+import yog/pathfinding/util.{type Path, Path}
 import yog/traversal
 
 // Re-export type from dag_model for cleaner signatures

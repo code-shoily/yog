@@ -1,4 +1,4 @@
--module(yog_internal_utils).
+-module(yog_internal_util).
 -export([array_from_list/1, array_to_list/2, array_get/2, array_set/3]).
 
 %% Using erlang:array for O(log n) performance instead of O(n) tuples

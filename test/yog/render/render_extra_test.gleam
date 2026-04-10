@@ -3,9 +3,9 @@ import gleam/list
 import gleam/option.{Some}
 import gleam/string
 import gleeunit/should
-import yog/internal/utils
+import yog/internal/util
 import yog/model
-import yog/pathfinding/utils as p_utils
+import yog/pathfinding/util as p_utils
 import yog/render/dot
 import yog/render/mermaid
 
@@ -43,7 +43,7 @@ pub fn mermaid_quote_escaping_test() {
 
 pub fn dot_path_to_edges_large_test() {
   // Generate a long path to check tail recursion 
-  let nodes = utils.range(0, 1000)
+  let nodes = util.range(0, 1000)
   let edges =
     dot.path_to_dot_options(
       p_utils.Path(nodes: nodes, total_weight: 0.0),

@@ -3,7 +3,7 @@
 //// Compares Dijkstra's algorithm across different graph sizes
 //// Run with: `gleam run -m bench/simple_pathfinding`
 
-import bench/bench_utils
+import bench/bench_util
 import gleam/int
 import gleam/io
 import gleamy/bench
@@ -19,10 +19,8 @@ pub fn main() {
   io.println("Expected: O((V+E) log V) complexity\n")
 
   // Create test graphs of different sizes
-  let small =
-    bench_utils.random_graph(bench_utils.Small, bench_utils.Sparse, 42)
-  let medium =
-    bench_utils.random_graph(bench_utils.Medium, bench_utils.Sparse, 42)
+  let small = bench_util.random_graph(bench_util.Small, bench_util.Sparse, 42)
+  let medium = bench_util.random_graph(bench_util.Medium, bench_util.Sparse, 42)
 
   // Wrap inputs in bench.Input
   let inputs = [

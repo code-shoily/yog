@@ -4,10 +4,10 @@ import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleeunit/should
-import yog/internal/utils as internal_utils
+import yog/internal/util as internal_utils
 import yog/model.{Directed, Undirected}
 import yog/pathfinding/dijkstra
-import yog/pathfinding/utils.{Path}
+import yog/pathfinding/util.{Path}
 
 // ============= Basic Path Tests =============
 

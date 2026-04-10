@@ -1,7 +1,7 @@
 import gleam/int
 import gleam/list
 import qcheck
-import yog/internal/utils
+import yog/internal/util
 import yog/model.{type Graph, type GraphType}
 import yog/traversal
 
@@ -141,7 +141,7 @@ pub fn graph_and_edge_generator(kind: GraphType) {
 pub fn star_graph_generator() {
   use num_nodes <- qcheck.bind(qcheck.bounded_int(3, 10))
   let center = 0
-  let leaves = utils.range(1, num_nodes - 1)
+  let leaves = util.range(1, num_nodes - 1)
 
   let graph = build_nodes(model.new(model.Undirected), 0, num_nodes - 1)
 

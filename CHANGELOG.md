@@ -70,6 +70,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Renamed `utils` modules to `util`**: Following Gleam's singular naming convention:
+  - `yog/internal/utils` → `yog/internal/util`
+  - `yog/pathfinding/utils` → `yog/pathfinding/util`
+  - Corresponding test files, FFI files (`utils_ffi.mjs` → `util_ffi.mjs`), and Erlang helper modules (`yog_internal_utils` → `yog_internal_util`) have been renamed accordingly.
+  - Update your imports: `import yog/internal/utils` → `import yog/internal/util` and `import yog/pathfinding/utils` → `import yog/pathfinding/util`.
+
 - **Promoted Multigraph and DAG Modules**: The `yog/multi/*` and `yog/dag/*` modules are now mature, stable, and fully documented.
 - **Consolidated Transform Operations** (`yog/transform`): Migrated reachability-based transformations (`transitive_closure`, `transitive_reduction`) from DAG-specific algorithms to the core transform module for use on all graph types.
 - **Refactored DAG Algorithms**: Simplified internal path reconstruction and consolidated redundant helper functions.
