@@ -21,6 +21,7 @@ This document compares the Gleam and Elixir (YogEx) implementations of the Yog g
 | Feature | Gleam | Elixir | Notes |
 | --------- | ------- | ----- | ------- |
 | **Graph<'n, 'e>** | ✅ | ✅ | Directed/Undirected with generic node/edge data |
+| **Node ID Type** | **Strictly `Int`** | **Any `term`** | Elixir allows any type but `integer` is best practice |
 | **MultiGraph** | ✅ | ✅ | Parallel edges between nodes |
 | **DAG (Directed Acyclic Graph)** | ✅ | ✅ | Type-safe wrapper with cycle prevention |
 | **Disjoint Set (Union-Find)** | ✅ | ✅ | Path compression and union by rank |
@@ -52,8 +53,8 @@ This document compares the Gleam and Elixir (YogEx) implementations of the Yog g
 | **Topological Sort** | ✅ | ✅ | Kahn's algorithm |
 | **Lexicographical Topo Sort** | ✅ | ✅ | Stable ordering |
 | **Cycle Detection** | ✅ | ✅ | For directed & undirected graphs |
-| **Best-First Walk** | ✅ | ❌ | Greedy heuristic traversal (Gleam only) |
-| **Random Walk** | ✅ | ❌ | Stochastic graph exploration (Gleam only) |
+| **Best-First Walk** | ✅ | ✅ | Greedy heuristic traversal |
+| **Random Walk** | ✅ | ✅ | Stochastic graph exploration |
 
 ## Flow & Optimization
 
@@ -63,7 +64,6 @@ This document compares the Gleam and Elixir (YogEx) implementations of the Yog g
 | **Stoer-Wagner** (Global Min Cut) | ✅ | ✅ | Both fully functional |
 | **Network Simplex** (Min Cost Flow) | ✅ | ❌ | Gleam only |
 | **Successive Shortest Path** | ❌ | ✅ | **Elixir only** - Min-cost flow with potentials |
-| **Capacity Scaling** | ❌ | ❌ | Not implemented in either version |
 
 ## Centrality Measures
 
@@ -76,9 +76,9 @@ This document compares the Gleam and Elixir (YogEx) implementations of the Yog g
 | **PageRank** | ✅ | ✅ | Iterative algorithm |
 | **Eigenvector Centrality** | ✅ | ✅ | Power iteration |
 | **Katz Centrality** | ✅ | ✅ | |
-| **Alpha Centrality** | ✅ | ❌ | Gleam only |
+| **Alpha Centrality** | ✅ | ✅ | Generalization of Katz for directed graphs |
 
-**Convenience wrappers**: Gleam provides `_int` and `_float` variants for closeness, harmonic, and betweenness; Elixir only provides `_int` variants.
+**API Conventions**: Gleam provides explicit `_int` and `_float` variants for algorithms like closeness, harmonic, and betweenness because weight types must be resolved at compile time. Elixir uses optional arguments and default values (e.g., `zero: 0`, `add: &+/2`), making these suffixes unnecessary.
 
 ## Community Detection
 
@@ -128,41 +128,41 @@ This document compares the Gleam and Elixir (YogEx) implementations of the Yog g
 | **Empty** | ✅ | ✅ | Isolated vertices |
 | **Binary Tree** | ✅ | ✅ | Full binary tree |
 | **Complete Bipartite** | ✅ | ✅ | K_{m,n} |
-| **Book** | ✅ | ❌ | n triangular prisms sharing a common edge (Gleam only) |
-| **Caterpillar** | ✅ | ❌ | Path with pendant vertices (Gleam only) |
-| **Circular Ladder** | ✅ | ❌ | Prism graph variant (Gleam only) |
-| **Crown** | ✅ | ❌ | Complete bipartite minus a perfect matching (Gleam only) |
-| **Friendship** | ✅ | ❌ | Windmill graph W₃ₙ (Gleam only) |
-| **Hypercube** | ✅ | ❌ | Q_n binary hypercube (Gleam only) |
-| **Ladder** | ✅ | ❌ | P₂ × P_n grid (Gleam only) |
-| **Möbius Ladder** | ✅ | ❌ | Cubic graph variant (Gleam only) |
-| **Prism** | ✅ | ❌ | C_n × P₂ (Gleam only) |
-| **Turán** | ✅ | ❌ | Turán graph T(n,r) (Gleam only) |
-| **Windmill** | ✅ | ❌ | Complete graphs joined at a hub (Gleam only) |
+| **Book** | ✅ | ✅ | n triangular prisms sharing a common edge |
+| **Caterpillar** | ✅ | ✅ | Path with pendant vertices |
+| **Circular Ladder** | ✅ | ✅ | Prism graph variant |
+| **Crown** | ✅ | ✅ | Complete bipartite minus a perfect matching |
+| **Friendship** | ✅ | ✅ | Windmill graph W₃ₙ |
+| **Hypercube** | ✅ | ✅ | Q_n binary hypercube |
+| **Ladder** | ✅ | ✅ | P₂ × P_n grid |
+| **Möbius Ladder** | ✅ | ✅ | Cubic graph variant |
+| **Prism** | ✅ | ✅ | C_n × P₂ |
+| **Turán** | ✅ | ✅ | Turán graph T(n,r) |
+| **Windmill** | ✅ | ✅ | Complete graphs joined at a hub |
 
 ### Random / Stochastic
 
 | Generator | Gleam | Elixir | Description |
 | ----------- | ------- | ----- | ------------- |
 | **Erdős-Rényi G(n,p)** | ✅ | ✅ | Edge probability p |
-| **Erdős-Rényi G(n,m)** | ✅ | ❌ | Fixed number of edges (Gleam only) |
+| **Erdős-Rényi G(n,m)** | ✅ | ✅ | Fixed number of edges |
 | **Barabási-Albert** | ✅ | ✅ | Scale-free networks |
 | **Watts-Strogatz** | ✅ | ✅ | Small-world networks |
 | **Random Tree** | ✅ | ✅ | Uniform random tree |
-| **Configuration Model** | ✅ | ❌ | Prescribed degree sequence (Gleam only) |
-| **Geometric** | ✅ | ❌ | Random geometric graph (Gleam only) |
-| **Kronecker** | ✅ | ❌ | Recursive tensor product (Gleam only) |
-| **RMAT** | ✅ | ❌ | Recursive Matrix model (Gleam only) |
-| **SBM** | ✅ | ❌ | Stochastic Block Model (Gleam only) |
-| **DCSBM** | ✅ | ❌ | Degree-Corrected SBM (Gleam only) |
-| **HSBM** | ✅ | ❌ | Hierarchical SBM (Gleam only) |
-| **Random Regular** | ✅ | ❌ | Fixed regular degree (Gleam only) |
+| **Configuration Model** | ✅ | ✅ | Prescribed degree sequence |
+| **Geometric** | ✅ | ✅ | Random geometric graph |
+| **Kronecker** | ✅ | ✅ | Recursive tensor product |
+| **RMAT** | ✅ | ✅ | Recursive Matrix model |
+| **SBM** | ✅ | ✅ | Stochastic Block Model |
+| **DCSBM** | ✅ | ✅ | Degree-Corrected SBM |
+| **HSBM** | ✅ | ✅ | Hierarchical SBM |
+| **Random Regular** | ✅ | ✅ | Fixed regular degree |
 
 ### Mazes & Games
 
 | Generator | Gleam | Elixir | Description |
 | ----------- | ------- | ----- | ------------- |
-| **Maze (Recursive Backtracker)** | ✅ | ❌ | Perfect maze generation (Gleam only) |
+| **Maze (Recursive Backtracker)** | ✅ | ✅ | Perfect maze generation |
 
 ## Graph Operations
 
@@ -197,10 +197,28 @@ This document compares the Gleam and Elixir (YogEx) implementations of the Yog g
 
 | Feature | Gleam | Elixir | Notes |
 | -------- | ------- | ----- | ------- |
-| **Connected Components** | ✅ | ✅ | Via `analyze` in Elixir |
-| **Strongly Connected Components** | ✅ | ❌ | Kosaraju's algorithm (Gleam only) |
-| **Weakly Connected Components** | ✅ | ❌ | Gleam only |
+| **Connected Components** | ✅ | ✅ | Standard CC (undirected) |
+| **Strongly Connected Components** | ✅ | ✅ | Kosaraju's algorithm |
+| **Weakly Connected Components** | ✅ | ✅ | Weakly Connected Components |
 | **Bridge & Articulation Point Detection** | ✅ | ✅ | Both expose via `analyze` |
+| **Ancestor/Descendant Counts** | ✅ | ✅ | Counts for reachability |
+
+## DAG Algorithms
+
+| Feature | Gleam | Elixir | Notes |
+| -------- | ------- | ----- | ------- |
+| **Topological Sort** | ✅ | ✅ | Cycle-aware linear ordering |
+| **Longest Path** | ✅ | ✅ | Critical path in weighted DAG |
+| **Lowest Common Ancestor** | ✅ | ✅ | LCA for tree/DAG structures |
+
+## Graph Health & Metrics
+
+| Feature | Gleam | Elixir | Notes |
+| -------- | ------- | ----- | ------- |
+| **Density** | ✅ | ✅ | Ratio of actual to possible edges |
+| **Clustering Coefficient** | ✅ | ✅ | Average and local clustering |
+| **Triangles** | ✅ | ✅ | Node-level and global counts |
+| **Transitivity** | ✅ | ✅ | Global clustering coefficient |
 
 ## I/O & Visualization
 
@@ -220,13 +238,25 @@ This document compares the Gleam and Elixir (YogEx) implementations of the Yog g
 
 ---
 
+## When to Choose Which?
+
+### Choose **Gleam (Yog)** when:
+- **Type Safety**: You need strong compile-time guarantees and type-safe graph containers.
+- **Node ID Constraints**: You are comfortable with **strictly integer Node IDs**. Because of this constraint, Gleam provides specialized builders like `Labeled` and `Live` to manage mapping domain objects to IDs more explicitly.
+- **Multi-platform targets**: You need the library to run on both **Erlang (BEAM) and JavaScript**. Yog is designed for seamless cross-platform usage.
+- **I/O Integration**: You prefer using a modular ecosystem; Gleam uses the separate `yog_io` package for file operations.
+
+### Choose **Elixir (YogEx)** when:
+- **Development Experience**: You need a world-class **REPL (iex)** or are working in collaborative, interactive environments like **Livebook** (via [kino_yog](https://github.com/code-shoily/kino_yog)).
+- **Deployment Environments**: You are building real-time applications using **Phoenix LiveView** or other live-coding platforms.
+- **Flexible Node IDs**: Your domain model benefits from using non-integer IDs (e.g., atoms, strings, or structs), although integers remain the best practice for performance.
+- **Deep Interop**: You need to work with other BEAM graph libraries like `libgraph` or require built-in support for a wide variety of file formats (JSON, GraphML, etc.) directly in the main package.
+
 ## Key Takeaways
 
-- **Gleam is leaner but broader** in algorithms: it has significantly more graph generators, operations, and traversal variants.
-- **Elixir's unique features**: Functional Graphs (FGL) inductive graph library, Successive Shortest Path for min-cost flow, and exposed `bipartite_coloring` returning the actual 2-color map.
-- **Gleam's unique features**: Network Simplex for min-cost flow, broader graph generators and operations, and more centrality/traversal variants.
-- **API style differs**: Elixir provides a keyword-based facade module (`Yog.Pathfinding`) and exposes fewer convenience wrappers; Gleam favors explicit module imports and provides both `Int` and `Float` convenience variants for weighted algorithms.
-- **Development velocity**: Elixir's test suite runs ~4× faster in development because it executes natively on the BEAM, whereas Gleam compiles to Erlang before running tests.
+- **API Architecture**: Elixir provides a keyword-based facade module (`Yog`) for most high-level tasks; Gleam favors explicit module imports for better discovery and type inference.
+- **Growing Parity**: Both libraries now share nearly 95% of features including all major generators, centrality measures, and community detection algorithms.
+- **Min-Cost Flow**: Gleam uniquely offers **Network Simplex**, while Elixir provides **Successive Shortest Path**.
 
 **Last Updated**: April 2026
 **Gleam Version**: 6.0.0 (Unreleased)
