@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `map_nodes` / `filter_nodes`: `fn(NodeId, n) -> m / Bool`
     - `map_edges`: `fn(NodeId, NodeId, e) -> m`
 
+- **Relocated Dijkstra Traversal** (`yog/traversal`):
+  - Removed `implicit_dijkstra` from the generic traversal module. This function has been relocated to `yog/pathfinding/dijkstra` as `fold` to better align with the library's module-based organization of algorithms.
+
 ### Added
 
 - **High-Performance Set Operations** (`yog/operation`):

@@ -16,7 +16,7 @@
 //// - `bfs/2` / `dfs/2`: Simple traversals returning visited nodes in order
 //// - `walk/4`: Generic traversal with custom fold function
 //// - `topological_sort/1`: Ordering for DAGs (uses DFS internally)
-//// - `is_acyclic/1`: Cycle detection via Kahn's algorithm
+//// - `lexicographical_topological_sort/2`: Ordering with custom priority
 ////
 //// ## Walk Control
 ////
@@ -46,6 +46,10 @@ import yog/internal/priority_queue
 import yog/internal/queue
 import yog/model.{type Graph, type NodeId}
 
+// =============================================================================
+// TYPES
+// =============================================================================
+
 /// Traversal order for graph walking algorithms.
 pub type Order {
   /// Breadth-First Search: visit all neighbors before going deeper.
@@ -74,7 +78,26 @@ pub type WalkMetadata(nid) {
   )
 }
 
+// =============================================================================
+// WALKS
+// =============================================================================
+
 /// Walks the graph starting from the given node, visiting all reachable nodes.
+///
+/// Returns a list of NodeIds in the order they were visited.
+/// Uses successors to follow directed paths.
+///
+/// ## Example
+///
+/// ```gleam
+/// // BFS traversal
+/// traversal.walk(graph, from: 1, using: BreadthFirst)
+/// // => [1, 2, 3, 4, 5]
+///
+/// // DFS traversal
+/// traversal.walk(graph, from: 1, using: DepthFirst)
+/// // => [1, 2, 4, 5, 3]
+/// ```
 pub fn walk(
   in graph: Graph(n, e),
   from start_id: NodeId,
@@ -91,6 +114,21 @@ pub fn walk(
 }
 
 /// Walks the graph but stops early when a condition is met.
+///
+/// Traverses the graph until `until` returns True for a node.
+/// Returns all nodes visited including the one that stopped traversal.
+///
+/// ## Example
+///
+/// ```gleam
+/// // Stop when we find node 5
+/// traversal.walk_until(
+///   graph,
+///   from: 1,
+///   using: BreadthFirst,
+///   until: fn(node) { node == 5 }
+/// )
+/// ```
 pub fn walk_until(
   in graph: Graph(n, e),
   from start_id: NodeId,
@@ -114,6 +152,42 @@ pub fn walk_until(
 }
 
 /// Folds over nodes during graph traversal, accumulating state with metadata.
+///
+/// This function combines traversal with state accumulation, providing metadata
+/// about each visited node (depth and parent). The folder function controls the
+/// traversal flow:
+///
+/// - `Continue`: Explore successors of the current node normally
+/// - `Stop`: Skip successors of this node, but continue processing other queued nodes
+/// - `Halt`: Stop the entire traversal immediately and return the accumulator
+///
+/// **Time Complexity:** O(V + E) for both BFS and DFS
+///
+/// ## Parameters
+///
+/// - `folder`: Called for each visited node with (accumulator, node_id, metadata).
+///   Returns `#(WalkControl, new_accumulator)`.
+///
+/// ## Examples
+///
+/// ```gleam
+/// import gleam/dict
+/// import yog/traversal.{BreadthFirst, Continue, Halt, Stop, WalkMetadata}
+///
+/// // Find all nodes within distance 3 from start
+/// let nearby = traversal.fold_walk(
+///   graph,
+///   from: 1,
+///   using: BreadthFirst,
+///   initial: dict.new(),
+///   with: fn(acc, node_id, meta) {
+///     case meta.depth <= 3 {
+///       True -> #(Continue, dict.insert(acc, node_id, meta.depth))
+///       False -> #(Stop, acc)  // Don't explore beyond depth 3
+///     }
+///   }
+/// )
+/// ```
 pub fn fold_walk(
   over graph: Graph(n, e),
   from start: NodeId,
@@ -132,6 +206,29 @@ pub fn fold_walk(
 }
 
 /// Traverses an *implicit* graph using BFS or DFS, folding over visited nodes.
+///
+/// Unlike `fold_walk`, this does not require a materialised `Graph` value.
+/// Instead, you supply a `successors_of` function that computes neighbours
+/// on the fly — ideal for infinite grids, state-space search, or any
+/// graph that is too large or expensive to build upfront.
+///
+/// ## Example
+///
+/// ```gleam
+/// // BFS shortest path in an implicit maze
+/// traversal.implicit_fold(
+///   from: #(1, 1),
+///   using: BreadthFirst,
+///   initial: -1,
+///   successors_of: fn(pos) { open_neighbours(pos, fav) },
+///   with: fn(acc, pos, meta) {
+///     case pos == target {
+///       True -> #(Halt, meta.depth)
+///       False -> #(Continue, acc)
+///     }
+///   },
+/// )
+/// ```
 pub fn implicit_fold(
   from start: nid,
   using order: Order,
@@ -150,6 +247,47 @@ pub fn implicit_fold(
 }
 
 /// Like `implicit_fold`, but deduplicates visited nodes by a custom key.
+///
+/// This is essential when your node type carries extra state beyond what
+/// defines "identity". For example, in state-space search you might have
+/// `#(Position, Mask)` nodes, but only want to visit each `Position` once —
+/// the `Mask` is just carried state, not part of the identity.
+///
+/// The `visited_by` function extracts the deduplication key from each node.
+/// Internally, a `Set(key)` tracks which keys have been visited, but the
+/// full `nid` value (with all its state) is still passed to your folder.
+///
+/// **Time Complexity:** O(V + E) for both BFS and DFS, where V and E are
+/// measured in terms of unique *keys* (not unique nodes).
+///
+/// ## Example
+///
+/// ```gleam
+/// // Search a maze where nodes carry both position and step count
+/// // but we only want to visit each position once (first-visit wins)
+/// type State {
+///   State(pos: #(Int, Int), steps: Int)
+/// }
+///
+/// traversal.implicit_fold_by(
+///   from: State(#(0, 0), 0),
+///   using: BreadthFirst,
+///   initial: None,
+///   successors_of: fn(state) {
+///     neighbors(state.pos)
+///     |> list.map(fn(next_pos) {
+///       State(next_pos, state.steps + 1)
+///     })
+///   },
+///   visited_by: fn(state) { state.pos },  // Dedupe by position only
+///   with: fn(acc, state, _meta) {
+///     case state.pos == target {
+///       True -> #(Halt, Some(state.steps))
+///       False -> #(Continue, acc)
+///     }
+///   },
+/// )
+/// ```
 pub fn implicit_fold_by(
   from start: nid,
   using order: Order,
@@ -267,7 +405,26 @@ fn do_walk_dfs(
   }
 }
 
+// =============================================================================
+// SORTS
+// =============================================================================
+
 /// Performs a topological sort on a directed graph using Kahn's algorithm.
+///
+/// Returns a linear ordering of nodes such that for every directed edge (u, v),
+/// node u comes before node v in the ordering.
+///
+/// Returns `Error(Nil)` if the graph contains a cycle.
+///
+/// **Time Complexity:** O(V + E) where V is vertices and E is edges
+///
+/// ## Example
+///
+/// ```gleam
+/// traversal.topological_sort(graph)
+/// // => Ok([1, 2, 3, 4])  // Valid ordering
+/// // or Error(Nil)         // Cycle detected
+/// ```
 pub fn topological_sort(graph: Graph(n, e)) -> Result(List(NodeId), Nil) {
   let all_nodes = model.all_nodes(graph)
   let in_degrees =
@@ -314,7 +471,24 @@ fn do_kahn(graph, queue, in_degrees, acc, total_count) {
   }
 }
 
-/// Performs a lexicographical topological sort.
+/// Performs a topological sort that returns the lexicographically smallest sequence.
+///
+/// Uses a heap-based version of Kahn's algorithm to ensure that when multiple
+/// nodes have in-degree 0, the smallest one (according to `compare_nodes`) is chosen first.
+///
+/// The comparison function operates on **node data**, not node IDs, allowing intuitive
+/// comparisons like `string.compare` for alphabetical ordering.
+///
+/// Returns `Error(Nil)` if the graph contains a cycle.
+///
+/// **Time Complexity:** O(V log V + E) due to heap operations
+///
+/// ## Example
+///
+/// ```gleam
+/// // Get alphabetical ordering by node data
+/// traversal.lexicographical_topological_sort(graph, string.compare)
+/// // => Ok([0, 1, 2])  // Node IDs ordered by their string data
 pub fn lexicographical_topological_sort(
   graph: Graph(n, e),
   compare_nodes: fn(n, n) -> order.Order,
