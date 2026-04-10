@@ -3,6 +3,7 @@ import gleam/int
 import gleam/io
 import gleam/list
 import gleam/option
+import yog/internal/utils
 import yog/property/bipartite
 
 pub fn main() {
@@ -131,9 +132,9 @@ pub fn main() {
 
 // Helper: Get name from list
 fn get_name(names: List(String), index: Int) -> String {
-  case list_at(names, index) {
-    option.Some(name) -> name
-    option.None -> "Unknown"
+  case utils.list_at(names, index) {
+    Ok(name) -> name
+    Error(_) -> "Unknown"
   }
 }
 
@@ -147,15 +148,6 @@ fn get_rank(prefs: dict.Dict(Int, List(Int)), person: Int, target: Int) -> Int {
       }
     }
     Error(_) -> 999
-  }
-}
-
-// Helper: Get element at index
-fn list_at(lst: List(a), index: Int) -> option.Option(a) {
-  case index, lst {
-    0, [first, ..] -> option.Some(first)
-    n, [_, ..rest] if n > 0 -> list_at(rest, n - 1)
-    _, _ -> option.None
   }
 }
 

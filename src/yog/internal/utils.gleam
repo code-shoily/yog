@@ -140,6 +140,16 @@ pub fn array_get(arr: Array(a), index: Int) -> a
 @external(javascript, "./utils_ffi.mjs", "arraySet")
 pub fn array_set(arr: Array(a), index: Int, value: a) -> Array(a)
 
+/// Returns the element at the given index in the list, or `Error(Nil)` if the
+/// index is out of bounds.
+pub fn list_at(lst: List(a), index: Int) -> Result(a, Nil) {
+  case index, lst {
+    0, [first, ..] -> Ok(first)
+    n, [_, ..rest] if n > 0 -> list_at(rest, n - 1)
+    _, _ -> Error(Nil)
+  }
+}
+
 // =============================================================================
 // FISHER-YATES SHUFFLE
 // =============================================================================

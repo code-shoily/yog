@@ -475,7 +475,7 @@ fn select_preferential_targets_seeded(
       let list_size = list.length(degree_list)
       let #(index, new_rng) = random.next_int(rng, list_size)
 
-      case list_at(degree_list, index) {
+      case utils.list_at(degree_list, index) {
         Ok(target) -> {
           let new_selected = set.insert(selected, target)
           select_preferential_targets_seeded(
@@ -688,7 +688,7 @@ fn build_random_tree_seeded(
       let tree_size = list.length(tree_list)
       let #(index, new_rng) = random.next_int(rng, tree_size)
 
-      case list_at(tree_list, index) {
+      case utils.list_at(tree_list, index) {
         Ok(parent) -> {
           let new_graph =
             model.add_edge_ensure(
@@ -1439,7 +1439,7 @@ fn generate_default_thetas(n: Int) -> List(Float) {
 }
 
 fn list_at_float(lst: List(Float), index: Int) -> Float {
-  list_at(lst, index) |> result.unwrap(1.0)
+  utils.list_at(lst, index) |> result.unwrap(1.0)
 }
 
 // =============================================================================
@@ -1681,15 +1681,6 @@ fn create_nodes(graph: Graph(Nil, e), n: Int) -> Graph(Nil, e) {
   }
 }
 
-// Helper: Get element at index from list
-fn list_at(lst: List(a), index: Int) -> Result(a, Nil) {
-  case index, lst {
-    0, [first, ..] -> Ok(first)
-    n, [_, ..rest] if n > 0 -> list_at(rest, n - 1)
-    _, _ -> Error(Nil)
-  }
-}
-
 // Helper: Build a list where each node appears proportional to its degree
 fn build_degree_list(graph: Graph(Nil, Int), graph_type: GraphType) -> List(Int) {
   model.all_nodes(graph)
@@ -1714,7 +1705,7 @@ fn do_shuffle(remaining: List(a), acc: List(a), rng: Rng) -> List(a) {
     _ -> {
       let len = list.length(remaining)
       let #(index, new_rng) = random.next_int(rng, len)
-      let selected = list_at(remaining, index)
+      let selected = utils.list_at(remaining, index)
       let rest = list_take_remove(remaining, index)
       case selected {
         Ok(val) -> do_shuffle(rest, [val, ..acc], new_rng)

@@ -125,7 +125,7 @@ pub fn binary_tree_with_options(
       }
       _ -> {
         let #(idx, next_rng) = random.next_int(curr_rng, list.length(neighbors))
-        let neighbor = case list_at(neighbors, idx) {
+        let neighbor = case utils.list_at(neighbors, idx) {
           Ok(n) -> n
           Error(_) -> #(0, 0)
         }
@@ -280,7 +280,7 @@ fn carve_sidewinder_row(
       case should_close {
         True -> {
           let #(idx, r2) = random.next_int(next_rng, list.length(run))
-          let cell_col = case list_at(run, idx) {
+          let cell_col = case utils.list_at(run, idx) {
             Ok(c) -> c
             Error(_) -> col
           }
@@ -301,7 +301,7 @@ fn carve_sidewinder_row(
           let grid = case is_special_north && at_boundary {
             True -> {
               let #(idx, _) = random.next_int(next_rng, list.length(run))
-              let r_col = case list_at(run, idx) {
+              let r_col = case utils.list_at(run, idx) {
                 Ok(c) -> c
                 Error(_) -> col
               }
@@ -379,7 +379,7 @@ fn do_recursive_backtracker(
         [] -> do_recursive_backtracker(grid, rest, visited, rows, cols, rng)
         _ -> {
           let #(idx, next_rng) = random.next_int(rng, list.length(neighbors))
-          let neighbor = case list_at(neighbors, idx) {
+          let neighbor = case utils.list_at(neighbors, idx) {
             Ok(n) -> n
             Error(_) -> current
           }
@@ -470,7 +470,7 @@ fn do_hunt_and_kill(
   case unvisited {
     [_, ..] -> {
       let #(idx, next_rng) = random.next_int(rng, list.length(unvisited))
-      let neighbor = case list_at(unvisited, idx) {
+      let neighbor = case utils.list_at(unvisited, idx) {
         Ok(n) -> n
         Error(_) -> current
       }
@@ -552,7 +552,7 @@ fn hunt(
       case result {
         option.Some(#(cell, vn)) -> {
           let #(idx, next_rng) = random.next_int(rng, list.length(vn))
-          let neighbor = case list_at(vn, idx) {
+          let neighbor = case utils.list_at(vn, idx) {
             Ok(n) -> n
             Error(_) -> #(0, 0)
           }
@@ -583,7 +583,7 @@ fn hunt(
         Ok(cell) -> {
           let vn = visited_neighbors(cell, visited, rows, cols)
           let #(idx, final_rng) = random.next_int(next_rng, list.length(vn))
-          let neighbor = case list_at(vn, idx) {
+          let neighbor = case utils.list_at(vn, idx) {
             Ok(n) -> n
             Error(_) -> #(0, 0)
           }
@@ -682,7 +682,7 @@ fn do_aldous_broder(
       let ns = neighbors(current.0, current.1, rows, cols)
       let len = list.length(ns)
       let #(idx, next_rng) = random.next_int(rng, len)
-      let neighbor = case list_at(ns, idx) {
+      let neighbor = case utils.list_at(ns, idx) {
         Ok(n) -> n
         Error(_) -> current
       }
@@ -778,7 +778,7 @@ fn do_wilson(
       // Pick a random unvisited cell
       let unvisited_len = list.length(unvisited)
       let #(idx, next_rng) = random.next_int(rng, unvisited_len)
-      let start_cell = case list_at(unvisited, idx) {
+      let start_cell = case utils.list_at(unvisited, idx) {
         Ok(c) -> c
         Error(_) -> #(0, 0)
       }
@@ -821,7 +821,7 @@ fn random_walk_to_visited(
   let ns = neighbors(current.0, current.1, rows, cols)
   let ns_len = list.length(ns)
   let #(idx, next_rng) = random.next_int(rng, ns_len)
-  let neighbor = case list_at(ns, idx) {
+  let neighbor = case utils.list_at(ns, idx) {
     Ok(n) -> n
     Error(_) -> current
   }
@@ -929,7 +929,7 @@ fn do_growing_tree(
         }
       }
 
-      let cell = case list_at(active, idx) {
+      let cell = case utils.list_at(active, idx) {
         Ok(c) -> c
         Error(_) -> #(0, 0)
       }
@@ -952,7 +952,7 @@ fn do_growing_tree(
         _ -> {
           let unvisited_len = list.length(unvisited)
           let #(idx2, final_rng) = random.next_int(next_rng, unvisited_len)
-          let neighbor = case list_at(unvisited, idx2) {
+          let neighbor = case utils.list_at(unvisited, idx2) {
             Ok(n) -> n
             Error(_) -> cell
           }
@@ -1078,7 +1078,7 @@ fn do_prim_simplified(
     _ -> {
       let frontier_len = list.length(frontier)
       let #(idx, next_rng) = random.next_int(rng, frontier_len)
-      let cell = case list_at(frontier, idx) {
+      let cell = case utils.list_at(frontier, idx) {
         Ok(c) -> c
         Error(_) -> #(0, 0)
       }
@@ -1514,14 +1514,6 @@ fn create_empty_grid(rows: Int, cols: Int) -> Grid(Nil, Int) {
     model.add_node(acc_c, id, Nil)
   }
   |> Grid(rows: rows, cols: cols)
-}
-
-fn list_at(lst: List(a), index: Int) -> Result(a, Nil) {
-  case index, lst {
-    0, [first, ..] -> Ok(first)
-    n, [_, ..rest] if n > 0 -> list_at(rest, n - 1)
-    _, _ -> Error(Nil)
-  }
 }
 
 /// Remove element at index using swap-and-pop for O(1) removal.
