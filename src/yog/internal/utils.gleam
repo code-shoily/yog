@@ -113,57 +113,6 @@ fn norm_diff_max(m1: Dict(k, Float), m2: Dict(k, Float)) -> Float {
 }
 
 // =============================================================================
-// FISHER-YATES SHUFFLE
-// =============================================================================
-
-/// Fisher-Yates shuffle: O(n log n) on Erlang, O(n) on JavaScript.
-///
-/// Deterministic when given a seed (for reproducibility).
-///
-/// ## Examples
-///
-/// ```gleam
-/// fisher_yates([1, 2, 3, 4, 5], 42)
-/// // => [3, 2, 5, 4, 1]
-///
-/// fisher_yates([], 123)
-/// // => []
-/// ```
-pub fn fisher_yates(list: List(a), seed: Int) -> List(a) {
-  let n = list.length(list)
-
-  case n <= 1 {
-    True -> list
-    False -> {
-      let arr = array_from_list(list)
-      let #(shuffled_arr, _final_seed) = do_fisher_yates(arr, 0, n, seed)
-      array_to_list(shuffled_arr, n)
-    }
-  }
-}
-
-fn do_fisher_yates(arr: Array(a), i: Int, n: Int, seed: Int) -> #(Array(a), Int) {
-  case i >= n - 1 {
-    True -> #(arr, seed)
-    False -> {
-      let a = 1_103_515_245
-      let c = 12_345
-      let m = 2_147_483_648
-
-      let next_seed = int.modulo(a * seed + c, m) |> result.unwrap(0)
-      let j = i + next_seed % { n - i }
-
-      let val_i = array_get(arr, i)
-      let val_j = array_get(arr, j)
-      let arr = array_set(arr, i, val_j)
-      let arr = array_set(arr, j, val_i)
-
-      do_fisher_yates(arr, i + 1, n, next_seed)
-    }
-  }
-}
-
-// =============================================================================
 // ARRAY EMULATION (Erlang: tuples, JavaScript: arrays)
 // =============================================================================
 
