@@ -174,12 +174,11 @@ pub fn to_undirected(
 
 /// Transforms node data using a function, preserving graph structure.
 ///
-/// This is a functor operation - it applies a function to every node's data
-/// while keeping all edges and the graph structure unchanged.
+/// This is a functor-like operation that applies a function to every node's data
+/// while keeping all edges and the graph structure unchanged. The transformation
+/// function receives both the `NodeId` and the node data.
 ///
 /// **Time Complexity:** O(V) where V is the number of nodes
-///
-/// **Functor Law:** `map_nodes(map_nodes(g, f), h) = map_nodes(g, fn(x) { h(f(x)) })`
 ///
 /// ## Example
 ///
@@ -189,35 +188,19 @@ pub fn to_undirected(
 ///   |> model.add_node(1, "alice")
 ///   |> model.add_node(2, "bob")
 ///
-/// let uppercased = transform.map_nodes(graph, string.uppercase)
+/// let uppercased = transform.map_nodes(graph, fn(_id, name) { string.uppercase(name) })
 /// // Nodes now contain "ALICE" and "BOB"
 /// ```
 ///
-/// ## Type Changes
+/// ## Accessing Identifiers
 ///
-/// Can change the node data type:
+/// The function can use the node ID to calculate new values:
 ///
 /// ```gleam
-/// // Convert string node data to integers
-/// transform.map_nodes(graph, fn(s) {
-///   case int.parse(s) {
-///     Ok(n) -> n
-///     Error(_) -> 0
-///   }
+/// // Prefix node values with their IDs
+/// transform.map_nodes(graph, fn(id, name) {
+///   int.to_string(id) <> ": " <> name
 /// })
-/// ```
-/// Transforms node data while preserving identifiers and edges.
-///
-/// Returns a new graph with the same structure but different node data.
-/// The transformation function receives both the node ID and its data.
-///
-/// **Time Complexity:** O(V)
-///
-/// ## Example
-///
-/// ```gleam
-/// // Double all node values, incorporating ID
-/// let result = transform.map_nodes(graph, fn(id, v) { v * id })
 /// ```
 pub fn map_nodes(
   graph: Graph(n, e),
@@ -260,8 +243,8 @@ pub fn update_node(
 /// Creates a new graph containing only the nodes that satisfy the predicate.
 ///
 /// Nodes are filtered based on both their ID and their associated data.
-/// Like `filter_nodes`, this automatically removes all incident edges of the
-/// removed nodes.
+/// Removing a node automatically removes all of its incident edges (both inbound
+/// and outbound).
 ///
 /// **Time Complexity:** O(V + E)
 ///
@@ -299,12 +282,11 @@ pub fn filter_nodes(
 
 /// Transforms edge weights using a function, preserving graph structure.
 ///
-/// This is a functor operation - it applies a function to every edge's weight/data
-/// while keeping all nodes and the graph topology unchanged.
+/// This is a functor-like operation that applies a function to every edge's weight
+/// while keeping all nodes and the graph topology unchanged. The transformation
+/// function receives the source node ID, destination node ID, and the edge weight.
 ///
 /// **Time Complexity:** O(E) where E is the number of edges
-///
-/// **Functor Law:** `map_edges(map_edges(g, f), h) = map_edges(g, fn(x) { h(f(x)) })`
 ///
 /// ## Example
 ///
@@ -315,38 +297,17 @@ pub fn filter_nodes(
 ///   |> model.add_edge(from: 2, to: 3, with: 20)
 ///
 /// // Double all weights
-/// let doubled = transform.map_edges(graph, fn(w) { w * 2 })
+/// let doubled = transform.map_edges(graph, fn(_u, _v, w) { w * 2 })
 /// // Edges now have weights 20 and 40
 /// ```
 ///
-/// ## Type Changes
+/// ## Accessing Identifiers
 ///
-/// Can change the edge weight type:
-///
-/// ```gleam
-/// // Convert integer weights to floats
-/// transform.map_edges(graph, int.to_float)
-///
-/// // Convert weights to labels
-/// transform.map_edges(graph, fn(w) {
-///   case w < 10 {
-///     True -> "short"
-///     False -> "long"
-///   }
-/// })
-/// ```
-/// Transforms edge weights while preserving node IDs and structure.
-///
-/// Returns a new graph with different edge data. The transformation function
-/// receives the source node ID, destination node ID, and the current weight.
-///
-/// **Time Complexity:** O(E)
-///
-/// ## Example
+/// The function can use endpoint identifiers to calculate new weights:
 ///
 /// ```gleam
 /// // Include path context in edge data
-/// let result = transform.map_edges(graph, fn(u, v, w) {
+/// let result = transform.map_edges(graph, fn(u, v, _w) {
 ///   int.to_string(u) <> "->" <> int.to_string(v)
 /// })
 /// ```
