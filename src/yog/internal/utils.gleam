@@ -2,6 +2,7 @@ import gleam/dict.{type Dict}
 import gleam/float
 import gleam/list
 import gleam/result
+import yog/internal/random
 
 /// Returns a list of integers from `start` to `end` (inclusive).
 ///
@@ -138,6 +139,49 @@ pub fn array_get(arr: Array(a), index: Int) -> a
 @external(erlang, "yog_internal_utils", "array_set")
 @external(javascript, "./utils_ffi.mjs", "arraySet")
 pub fn array_set(arr: Array(a), index: Int, value: a) -> Array(a)
+
+// =============================================================================
+// FISHER-YATES SHUFFLE
+// =============================================================================
+
+/// Shuffles a list using the Fisher-Yates algorithm.
+///
+/// This is an O(N) algorithm that produces an unbiased permutation.
+/// Uses the Array emulation for O(1) indexed access.
+///
+/// ## Example
+///
+/// ```gleam
+/// let rng = random.new(Some(42))
+/// let #(shuffled, next_rng) = shuffle([1, 2, 3, 4, 5], rng)
+/// ```
+pub fn shuffle(list: List(a), rng: random.Rng) -> #(List(a), random.Rng) {
+  let n = list.length(list)
+  case n <= 1 {
+    True -> #(list, rng)
+    False -> {
+      let arr = array_from_list(list)
+      let #(shuffled_arr, final_rng) = do_shuffle(arr, n - 1, rng)
+      #(array_to_list(shuffled_arr, n), final_rng)
+    }
+  }
+}
+
+fn do_shuffle(arr: Array(a), i: Int, rng: random.Rng) -> #(Array(a), random.Rng) {
+  case i <= 0 {
+    True -> #(arr, rng)
+    False -> {
+      let #(j, next_rng) = random.next_int(rng, i + 1)
+      let temp_i = array_get(arr, i)
+      let temp_j = array_get(arr, j)
+      let swapped =
+        arr
+        |> array_set(i, temp_j)
+        |> array_set(j, temp_i)
+      do_shuffle(swapped, i - 1, next_rng)
+    }
+  }
+}
 
 // =============================================================================
 // PROCESS CONTROL
