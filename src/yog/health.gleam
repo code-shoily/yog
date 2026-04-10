@@ -55,26 +55,23 @@ import yog/model.{type Graph, type NodeId}
 import yog/pathfinding/dijkstra
 import yog/transform
 
+// =============================================================================
+// Distance Metrics
+// =============================================================================
+
 /// The diameter is the maximum eccentricity (longest shortest path).
 /// Returns None if the graph is disconnected or empty.
 ///
 /// Time Complexity: O(V × (V+E) log V)
 ///
-/// ## Example
+/// ## Interpreting Diameter
 ///
-/// ```gleam
-/// let diam = health.diameter(
-///   in: graph,
-///   with_zero: 0,
-///   with_add: int.add,
-///   with_compare: int.compare,
-///   with: fn(w) { w }
-/// )
-/// case diam {
-///   Some(d) -> io.println("Diameter: " <> int.to_string(d))
-///   None -> io.println("Graph is disconnected")
-/// }
-/// ```
+/// | Value | Meaning |
+/// |-------|---------|
+/// | `1` | Complete graph — everyone is directly connected |
+/// | `2` | Small world — at most one hop between any pair |
+/// | `> log(V)` | Relatively sparse or stretched topology |
+/// | `None` | Disconnected or empty graph |
 pub fn diameter(
   in graph: Graph(n, e),
   with_zero zero: e,
@@ -87,7 +84,6 @@ pub fn diameter(
   case list.is_empty(nodes) {
     True -> None
     False -> {
-      // Calculate eccentricity for all nodes
       let eccentricities =
         list.filter_map(nodes, fn(node) {
           eccentricity(
@@ -121,21 +117,14 @@ pub fn diameter(
 ///
 /// Time Complexity: O(V × (V+E) log V)
 ///
-/// ## Example
+/// ## Interpreting Radius
 ///
-/// ```gleam
-/// let rad = health.radius(
-///   in: graph,
-///   with_zero: 0,
-///   with_add: int.add,
-///   with_compare: int.compare,
-///   with: fn(w) { w }
-/// )
-/// case rad {
-///   Some(r) -> io.println("Radius: " <> int.to_string(r))
-///   None -> io.println("Graph is disconnected")
-/// }
-/// ```
+/// | Value | Meaning |
+/// |-------|---------|
+/// | `= diameter` | Highly symmetric structure (e.g. cycle, complete graph) |
+/// | `< diameter` | Centralized topology with a clear hub (e.g. star) |
+/// | `1` | There exists a central node one hop from everyone else |
+/// | `None` | Disconnected or empty graph |
 pub fn radius(
   in graph: Graph(n, e),
   with_zero zero: e,
@@ -148,7 +137,6 @@ pub fn radius(
   case list.is_empty(nodes) {
     True -> None
     False -> {
-      // Calculate eccentricity for all nodes
       let eccentricities =
         list.filter_map(nodes, fn(node) {
           eccentricity(
@@ -182,22 +170,15 @@ pub fn radius(
 ///
 /// Time Complexity: O((V+E) log V)
 ///
-/// ## Example
+/// ## Interpreting Eccentricity
 ///
-/// ```gleam
-/// let ecc = health.eccentricity(
-///   in: graph,
-///   node: node_id,
-///   with_zero: 0,
-///   with_add: int.add,
-///   with_compare: int.compare,
-///   with: fn(w) { w }
-/// )
-/// case ecc {
-///   Some(e) -> io.println("Eccentricity: " <> int.to_string(e))
-///   None -> io.println("Node cannot reach all others")
-/// }
-/// ```
+/// | Value | Meaning |
+/// |-------|---------|
+/// | `= radius` | The node is in the graph center |
+/// | `= diameter` | The node is on the periphery (worst-case reachability) |
+/// | `1` | The node is adjacent to every other node |
+/// | `0` | Single-node graph |
+/// | `None` | The node cannot reach all others (disconnected component) |
 pub fn eccentricity(
   in graph: Graph(n, e),
   node node: NodeId,
@@ -212,11 +193,9 @@ pub fn eccentricity(
   case num_nodes {
     0 | 1 -> Some(zero)
     _ -> {
-      // Transform graph to apply weight function
       let weighted_graph =
         transform.map_edges(graph, applying: fn(_, _, w) { weight_fn(w) })
 
-      // Run Dijkstra from this node
       let distances =
         dijkstra.single_source_distances(
           in: weighted_graph,
@@ -226,65 +205,58 @@ pub fn eccentricity(
           with_compare: compare,
         )
 
-      // Check if all nodes are reachable
-      let reachable_count = dict.size(distances)
-
-      case reachable_count == num_nodes {
+      case dict.size(distances) == num_nodes {
         False -> None
         True -> {
-          // Find maximum distance
-          case
-            dict.values(distances)
-            |> list.reduce(fn(max_dist, dist) {
-              case compare(dist, max_dist) {
-                order.Gt -> dist
-                _ -> max_dist
-              }
-            })
-          {
-            Ok(max) -> Some(max)
-            Error(Nil) -> None
-          }
+          dict.values(distances)
+          |> list.reduce(fn(max_dist, dist) {
+            case compare(dist, max_dist) {
+              order.Gt -> dist
+              _ -> max_dist
+            }
+          })
+          |> option.from_result
         }
       }
     }
   }
 }
 
+// =============================================================================
+// Assortativity
+// =============================================================================
+
 /// Assortativity coefficient measures degree correlation.
-/// - Positive: high-degree nodes connect to high-degree nodes (assortative)
-/// - Negative: high-degree nodes connect to low-degree nodes (disassortative)
-/// - Zero: random mixing
 ///
 /// Time Complexity: O(V+E)
 ///
-/// ## Example
+/// ## Interpreting Assortativity
 ///
-/// ```gleam
-/// let assort = health.assortativity(graph)
-/// case assort >. 0.0 {
-///   True -> io.println("Assortative mixing (homophily)")
-///   False -> io.println("Disassortative mixing")
-/// }
-/// ```
+/// | Value | Meaning |
+/// |-------|---------|
+/// | **Positive** | High-degree nodes preferentially connect to other high-degree nodes (assortative) |
+/// | **Negative** | High-degree nodes connect to low-degree nodes (disassortative) |
+/// | **Zero** | Random mixing, or all nodes have the same degree (regular graph) |
+///
+/// Common real-world patterns:
+/// - Social networks tend to be **assortative** (people with many friends know each other)
+/// - Biological and technological networks tend to be **disassortative** (hubs serve many leaves)
 pub fn assortativity(graph: Graph(n, e)) -> Float {
   let nodes = model.all_nodes(graph)
 
-  // Calculate degrees for all nodes
-  let degrees =
-    list.fold(nodes, dict.new(), fn(acc, node) {
-      let degree = list.length(yog.neighbors(graph, node))
-      dict.insert(acc, node, degree)
-    })
+  let degrees = {
+    use acc, node <- list.fold(nodes, dict.new())
+    let degree = list.length(yog.neighbors(graph, node))
+    dict.insert(acc, node, degree)
+  }
 
-  // Calculate assortativity using Newman's formula
   let edges_data =
     list.flat_map(nodes, fn(u) {
       yog.successors(graph, u)
       |> list.map(fn(edge) {
         let #(v, _) = edge
-        let du = dict.get(degrees, u) |> result.unwrap(0)
-        let dv = dict.get(degrees, v) |> result.unwrap(0)
+        let du = dict_get_int(degrees, u)
+        let dv = dict_get_int(degrees, v)
         #(du, dv)
       })
     })
@@ -294,40 +266,26 @@ pub fn assortativity(graph: Graph(n, e)) -> Float {
     False -> {
       let m = int.to_float(list.length(edges_data))
 
-      let sum_jk =
-        list.fold(edges_data, 0.0, fn(acc, edge) {
-          let #(j, k) = edge
-          acc +. int.to_float(j * k)
-        })
+      let #(sum_jk, sum_j, sum_k, sum_j_squared, sum_k_squared) = {
+        use acc, edge <- list.fold(edges_data, #(0.0, 0.0, 0.0, 0.0, 0.0))
+        let #(j, k) = edge
+        let jf = int.to_float(j)
+        let kf = int.to_float(k)
+        #(
+          acc.0 +. jf *. kf,
+          acc.1 +. jf,
+          acc.2 +. kf,
+          acc.3 +. jf *. jf,
+          acc.4 +. kf *. kf,
+        )
+      }
 
-      let sum_j =
-        list.fold(edges_data, 0.0, fn(acc, edge) {
-          let #(j, _) = edge
-          acc +. int.to_float(j)
-        })
+      let mean_j = sum_j /. m
+      let mean_k = sum_k /. m
+      let numerator = sum_jk /. m -. mean_j *. mean_k
 
-      let sum_k =
-        list.fold(edges_data, 0.0, fn(acc, edge) {
-          let #(_, k) = edge
-          acc +. int.to_float(k)
-        })
-
-      let sum_j_squared =
-        list.fold(edges_data, 0.0, fn(acc, edge) {
-          let #(j, _) = edge
-          acc +. int.to_float(j * j)
-        })
-
-      let sum_k_squared =
-        list.fold(edges_data, 0.0, fn(acc, edge) {
-          let #(_, k) = edge
-          acc +. int.to_float(k * k)
-        })
-
-      let numerator = sum_jk /. m -. { sum_j /. m } *. { sum_k /. m }
-
-      let denom_j = sum_j_squared /. m -. { sum_j /. m } *. { sum_j /. m }
-      let denom_k = sum_k_squared /. m -. { sum_k /. m } *. { sum_k /. m }
+      let denom_j = sum_j_squared /. m -. mean_j *. mean_j
+      let denom_k = sum_k_squared /. m -. mean_k *. mean_k
 
       let denominator = float.square_root(denom_j *. denom_k)
 
@@ -339,28 +297,27 @@ pub fn assortativity(graph: Graph(n, e)) -> Float {
   }
 }
 
+// =============================================================================
+// Average Path Length
+// =============================================================================
+
 /// Average shortest path length across all node pairs.
 /// Returns None if the graph is disconnected or empty.
 /// Requires a function to convert edge weights to Float for averaging.
 ///
 /// Time Complexity: O(V × (V+E) log V)
 ///
-/// ## Example
+/// ## Interpreting Average Path Length
 ///
-/// ```gleam
-/// let avg_path = health.average_path_length(
-///   in: graph,
-///   with_zero: 0,
-///   with_add: int.add,
-///   with_compare: int.compare,
-///   with: fn(w) { w },
-///   with_to_float: int.to_float
-/// )
-/// case avg_path {
-///   Some(avg) -> io.println("Average path length: " <> float.to_string(avg))
-///   None -> io.println("Graph is disconnected")
-/// }
-/// ```
+/// | Value | Meaning |
+/// |-------|---------|
+/// | `≈ 1.0` | Dense or highly connected graph (e.g. complete graph) |
+/// | `≈ 2.0` | Star-like or small-world structure |
+/// | `≈ V/3` | Chain-like or path-like topology |
+/// | `None` | Disconnected or empty graph |
+///
+/// A low APL relative to the number of nodes indicates a **small-world** structure:
+/// the graph achieves global connectivity through a small number of hops.
 pub fn average_path_length(
   in graph: Graph(n, e),
   with_zero zero: e,
@@ -375,11 +332,9 @@ pub fn average_path_length(
   case num_nodes {
     0 | 1 -> None
     _ -> {
-      // Transform graph to apply weight function
       let weighted_graph =
         transform.map_edges(graph, applying: fn(_, _, w) { weight_fn(w) })
 
-      // Calculate all-pairs shortest paths
       let all_distances =
         list.map(nodes, fn(source) {
           dijkstra.single_source_distances(
@@ -391,7 +346,6 @@ pub fn average_path_length(
           )
         })
 
-      // Check if graph is fully connected
       let all_reachable =
         list.all(all_distances, fn(distances) {
           dict.size(distances) == num_nodes
@@ -400,17 +354,15 @@ pub fn average_path_length(
       case all_reachable {
         False -> None
         True -> {
-          // Sum all distances (excluding self-distances which are zero)
-          let total =
-            list.fold(all_distances, 0.0, fn(acc, distances) {
-              let sum =
-                dict.fold(distances, 0.0, fn(sum, _node, dist) {
-                  sum +. to_float(dist)
-                })
-              acc +. sum
-            })
+          let total = {
+            use acc, distances <- list.fold(all_distances, 0.0)
+            let sum = {
+              use s, _node, dist <- dict.fold(distances, 0.0)
+              s +. to_float(dist)
+            }
+            acc +. sum
+          }
 
-          // Subtract self-distances (all zeros) and divide by number of pairs (n * (n-1))
           let zero_distances = int.to_float(num_nodes) *. to_float(zero)
           let num_pairs = int.to_float(num_nodes * { num_nodes - 1 })
           Some({ total -. zero_distances } /. num_pairs)
@@ -418,4 +370,12 @@ pub fn average_path_length(
       }
     }
   }
+}
+
+// =============================================================================
+// Helpers
+// =============================================================================
+
+fn dict_get_int(dict: dict.Dict(NodeId, Int), key: NodeId) -> Int {
+  dict.get(dict, key) |> result.unwrap(0)
 }
