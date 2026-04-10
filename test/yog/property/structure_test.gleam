@@ -1,4 +1,4 @@
-import gleam/list
+import gleam/int
 import gleam/option.{None, Some}
 import gleeunit/should
 import yog/model.{Directed, Undirected}
@@ -27,12 +27,11 @@ fn cycle_graph() {
 
 fn complete_graph(n: Int) {
   let g = model.new(Undirected)
-  let g =
-    list.fold(list.range(1, n), g, fn(acc, id) { model.add_node(acc, id, Nil) })
-  list.fold(list.range(1, n), g, fn(acc, i) {
+  let g = int.range(1, n + 1, g, fn(acc, id) { model.add_node(acc, id, Nil) })
+  int.range(1, n + 1, g, fn(acc, i) {
     case i + 1 <= n {
       True ->
-        list.fold(list.range(i + 1, n), acc, fn(inner, j) {
+        int.range(i + 1, n + 1, acc, fn(inner, j) {
           model.add_edge_ensure(inner, i, j, with: 1, default: Nil)
         })
       False -> acc
