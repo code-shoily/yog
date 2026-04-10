@@ -16,4 +16,5 @@ packages = [
 gleam_stdlib = { version = ">= 0.69.0 and < 1.0.0" }
 gleamy_bench = { version = ">= 0.6.0 and < 1.0.0" }
 gleeunit = { version = ">= 1.0.0 and < 2.0.0" }
+prng = { version = ">= 5.1.0 and < 6.0.0" }
 qcheck = { version = ">= 1.0.0 and < 2.0.0" }
