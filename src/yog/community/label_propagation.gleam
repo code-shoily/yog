@@ -52,13 +52,15 @@
 //// - [Wikipedia: Label Propagation Algorithm](https://en.wikipedia.org/wiki/Label_propagation_algorithm)
 
 import gleam/dict.{type Dict}
-import gleam/float
 import gleam/int
 import gleam/list
+import gleam/option.{Some}
 import gleam/result
 import gleam/set
 import yog
 import yog/community.{type Communities, Communities}
+import yog/internal/random
+import yog/internal/utils
 import yog/model.{type Graph, type NodeId}
 
 /// Options for Label Propagation Algorithm.
@@ -68,7 +70,7 @@ pub type LabelPropagationOptions {
 
 /// Default options for LPA.
 pub fn default_options() -> LabelPropagationOptions {
-  LabelPropagationOptions(max_iterations: 100, seed: 0)
+  LabelPropagationOptions(max_iterations: 100, seed: 42)
 }
 
 /// Detects communities using the Label Propagation Algorithm.
@@ -87,8 +89,9 @@ pub fn detect_with_options(
     list.map(nodes, fn(u) { #(u, u) })
     |> dict.from_list
 
+  let rng = random.new(Some(options.seed))
   let final_labels =
-    run_lpa(graph, nodes, initial_labels, options.max_iterations)
+    run_lpa(graph, nodes, initial_labels, options.max_iterations, rng)
 
   let unique_labels =
     dict.values(final_labels)
@@ -103,20 +106,21 @@ fn run_lpa(
   nodes: List(NodeId),
   labels: Dict(NodeId, Int),
   remaining_iters: Int,
+  rng: random.Rng,
 ) -> Dict(NodeId, Int) {
   case remaining_iters <= 0 {
     True -> labels
     False -> {
-      // 2. Randomize node order
-      let shuffled_nodes = shuffle(nodes)
+      // 2. Randomize node order using Fisher-Yates shuffle
+      let #(shuffled_nodes, next_rng) = utils.shuffle(nodes, rng)
 
       // 3. Update labels
-      let #(new_labels, changed) =
+      let #(new_labels, changed, final_rng) =
         list.fold(
           over: shuffled_nodes,
-          from: #(labels, False),
+          from: #(labels, False, next_rng),
           with: fn(acc, u) {
-            let #(current_labels, _was_changed) = acc
+            let #(current_labels, was_changed, curr_rng) = acc
             let neighbors = yog.neighbors(graph, u)
 
             case neighbors {
@@ -127,12 +131,17 @@ fn run_lpa(
                     dict.get(current_labels, pair.0) |> result.unwrap(pair.0)
                   })
 
-                let best_label = most_frequent(neighbor_labels)
+                let #(best_label, new_rng) =
+                  most_frequent(neighbor_labels, curr_rng)
                 let old_label = dict.get(current_labels, u) |> result.unwrap(u)
 
                 case best_label == old_label {
-                  True -> acc
-                  False -> #(dict.insert(current_labels, u, best_label), True)
+                  True -> #(current_labels, was_changed, new_rng)
+                  False -> #(
+                    dict.insert(current_labels, u, best_label),
+                    True,
+                    new_rng,
+                  )
                 }
               }
             }
@@ -141,13 +150,14 @@ fn run_lpa(
 
       case changed {
         False -> new_labels
-        True -> run_lpa(graph, nodes, new_labels, remaining_iters - 1)
+        True ->
+          run_lpa(graph, nodes, new_labels, remaining_iters - 1, final_rng)
       }
     }
   }
 }
 
-fn most_frequent(labels: List(Int)) -> Int {
+fn most_frequent(labels: List(Int), rng: random.Rng) -> #(Int, random.Rng) {
   let counts =
     list.fold(over: labels, from: dict.new(), with: fn(acc, label) {
       let count = dict.get(acc, label) |> result.unwrap(0)
@@ -166,30 +176,17 @@ fn most_frequent(labels: List(Int)) -> Int {
   // Tie-break: choose randomly from candidates
   let n = list.length(candidates)
   case n {
-    0 -> 0
+    0 -> #(0, rng)
     // Should not happen
-    1 -> result.unwrap(list.first(candidates), 0)
+    1 -> #(result.unwrap(list.first(candidates), 0), rng)
     _ -> {
-      let idx = random_int(n) - 1
-      // Simple nth implementation using list.drop and list.first
-      candidates
-      |> list.drop(idx)
-      |> list.first
-      |> result.unwrap(0)
+      let #(idx, new_rng) = random.next_int(rng, n)
+      let chosen =
+        candidates
+        |> list.drop(idx)
+        |> list.first
+        |> result.unwrap(0)
+      #(chosen, new_rng)
     }
   }
-}
-
-pub fn shuffle(list: List(a)) -> List(a) {
-  list
-  |> list.map(fn(x) { #(float.random(), x) })
-  |> list.sort(fn(a, b) { float.compare(a.0, b.0) })
-  |> list.map(fn(pair) { pair.1 })
-}
-
-pub fn random_int(n: Int) -> Int {
-  float.random() *. int.to_float(n)
-  |> float.floor()
-  |> float.truncate()
-  |> int.add(1)
 }

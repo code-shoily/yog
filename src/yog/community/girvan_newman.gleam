@@ -67,12 +67,12 @@ import gleam/float
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
-import gleam/order.{type Order, Eq, Gt, Lt}
+import gleam/order.{type Order}
 import gleam/result
 import gleam/set
 import yog
 import yog/community.{type Communities, type Dendrogram, Communities, Dendrogram}
-import yog/internal/priority_queue as pq
+import yog/internal/brandes
 import yog/model.{type Graph, type NodeId, Directed, Undirected}
 
 /// Options for Girvan-Newman algorithm.
@@ -107,14 +107,14 @@ pub fn edge_betweenness(
   let edge_scores =
     list.fold(nodes, initial, fn(acc, s) {
       let discovery =
-        run_discovery(
+        brandes.run_discovery(
           graph,
           s,
           with_zero: zero,
           with_add: add,
           with_compare: compare,
         )
-      let edge_dependencies = accumulate_edge_dependencies(discovery)
+      let edge_dependencies = brandes.accumulate_edge_dependencies(discovery)
 
       dict.fold(edge_dependencies, acc, fn(acc2, edge, delta) {
         let current = dict.get(acc2, edge) |> result.unwrap(0.0)
@@ -127,161 +127,6 @@ pub fn edge_betweenness(
     Undirected -> dict.map_values(edge_scores, fn(_k, v) { v /. 2.0 })
     Directed -> edge_scores
   }
-}
-
-type BrandesDiscovery =
-  #(List(NodeId), Dict(NodeId, List(NodeId)), Dict(NodeId, Int))
-
-fn run_discovery(
-  graph: Graph(n, e),
-  source: NodeId,
-  with_zero zero: e,
-  with_add add: fn(e, e) -> e,
-  with_compare compare: fn(e, e) -> Order,
-) -> BrandesDiscovery {
-  let queue =
-    pq.new(fn(a: #(e, NodeId), b: #(e, NodeId)) { compare(a.0, b.0) })
-    |> pq.push(#(zero, source))
-
-  let dists = dict.from_list([#(source, zero)])
-  let sigmas = dict.from_list([#(source, 1)])
-  let preds = dict.new()
-  let stack = []
-
-  do_brandes_dijkstra(
-    graph,
-    queue,
-    dists,
-    sigmas,
-    preds,
-    stack,
-    with_add: add,
-    with_compare: compare,
-  )
-}
-
-fn do_brandes_dijkstra(
-  graph: Graph(n, e),
-  queue: pq.Queue(#(e, NodeId)),
-  dists: Dict(NodeId, e),
-  sigmas: Dict(NodeId, Int),
-  preds: Dict(NodeId, List(NodeId)),
-  stack: List(NodeId),
-  with_add add: fn(e, e) -> e,
-  with_compare compare: fn(e, e) -> Order,
-) -> BrandesDiscovery {
-  case pq.pop(queue) {
-    Error(Nil) -> #(stack, preds, sigmas)
-    Ok(#(#(d_v, v), rest_q)) -> {
-      let current_best = dict.get(dists, v) |> result.unwrap(d_v)
-      case compare(d_v, current_best) {
-        Gt ->
-          do_brandes_dijkstra(
-            graph,
-            rest_q,
-            dists,
-            sigmas,
-            preds,
-            stack,
-            with_add: add,
-            with_compare: compare,
-          )
-        _ -> {
-          let new_stack = [v, ..stack]
-
-          let #(next_q, next_dists, next_sigmas, next_preds) =
-            model.successors(graph, v)
-            |> list.fold(#(rest_q, dists, sigmas, preds), fn(state, edge) {
-              let #(q, ds, ss, ps) = state
-              let #(w, weight) = edge
-              let new_dist = add(d_v, weight)
-
-              case dict.get(ds, w) {
-                Error(Nil) -> {
-                  let q2 = pq.push(q, #(new_dist, w))
-                  let ds2 = dict.insert(ds, w, new_dist)
-                  let ss2 = dict.insert(ss, w, get_sigma(ss, v))
-                  let ps2 = dict.insert(ps, w, [v])
-                  #(q2, ds2, ss2, ps2)
-                }
-                Ok(old_dist) -> {
-                  case compare(new_dist, old_dist) {
-                    Lt -> {
-                      let q2 = pq.push(q, #(new_dist, w))
-                      let ds2 = dict.insert(ds, w, new_dist)
-                      let ss2 = dict.insert(ss, w, get_sigma(ss, v))
-                      let ps2 = dict.insert(ps, w, [v])
-                      #(q2, ds2, ss2, ps2)
-                    }
-                    Eq -> {
-                      let ss2 =
-                        dict.upsert(ss, w, fn(curr) {
-                          option.unwrap(curr, 0) + get_sigma(ss, v)
-                        })
-                      let ps2 =
-                        dict.upsert(ps, w, fn(curr) {
-                          [v, ..option.unwrap(curr, [])]
-                        })
-                      #(q, ds, ss2, ps2)
-                    }
-                    Gt -> state
-                  }
-                }
-              }
-            })
-
-          do_brandes_dijkstra(
-            graph,
-            next_q,
-            next_dists,
-            next_sigmas,
-            next_preds,
-            new_stack,
-            with_add: add,
-            with_compare: compare,
-          )
-        }
-      }
-    }
-  }
-}
-
-fn get_sigma(sigmas: Dict(NodeId, Int), id: NodeId) -> Int {
-  dict.get(sigmas, id) |> result.unwrap(0)
-}
-
-fn accumulate_edge_dependencies(
-  discovery: BrandesDiscovery,
-) -> Dict(#(NodeId, NodeId), Float) {
-  let #(stack, preds, sigmas) = discovery
-  let node_deltas = dict.new()
-  let edge_deltas = dict.new()
-
-  let #(_node_deltas, final_edge_deltas) =
-    list.fold(stack, #(node_deltas, edge_deltas), fn(acc, v) {
-      let #(nd, ed) = acc
-      let sigma_v = int.to_float(get_sigma(sigmas, v))
-      let delta_v = dict.get(nd, v) |> result.unwrap(0.0)
-      let v_preds = dict.get(preds, v) |> result.unwrap([])
-
-      list.fold(v_preds, #(nd, ed), fn(inner_acc, u) {
-        let #(inner_nd, inner_ed) = inner_acc
-        let sigma_u = int.to_float(get_sigma(sigmas, u))
-
-        let c = { sigma_u /. sigma_v } *. { 1.0 +. delta_v }
-        let edge = case u < v {
-          True -> #(u, v)
-          False -> #(v, u)
-        }
-
-        let new_nd =
-          dict.upsert(inner_nd, u, fn(curr) { option.unwrap(curr, 0.0) +. c })
-        let new_ed = dict.insert(inner_ed, edge, c)
-        #(new_nd, new_ed)
-      })
-    })
-
-  final_edge_deltas
 }
 
 /// Detects communities using the Girvan-Newman algorithm with default options.

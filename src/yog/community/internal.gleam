@@ -21,13 +21,14 @@
 //// `louvain` or `leiden` modules directly.
 
 import gleam/dict.{type Dict}
-import gleam/float
 import gleam/int
 import gleam/list
-import gleam/option
+import gleam/option.{Some}
 import gleam/result
 import gleam/set.{type Set}
 import yog/community.{type CommunityId}
+import yog/internal/random
+import yog/internal/utils
 import yog/model.{type Graph, type NodeId}
 
 /// Internal state for modularity-based algorithms.
@@ -41,21 +42,14 @@ pub type CommunityState {
   )
 }
 
-/// Deterministic shuffle using Linear Congruential Generator.
+/// Deterministic shuffle using Fisher-Yates algorithm.
+///
+/// This is an O(N) algorithm that produces an unbiased permutation.
+/// Uses the Fisher-Yates shuffle from yog/internal/utils for optimal performance.
 pub fn shuffle(items: List(a), seed: Int) -> List(a) {
-  // Use LCG parameters (same as glibc)
-  let a = 1_103_515_245
-  let c = 12_345
-  let m = 2_147_483_648
-
-  items
-  |> list.index_map(fn(item, i) {
-    // Generate deterministic random number
-    let rand = { a * { seed + i } + c } % m
-    #(int.to_float(rand), item)
-  })
-  |> list.sort(fn(a, b) { float.compare(a.0, b.0) })
-  |> list.map(fn(pair) { pair.1 })
+  let rng = random.new(Some(seed))
+  let #(shuffled, _) = utils.shuffle(items, rng)
+  shuffled
 }
 
 /// Get communities that are neighbors of a node.
