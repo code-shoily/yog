@@ -3,8 +3,8 @@ import gleam/option.{Some}
 import gleeunit/should
 import yog
 import yog/generator/classic
+import yog/pathfinding/path.{Path}
 import yog/pathfinding/unweighted
-import yog/pathfinding/util.{Path}
 
 pub fn unweighted_shortest_path_test() {
   // Line graph: 0-1-2-3-4

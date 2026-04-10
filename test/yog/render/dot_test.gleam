@@ -2,7 +2,7 @@ import gleam/option.{None, Some}
 import gleam/string
 import gleeunit/should
 import yog/model.{Directed, Undirected}
-import yog/pathfinding/util.{Path}
+import yog/pathfinding/path.{Path}
 import yog/render/dot
 
 // =============================================================================

@@ -106,7 +106,7 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/string
 import yog/model.{type Graph, type NodeId, Directed, Undirected}
-import yog/pathfinding/util.{type Path}
+import yog/pathfinding/path.{type Path}
 
 // =============================================================================
 // SUBGRAPH TYPE

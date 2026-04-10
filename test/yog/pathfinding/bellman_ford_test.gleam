@@ -5,7 +5,7 @@ import gleeunit/should
 import yog/model.{Directed}
 import yog/pathfinding/bellman_ford
 import yog/pathfinding/dijkstra
-import yog/pathfinding/util
+import yog/pathfinding/path
 
 // ============= Bellman-Ford Tests =============
 
@@ -30,7 +30,7 @@ pub fn bellman_ford_basic_test() {
 
   result
   |> should.equal(
-    bellman_ford.ShortestPath(util.Path(nodes: [1, 2, 3], total_weight: 15)),
+    bellman_ford.ShortestPath(path.Path(nodes: [1, 2, 3], total_weight: 15)),
   )
 }
 
@@ -55,7 +55,7 @@ pub fn bellman_ford_negative_weights_test() {
 
   result
   |> should.equal(
-    bellman_ford.ShortestPath(util.Path(nodes: [1, 2, 3], total_weight: 5)),
+    bellman_ford.ShortestPath(path.Path(nodes: [1, 2, 3], total_weight: 5)),
   )
 }
 
@@ -82,7 +82,7 @@ pub fn bellman_ford_negative_optimal_test() {
   // Path through 2,3 is 2+2-10=-6, direct is 5
   result
   |> should.equal(
-    bellman_ford.ShortestPath(util.Path(nodes: [1, 2, 3, 4], total_weight: -6)),
+    bellman_ford.ShortestPath(path.Path(nodes: [1, 2, 3, 4], total_weight: -6)),
   )
 }
 
@@ -140,7 +140,7 @@ pub fn bellman_ford_negative_cycle_elsewhere_test() {
   // Cycle is unreachable from source, so path should be found
   result
   |> should.equal(
-    bellman_ford.ShortestPath(util.Path(nodes: [1, 5], total_weight: 10)),
+    bellman_ford.ShortestPath(path.Path(nodes: [1, 5], total_weight: 10)),
   )
 }
 
@@ -185,7 +185,7 @@ pub fn bellman_ford_same_node_test() {
 
   result
   |> should.equal(
-    bellman_ford.ShortestPath(util.Path(nodes: [1], total_weight: 0)),
+    bellman_ford.ShortestPath(path.Path(nodes: [1], total_weight: 0)),
   )
 }
 
@@ -210,7 +210,7 @@ pub fn bellman_ford_zero_weights_test() {
 
   result
   |> should.equal(
-    bellman_ford.ShortestPath(util.Path(nodes: [1, 2, 3], total_weight: 0)),
+    bellman_ford.ShortestPath(path.Path(nodes: [1, 2, 3], total_weight: 0)),
   )
 }
 
@@ -243,7 +243,7 @@ pub fn bellman_ford_mixed_weights_test() {
   // Best path: 1->3->2->4 with cost 2+(-6)+3=-1
   result
   |> should.equal(
-    bellman_ford.ShortestPath(util.Path(nodes: [1, 3, 2, 4], total_weight: -1)),
+    bellman_ford.ShortestPath(path.Path(nodes: [1, 3, 2, 4], total_weight: -1)),
   )
 }
 
@@ -289,7 +289,7 @@ pub fn bellman_ford_positive_self_loop_test() {
 
   result
   |> should.equal(
-    bellman_ford.ShortestPath(util.Path(nodes: [1, 2], total_weight: 10)),
+    bellman_ford.ShortestPath(path.Path(nodes: [1, 2], total_weight: 10)),
   )
 }
 
@@ -316,7 +316,7 @@ pub fn bellman_ford_diamond_negative_test() {
   // Path through right: 4+(-3)=1, path through left: 1+2=3
   result
   |> should.equal(
-    bellman_ford.ShortestPath(util.Path(nodes: [1, 3, 4], total_weight: 1)),
+    bellman_ford.ShortestPath(path.Path(nodes: [1, 3, 4], total_weight: 1)),
   )
 }
 

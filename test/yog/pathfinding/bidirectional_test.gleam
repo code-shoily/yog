@@ -4,7 +4,7 @@ import gleeunit/should
 import yog/model.{Directed, Undirected}
 import yog/pathfinding/bidirectional
 import yog/pathfinding/dijkstra
-import yog/pathfinding/util.{Path}
+import yog/pathfinding/path.{Path}
 
 // ============= Basic BFS Tests =============
 

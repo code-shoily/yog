@@ -62,10 +62,9 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/order.{type Order}
 import yog/internal/priority_queue
+import yog/internal/util.{compare_a_star_frontier, should_explore_node}
 import yog/model.{type Graph, type NodeId}
-import yog/pathfinding/util.{
-  type Path, Path, compare_a_star_frontier, should_explore_node,
-}
+import yog/pathfinding/path.{type Path, Path}
 
 /// Finds the shortest path using A* search with a heuristic function.
 ///

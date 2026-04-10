@@ -5,7 +5,7 @@ import gleam/string
 import gleeunit/should
 import yog/internal/util
 import yog/model
-import yog/pathfinding/util as p_utils
+import yog/pathfinding/path as p_path
 import yog/render/dot
 import yog/render/mermaid
 
@@ -46,7 +46,7 @@ pub fn dot_path_to_edges_large_test() {
   let nodes = util.range(0, 1000)
   let edges =
     dot.path_to_dot_options(
-      p_utils.Path(nodes: nodes, total_weight: 0.0),
+      p_path.Path(nodes: nodes, total_weight: 0.0),
       dot.default_dot_options_with_edge_formatter(float.to_string),
     ).highlighted_edges
 

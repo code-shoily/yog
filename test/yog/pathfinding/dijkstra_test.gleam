@@ -7,7 +7,7 @@ import gleeunit/should
 import yog/internal/util as internal_utils
 import yog/model.{Directed, Undirected}
 import yog/pathfinding/dijkstra
-import yog/pathfinding/util.{Path}
+import yog/pathfinding/path.{Path}
 
 // ============= Basic Path Tests =============
 

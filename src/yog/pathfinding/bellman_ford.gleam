@@ -73,7 +73,7 @@ import gleam/result
 import gleam/set
 import yog/internal/queue
 import yog/model.{type Graph, type NodeId}
-import yog/pathfinding/util.{type Path, Path}
+import yog/pathfinding/path.{type Path, Path}
 
 /// Result type for Bellman-Ford algorithm.
 pub type BellmanFordResult(e) {

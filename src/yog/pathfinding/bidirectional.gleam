@@ -50,8 +50,9 @@ import gleam/result
 import gleam/set.{type Set}
 import yog/internal/priority_queue
 import yog/internal/queue
+import yog/internal/util.{should_explore_node}
 import yog/model.{type Graph, type NodeId}
-import yog/pathfinding/util.{type Path, Path, should_explore_node}
+import yog/pathfinding/path.{type Path, Path}
 
 /// Result of a bidirectional search containing paths from both directions
 type BiSearchState(e) {

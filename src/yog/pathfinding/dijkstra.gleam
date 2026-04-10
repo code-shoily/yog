@@ -56,11 +56,10 @@ import gleam/list
 import gleam/option.{type Option}
 import gleam/order.{type Order}
 import yog/internal/priority_queue
+import yog/internal/util.{compare_distance_frontier, should_explore_node}
 import yog/model.{type Graph, type NodeId}
 import yog/pathfinding/a_star
-import yog/pathfinding/util.{
-  type Path, compare_distance_frontier, should_explore_node,
-}
+import yog/pathfinding/path.{type Path}
 import yog/traversal.{type WalkControl}
 
 /// Finds the shortest path between two nodes using Dijkstra's algorithm.
