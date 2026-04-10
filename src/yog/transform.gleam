@@ -206,9 +206,24 @@ pub fn to_undirected(
 ///   }
 /// })
 /// ```
-pub fn map_nodes(graph: Graph(n, e), with fun: fn(n) -> m) -> Graph(m, e) {
-  let new_nodes = dict.map_values(graph.nodes, fn(_id, data) { fun(data) })
-
+/// Transforms node data while preserving identifiers and edges.
+///
+/// Returns a new graph with the same structure but different node data.
+/// The transformation function receives both the node ID and its data.
+///
+/// **Time Complexity:** O(V)
+///
+/// ## Example
+///
+/// ```gleam
+/// // Double all node values, incorporating ID
+/// let result = transform.map_nodes(graph, fn(id, v) { v * id })
+/// ```
+pub fn map_nodes(
+  graph: Graph(n, e),
+  applying transform: fn(NodeId, n) -> m,
+) -> Graph(m, e) {
+  let new_nodes = dict.map_values(graph.nodes, transform)
   Graph(..graph, nodes: new_nodes)
 }
 
@@ -242,42 +257,24 @@ pub fn update_node(
   Graph(..graph, nodes: new_nodes)
 }
 
-/// Filters nodes by a predicate, automatically pruning connected edges.
+/// Creates a new graph containing only the nodes that satisfy the predicate.
 ///
-/// Returns a new graph containing only nodes whose data satisfies the predicate.
-/// All edges connected to removed nodes (both incoming and outgoing) are
-/// automatically removed to maintain graph consistency.
+/// Nodes are filtered based on both their ID and their associated data.
+/// Like `filter_nodes`, this automatically removes all incident edges of the
+/// removed nodes.
 ///
-/// **Time Complexity:** O(V + E) where V is nodes and E is edges
-///
-/// ## Example
-///
-/// ```gleam
-/// let graph =
-///   model.new(Directed)
-///   |> model.add_node(1, "apple")
-///   |> model.add_node(2, "banana")
-///   |> model.add_node(3, "apricot")
-///   |> model.add_edge(from: 1, to: 2, with: 1)
-///   |> model.add_edge(from: 2, to: 3, with: 2)
-///
-/// // Keep only nodes starting with 'a'
-/// let filtered = transform.filter_nodes(graph, fn(s) {
-///   string.starts_with(s, "a")
-/// })
-/// // Result has nodes 1 and 3, edge 1->2 is removed (node 2 gone)
-/// ```
+/// **Time Complexity:** O(V + E)
 ///
 /// ## Use Cases
 ///
-/// - Extract subgraphs based on node properties
-/// - Remove inactive/disabled nodes from a network
-/// - Filter by node importance/centrality
+/// - Filter nodes by ID range or specific identifiers
+/// - Complex filtering requiring both identity and data
+/// - Efficiently removing common nodes between two graphs
 pub fn filter_nodes(
   graph: Graph(n, e),
-  keeping predicate: fn(n) -> Bool,
+  keeping predicate: fn(NodeId, n) -> Bool,
 ) -> Graph(n, e) {
-  let kept_nodes = dict.filter(graph.nodes, fn(_id, data) { predicate(data) })
+  let kept_nodes = dict.filter(graph.nodes, predicate)
   let kept_ids = set.from_list(dict.keys(kept_nodes))
 
   let prune_edges = fn(outer_map) {
@@ -338,53 +335,36 @@ pub fn filter_nodes(
 ///   }
 /// })
 /// ```
-pub fn map_edges(graph: Graph(n, e), with fun: fn(e) -> f) -> Graph(n, f) {
-  let transform_inner = dict.map_values(_, fn(_dst, weight) { fun(weight) })
-
-  let transform_outer = dict.map_values(_, fn(_src, inner_map) {
-    transform_inner(inner_map)
-  })
-
-  Graph(
-    ..graph,
-    out_edges: transform_outer(graph.out_edges),
-    in_edges: transform_outer(graph.in_edges),
-  )
-}
-
-/// Transforms edge weights using a function that also takes the source and destination IDs.
+/// Transforms edge weights while preserving node IDs and structure.
 ///
-/// Similar to `map_edges`, but the function receives `(src_id, dst_id, weight)`.
+/// Returns a new graph with different edge data. The transformation function
+/// receives the source node ID, destination node ID, and the current weight.
 ///
 /// **Time Complexity:** O(E)
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let graph =
-///   model.new(Directed)
-///   |> model.add_node(1, "A")
-///   |> model.add_node(2, "B")
-///   |> model.add_edge(1, 2, 10)
-///
-/// let updated = transform.map_edges_indexed(graph, fn(u, v, w) { u + v + w })
-/// // Edge 1->2 now has weight 13 (1 + 2 + 10)
+/// // Include path context in edge data
+/// let result = transform.map_edges(graph, fn(u, v, w) {
+///   int.to_string(u) <> "->" <> int.to_string(v)
+/// })
 /// ```
-pub fn map_edges_indexed(
+pub fn map_edges(
   graph: Graph(n, e),
-  with fun: fn(NodeId, NodeId, e) -> f,
+  applying transform: fn(NodeId, NodeId, e) -> f,
 ) -> Graph(n, f) {
-  let new_out =
-    dict.map_values(graph.out_edges, fn(src, inner) {
-      dict.map_values(inner, fn(dst, weight) { fun(src, dst, weight) })
+  let map_outer = fn(edge_map) {
+    dict.map_values(edge_map, fn(src, inner_map) {
+      dict.map_values(inner_map, fn(dst, weight) { transform(src, dst, weight) })
     })
+  }
 
-  let new_in =
-    dict.map_values(graph.in_edges, fn(dst, inner) {
-      dict.map_values(inner, fn(src, weight) { fun(src, dst, weight) })
-    })
-
-  Graph(..graph, out_edges: new_out, in_edges: new_in)
+  Graph(
+    ..graph,
+    out_edges: map_outer(graph.out_edges),
+    in_edges: map_outer(graph.in_edges),
+  )
 }
 
 /// Updates a specific edge's weight/metadata safely.
@@ -465,7 +445,7 @@ pub fn filter_edges(
   graph: Graph(n, e),
   keeping predicate: fn(NodeId, NodeId, e) -> Bool,
 ) -> Graph(n, e) {
-  let filter_outer = fn(outer_map) {
+  let filter_out = fn(outer_map) {
     outer_map
     |> dict.map_values(fn(src, inner_map) {
       dict.filter(inner_map, fn(dst, weight) { predicate(src, dst, weight) })
@@ -473,10 +453,18 @@ pub fn filter_edges(
     |> dict.filter(fn(_src, inner_map) { dict.size(inner_map) > 0 })
   }
 
+  let filter_in = fn(outer_map) {
+    outer_map
+    |> dict.map_values(fn(dst, inner_map) {
+      dict.filter(inner_map, fn(src, weight) { predicate(src, dst, weight) })
+    })
+    |> dict.filter(fn(_dst, inner_map) { dict.size(inner_map) > 0 })
+  }
+
   Graph(
     ..graph,
-    out_edges: filter_outer(graph.out_edges),
-    in_edges: filter_outer(graph.in_edges),
+    out_edges: filter_out(graph.out_edges),
+    in_edges: filter_in(graph.in_edges),
   )
 }
 

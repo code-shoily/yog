@@ -213,7 +213,8 @@ pub fn eccentricity(
     0 | 1 -> Some(zero)
     _ -> {
       // Transform graph to apply weight function
-      let weighted_graph = transform.map_edges(graph, with: weight_fn)
+      let weighted_graph =
+        transform.map_edges(graph, applying: fn(_, _, w) { weight_fn(w) })
 
       // Run Dijkstra from this node
       let distances =
@@ -375,7 +376,8 @@ pub fn average_path_length(
     0 | 1 -> None
     _ -> {
       // Transform graph to apply weight function
-      let weighted_graph = transform.map_edges(graph, with: weight_fn)
+      let weighted_graph =
+        transform.map_edges(graph, applying: fn(_, _, w) { weight_fn(w) })
 
       // Calculate all-pairs shortest paths
       let all_distances =

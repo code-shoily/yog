@@ -69,7 +69,7 @@ pub type MinCut {
 pub fn global_min_cut(in graph: Graph(n, Int)) -> MinCut {
   // Start every node with a weight of 1 (representing itself)
   // This tracks how many original nodes have been merged together
-  let graph = transform.map_nodes(graph, fn(_) { 1 })
+  let graph = transform.map_nodes(graph, fn(_, _) { 1 })
   do_min_cut(
     graph,
     MinCut(weight: 999_999_999, group_a_size: 0, group_b_size: 0),

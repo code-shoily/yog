@@ -581,17 +581,23 @@ pub fn transpose(graph: Graph(n, e)) -> Graph(n, e) {
   transform.transpose(graph)
 }
 
-pub fn map_nodes(graph: Graph(n, e), with fun: fn(n) -> m) -> Graph(m, e) {
-  transform.map_nodes(graph, with: fun)
+pub fn map_nodes(
+  graph: Graph(n, e),
+  with fun: fn(NodeId, n) -> m,
+) -> Graph(m, e) {
+  transform.map_nodes(graph, applying: fun)
 }
 
-pub fn map_edges(graph: Graph(n, e), with fun: fn(e) -> f) -> Graph(n, f) {
-  transform.map_edges(graph, with: fun)
+pub fn map_edges(
+  graph: Graph(n, e),
+  with fun: fn(NodeId, NodeId, e) -> f,
+) -> Graph(n, f) {
+  transform.map_edges(graph, applying: fun)
 }
 
 pub fn filter_nodes(
   graph: Graph(n, e),
-  keeping predicate: fn(n) -> Bool,
+  keeping predicate: fn(NodeId, n) -> Bool,
 ) -> Graph(n, e) {
   transform.filter_nodes(graph, keeping: predicate)
 }
