@@ -10,7 +10,11 @@ import yog/community/metrics
 
 pub fn karate_club_lpa_test() {
   let g = karate_club.karate_club_graph()
-  let comms = label_propagation.detect(g)
+  // Use a fixed seed so tie-breaking is deterministic and reliably
+  // finds the expected 2-community split on the karate club graph.
+  let options =
+    label_propagation.LabelPropagationOptions(max_iterations: 100, seed: 42)
+  let comms = label_propagation.detect_with_options(g, options)
 
   // LPA should find some structure (usually 2-4 communities)
   { comms.num_communities >= 2 } |> should.be_true
