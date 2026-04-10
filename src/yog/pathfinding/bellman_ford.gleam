@@ -171,48 +171,58 @@ pub fn relaxation_passes(
   case remaining <= 0 {
     True -> #(distances, predecessors)
     False -> {
-      let #(new_distances, new_predecessors) =
-        list.fold(nodes, #(distances, predecessors), fn(acc, u) {
-          let #(dists, preds) = acc
+      let #(new_distances, new_predecessors, relaxed_any) =
+        list.fold(nodes, #(distances, predecessors, False), fn(acc, u) {
+          let #(dists, preds, changed) = acc
 
           case dict.get(dists, u) {
             Error(Nil) -> acc
             Ok(u_dist) -> {
               let neighbors = model.successors(graph, u)
 
-              list.fold(neighbors, #(dists, preds), fn(inner_acc, edge) {
-                let #(v, weight) = edge
-                let #(curr_dists, curr_preds) = inner_acc
-                let new_dist = add(u_dist, weight)
+              list.fold(
+                neighbors,
+                #(dists, preds, changed),
+                fn(inner_acc, edge) {
+                  let #(v, weight) = edge
+                  let #(curr_dists, curr_preds, _) = inner_acc
+                  let new_dist = add(u_dist, weight)
 
-                case dict.get(curr_dists, v) {
-                  Error(Nil) -> #(
-                    dict.insert(curr_dists, v, new_dist),
-                    dict.insert(curr_preds, v, u),
-                  )
-                  Ok(v_dist) ->
-                    case compare(new_dist, v_dist) {
-                      Lt -> #(
-                        dict.insert(curr_dists, v, new_dist),
-                        dict.insert(curr_preds, v, u),
-                      )
-                      _ -> inner_acc
-                    }
-                }
-              })
+                  case dict.get(curr_dists, v) {
+                    Error(Nil) -> #(
+                      dict.insert(curr_dists, v, new_dist),
+                      dict.insert(curr_preds, v, u),
+                      True,
+                    )
+                    Ok(v_dist) ->
+                      case compare(new_dist, v_dist) {
+                        Lt -> #(
+                          dict.insert(curr_dists, v, new_dist),
+                          dict.insert(curr_preds, v, u),
+                          True,
+                        )
+                        _ -> inner_acc
+                      }
+                  }
+                },
+              )
             }
           }
         })
 
-      relaxation_passes(
-        graph,
-        nodes,
-        new_distances,
-        new_predecessors,
-        remaining - 1,
-        with_add: add,
-        with_compare: compare,
-      )
+      case relaxed_any {
+        False -> #(new_distances, new_predecessors)
+        True ->
+          relaxation_passes(
+            graph,
+            nodes,
+            new_distances,
+            new_predecessors,
+            remaining - 1,
+            with_add: add,
+            with_compare: compare,
+          )
+      }
     }
   }
 }

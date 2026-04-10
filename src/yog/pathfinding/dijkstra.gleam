@@ -53,13 +53,13 @@ import gleam/dict.{type Dict}
 import gleam/float
 import gleam/int
 import gleam/list
-import gleam/option.{type Option, None, Some}
+import gleam/option.{type Option}
 import gleam/order.{type Order}
 import yog/internal/priority_queue
 import yog/model.{type Graph, type NodeId}
+import yog/pathfinding/a_star
 import yog/pathfinding/utils.{
-  type Path, Path, compare_distance_frontier, compare_frontier,
-  should_explore_node,
+  type Path, compare_distance_frontier, should_explore_node,
 }
 import yog/traversal.{type WalkControl}
 
@@ -96,58 +96,15 @@ pub fn shortest_path(
   with_add add: fn(e, e) -> e,
   with_compare compare: fn(e, e) -> Order,
 ) -> Option(Path(e)) {
-  let frontier =
-    priority_queue.new(fn(a, b) { compare_frontier(a, b, compare) })
-    |> priority_queue.push(#(zero, [start]))
-
-  do_dijkstra(graph, goal, frontier, dict.new(), add, compare)
-  |> option.map(fn(res) {
-    let #(dist, path) = res
-    Path(nodes: list.reverse(path), total_weight: dist)
-  })
-}
-
-pub fn do_dijkstra(
-  graph: Graph(n, e),
-  goal: NodeId,
-  frontier: priority_queue.Queue(#(e, List(NodeId))),
-  visited: Dict(NodeId, e),
-  add: fn(e, e) -> e,
-  compare: fn(e, e) -> Order,
-) -> Option(#(e, List(NodeId))) {
-  case priority_queue.pop(frontier) {
-    Error(Nil) -> None
-    Ok(#(#(dist, [current, ..] as path), rest_frontier)) -> {
-      case current == goal {
-        True -> Some(#(dist, path))
-        False -> {
-          let should_explore =
-            should_explore_node(visited, current, dist, compare)
-
-          case should_explore {
-            False ->
-              do_dijkstra(graph, goal, rest_frontier, visited, add, compare)
-            True -> {
-              let new_visited = dict.insert(visited, current, dist)
-
-              let next_frontier =
-                model.successors(graph, current)
-                |> list.fold(rest_frontier, fn(h, neighbor) {
-                  let #(next_id, weight) = neighbor
-                  priority_queue.push(
-                    h,
-                    #(add(dist, weight), [next_id, ..path]),
-                  )
-                })
-
-              do_dijkstra(graph, goal, next_frontier, new_visited, add, compare)
-            }
-          }
-        }
-      }
-    }
-    Ok(_) -> None
-  }
+  a_star.a_star(
+    in: graph,
+    from: start,
+    to: goal,
+    with_zero: zero,
+    with_add: add,
+    with_compare: compare,
+    with_heuristic: fn(_, _) { zero },
+  )
 }
 
 /// Computes shortest distances from a source node to all reachable nodes.
@@ -246,66 +203,15 @@ pub fn implicit_dijkstra(
   with_add add: fn(cost, cost) -> cost,
   with_compare compare: fn(cost, cost) -> Order,
 ) -> Option(cost) {
-  let frontier =
-    priority_queue.new(fn(a: #(cost, state), b: #(cost, state)) {
-      compare(a.0, b.0)
-    })
-    |> priority_queue.push(#(zero, start))
-
-  do_implicit_dijkstra(frontier, dict.new(), successors, is_goal, add, compare)
-}
-
-fn do_implicit_dijkstra(
-  frontier: priority_queue.Queue(#(cost, state)),
-  distances: Dict(state, cost),
-  successors: fn(state) -> List(#(state, cost)),
-  is_goal: fn(state) -> Bool,
-  add: fn(cost, cost) -> cost,
-  compare: fn(cost, cost) -> Order,
-) -> Option(cost) {
-  case priority_queue.pop(frontier) {
-    Error(Nil) -> None
-    Ok(#(#(dist, current), rest_frontier)) -> {
-      case is_goal(current) {
-        True -> Some(dist)
-        False -> {
-          let should_explore =
-            should_explore_node(distances, current, dist, compare)
-
-          case should_explore {
-            False ->
-              do_implicit_dijkstra(
-                rest_frontier,
-                distances,
-                successors,
-                is_goal,
-                add,
-                compare,
-              )
-            True -> {
-              let new_distances = dict.insert(distances, current, dist)
-
-              let next_frontier =
-                successors(current)
-                |> list.fold(rest_frontier, fn(h, neighbor) {
-                  let #(next_state, cost) = neighbor
-                  priority_queue.push(h, #(add(dist, cost), next_state))
-                })
-
-              do_implicit_dijkstra(
-                next_frontier,
-                new_distances,
-                successors,
-                is_goal,
-                add,
-                compare,
-              )
-            }
-          }
-        }
-      }
-    }
-  }
+  a_star.implicit_a_star(
+    from: start,
+    successors_with_cost: successors,
+    is_goal: is_goal,
+    with_heuristic: fn(_) { zero },
+    with_zero: zero,
+    with_add: add,
+    with_compare: compare,
+  )
 }
 
 /// Like `implicit_dijkstra`, but deduplicates visited states by a custom key.
@@ -323,78 +229,16 @@ pub fn implicit_dijkstra_by(
   with_add add: fn(cost, cost) -> cost,
   with_compare compare: fn(cost, cost) -> Order,
 ) -> Option(cost) {
-  let frontier =
-    priority_queue.new(fn(a: #(cost, state), b: #(cost, state)) {
-      compare(a.0, b.0)
-    })
-    |> priority_queue.push(#(zero, start))
-
-  do_implicit_dijkstra_by(
-    frontier,
-    dict.new(),
-    successors,
-    key_fn,
-    is_goal,
-    add,
-    compare,
+  a_star.implicit_a_star_by(
+    from: start,
+    successors_with_cost: successors,
+    visited_by: key_fn,
+    is_goal: is_goal,
+    with_heuristic: fn(_) { zero },
+    with_zero: zero,
+    with_add: add,
+    with_compare: compare,
   )
-}
-
-fn do_implicit_dijkstra_by(
-  frontier: priority_queue.Queue(#(cost, state)),
-  distances: Dict(key, cost),
-  successors: fn(state) -> List(#(state, cost)),
-  key_fn: fn(state) -> key,
-  is_goal: fn(state) -> Bool,
-  add: fn(cost, cost) -> cost,
-  compare: fn(cost, cost) -> Order,
-) -> Option(cost) {
-  case priority_queue.pop(frontier) {
-    Error(Nil) -> None
-    Ok(#(#(dist, current), rest_frontier)) -> {
-      case is_goal(current) {
-        True -> Some(dist)
-        False -> {
-          let current_key = key_fn(current)
-          let should_explore =
-            should_explore_node(distances, current_key, dist, compare)
-
-          case should_explore {
-            False ->
-              do_implicit_dijkstra_by(
-                rest_frontier,
-                distances,
-                successors,
-                key_fn,
-                is_goal,
-                add,
-                compare,
-              )
-            True -> {
-              let new_distances = dict.insert(distances, current_key, dist)
-
-              let next_frontier =
-                successors(current)
-                |> list.fold(rest_frontier, fn(h, neighbor) {
-                  let #(next_state, cost) = neighbor
-                  priority_queue.push(h, #(add(dist, cost), next_state))
-                })
-
-              do_implicit_dijkstra_by(
-                next_frontier,
-                new_distances,
-                successors,
-                key_fn,
-                is_goal,
-                add,
-                compare,
-              )
-            }
-          }
-        }
-      }
-    }
-  }
 }
 
 /// Folds over an implicit weighted graph using Dijkstra's algorithm.
