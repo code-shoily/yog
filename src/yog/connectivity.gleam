@@ -61,15 +61,19 @@ pub type ConnectivityResults {
   ConnectivityResults(bridges: List(Bridge), articulation_points: List(NodeId))
 }
 
+// =============================================================================
+// Bridge & Articulation Point Analysis
+// =============================================================================
+
 /// Analyzes an **undirected graph** to find all bridges and articulation points
 /// using Tarjan's algorithm in a single DFS pass.
 ///
 /// **Important:** This algorithm is designed for undirected graphs. For directed
 /// graphs, use strongly connected components analysis instead.
 ///
-/// **Bridges** are edges whose removal increases the number of connected connectivity.
+/// **Bridges** are edges whose removal increases the number of connected components.
 /// **Articulation points** (cut vertices) are nodes whose removal increases the number
-/// of connected connectivity.
+/// of connected components.
 ///
 /// **Bridge ordering:** Bridges are returned as `#(lower_id, higher_id)` for consistency.
 ///
@@ -144,64 +148,57 @@ fn do_analyze(
   let state = InternalState(..state, tin:, low:, visited:, timer:)
   let neighbors = model.successor_ids(graph, v)
 
-  let #(final_state, children) =
-    list.fold(neighbors, #(state, 0), fn(acc, to) {
-      let #(acc_state, children_count) = acc
-      case parent {
-        Some(parent_id) if to == parent_id -> acc
-        _ -> {
-          case set.contains(acc_state.visited, to) {
-            True -> {
-              let assert Ok(v_low) = dict.get(acc_state.low, v)
-              let assert Ok(to_tin) = dict.get(acc_state.tin, to)
-              let new_low = int.min(v_low, to_tin)
-              #(
-                InternalState(
-                  ..acc_state,
-                  low: dict.insert(acc_state.low, v, new_low),
-                ),
-                children_count,
-              )
-            }
-            False -> {
-              let post_dfs_state = do_analyze(graph, to, Some(v), acc_state)
-
-              let assert Ok(v_low) = dict.get(post_dfs_state.low, v)
-              let assert Ok(to_low) = dict.get(post_dfs_state.low, to)
-              let new_v_low = int.min(v_low, to_low)
-
-              let assert Ok(v_tin) = dict.get(post_dfs_state.tin, v)
-
-              let new_bridges = case to_low > v_tin {
-                True -> {
-                  let bridge = case v < to {
-                    True -> #(v, to)
-                    False -> #(to, v)
-                  }
-                  [bridge, ..post_dfs_state.bridges]
-                }
-                False -> post_dfs_state.bridges
-              }
-
-              let new_points = case parent, to_low >= v_tin {
-                Some(_), True -> set.insert(post_dfs_state.points, v)
-                _, _ -> post_dfs_state.points
-              }
-
-              #(
-                InternalState(
-                  ..post_dfs_state,
-                  low: dict.insert(post_dfs_state.low, v, new_v_low),
-                  bridges: new_bridges,
-                  points: new_points,
-                ),
-                children_count + 1,
-              )
-            }
-          }
-        }
+  let #(final_state, children) = {
+    use #(acc_state, children_count), to <- list.fold(neighbors, #(state, 0))
+    case parent, set.contains(acc_state.visited, to) {
+      Some(parent_id), _ if to == parent_id -> #(acc_state, children_count)
+      _, True -> {
+        let assert Ok(v_low) = dict.get(acc_state.low, v)
+        let assert Ok(to_tin) = dict.get(acc_state.tin, to)
+        let new_low = int.min(v_low, to_tin)
+        #(
+          InternalState(
+            ..acc_state,
+            low: dict.insert(acc_state.low, v, new_low),
+          ),
+          children_count,
+        )
       }
-    })
+      _, False -> {
+        let post_dfs_state = do_analyze(graph, to, Some(v), acc_state)
+        let assert Ok(v_low) = dict.get(post_dfs_state.low, v)
+        let assert Ok(to_low) = dict.get(post_dfs_state.low, to)
+        let new_v_low = int.min(v_low, to_low)
+        let assert Ok(v_tin) = dict.get(post_dfs_state.tin, v)
+
+        let new_bridges = case to_low > v_tin {
+          True -> {
+            let bridge = case v < to {
+              True -> #(v, to)
+              False -> #(to, v)
+            }
+            [bridge, ..post_dfs_state.bridges]
+          }
+          False -> post_dfs_state.bridges
+        }
+
+        let new_points = case parent, to_low >= v_tin {
+          Some(_), True -> set.insert(post_dfs_state.points, v)
+          _, _ -> post_dfs_state.points
+        }
+
+        #(
+          InternalState(
+            ..post_dfs_state,
+            low: dict.insert(post_dfs_state.low, v, new_v_low),
+            bridges: new_bridges,
+            points: new_points,
+          ),
+          children_count + 1,
+        )
+      }
+    }
+  }
 
   // Special case: Root of DFS tree is an articulation point if it has > 1 child
   case parent, children > 1 {
@@ -210,6 +207,10 @@ fn do_analyze(
     _, _ -> final_state
   }
 }
+
+// =============================================================================
+// Tarjan's Strongly Connected Components
+// =============================================================================
 
 pub type TarjanState {
   TarjanState(
@@ -224,6 +225,27 @@ pub type TarjanState {
 
 /// Finds Strongly Connected Components (SCC) using Tarjan's Algorithm.
 /// Returns a list of components, where each component is a list of NodeIds.
+///
+/// **Time Complexity:** O(V + E)
+///
+/// ## Example
+///
+/// ```gleam
+/// import yog/connectivity
+/// import yog/model.{Directed}
+///
+/// let graph =
+///   model.new(Directed)
+///   |> model.add_node(1, "A")
+///   |> model.add_node(2, "B")
+///   |> model.add_node(3, "C")
+///   |> model.add_edge(from: 1, to: 2, with: 1)
+///   |> model.add_edge(from: 2, to: 3, with: 1)
+///   |> model.add_edge(from: 3, to: 1, with: 1)
+///
+/// let sccs = connectivity.strongly_connected_components(graph)
+/// // => [[1, 2, 3]]  // All nodes form one SCC (cycle)
+/// ```
 pub fn strongly_connected_components(graph: Graph(n, e)) -> List(List(NodeId)) {
   let nodes = model.all_nodes(graph)
 
@@ -253,7 +275,6 @@ fn strong_connect(
   u: NodeId,
   state: TarjanState,
 ) -> TarjanState {
-  // Set the discovery index and low-link to the current index
   let state =
     TarjanState(
       ..state,
@@ -264,40 +285,35 @@ fn strong_connect(
       on_stack: dict.insert(state.on_stack, u, True),
     )
 
-  // Consider successors of u
   let successors = model.successor_ids(graph, u)
 
-  let state =
-    list.fold(successors, state, fn(st, v) {
-      case dict.has_key(st.indices, v) {
-        False -> {
-          // Successor v has not yet been visited; recurse on it
-          let st = strong_connect(graph, v, st)
-          let u_low = dict.get(st.low_links, u) |> result.unwrap(0)
-          let v_low = dict.get(st.low_links, v) |> result.unwrap(0)
-          TarjanState(
-            ..st,
-            low_links: dict.insert(st.low_links, u, int.min(u_low, v_low)),
-          )
-        }
-        True -> {
-          case dict.get(st.on_stack, v) |> result.unwrap(False) {
-            True -> {
-              // Successor v is in stack and hence in the current SCC
-              let u_low = dict.get(st.low_links, u) |> result.unwrap(0)
-              let v_index = dict.get(st.indices, v) |> result.unwrap(0)
-              TarjanState(
-                ..st,
-                low_links: dict.insert(st.low_links, u, int.min(u_low, v_index)),
-              )
-            }
-            False -> st
-          }
-        }
+  let state = {
+    use st, v <- list.fold(successors, state)
+    case
+      dict.has_key(st.indices, v),
+      dict.get(st.on_stack, v) |> result.unwrap(False)
+    {
+      False, _ -> {
+        let st = strong_connect(graph, v, st)
+        let u_low = dict.get(st.low_links, u) |> result.unwrap(0)
+        let v_low = dict.get(st.low_links, v) |> result.unwrap(0)
+        TarjanState(
+          ..st,
+          low_links: dict.insert(st.low_links, u, int.min(u_low, v_low)),
+        )
       }
-    })
+      True, True -> {
+        let u_low = dict.get(st.low_links, u) |> result.unwrap(0)
+        let v_index = dict.get(st.indices, v) |> result.unwrap(0)
+        TarjanState(
+          ..st,
+          low_links: dict.insert(st.low_links, u, int.min(u_low, v_index)),
+        )
+      }
+      True, False -> st
+    }
+  }
 
-  // If u is a root node, pop the stack and generate an SCC
   let u_index = dict.get(state.indices, u) |> result.unwrap(0)
   let u_low = dict.get(state.low_links, u) |> result.unwrap(0)
 
@@ -367,37 +383,35 @@ fn pop_stack_until(
 /// Both have the same O(V + E) time complexity, but Kosaraju may be preferred when:
 /// - The graph is already stored in a format supporting fast transposition
 /// - Simplicity and clarity are prioritized over single-pass execution
+// =============================================================================
+// Kosaraju's Algorithm
+// =============================================================================
+
 pub fn kosaraju(graph: Graph(n, e)) -> List(List(NodeId)) {
   let nodes = model.all_nodes(graph)
 
-  // First DFS: Compute finishing times
-  let #(finish_stack, _) =
-    list.fold(nodes, #([], set.new()), fn(acc, node) {
-      let #(stack, visited) = acc
-      first_dfs(graph, node, visited, stack)
-    })
+  let #(finish_stack, _) = {
+    use #(stack, visited), node <- list.fold(nodes, #([], set.new()))
+    first_dfs(graph, node, visited, stack)
+  }
 
-  // Transpose the graph (O(1) operation!)
   let transposed = transform.transpose(graph)
 
-  // Second DFS: Process in reverse finishing time order on transposed graph
-  let #(components, _) =
-    list.fold(finish_stack, #([], set.new()), fn(acc, node) {
-      let #(components, visited) = acc
-      case set.contains(visited, node) {
-        True -> acc
-        False -> {
-          let #(component, new_visited) =
-            second_dfs(transposed, node, visited, [])
-          #([component, ..components], new_visited)
-        }
+  let #(components, _) = {
+    use #(components, visited), node <- list.fold(finish_stack, #([], set.new()))
+    case set.contains(visited, node) {
+      True -> #(components, visited)
+      False -> {
+        let #(component, new_visited) =
+          second_dfs(transposed, node, visited, [])
+        #([component, ..components], new_visited)
       }
-    })
+    }
+  }
 
   components
 }
 
-// First DFS: Accumulate nodes in finishing time order
 fn first_dfs(
   graph: Graph(n, e),
   node: NodeId,
@@ -410,20 +424,16 @@ fn first_dfs(
       let new_visited = set.insert(visited, node)
       let successors = model.successor_ids(graph, node)
 
-      // Visit all successors first
-      let #(new_stack, final_visited) =
-        list.fold(successors, #(stack, new_visited), fn(acc, succ) {
-          let #(s, v) = acc
-          first_dfs(graph, succ, v, s)
-        })
+      let #(new_stack, final_visited) = {
+        use #(s, v), succ <- list.fold(successors, #(stack, new_visited))
+        first_dfs(graph, succ, v, s)
+      }
 
-      // Add current node to stack AFTER visiting all descendants (finishing time)
       #([node, ..new_stack], final_visited)
     }
   }
 }
 
-// Second DFS: Explore SCC on transposed graph
 fn second_dfs(
   transposed: Graph(n, e),
   node: NodeId,
@@ -437,16 +447,18 @@ fn second_dfs(
       let new_component = [node, ..component]
       let successors = model.successor_ids(transposed, node)
 
-      // Visit all successors in the transposed graph
-      list.fold(successors, #(new_component, new_visited), fn(acc, succ) {
-        let #(comp, vis) = acc
-        second_dfs(transposed, succ, vis, comp)
-      })
+      use #(comp, vis), succ <- list.fold(successors, #(
+        new_component,
+        new_visited,
+      ))
+      second_dfs(transposed, succ, vis, comp)
     }
   }
 }
 
-// ============= Connected Components (Undirected Graphs) =============
+// =============================================================================
+// Connected Components (Undirected)
+// =============================================================================
 
 /// Finds Connected Components in an **undirected graph**.
 ///
@@ -478,14 +490,6 @@ fn second_dfs(
 /// let components = connectivity.connected_components(graph)
 /// // => [[1, 2], [3, 4]]  // Two separate components
 /// ```
-///
-/// ## Comparison with Other Component Types
-///
-/// | Function | Graph Type | Direction | Use Case |
-/// |----------|------------|-----------|----------|
-/// | `connected_components/1` | Undirected | N/A | Standard undirected connectivity |
-/// | `weakly_connected_components/1` | Directed | Ignored | Directed graphs treated as undirected |
-/// | `strongly_connected_components/1` | Directed | Followed | Maximum reachability following arrows |
 pub fn connected_components(graph: Graph(n, e)) -> List(Component) {
   let nodes = model.all_nodes(graph)
   do_connected_components(graph, nodes, set.new(), [])
@@ -499,7 +503,7 @@ fn do_connected_components(
 ) -> List(Component) {
   case nodes {
     [] -> components
-    [node, ..rest] -> {
+    [node, ..rest] ->
       case set.contains(visited, node) {
         True -> do_connected_components(graph, rest, visited, components)
         False -> {
@@ -510,7 +514,6 @@ fn do_connected_components(
           ])
         }
       }
-    }
   }
 }
 
@@ -526,19 +529,18 @@ fn dfs_collect(
       let new_visited = set.insert(visited, node)
       let neighbors = model.successor_ids(graph, node)
 
-      list.fold(
-        neighbors,
-        #([node, ..component], new_visited),
-        fn(acc, neighbor) {
-          let #(comp, vis) = acc
-          dfs_collect(graph, neighbor, vis, comp)
-        },
-      )
+      use #(comp, vis), neighbor <- list.fold(neighbors, #(
+        [node, ..component],
+        new_visited,
+      ))
+      dfs_collect(graph, neighbor, vis, comp)
     }
   }
 }
 
-// ============= Weakly Connected Components (Directed Graphs) =============
+// =============================================================================
+// Weakly Connected Components (Directed)
+// =============================================================================
 
 /// Finds Weakly Connected Components in a **directed graph**.
 ///
@@ -573,20 +575,6 @@ fn dfs_collect(
 /// // WCCs: [[1, 2, 3]]  (weakly connected as undirected)
 /// let wccs = connectivity.weakly_connected_components(graph)
 /// ```
-///
-/// ## Comparison with Other Component Types
-///
-/// | Function | Graph Type | Direction | Use Case |
-/// |----------|------------|-----------|----------|
-/// | `connected_components/1` | Undirected | N/A | Standard undirected connectivity |
-/// | `weakly_connected_components/1` | Directed | Ignored | Directed graphs treated as undirected |
-/// | `strongly_connected_components/1` | Directed | Followed | Maximum reachability following arrows |
-///
-/// ## Implementation Notes
-///
-/// This function uses `model.neighbors/2` which treats edges as undirected
-/// by combining successors and predecessors for directed graphs. This is
-/// more efficient than actually converting the graph to undirected form.
 pub fn weakly_connected_components(graph: Graph(n, e)) -> List(Component) {
   let nodes = model.all_nodes(graph)
   do_weakly_connected_components(graph, nodes, set.new(), [])
@@ -600,7 +588,7 @@ fn do_weakly_connected_components(
 ) -> List(Component) {
   case nodes {
     [] -> components
-    [node, ..rest] -> {
+    [node, ..rest] ->
       case set.contains(visited, node) {
         True -> do_weakly_connected_components(graph, rest, visited, components)
         False -> {
@@ -612,7 +600,6 @@ fn do_weakly_connected_components(
           ])
         }
       }
-    }
   }
 }
 
@@ -626,19 +613,13 @@ fn wcc_dfs_collect(
     True -> #(component, visited)
     False -> {
       let new_visited = set.insert(visited, node)
-      // Use neighbors() to treat edges as undirected
-      let neighbors =
-        model.neighbors(graph, node)
-        |> list.map(fn(n) { n.0 })
+      let neighbors = model.neighbor_ids(graph, node)
 
-      list.fold(
-        neighbors,
-        #([node, ..component], new_visited),
-        fn(acc, neighbor) {
-          let #(comp, vis) = acc
-          wcc_dfs_collect(graph, neighbor, vis, comp)
-        },
-      )
+      use #(comp, vis), neighbor <- list.fold(neighbors, #(
+        [node, ..component],
+        new_visited,
+      ))
+      wcc_dfs_collect(graph, neighbor, vis, comp)
     }
   }
 }
