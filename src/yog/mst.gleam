@@ -25,6 +25,12 @@
 //// This will cause the algorithms to prioritize the largest weights first,
 //// yielding the maximum possible total weight.
 ////
+//// > [!TIP]
+//// > **Widest Path Problem**: In an undirected graph, the unique path between two nodes
+//// > in a Maximum Spanning Tree is also a **widest path** (or maximum capacity path).
+//// > If you need to find a path that maximizes the bottleneck capacity between two
+//// > nodes, you can calculate the MaxST and then find the path in that tree.
+////
 //// ## Example Use Cases
 ////
 //// - **Network Design**: Minimizing cable length to connect buildings
