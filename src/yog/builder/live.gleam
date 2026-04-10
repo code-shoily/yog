@@ -78,6 +78,10 @@ import gleam/list
 import yog/builder/labeled
 import yog/model.{type Graph, type NodeId}
 
+// =============================================================================
+// Types
+// =============================================================================
+
 /// A pending transition to be applied during sync.
 type Transition(n, e) {
   /// Add a node with the given ID and label.
@@ -116,6 +120,10 @@ pub fn new() -> LiveBuilder(n, e) {
   LiveBuilder(registry: dict.new(), next_id: 0, pending: [])
 }
 
+// =============================================================================
+// Constructors
+// =============================================================================
+
 /// Creates a new live builder with a directed graph type in mind.
 ///
 /// This is a convenience function - the builder itself doesn't store
@@ -143,6 +151,10 @@ pub fn directed() -> LiveBuilder(n, e) {
 pub fn undirected() -> LiveBuilder(n, e) {
   new()
 }
+
+// =============================================================================
+// Node & Edge Operations
+// =============================================================================
 
 /// Gets or creates a node ID for the given label.
 ///
@@ -313,9 +325,12 @@ pub fn remove_node(builder: LiveBuilder(n, e), label: n) -> LiveBuilder(n, e) {
       ])
     }
     Error(_) -> builder
-    // Node doesn't exist, nothing to remove
   }
 }
+
+// =============================================================================
+// Sync & Transactions
+// =============================================================================
 
 /// Synchronizes pending changes to the given graph.
 ///
@@ -352,42 +367,28 @@ pub fn sync(
 ) -> #(LiveBuilder(n, e), Graph(n, e)) {
   case builder.pending {
     [] -> #(builder, graph)
-    // No pending changes - fast path
     pending -> {
-      // Reverse to apply in insertion order (we prepended)
       let transitions = list.reverse(pending)
-
-      // Apply all transitions
       let new_graph = apply_transitions(graph, transitions)
-
-      // Return builder with empty pending
       #(LiveBuilder(..builder, pending: []), new_graph)
     }
   }
 }
 
-/// Applies a list of transitions to a graph.
 fn apply_transitions(
   graph: Graph(n, e),
   transitions: List(Transition(n, e)),
 ) -> Graph(n, e) {
-  list.fold(transitions, graph, fn(g, transition) {
-    case transition {
-      AddNode(id: id, label: label) -> {
-        model.add_node(g, id, label)
-      }
-      AddEdge(from: src, to: dst, weight: weight) -> {
-        let assert Ok(g) = model.add_edge(g, from: src, to: dst, with: weight)
-        g
-      }
-      RemoveEdge(from: src, to: dst) -> {
-        model.remove_edge(g, src, dst)
-      }
-      RemoveNode(id: id) -> {
-        model.remove_node(g, id)
-      }
+  use g, transition <- list.fold(transitions, graph)
+  case transition {
+    AddNode(id: id, label: label) -> model.add_node(g, id, label)
+    AddEdge(from: src, to: dst, weight: weight) -> {
+      let assert Ok(g) = model.add_edge(g, from: src, to: dst, with: weight)
+      g
     }
-  })
+    RemoveEdge(from: src, to: dst) -> model.remove_edge(g, src, dst)
+    RemoveNode(id: id) -> model.remove_node(g, id)
+  }
 }
 
 /// Discards all pending transitions without applying them.
@@ -436,6 +437,10 @@ pub fn purge_pending(builder: LiveBuilder(n, e)) -> LiveBuilder(n, e) {
 pub fn checkpoint(builder: LiveBuilder(n, e)) -> LiveBuilder(n, e) {
   LiveBuilder(..builder, pending: [])
 }
+
+// =============================================================================
+// Queries
+// =============================================================================
 
 /// Looks up the node ID for a given label.
 ///

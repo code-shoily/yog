@@ -147,39 +147,27 @@ pub fn from_2d_list_with_topology(
       model.add_node(g, id, data)
     })
 
-  // Add edges with wrapping
-  let graph_with_edges =
-    cells
-    |> list.fold(graph_with_nodes, fn(g, cell) {
-      let #(row, col, from_data) = cell
-      let from_id = coord_to_id(row, col, cols)
+  let graph_with_edges = {
+    use g, cell <- list.fold(cells, graph_with_nodes)
+    let #(row, col, from_data) = cell
+    let from_id = coord_to_id(row, col, cols)
 
-      topology
-      |> list.fold(g, fn(acc_g, delta) {
-        let #(d_row, d_col) = delta
+    use acc_g, delta <- list.fold(topology, g)
+    let #(d_row, d_col) = delta
+    let n_row = wrap_coordinate(row + d_row, rows)
+    let n_col = wrap_coordinate(col + d_col, cols)
+    let to_id = coord_to_id(n_row, n_col, cols)
 
-        // Wrap coordinates using modulo
-        let n_row = wrap_coordinate(row + d_row, rows)
-        let n_col = wrap_coordinate(col + d_col, cols)
-
-        let to_id = coord_to_id(n_row, n_col, cols)
-
-        case dict.get(graph_with_nodes.nodes, to_id) {
-          Ok(to_data) -> {
-            case can_move(from_data, to_data) {
-              True -> {
-                case model.add_edge(acc_g, from: from_id, to: to_id, with: 1) {
-                  Ok(g) -> g
-                  Error(_) -> acc_g
-                }
-              }
-              False -> acc_g
-            }
-          }
-          Error(_) -> acc_g
-        }
-      })
-    })
+    let assert Ok(to_data) = dict.get(graph_with_nodes.nodes, to_id)
+    case can_move(from_data, to_data) {
+      True -> {
+        let assert Ok(g) =
+          model.add_edge(acc_g, from: from_id, to: to_id, with: 1)
+        g
+      }
+      False -> acc_g
+    }
+  }
 
   ToroidalGrid(graph: graph_with_edges, rows: rows, cols: cols)
 }

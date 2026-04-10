@@ -80,6 +80,10 @@ import gleam/list
 import gleam/result
 import yog/model.{type Graph, type GraphType, type NodeId}
 
+// =============================================================================
+// Types
+// =============================================================================
+
 /// A builder for graphs that use arbitrary labels instead of integer node IDs.
 ///
 /// The builder maintains an internal mapping from labels to integer IDs and
@@ -94,6 +98,10 @@ pub type Builder(label, edge_data) {
     next_id: NodeId,
   )
 }
+
+// =============================================================================
+// Constructors
+// =============================================================================
 
 /// Creates a new empty labeled graph builder.
 ///
@@ -146,6 +154,10 @@ pub fn undirected() -> Builder(label, edge_data) {
     next_id: 0,
   )
 }
+
+// =============================================================================
+// Node & Edge Operations
+// =============================================================================
 
 /// Gets or creates a node for the given label, returning the builder and node ID.
 ///
@@ -285,6 +297,10 @@ pub fn add_simple_edge(
   Builder(..builder, graph: new_graph)
 }
 
+// =============================================================================
+// Queries
+// =============================================================================
+
 /// Looks up the internal node ID for a given label.
 ///
 /// Returns `Ok(id)` if the label exists, `Error(Nil)` if it doesn't.
@@ -300,6 +316,10 @@ pub fn add_simple_edge(
 pub fn get_id(builder: Builder(label, e), label: label) -> Result(NodeId, Nil) {
   dict.get(builder.label_to_id, label)
 }
+
+// =============================================================================
+// Conversion
+// =============================================================================
 
 /// Converts the builder to a standard `Graph`.
 ///
@@ -321,6 +341,10 @@ pub fn to_graph(builder: Builder(label, e)) -> Graph(label, e) {
   builder.graph
 }
 
+// =============================================================================
+// Bulk Construction
+// =============================================================================
+
 /// Creates a labeled graph builder from a list of edges #(src_label, dst_label, weight).
 ///
 /// ## Example
@@ -332,10 +356,8 @@ pub fn from_list(
   graph_type: GraphType,
   edges: List(#(label, label, e)),
 ) -> Builder(label, e) {
-  list.fold(edges, new(graph_type), fn(b, edge) {
-    let #(src, dst, weight) = edge
-    add_edge(b, from: src, to: dst, with: weight)
-  })
+  use b, #(src, dst, weight) <- list.fold(edges, new(graph_type))
+  add_edge(b, from: src, to: dst, with: weight)
 }
 
 /// Creates a labeled graph builder from a list of unweighted edges #(src_label, dst_label).
@@ -349,10 +371,8 @@ pub fn from_unweighted_list(
   graph_type: GraphType,
   edges: List(#(label, label)),
 ) -> Builder(label, Nil) {
-  list.fold(edges, new(graph_type), fn(b, edge) {
-    let #(src, dst) = edge
-    add_unweighted_edge(b, from: src, to: dst)
-  })
+  use b, #(src, dst) <- list.fold(edges, new(graph_type))
+  add_unweighted_edge(b, from: src, to: dst)
 }
 
 /// Extracts the label-to-ID registry from the builder.
@@ -371,6 +391,10 @@ pub fn from_unweighted_list(
 pub fn to_registry(builder: Builder(label, e)) -> Dict(label, NodeId) {
   builder.label_to_id
 }
+
+// =============================================================================
+// Migration Helpers
+// =============================================================================
 
 /// Returns the next available ID from the builder.
 ///

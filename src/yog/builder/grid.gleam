@@ -56,6 +56,10 @@ import gleam/list
 import yog/internal/utils
 import yog/model.{type Graph, type GraphType, type NodeId}
 
+// =============================================================================
+// Types
+// =============================================================================
+
 /// A grid builder that wraps a graph and maintains grid dimensions.
 ///
 /// The grid uses row-major ordering: node_id = row * cols + col
@@ -69,6 +73,10 @@ pub type Grid(cell_data, edge_data) {
     cols: Int,
   )
 }
+
+// =============================================================================
+// Builders
+// =============================================================================
 
 /// Creates a graph from a 2D list using 4-directional (rook) movement.
 ///
@@ -167,46 +175,39 @@ pub fn from_2d_list_with_topology(
       model.add_node(g, id, data)
     })
 
-  let graph_with_edges =
-    cells
-    |> list.fold(graph_with_nodes, fn(g, cell) {
-      let #(row, col, from_data) = cell
-      let from_id = coord_to_id(row, col, cols)
+  let graph_with_edges = {
+    use g, cell <- list.fold(cells, graph_with_nodes)
+    let #(row, col, from_data) = cell
+    let from_id = coord_to_id(row, col, cols)
 
-      topology
-      |> list.fold(g, fn(acc_g, delta) {
-        let #(d_row, d_col) = delta
-        let n_row = row + d_row
-        let n_col = col + d_col
+    use acc_g, delta <- list.fold(topology, g)
+    let #(d_row, d_col) = delta
+    let n_row = row + d_row
+    let n_col = col + d_col
 
-        case n_row >= 0 && n_row < rows && n_col >= 0 && n_col < cols {
-          False -> acc_g
+    case n_row >= 0 && n_row < rows && n_col >= 0 && n_col < cols {
+      False -> acc_g
+      True -> {
+        let to_id = coord_to_id(n_row, n_col, cols)
+        let assert Ok(to_data) = dict.get(graph_with_nodes.nodes, to_id)
+        case can_move(from_data, to_data) {
           True -> {
-            let to_id = coord_to_id(n_row, n_col, cols)
-
-            case dict.get(graph_with_nodes.nodes, to_id) {
-              Ok(to_data) -> {
-                case can_move(from_data, to_data) {
-                  True -> {
-                    case
-                      model.add_edge(acc_g, from: from_id, to: to_id, with: 1)
-                    {
-                      Ok(g) -> g
-                      Error(_) -> acc_g
-                    }
-                  }
-                  False -> acc_g
-                }
-              }
-              Error(_) -> acc_g
-            }
+            let assert Ok(g) =
+              model.add_edge(acc_g, from: from_id, to: to_id, with: 1)
+            g
           }
+          False -> acc_g
         }
-      })
-    })
+      }
+    }
+  }
 
   Grid(graph: graph_with_edges, rows: rows, cols: cols)
 }
+
+// =============================================================================
+// Topology Presets
+// =============================================================================
 
 /// Cardinal (4-way) movement: up, down, left, right.
 ///
@@ -273,6 +274,10 @@ pub fn knight() -> List(#(Int, Int)) {
   ]
 }
 
+// =============================================================================
+// Coordinate Conversion
+// =============================================================================
+
 /// Converts grid coordinates (row, col) to a node ID.
 ///
 /// Uses row-major ordering: id = row * cols + col
@@ -300,6 +305,10 @@ pub fn coord_to_id(row: Int, col: Int, cols: Int) -> NodeId {
 pub fn id_to_coord(id: NodeId, cols: Int) -> #(Int, Int) {
   #(id / cols, id % cols)
 }
+
+// =============================================================================
+// Graph Conversion
+// =============================================================================
 
 /// Gets the cell data at the specified grid coordinate.
 ///
@@ -341,6 +350,10 @@ pub fn to_graph(grid: Grid(cell_data, e)) -> Graph(cell_data, e) {
   grid.graph
 }
 
+// =============================================================================
+// Distance Heuristics
+// =============================================================================
+
 /// Calculates the Manhattan distance between two node IDs.
 ///
 /// This is useful as a heuristic for A* pathfinding on grids.
@@ -359,17 +372,7 @@ pub fn manhattan_distance(from_id: NodeId, to_id: NodeId, cols: Int) -> Int {
   let #(from_row, from_col) = id_to_coord(from_id, cols)
   let #(to_row, to_col) = id_to_coord(to_id, cols)
 
-  let row_diff = case from_row > to_row {
-    True -> from_row - to_row
-    False -> to_row - from_row
-  }
-
-  let col_diff = case from_col > to_col {
-    True -> from_col - to_col
-    False -> to_col - from_col
-  }
-
-  row_diff + col_diff
+  int.absolute_value(from_row - to_row) + int.absolute_value(from_col - to_col)
 }
 
 /// Calculates the Chebyshev distance between two node IDs.
@@ -393,20 +396,10 @@ pub fn chebyshev_distance(from_id: NodeId, to_id: NodeId, cols: Int) -> Int {
   let #(from_row, from_col) = id_to_coord(from_id, cols)
   let #(to_row, to_col) = id_to_coord(to_id, cols)
 
-  let row_diff = case from_row > to_row {
-    True -> from_row - to_row
-    False -> to_row - from_row
-  }
+  let row_diff = int.absolute_value(from_row - to_row)
+  let col_diff = int.absolute_value(from_col - to_col)
 
-  let col_diff = case from_col > to_col {
-    True -> from_col - to_col
-    False -> to_col - from_col
-  }
-
-  case row_diff > col_diff {
-    True -> row_diff
-    False -> col_diff
-  }
+  int.max(row_diff, col_diff)
 }
 
 /// Calculates the Octile distance between two node IDs.
@@ -431,29 +424,19 @@ pub fn octile_distance(from_id: NodeId, to_id: NodeId, cols: Int) -> Float {
   let #(from_row, from_col) = id_to_coord(from_id, cols)
   let #(to_row, to_col) = id_to_coord(to_id, cols)
 
-  let row_diff = case from_row > to_row {
-    True -> from_row - to_row
-    False -> to_row - from_row
-  }
+  let row_diff = int.absolute_value(from_row - to_row)
+  let col_diff = int.absolute_value(from_col - to_col)
 
-  let col_diff = case from_col > to_col {
-    True -> from_col - to_col
-    False -> to_col - from_col
-  }
-
-  let min_d = case row_diff < col_diff {
-    True -> row_diff
-    False -> col_diff
-  }
-
-  let max_d = case row_diff > col_diff {
-    True -> row_diff
-    False -> col_diff
-  }
+  let min_d = int.min(row_diff, col_diff)
+  let max_d = int.max(row_diff, col_diff)
 
   // √2 ≈ 1.414213562373095
   int.to_float(min_d) *. 1.414213562373095 +. int.to_float(max_d - min_d)
 }
+
+// =============================================================================
+// Node Lookup
+// =============================================================================
 
 /// Finds a node in the grid where the cell data matches a predicate.
 ///
@@ -504,6 +487,10 @@ pub fn find_node(
 /// let g = grid.from_2d_list(maze, model.Directed, can_move: grid.avoiding("#"))
 /// // Edges only connect non-wall cells
 /// ```
+// =============================================================================
+// Movement Predicates
+// =============================================================================
+
 pub fn avoiding(wall_value: cell_data) -> fn(cell_data, cell_data) -> Bool {
   fn(from, to) { from != wall_value && to != wall_value }
 }
