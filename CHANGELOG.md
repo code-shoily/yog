@@ -51,6 +51,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `best_first_walk` and `best_first_fold` for Greedy Best-First Search exploration.
   - Added `random_walk` for stochastic path simulation.
 
+- **K-Core Decomposition** (`yog/connectivity`): New functions for analyzing graph resilience and core structure, ported from Elixir:
+  - `k_core/2` - Returns the maximal subgraph where every node has at least degree `k`.
+  - `core_numbers/1` - Returns the largest core number for each node (Batagelj-Zaversnik O(V+E) algorithm).
+  - `degeneracy/1` - Returns the maximum core number in the graph.
+  - `shell_decomposition/1` - Groups nodes by their core number (k-shells).
+
+- **Path Hydration** (`yog/pathfinding/util`): Added `hydrate_path/2` to reconstruct a sequence of edges from a list of node IDs.
+  - Given a path like `[1, 2, 3]`, returns `[#(1, 2, edge_data), #(2, 3, edge_data)]`.
+  - Works with both directed and undirected graphs.
+
 - **High-Performance Set Operations** (`yog/operation`):
   - Re-implemented `union`, `intersection`, `difference`, and `symmetric_difference` as declarative pipelines for $O(V+E)$ complexity.
   - Optimized `cartesian_product` and `power` (k-th graph power) implementations.
@@ -72,9 +82,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Renamed `utils` modules to `util`**: Following Gleam's singular naming convention:
   - `yog/internal/utils` → `yog/internal/util`
-  - `yog/pathfinding/utils` → `yog/pathfinding/util`
   - Corresponding test files, FFI files (`utils_ffi.mjs` → `util_ffi.mjs`), and Erlang helper modules (`yog_internal_utils` → `yog_internal_util`) have been renamed accordingly.
-  - Update your imports: `import yog/internal/utils` → `import yog/internal/util` and `import yog/pathfinding/utils` → `import yog/pathfinding/util`.
+  - Update your imports: `import yog/internal/utils` → `import yog/internal/util`.
+
+- **Renamed `pathfinding/util` to `pathfinding/path`**: The pathfinding utility module has been renamed to better reflect its purpose as the home of the `Path` type and path-related helpers:
+  - `yog/pathfinding/util` → `yog/pathfinding/path`
+  - Internal pathfinding helpers (`compare_frontier`, `compare_distance_frontier`, `compare_a_star_frontier`, `should_explore_node`) have been moved to `yog/internal/util`.
+  - Update your imports: `import yog/pathfinding/util` → `import yog/pathfinding/path`.
 
 - **Promoted Multigraph and DAG Modules**: The `yog/multi/*` and `yog/dag/*` modules are now mature, stable, and fully documented.
 - **Consolidated Transform Operations** (`yog/transform`): Migrated reachability-based transformations (`transitive_closure`, `transitive_reduction`) from DAG-specific algorithms to the core transform module for use on all graph types.
