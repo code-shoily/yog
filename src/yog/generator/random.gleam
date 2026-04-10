@@ -95,42 +95,9 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 
 import gleam/set.{type Set}
+import yog/internal/random.{type Rng}
 import yog/internal/utils
 import yog/model.{type Graph, type GraphType}
-
-// =============================================================================
-// Seeded Random Number Generator (SplitMix64)
-// =============================================================================
-
-/// Internal state for seeded random number generator
-pub opaque type RngState {
-  RngState(seed: Int)
-}
-
-/// Create a new RNG state from a seed
-fn new_rng(seed: Option(Int)) -> RngState {
-  case seed {
-    Some(s) -> RngState(s)
-    None -> RngState(float.truncate(float.random() *. 1_000_000_000.0) + 1)
-  }
-}
-
-/// Generate next random Int in range [0, max)
-fn next_int(state: RngState, max: Int) -> #(Int, RngState) {
-  // Simple LCG (Linear Congruential Generator)
-  // Uses parameters from Numerical Recipes
-  let a = 1_664_525
-  let c = 1_013_904_223
-  let new_seed = int.bitwise_and(a * state.seed + c, 0x7FFFFFFF)
-  let result = new_seed % max
-  #(result, RngState(new_seed))
-}
-
-/// Generate next random Float in range [0.0, 1.0)
-fn next_float(state: RngState) -> #(Float, RngState) {
-  let #(int_val, new_state) = next_int(state, 1_000_000)
-  #(int.to_float(int_val) /. 1_000_000.0, new_state)
-}
 
 // =============================================================================
 // Erdős-Rényi G(n, p)
@@ -181,7 +148,7 @@ pub fn erdos_renyi_gnp_with_type(
   case n <= 0 || p <. 0.0 || p >. 1.0 {
     True -> model.new(graph_type)
     False -> {
-      let rng = new_rng(seed)
+      let rng = random.new(seed)
       let graph = create_nodes(model.new(graph_type), n)
 
       case graph_type {
@@ -194,7 +161,7 @@ pub fn erdos_renyi_gnp_with_type(
               utils.range(i + 1, n - 1)
               |> list.fold(#(g, rng_state), fn(inner_state, j) {
                 let #(inner_g, inner_rng) = inner_state
-                let #(rand_val, new_rng) = next_float(inner_rng)
+                let #(rand_val, new_rng) = random.next_float(inner_rng)
                 case rand_val <. p {
                   True -> #(
                     model.add_edge_ensure(
@@ -224,7 +191,7 @@ pub fn erdos_renyi_gnp_with_type(
                 case i == j {
                   True -> #(inner_g, inner_rng)
                   False -> {
-                    let #(rand_val, new_rng) = next_float(inner_rng)
+                    let #(rand_val, new_rng) = random.next_float(inner_rng)
                     case rand_val <. p {
                       True -> #(
                         model.add_edge_ensure(
@@ -295,7 +262,7 @@ pub fn erdos_renyi_gnm_with_type(
   case n <= 0 || m < 0 {
     True -> model.new(graph_type)
     False -> {
-      let rng = new_rng(seed)
+      let rng = random.new(seed)
       let graph = create_nodes(model.new(graph_type), n)
 
       let max_edges = case graph_type {
@@ -329,7 +296,7 @@ pub fn erdos_renyi_gnm_with_type(
       }
 
       // Shuffle and take first m edges using Fisher-Yates
-      let shuffled = shuffle(all_edges, rng)
+      let #(shuffled, _) = random.shuffle(all_edges, rng)
       let selected = list.take(shuffled, actual_m)
 
       // Add selected edges to graph
@@ -389,7 +356,7 @@ pub fn barabasi_albert_with_type(
   case n < m || m < 1 {
     True -> model.new(graph_type)
     False -> {
-      let rng = new_rng(seed)
+      let rng = random.new(seed)
       // Start with complete graph on m nodes
       let m0 = int.max(m, 2)
       let initial =
@@ -473,8 +440,8 @@ fn add_node_with_preferential_attachment_seeded(
   new_node: Int,
   m: Int,
   graph_type: GraphType,
-  rng: RngState,
-) -> #(Graph(Nil, Int), RngState) {
+  rng: Rng,
+) -> #(Graph(Nil, Int), Rng) {
   let with_node = model.add_node(graph, new_node, Nil)
 
   // Build degree list (each node appears degree times for weighted sampling)
@@ -505,13 +472,13 @@ fn select_preferential_targets_seeded(
   degree_list: List(Int),
   m: Int,
   selected: Set(Int),
-  rng: RngState,
-) -> #(Set(Int), RngState) {
+  rng: Rng,
+) -> #(Set(Int), Rng) {
   case set.size(selected) >= m || list.is_empty(degree_list) {
     True -> #(selected, rng)
     False -> {
       let list_size = list.length(degree_list)
-      let #(index, new_rng) = next_int(rng, list_size)
+      let #(index, new_rng) = random.next_int(rng, list_size)
 
       case list_at(degree_list, index) {
         Ok(target) -> {
@@ -579,7 +546,7 @@ pub fn watts_strogatz_with_type(
   case n < 3 || k < 2 || k >= n || p <. 0.0 || p >. 1.0 {
     True -> model.new(graph_type)
     False -> {
-      let rng = new_rng(seed)
+      let rng = random.new(seed)
       // Start with empty graph
       let graph = create_nodes(model.new(graph_type), n)
 
@@ -592,7 +559,7 @@ pub fn watts_strogatz_with_type(
           utils.range(1, half_k)
           |> list.fold(#(g, rng_state), fn(inner_state, offset) {
             let #(acc, inner_rng) = inner_state
-            let #(rand_val, new_rng) = next_float(inner_rng)
+            let #(rand_val, new_rng) = random.next_float(inner_rng)
             case rand_val <. p {
               False -> {
                 // Keep regular edge
@@ -625,9 +592,9 @@ fn add_random_edge_not_to_seeded(
   graph: Graph(Nil, Int),
   from: Int,
   n: Int,
-  rng: RngState,
-) -> #(Graph(Nil, Int), RngState) {
-  let #(to, new_rng) = next_int(rng, n)
+  rng: Rng,
+) -> #(Graph(Nil, Int), Rng) {
+  let #(to, new_rng) = random.next_int(rng, n)
 
   case to == from {
     True -> add_random_edge_not_to_seeded(graph, from, n, new_rng)
@@ -698,7 +665,7 @@ pub fn random_tree_with_type(
   case n < 2 {
     True -> create_nodes(model.new(graph_type), n)
     False -> {
-      let rng = new_rng(seed)
+      let rng = random.new(seed)
       let graph = create_nodes(model.new(graph_type), n)
 
       // Start with node 0 in the tree
@@ -716,7 +683,7 @@ fn build_random_tree_seeded(
   n: Int,
   in_tree: Set(Int),
   next_node: Int,
-  rng: RngState,
+  rng: Rng,
 ) -> Graph(Nil, Int) {
   case next_node >= n {
     True -> graph
@@ -724,7 +691,7 @@ fn build_random_tree_seeded(
       // Connect next_node to a random node already in tree
       let tree_list = set.to_list(in_tree)
       let tree_size = list.length(tree_list)
-      let #(index, new_rng) = next_int(rng, tree_size)
+      let #(index, new_rng) = random.next_int(rng, tree_size)
 
       case list_at(tree_list, index) {
         Ok(parent) -> {
@@ -805,7 +772,7 @@ pub fn random_regular_with_type(
           case d == 0 {
             True -> create_nodes(model.new(graph_type), n)
             False -> {
-              let rng = new_rng(seed)
+              let rng = random.new(seed)
               generate_regular(n, d, graph_type, 100, rng)
             }
           }
@@ -821,7 +788,7 @@ fn generate_regular(
   d: Int,
   graph_type: GraphType,
   retries: Int,
-  rng: RngState,
+  rng: Rng,
 ) -> Graph(Nil, Int) {
   case retries <= 0 {
     True -> {
@@ -1021,7 +988,7 @@ pub fn sbm_with_type(
   {
     True -> model.new(graph_type)
     False -> {
-      let rng = new_rng(seed)
+      let rng = random.new(seed)
       let graph = create_nodes(model.new(graph_type), n)
 
       // Assign nodes to communities (balanced)
@@ -1049,7 +1016,7 @@ pub fn sbm_with_type(
                   True -> p_in
                   False -> p_out
                 }
-                let #(rand_val, new_rng) = next_float(inner_rng)
+                let #(rand_val, new_rng) = random.next_float(inner_rng)
                 case rand_val <. p {
                   True -> #(
                     model.add_edge_ensure(
@@ -1090,7 +1057,7 @@ pub fn sbm_with_type(
                       True -> p_in
                       False -> p_out
                     }
-                    let #(rand_val, new_rng) = next_float(inner_rng)
+                    let #(rand_val, new_rng) = random.next_float(inner_rng)
                     case rand_val <. p {
                       True -> #(
                         model.add_edge_ensure(
@@ -1173,16 +1140,16 @@ fn build_degree_list(graph: Graph(Nil, Int), graph_type: GraphType) -> List(Int)
 }
 
 // Helper: Shuffle a list using simple random extraction with seeded RNG
-fn shuffle(list: List(a), rng: RngState) -> List(a) {
+fn shuffle(list: List(a), rng: Rng) -> List(a) {
   do_shuffle(list, [], rng)
 }
 
-fn do_shuffle(remaining: List(a), acc: List(a), rng: RngState) -> List(a) {
+fn do_shuffle(remaining: List(a), acc: List(a), rng: Rng) -> List(a) {
   case remaining {
     [] -> acc
     _ -> {
       let len = list.length(remaining)
-      let #(index, new_rng) = next_int(rng, len)
+      let #(index, new_rng) = random.next_int(rng, len)
       let selected = list_at(remaining, index)
       let rest = list_take_remove(remaining, index)
       case selected {
