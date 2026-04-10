@@ -137,10 +137,7 @@ pub fn k_cliques(graph: Graph(n, e), k: Int) -> List(Set(NodeId)) {
 fn build_adjacency(graph: Graph(n, e)) -> Dict(NodeId, Set(NodeId)) {
   model.all_nodes(graph)
   |> list.fold(dict.new(), fn(acc, node_id) {
-    let neighbor_set =
-      model.neighbors(graph, node_id)
-      |> list.map(fn(neighbor) { neighbor.0 })
-      |> set.from_list
+    let neighbor_set = model.neighbor_ids(graph, node_id) |> set.from_list
     dict.insert(acc, node_id, neighbor_set)
   })
 }
@@ -219,7 +216,7 @@ fn bron_kerbosch_pivot(
   }
 }
 
-// Bron-Kerbosch algorithm (finds all maximal cliques)
+// Bron-Kerbosch algorithm with pivoting (finds all maximal cliques)
 fn bron_kerbosch_all(
   adj: Dict(NodeId, Set(NodeId)),
   r: Set(NodeId),
@@ -234,7 +231,11 @@ fn bron_kerbosch_all(
         False -> [r, ..acc]
       }
     False -> {
-      set.to_list(p)
+      let pivot = choose_pivot(adj, p, x)
+      let pivot_neighbors = get_neighbors(adj, pivot)
+      let candidates = set.drop(p, set.to_list(pivot_neighbors))
+
+      set.to_list(candidates)
       |> list.fold(#(p, x, acc), fn(state, v) {
         let #(curr_p, curr_x, curr_acc) = state
         let v_neighbors = get_neighbors(adj, v)
@@ -266,14 +267,11 @@ fn bron_kerbosch_k(
   let r_size = set.size(r)
 
   case r_size == k {
-    // Found a k-clique!
     True -> [r, ..acc]
     False -> {
-      // Prune: can't reach size k even if we add all remaining candidates
       case r_size + set.size(p) < k {
         True -> acc
         False -> {
-          // Continue exploring
           set.to_list(p)
           |> list.fold(#(p, acc), fn(state, v) {
             let #(curr_p, curr_acc) = state

@@ -267,26 +267,7 @@ fn do_bfs_color(
 }
 
 fn get_neighbors(graph: Graph(n, e), node: NodeId) -> List(NodeId) {
-  case graph.kind {
-    model.Undirected -> {
-      case dict.get(graph.out_edges, node) {
-        Error(_) -> []
-        Ok(neighbors) -> dict.keys(neighbors)
-      }
-    }
-    model.Directed -> {
-      let out_neighbors = case dict.get(graph.out_edges, node) {
-        Error(_) -> []
-        Ok(neighbors) -> dict.keys(neighbors)
-      }
-      let in_neighbors = case dict.get(graph.in_edges, node) {
-        Error(_) -> []
-        Ok(neighbors) -> dict.keys(neighbors)
-      }
-      list.append(out_neighbors, in_neighbors)
-      |> list.unique()
-    }
-  }
+  model.neighbor_ids(graph, node)
 }
 
 // Find an augmenting path from a left vertex using DFS

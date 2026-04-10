@@ -73,8 +73,8 @@
 import gleam/dict
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/set.{type Set}
 import yog/model.{type Graph, type NodeId, Directed, Undirected}
-import yog/traversal
 
 /// Checks if the graph has an Eulerian circuit.
 ///
@@ -170,13 +170,9 @@ pub fn find_eulerian_path(graph: Graph(n, e)) -> Option(List(NodeId)) {
 // ============= Helper Functions =============
 
 fn check_eulerian_circuit_undirected(graph: Graph(n, e)) -> Bool {
-  // All vertices must have even degree
   let all_even =
     dict.keys(graph.nodes)
-    |> list.all(fn(node) {
-      let degree = get_degree_undirected(graph, node)
-      degree % 2 == 0
-    })
+    |> list.all(fn(node) { model.degree(graph, node) % 2 == 0 })
 
   case all_even {
     False -> False
@@ -185,16 +181,11 @@ fn check_eulerian_circuit_undirected(graph: Graph(n, e)) -> Bool {
 }
 
 fn check_eulerian_path_undirected(graph: Graph(n, e)) -> Bool {
-  // Count vertices with odd degree
   let odd_count =
     dict.keys(graph.nodes)
-    |> list.filter(fn(node) {
-      let degree = get_degree_undirected(graph, node)
-      degree % 2 == 1
-    })
+    |> list.filter(fn(node) { model.degree(graph, node) % 2 == 1 })
     |> list.length()
 
-  // Must be 0 or 2 vertices with odd degree
   case odd_count {
     0 -> is_connected(graph)
     2 -> is_connected(graph)
@@ -203,13 +194,10 @@ fn check_eulerian_path_undirected(graph: Graph(n, e)) -> Bool {
 }
 
 fn check_eulerian_circuit_directed(graph: Graph(n, e)) -> Bool {
-  // All vertices must have equal in-degree and out-degree
   let all_balanced =
     dict.keys(graph.nodes)
     |> list.all(fn(node) {
-      let in_deg = get_in_degree(graph, node)
-      let out_deg = get_out_degree(graph, node)
-      in_deg == out_deg
+      model.in_degree(graph, node) == model.out_degree(graph, node)
     })
 
   all_balanced && is_connected(graph)
@@ -219,16 +207,12 @@ fn check_eulerian_path_directed(graph: Graph(n, e)) -> Bool {
   let #(start_count, end_count, balanced) =
     dict.keys(graph.nodes)
     |> list.fold(#(0, 0, True), fn(acc, node) {
-      let #(starts, ends, still_balanced) = acc
-      let in_deg = get_in_degree(graph, node)
-      let out_deg = get_out_degree(graph, node)
-      let diff = out_deg - in_deg
-
-      case diff {
-        1 -> #(starts + 1, ends, still_balanced)
-        -1 -> #(starts, ends + 1, still_balanced)
-        0 -> acc
-        _ -> #(starts, ends, False)
+      let diff = model.out_degree(graph, node) - model.in_degree(graph, node)
+      case diff, acc {
+        1, #(s, e, b) -> #(s + 1, e, b)
+        -1, #(s, e, b) -> #(s, e + 1, b)
+        0, _ -> acc
+        _, #(s, e, _) -> #(s, e, False)
       }
     })
 
@@ -244,49 +228,38 @@ fn check_eulerian_path_directed(graph: Graph(n, e)) -> Bool {
   }
 }
 
-fn get_degree_undirected(graph: Graph(n, e), node: NodeId) -> Int {
-  case dict.get(graph.out_edges, node) {
-    Error(_) -> 0
-    Ok(neighbors) -> dict.size(neighbors)
-  }
-}
-
-fn get_in_degree(graph: Graph(n, e), node: NodeId) -> Int {
-  case dict.get(graph.in_edges, node) {
-    Error(_) -> 0
-    Ok(neighbors) -> dict.size(neighbors)
-  }
-}
-
-fn get_out_degree(graph: Graph(n, e), node: NodeId) -> Int {
-  case dict.get(graph.out_edges, node) {
-    Error(_) -> 0
-    Ok(neighbors) -> dict.size(neighbors)
-  }
-}
-
 fn is_connected(graph: Graph(n, e)) -> Bool {
   case dict.keys(graph.nodes) |> list.first {
     Error(_) -> True
     Ok(start) -> {
-      let visited =
-        traversal.walk(in: graph, from: start, using: traversal.BreadthFirst)
-      list.length(visited) == dict.size(graph.nodes)
+      let visited = walk_all_neighbors(graph, start, set.new())
+      set.size(visited) == dict.size(graph.nodes)
+    }
+  }
+}
+
+fn walk_all_neighbors(
+  graph: Graph(n, e),
+  node: NodeId,
+  visited: Set(NodeId),
+) -> Set(NodeId) {
+  case set.contains(visited, node) {
+    True -> visited
+    False -> {
+      let new_visited = set.insert(visited, node)
+      use v, neighbor <- list.fold(model.neighbor_ids(graph, node), new_visited)
+      walk_all_neighbors(graph, neighbor, v)
     }
   }
 }
 
 fn find_odd_degree_vertex(graph: Graph(n, e)) -> Option(NodeId) {
   dict.keys(graph.nodes)
-  |> list.find(fn(node) {
-    let degree = get_degree_undirected(graph, node)
-    degree % 2 == 1
-  })
+  |> list.find(fn(node) { model.degree(graph, node) % 2 == 1 })
   |> option.from_result()
-  // If no odd degree vertex, start from any vertex with edges
   |> option.or(
     dict.keys(graph.nodes)
-    |> list.find(fn(node) { get_degree_undirected(graph, node) > 0 })
+    |> list.find(fn(node) { model.degree(graph, node) > 0 })
     |> option.from_result(),
   )
 }
@@ -294,15 +267,12 @@ fn find_odd_degree_vertex(graph: Graph(n, e)) -> Option(NodeId) {
 fn find_unbalanced_vertex(graph: Graph(n, e)) -> Option(NodeId) {
   dict.keys(graph.nodes)
   |> list.find(fn(node) {
-    let in_deg = get_in_degree(graph, node)
-    let out_deg = get_out_degree(graph, node)
-    out_deg > in_deg
+    model.out_degree(graph, node) > model.in_degree(graph, node)
   })
   |> option.from_result()
-  // If all balanced, start from any vertex with edges
   |> option.or(
     dict.keys(graph.nodes)
-    |> list.find(fn(node) { get_out_degree(graph, node) > 0 })
+    |> list.find(fn(node) { model.out_degree(graph, node) > 0 })
     |> option.from_result(),
   )
 }
