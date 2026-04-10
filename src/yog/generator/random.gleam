@@ -14,11 +14,11 @@
 //// | `random_tree` | Uniform tree | O(n²) | Uniformly random spanning tree |
 //// | `random_regular` | d-regular | O(nd) | All nodes have degree d |
 //// | `sbm` | SBM | O(n²) | Community structure |
-//// | `dcsbm` | DCSBM | O(n²) | Degree-corrected communities |
-//// | `hsbm` | HSBM | O(n²) | Hierarchical communities |
-//// | `configuration_model` | Config | O(Σd) | Custom degree sequence |
-//// | `kronecker` | Kronecker | O(E log V) | Recursive structure |
+//// | `dcsbm` | DCSBM | O(n²) | Community + Degree control |
+//// | `hsbm` | Hierarchical | O(n²) | Nested community structure |
+//// | `configuration_model` | Fixed Degree | O(M) | Exact degree sequence |
 //// | `rmat` | R-MAT | O(E log V) | Fast Kronecker variant |
+//// | `kronecker` | Kronecker | O(E log V) | Recursive matrix expansion |
 //// | `geometric` | RGG | O(n²) | Distance-based edges |
 ////
 //// ## Quick Start
@@ -29,12 +29,12 @@
 ////
 //// pub fn main() {
 ////   // Random network models
-////   let sparse = random.erdos_renyi_gnp(100, 0.05)      // Sparse random (p=5%)
-////   let exact = random.erdos_renyi_gnm(50, 100)         // Exactly 100 edges
-////   let scale_free = random.barabasi_albert(1000, 3)    // Scale-free network
-////   let small_world = random.watts_strogatz(100, 6, 0.1) // Small-world (10% rewire)
-////   let tree = random.random_tree(50)                   // Random spanning tree
-////   let regular = random.random_regular(20, 3)          // 3-regular graph
+////   let sparse = random.erdos_renyi_gnp(100, 0.05, seed: None)      // Sparse random (p=5%)
+////   let exact = random.erdos_renyi_gnm(50, 100, seed: None)         // Exactly 100 edges
+////   let scale_free = random.barabasi_albert(1000, 3, seed: None)    // Scale-free network
+////   let small_world = random.watts_strogatz(100, 6, 0.1, seed: None) // Small-world (10% rewire)
+////   let tree = random.random_tree(50, seed: None)                   // Random spanning tree
+////   let regular = random.random_regular(20, 3, seed: None)          // 3-regular graph
 //// }
 //// ```
 ////
@@ -73,10 +73,6 @@
 //// - Edge probability depends on community membership
 //// - **Use for**: Community detection testing, modular networks
 ////
-//// ### Configuration Model
-//// - Generates graph with specified degree sequence
-//// - **Use for**: Null models, degree-preserving randomization
-////
 //// ## References
 ////
 //// - [Erdős-Rényi Model](https://en.wikipedia.org/wiki/Erd%C5%91s%E2%80%93R%C3%A9nyi_model)
@@ -85,15 +81,14 @@
 //// - [Scale-Free Networks](https://en.wikipedia.org/wiki/Scale-free_network)
 //// - [Small-World Network](https://en.wikipedia.org/wiki/Small-world_network)
 //// - [Stochastic Block Model](https://en.wikipedia.org/wiki/Stochastic_block_model)
-//// - [Configuration Model](https://en.wikipedia.org/wiki/Configuration_model)
 //// - [NetworkX Random Graphs](https://networkx.org/documentation/stable/reference/generators.html#random-graphs)
 
 import gleam/dict.{type Dict}
 import gleam/float
 import gleam/int
 import gleam/list
-import gleam/option.{type Option, None, Some}
-
+import gleam/option.{type Option, Some}
+import gleam/result
 import gleam/set.{type Set}
 import yog/internal/random.{type Rng}
 import yog/internal/utils
@@ -1083,6 +1078,229 @@ pub fn sbm_with_type(
 }
 
 // Assign nodes to communities (balanced)
+// =============================================================================
+// R-MAT (Recursive MATRIX)
+// =============================================================================
+
+/// Generates a random graph using the R-MAT (Recursive MATRIX) model.
+///
+/// R-MAT is a fast generator for graphs with scale-free and small-world properties.
+/// It recursively partitions the adjacency matrix into four quadrants with
+/// specified probabilities.
+///
+/// **Parameters:**
+/// - `n` - Number of nodes (must be a power of 2)
+/// - `m` - Number of edges
+/// - `probs` - Quad probabilities #(a, b, c, d) that sum to 1.0
+///
+/// **Default Probs:** #(0.57, 0.19, 0.19, 0.05) - standard scale-free parameters.
+///
+/// **Time Complexity:** O(m log n)
+///
+/// ## Example
+///
+/// ```gleam
+/// let rmat = random.rmat(1024, 5000, None, seed: Some(42))
+/// // 1024 nodes (2^10), 5000 edges
+/// ```
+pub fn rmat(
+  n: Int,
+  m: Int,
+  probs: Option(#(Float, Float, Float, Float)),
+  seed seed: Option(Int),
+) -> Graph(Nil, Int) {
+  rmat_with_type(n, m, probs, model.Undirected, seed)
+}
+
+/// Generates an R-MAT graph with specified graph type.
+pub fn rmat_with_type(
+  n: Int,
+  m: Int,
+  probs: Option(#(Float, Float, Float, Float)),
+  graph_type: GraphType,
+  seed: Option(Int),
+) -> Graph(Nil, Int) {
+  case n <= 0 || m < 0 {
+    True -> model.new(graph_type)
+    False -> {
+      let rng = random.new(seed)
+      let graph = create_nodes(model.new(graph_type), n)
+
+      // Find k such that 2^k >= n
+      let k = find_power_of_two(n, 0)
+      let #(a, b, c, _) = option.unwrap(probs, #(0.57, 0.19, 0.19, 0.05))
+
+      let #(final_graph, _) =
+        utils.range(1, m)
+        |> list.fold(#(graph, rng), fn(state, _) {
+          let #(g, curr_rng) = state
+          let #(x, y, next_rng) = rmat_sample_edge(k, a, b, c, 0, 0, curr_rng)
+          // Ensure indices are within bounds (handles n not being exact power of 2)
+          let u = x % n
+          let v = y % n
+          #(
+            model.add_edge_ensure(g, from: u, to: v, with: 1, default: Nil),
+            next_rng,
+          )
+        })
+      final_graph
+    }
+  }
+}
+
+fn find_power_of_two(n: Int, k: Int) -> Int {
+  case power_of_two(k) >= n {
+    True -> k
+    False -> find_power_of_two(n, k + 1)
+  }
+}
+
+fn power_of_two(k: Int) -> Int {
+  case k <= 0 {
+    True -> 1
+    False -> 2 * power_of_two(k - 1)
+  }
+}
+
+fn rmat_sample_edge(
+  k: Int,
+  a: Float,
+  b: Float,
+  c: Float,
+  x: Int,
+  y: Int,
+  rng: Rng,
+) -> #(Int, Int, Rng) {
+  case k <= 0 {
+    True -> #(x, y, rng)
+    False -> {
+      let #(r, next_rng) = random.next_float(rng)
+      let offset = power_of_two(k - 1)
+
+      let #(nx, ny) = case r {
+        _ if r <. a -> #(x, y)
+        _ if r <. a +. b -> #(x, y + offset)
+        _ if r <. a +. b +. c -> #(x + offset, y)
+        _ -> #(x + offset, y + offset)
+      }
+
+      rmat_sample_edge(k - 1, a, b, c, nx, ny, next_rng)
+    }
+  }
+}
+
+// =============================================================================
+// Geometric Graph (RGG)
+// =============================================================================
+
+/// Generates a Random Geometric Graph (RGG).
+///
+/// Nodes are placed uniformly at random in a unit square [0, 1] x [0, 1].
+/// Edges are created between any two nodes if their Euclidean distance
+/// is less than or equal to `radius`.
+///
+/// **Time Complexity:** O(n²)
+///
+/// ## Example
+///
+/// ```gleam
+/// let rgg = random.geometric(100, 0.15, seed: Some(42))
+/// // 100 nodes, connected if distance <= 0.15
+/// ```
+pub fn geometric(
+  n: Int,
+  radius: Float,
+  seed seed: Option(Int),
+) -> Graph(Nil, Int) {
+  geometric_with_type(n, radius, model.Undirected, seed)
+}
+
+/// Generates a Geometric graph with specified graph type.
+pub fn geometric_with_type(
+  n: Int,
+  radius: Float,
+  graph_type: GraphType,
+  seed: Option(Int),
+) -> Graph(Nil, Int) {
+  case n <= 0 || radius <. 0.0 {
+    True -> model.new(graph_type)
+    False -> {
+      let rng = random.new(seed)
+      let graph = create_nodes(model.new(graph_type), n)
+
+      // Assign random positions to all nodes
+      let #(positions, _) =
+        utils.range(0, n - 1)
+        |> list.fold(#(dict.new(), rng), fn(state, i) {
+          let #(d, curr_rng) = state
+          let #(x, rng1) = random.next_float(curr_rng)
+          let #(y, rng2) = random.next_float(rng1)
+          #(dict.insert(d, i, #(x, y)), rng2)
+        })
+
+      // Add edges based on distance
+      let r_sq = radius *. radius
+      case graph_type {
+        model.Undirected -> {
+          utils.range(0, n - 1)
+          |> list.fold(graph, fn(g, i) {
+            let pos_i = dict.get(positions, i) |> result.unwrap(#(0.0, 0.0))
+            utils.range(i + 1, n - 1)
+            |> list.fold(g, fn(acc, j) {
+              let pos_j = dict.get(positions, j) |> result.unwrap(#(0.0, 0.0))
+              let dx = pos_i.0 -. pos_j.0
+              let dy = pos_i.1 -. pos_j.1
+              let dist_sq = dx *. dx +. dy *. dy
+              case dist_sq <=. r_sq {
+                True ->
+                  model.add_edge_ensure(
+                    acc,
+                    from: i,
+                    to: j,
+                    with: 1,
+                    default: Nil,
+                  )
+                False -> acc
+              }
+            })
+          })
+        }
+        model.Directed -> {
+          utils.range(0, n - 1)
+          |> list.fold(graph, fn(g, i) {
+            let pos_i = dict.get(positions, i) |> result.unwrap(#(0.0, 0.0))
+            utils.range(0, n - 1)
+            |> list.fold(g, fn(acc, j) {
+              case i == j {
+                True -> acc
+                False -> {
+                  let pos_j =
+                    dict.get(positions, j) |> result.unwrap(#(0.0, 0.0))
+                  let dx = pos_i.0 -. pos_j.0
+                  let dy = pos_i.1 -. pos_j.1
+                  let dist_sq = dx *. dx +. dy *. dy
+                  case dist_sq <=. r_sq {
+                    True ->
+                      model.add_edge_ensure(
+                        acc,
+                        from: i,
+                        to: j,
+                        with: 1,
+                        default: Nil,
+                      )
+                    False -> acc
+                  }
+                }
+              }
+            })
+          })
+        }
+      }
+    }
+  }
+}
+
+// Assign nodes to communities (balanced)
 fn assign_communities(n: Int, k: Int) -> Dict(Int, Int) {
   let base_size = n / k
   let remainder = n % k
@@ -1100,7 +1318,353 @@ fn assign_communities(n: Int, k: Int) -> Dict(Int, Int) {
       False -> #(new_dict, current_comm, count + 1)
     }
   })
-  |> fn(result) { result.0 }
+  |> fn(result_tuple) { result_tuple.0 }
+}
+
+// =============================================================================
+// Degree-Corrected Stochastic Block Model (DCSBM)
+// =============================================================================
+
+/// Generates a Degree-Corrected Stochastic Block Model (DCSBM).
+///
+/// Extends SBM with node-specific degree parameters, allowing more realistic
+/// degree distributions while preserving community structure.
+///
+/// **Parameters:**
+/// - `n` - Number of nodes
+/// - `k` - Number of communities
+/// - `p_in` - Probability within community
+/// - `p_out` - Probability between communities
+/// - `thetas` - Custom degree parameters for each node (optional)
+///
+/// **Time Complexity:** O(n²)
+pub fn dcsbm(
+  n: Int,
+  k: Int,
+  p_in: Float,
+  p_out: Float,
+  thetas: Option(List(Float)),
+  seed seed: Option(Int),
+) -> Graph(Nil, Int) {
+  dcsbm_with_type(n, k, p_in, p_out, thetas, model.Undirected, seed)
+}
+
+/// Generates a DCSBM graph with specified graph type.
+pub fn dcsbm_with_type(
+  n: Int,
+  k: Int,
+  p_in: Float,
+  p_out: Float,
+  thetas: Option(List(Float)),
+  graph_type: GraphType,
+  seed: Option(Int),
+) -> Graph(Nil, Int) {
+  case n <= 0 || k < 1 {
+    True -> model.new(graph_type)
+    False -> {
+      let rng = random.new(seed)
+      let graph = create_nodes(model.new(graph_type), n)
+      let communities = assign_communities(n, k)
+
+      // Use power-law thetas if not provided
+      let weights = case thetas {
+        Some(t) ->
+          case list.length(t) == n {
+            True -> t
+            False -> generate_default_thetas(n)
+          }
+        _ -> generate_default_thetas(n)
+      }
+
+      let #(result_graph, _) =
+        utils.range(0, n - 1)
+        |> list.fold(#(graph, rng), fn(state, u) {
+          let #(g, curr_rng) = state
+          let start_v = case graph_type {
+            model.Undirected -> u + 1
+            model.Directed -> 0
+          }
+          utils.range(start_v, n - 1)
+          |> list.fold(#(g, curr_rng), fn(inner_state, v) {
+            let #(inner_g, inner_rng) = inner_state
+            case u == v {
+              True -> #(inner_g, inner_rng)
+              False -> {
+                let comm_u = dict.get(communities, u) |> result.unwrap(-1)
+                let comm_v = dict.get(communities, v) |> result.unwrap(-1)
+                let p_base = case comm_u == comm_v {
+                  True -> p_in
+                  False -> p_out
+                }
+                let theta_u = list_at_float(weights, u)
+                let theta_v = list_at_float(weights, v)
+                let p = float.min(1.0, theta_u *. theta_v *. p_base)
+
+                let #(rand_val, new_rng) = random.next_float(inner_rng)
+                case rand_val <. p {
+                  True -> #(
+                    model.add_edge_ensure(
+                      inner_g,
+                      from: u,
+                      to: v,
+                      with: 1,
+                      default: Nil,
+                    ),
+                    new_rng,
+                  )
+                  False -> #(inner_g, new_rng)
+                }
+              }
+            }
+          })
+        })
+      result_graph
+    }
+  }
+}
+
+fn generate_default_thetas(n: Int) -> List(Float) {
+  // Simple power-law like weights 1/sqrt(i+1)
+  let raw =
+    utils.range(1, n)
+    |> list.map(fn(i: Int) {
+      let f = int.to_float(i)
+      float.square_root(f)
+      |> result.map(fn(s) { 1.0 /. s })
+      |> result.unwrap(1.0)
+    })
+  let sum = list.fold(raw, 0.0, float.add)
+  let mean = sum /. int.to_float(n)
+  list.map(raw, fn(x) { x /. mean })
+}
+
+fn list_at_float(lst: List(Float), index: Int) -> Float {
+  list_at(lst, index) |> result.unwrap(1.0)
+}
+
+// =============================================================================
+// Hierarchical SBM (HSBM)
+// =============================================================================
+
+/// Generates a hierarchical SBM with nested communities.
+///
+/// **Time Complexity:** O(n²)
+pub fn hsbm(
+  n: Int,
+  levels: Int,
+  branching: Int,
+  p_in: Float,
+  p_out: Float,
+  seed seed: Option(Int),
+) -> Graph(Nil, Int) {
+  hsbm_with_type(n, levels, branching, p_in, p_out, model.Undirected, seed)
+}
+
+/// Generates an HSBM graph with specified graph type.
+pub fn hsbm_with_type(
+  n: Int,
+  levels: Int,
+  branching: Int,
+  p_in: Float,
+  p_out: Float,
+  graph_type: GraphType,
+  seed: Option(Int),
+) -> Graph(Nil, Int) {
+  case n <= 0 || levels < 1 || branching < 2 {
+    True -> model.new(graph_type)
+    False -> {
+      let leaf_blocks = power_int(branching, levels)
+      let leaf_size = n / leaf_blocks
+      case leaf_size < 1 {
+        True -> model.new(graph_type)
+        False -> {
+          let rng = random.new(seed)
+          let graph = create_nodes(model.new(graph_type), n)
+
+          let #(result_graph, _) =
+            utils.range(0, n - 1)
+            |> list.fold(#(graph, rng), fn(state, u) {
+              let #(g, curr_rng) = state
+              let start_v = case graph_type {
+                model.Undirected -> u + 1
+                model.Directed -> 0
+              }
+              utils.range(start_v, n - 1)
+              |> list.fold(#(g, curr_rng), fn(inner_state, v) {
+                let #(inner_g, inner_rng) = inner_state
+                case u == v {
+                  True -> #(inner_g, inner_rng)
+                  False -> {
+                    let lca = hsbm_lca_level(u, v, leaf_size, branching)
+                    // Simple linear interpolation of p between levels
+                    // lca=0 -> p_in, lca=levels -> p_out
+                    let p =
+                      p_in
+                      +. { p_out -. p_in }
+                      *. { int.to_float(lca) /. int.to_float(levels) }
+
+                    let #(rand_val, new_rng) = random.next_float(inner_rng)
+                    case rand_val <. p {
+                      True -> #(
+                        model.add_edge_ensure(
+                          inner_g,
+                          from: u,
+                          to: v,
+                          with: 1,
+                          default: Nil,
+                        ),
+                        new_rng,
+                      )
+                      False -> #(inner_g, new_rng)
+                    }
+                  }
+                }
+              })
+            })
+          result_graph
+        }
+      }
+    }
+  }
+}
+
+fn hsbm_lca_level(u: Int, v: Int, leaf_size: Int, branching: Int) -> Int {
+  let bu = u / leaf_size
+  let bv = v / leaf_size
+  case bu == bv {
+    True -> 0
+    False -> find_lca_recursive(bu, bv, branching, 1)
+  }
+}
+
+fn find_lca_recursive(bu: Int, bv: Int, branching: Int, level: Int) -> Int {
+  let p = power_int(branching, level)
+  case bu / p == bv / p {
+    True -> level
+    False -> find_lca_recursive(bu, bv, branching, level + 1)
+  }
+}
+
+fn power_int(base: Int, exp: Int) -> Int {
+  case exp <= 0 {
+    True -> 1
+    False -> base * power_int(base, exp - 1)
+  }
+}
+
+// =============================================================================
+// Configuration Model
+// =============================================================================
+
+/// Generates a random graph with specified degree sequence using the configuration model.
+///
+/// **Time Complexity:** O(M) where M is total edges.
+/// Returns Ok(graph) or Error(Nil) if pairing fails after retries.
+pub fn configuration_model(
+  degrees: List(Int),
+  seed seed: Option(Int),
+) -> Result(Graph(Nil, Int), Nil) {
+  let sum = list.fold(degrees, 0, int.add)
+  case sum % 2 != 0 || list.any(degrees, fn(d) { d < 0 }) {
+    True -> Error(Nil)
+    False -> {
+      let rng = random.new(seed)
+      let n = list.length(degrees)
+      let graph = create_nodes(model.new(model.Undirected), n)
+
+      // Stub matching: create d stubs for each node i
+      let stubs =
+        degrees
+        |> list.index_map(fn(deg, i) { list.repeat(i, deg) })
+        |> list.flatten()
+
+      // Retry up to 10 times to avoid self-loops/parallel if possible
+      // Note: standard config model allows them, but we try to be "simple"
+      try_configuration(graph, stubs, rng, 10)
+    }
+  }
+}
+
+fn try_configuration(
+  graph: Graph(Nil, Int),
+  stubs: List(Int),
+  rng: Rng,
+  retries: Int,
+) -> Result(Graph(Nil, Int), Nil) {
+  case retries < 0 {
+    True -> Error(Nil)
+    False -> {
+      let shuffled = shuffle(stubs, rng)
+      let pairs = pair_stubs(shuffled)
+      // Check for self-loops/parallel
+      let has_self = list.any(pairs, fn(p: #(Int, Int)) { p.0 == p.1 })
+      case has_self {
+        True ->
+          try_configuration(
+            graph,
+            stubs,
+            random.next_int(rng, 100).1,
+            retries - 1,
+          )
+        False -> {
+          let result_graph =
+            list.fold(pairs, graph, fn(g, p: #(Int, Int)) {
+              model.add_edge_ensure(
+                g,
+                from: p.0,
+                to: p.1,
+                with: 1,
+                default: Nil,
+              )
+            })
+          Ok(result_graph)
+        }
+      }
+    }
+  }
+}
+
+fn pair_stubs(stubs: List(Int)) -> List(#(Int, Int)) {
+  case stubs {
+    [] -> []
+    [_] -> []
+    [a, b, ..rest] -> [#(a, b), ..pair_stubs(rest)]
+  }
+}
+
+/// Generates a random graph matching the degree sequence of a given graph.
+///
+/// **Time Complexity:** O(N + M)
+pub fn randomize_degree_sequence(
+  graph: Graph(Nil, Int),
+  seed seed: Option(Int),
+) -> Result(Graph(Nil, Int), Nil) {
+  let degrees =
+    model.all_nodes(graph)
+    |> list.map(fn(u) { list.length(model.neighbors(graph, u)) })
+  configuration_model(degrees, seed)
+}
+
+// =============================================================================
+// Kronecker Graphs
+// =============================================================================
+
+/// Generates a Kronecker graph using recursive expansion (via R-MAT).
+///
+/// **Parameters:**
+/// - `k` - Number of iterations (2^k nodes)
+/// - `initiator` - 2x2 probability matrix #(a, b, c, d)
+/// - `m` - Desired number of edges
+///
+/// **Time Complexity:** O(m log n)
+pub fn kronecker(
+  k: Int,
+  initiator: #(Float, Float, Float, Float),
+  m: Int,
+  seed seed: Option(Int),
+) -> Graph(Nil, Int) {
+  let n = power_int(2, k)
+  rmat_with_type(n, m, Some(initiator), model.Directed, seed)
 }
 
 // =============================================================================
