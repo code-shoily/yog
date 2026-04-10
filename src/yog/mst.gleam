@@ -17,6 +17,14 @@
 //// - Minimizes the sum of edge weights
 //// - May not be unique if multiple edges have the same weight
 ////
+//// ## Maximum Spanning Trees
+////
+//// While these functions are named for Minimum Spanning Trees, they are fully
+//// generic. To find a **Maximum Spanning Tree**, simply provide a comparator
+//// that reverses the natural order of your weights (e.g., using `order.reverse(int.compare)`).
+//// This will cause the algorithms to prioritize the largest weights first,
+//// yielding the maximum possible total weight.
+////
 //// ## Example Use Cases
 ////
 //// - **Network Design**: Minimizing cable length to connect buildings
