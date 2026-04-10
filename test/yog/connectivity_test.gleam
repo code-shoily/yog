@@ -1,3 +1,4 @@
+import gleam/dict
 import gleam/int
 import gleam/list
 import gleeunit/should
@@ -1853,4 +1854,109 @@ pub fn wcc_bidirectional_edges_test() {
     }
     _, _ -> should.fail()
   }
+}
+
+// ============= K-Core Tests =============
+
+pub fn k_core_square_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, Nil)
+    |> model.add_node(2, Nil)
+    |> model.add_node(3, Nil)
+    |> model.add_node(4, Nil)
+    |> model.add_edge_ensure(1, 2, with: 1, default: Nil)
+    |> model.add_edge_ensure(2, 3, with: 1, default: Nil)
+    |> model.add_edge_ensure(3, 4, with: 1, default: Nil)
+    |> model.add_edge_ensure(4, 1, with: 1, default: Nil)
+
+  let core_2 = connectivity.k_core(graph, 2)
+  model.node_count(core_2) |> should.equal(4)
+
+  let core_3 = connectivity.k_core(graph, 3)
+  model.node_count(core_3) |> should.equal(0)
+}
+
+pub fn k_core_empty_graph_test() {
+  let graph = model.new(Undirected)
+  connectivity.k_core(graph, 1) |> model.node_count |> should.equal(0)
+}
+
+pub fn k_core_two_nodes_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, Nil)
+    |> model.add_node(2, Nil)
+    |> model.add_edge_ensure(1, 2, with: 1, default: Nil)
+
+  connectivity.k_core(graph, 1)
+  |> model.node_count
+  |> should.equal(2)
+
+  connectivity.k_core(graph, 2)
+  |> model.node_count
+  |> should.equal(0)
+}
+
+pub fn core_numbers_two_nodes_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, Nil)
+    |> model.add_node(2, Nil)
+    |> model.add_edge_ensure(1, 2, with: 1, default: Nil)
+
+  let cores = connectivity.core_numbers(graph)
+  dict.get(cores, 1) |> should.be_ok |> should.equal(1)
+  dict.get(cores, 2) |> should.be_ok |> should.equal(1)
+}
+
+pub fn core_numbers_triangle_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, Nil)
+    |> model.add_node(2, Nil)
+    |> model.add_node(3, Nil)
+    |> model.add_edge_ensure(1, 2, with: 1, default: Nil)
+    |> model.add_edge_ensure(2, 3, with: 1, default: Nil)
+    |> model.add_edge_ensure(3, 1, with: 1, default: Nil)
+
+  let cores = connectivity.core_numbers(graph)
+  dict.get(cores, 1) |> should.be_ok |> should.equal(2)
+  dict.get(cores, 2) |> should.be_ok |> should.equal(2)
+  dict.get(cores, 3) |> should.be_ok |> should.equal(2)
+}
+
+pub fn degeneracy_square_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, Nil)
+    |> model.add_node(2, Nil)
+    |> model.add_node(3, Nil)
+    |> model.add_node(4, Nil)
+    |> model.add_edge_ensure(1, 2, with: 1, default: Nil)
+    |> model.add_edge_ensure(2, 3, with: 1, default: Nil)
+    |> model.add_edge_ensure(3, 4, with: 1, default: Nil)
+    |> model.add_edge_ensure(4, 1, with: 1, default: Nil)
+
+  connectivity.degeneracy(graph) |> should.equal(2)
+}
+
+pub fn degeneracy_empty_test() {
+  model.new(Undirected) |> connectivity.degeneracy |> should.equal(0)
+}
+
+pub fn shell_decomposition_test() {
+  let graph =
+    model.new(Undirected)
+    |> model.add_node(1, Nil)
+    |> model.add_node(2, Nil)
+    |> model.add_node(3, Nil)
+    |> model.add_node(4, Nil)
+    |> model.add_edge_ensure(1, 2, with: 1, default: Nil)
+    |> model.add_edge_ensure(2, 3, with: 1, default: Nil)
+    |> model.add_edge_ensure(3, 4, with: 1, default: Nil)
+    |> model.add_edge_ensure(4, 1, with: 1, default: Nil)
+
+  let shells = connectivity.shell_decomposition(graph)
+  dict.get(shells, 2) |> should.be_ok |> list.length |> should.equal(4)
 }

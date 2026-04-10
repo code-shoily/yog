@@ -623,3 +623,211 @@ fn wcc_dfs_collect(
     }
   }
 }
+
+// =============================================================================
+// K-CORE DECOMPOSITION
+// =============================================================================
+
+/// Returns the maximal subgraph where every node has at least degree k.
+pub fn k_core(graph: Graph(n, e), k: Int) -> Graph(n, e) {
+  let nodes = model.all_nodes(graph)
+  let degrees = initial_degrees(graph, nodes)
+  let to_prune =
+    list.filter(nodes, fn(u) {
+      case dict.get(degrees, u) {
+        Ok(deg) -> deg < k
+        Error(_) -> False
+      }
+    })
+  let queue_set = set.from_list(to_prune)
+  let pruned =
+    do_prune_k_core(graph.out_edges, to_prune, queue_set, degrees, k, set.new())
+  let remaining = set.difference(set.from_list(nodes), pruned) |> set.to_list
+  transform.subgraph(graph, remaining)
+}
+
+fn initial_degrees(graph: Graph(n, e), nodes: List(NodeId)) -> Dict(NodeId, Int) {
+  use acc, u <- list.fold(nodes, dict.new())
+  let deg = case dict.get(graph.out_edges, u) {
+    Ok(neighbors) -> dict.size(neighbors)
+    Error(_) -> 0
+  }
+  dict.insert(acc, u, deg)
+}
+
+fn do_prune_k_core(
+  out_edges: Dict(NodeId, Dict(NodeId, e)),
+  queue: List(NodeId),
+  queue_set: Set(NodeId),
+  degrees: Dict(NodeId, Int),
+  k: Int,
+  pruned: Set(NodeId),
+) -> Set(NodeId) {
+  case queue {
+    [] -> pruned
+    [u, ..rest] -> {
+      let queue_set = set.delete(queue_set, u)
+      case set.contains(pruned, u) {
+        True -> do_prune_k_core(out_edges, rest, queue_set, degrees, k, pruned)
+        False -> {
+          let new_pruned = set.insert(pruned, u)
+          let neighbors = case dict.get(out_edges, u) {
+            Ok(nbrs) -> dict.keys(nbrs)
+            Error(_) -> []
+          }
+          let #(new_rest, new_queue_set, new_degrees) =
+            list.fold(neighbors, #(rest, queue_set, degrees), fn(acc, v) {
+              let #(acc_rest, acc_qs, acc_deg) = acc
+              case set.contains(new_pruned, v) {
+                True -> acc
+                False -> {
+                  let assert Ok(old_deg) = dict.get(acc_deg, v)
+                  let new_deg = old_deg - 1
+                  let acc_deg = dict.insert(acc_deg, v, new_deg)
+                  case new_deg < k && !set.contains(acc_qs, v) {
+                    True -> #([v, ..acc_rest], set.insert(acc_qs, v), acc_deg)
+                    False -> #(acc_rest, acc_qs, acc_deg)
+                  }
+                }
+              }
+            })
+          do_prune_k_core(
+            out_edges,
+            new_rest,
+            new_queue_set,
+            new_degrees,
+            k,
+            new_pruned,
+          )
+        }
+      }
+    }
+  }
+}
+
+/// Returns the core number of every node (largest k such that v is in a k-core).
+pub fn core_numbers(graph: Graph(n, e)) -> Dict(NodeId, Int) {
+  let nodes = model.all_nodes(graph)
+  let degrees = initial_degrees(graph, nodes)
+  let max_deg = case dict.values(degrees) {
+    [] -> 0
+    vals -> list.fold(vals, 0, int.max)
+  }
+  do_calculate_core_numbers(graph.out_edges, nodes, degrees, max_deg)
+}
+
+fn do_calculate_core_numbers(
+  out_edges: Dict(NodeId, Dict(NodeId, e)),
+  nodes: List(NodeId),
+  degrees: Dict(NodeId, Int),
+  max_deg: Int,
+) -> Dict(NodeId, Int) {
+  let buckets =
+    list.fold(nodes, dict.new(), fn(acc, u) {
+      let assert Ok(deg) = dict.get(degrees, u)
+      let existing = case dict.get(acc, deg) {
+        Ok(b) -> b
+        Error(_) -> []
+      }
+      dict.insert(acc, deg, [u, ..existing])
+    })
+
+  let initial_state = #(degrees, dict.new(), buckets, set.new())
+
+  let #(_, cores, _, _) =
+    int.range(from: 0, to: max_deg + 1, with: initial_state, run: fn(state, i) {
+      process_bucket(out_edges, i, state)
+    })
+
+  cores
+}
+
+fn process_bucket(
+  out_edges: Dict(NodeId, Dict(NodeId, e)),
+  i: Int,
+  state: #(
+    Dict(NodeId, Int),
+    Dict(NodeId, Int),
+    Dict(Int, List(NodeId)),
+    Set(NodeId),
+  ),
+) -> #(
+  Dict(NodeId, Int),
+  Dict(NodeId, Int),
+  Dict(Int, List(NodeId)),
+  Set(NodeId),
+) {
+  let #(degs, cores, buckets, processed) = state
+  case dict.get(buckets, i) {
+    Error(_) -> state
+    Ok([]) -> state
+    Ok([u, ..rest]) -> {
+      case set.contains(processed, u) {
+        True ->
+          process_bucket(out_edges, i, #(
+            degs,
+            cores,
+            dict.insert(buckets, i, rest),
+            processed,
+          ))
+        False -> {
+          let cores = dict.insert(cores, u, i)
+          let processed = set.insert(processed, u)
+          let neighbors = case dict.get(out_edges, u) {
+            Ok(nbrs) -> dict.keys(nbrs)
+            Error(_) -> []
+          }
+          let #(new_degs, new_buckets) =
+            list.fold(
+              neighbors,
+              #(degs, dict.insert(buckets, i, rest)),
+              fn(acc, v) {
+                let #(d_acc, b_acc) = acc
+                case set.contains(processed, v) {
+                  True -> acc
+                  False -> {
+                    let assert Ok(old_v_deg) = dict.get(d_acc, v)
+                    let new_v_deg = old_v_deg - 1
+                    let d_acc = dict.insert(d_acc, v, new_v_deg)
+                    let target_bucket = int.max(new_v_deg, i)
+                    let existing = case dict.get(b_acc, target_bucket) {
+                      Ok(b) -> b
+                      Error(_) -> []
+                    }
+                    let b_acc =
+                      dict.insert(b_acc, target_bucket, [v, ..existing])
+                    #(d_acc, b_acc)
+                  }
+                }
+              },
+            )
+          process_bucket(out_edges, i, #(
+            new_degs,
+            cores,
+            new_buckets,
+            processed,
+          ))
+        }
+      }
+    }
+  }
+}
+
+/// Returns the degeneracy of the graph (maximum core number).
+pub fn degeneracy(graph: Graph(n, e)) -> Int {
+  let cores = core_numbers(graph)
+  case dict.values(cores) {
+    [] -> 0
+    vals -> list.fold(vals, 0, int.max)
+  }
+}
+
+/// Groups nodes by their core number (k-shell decomposition).
+pub fn shell_decomposition(graph: Graph(n, e)) -> Dict(Int, List(NodeId)) {
+  use acc, node, core <- dict.fold(core_numbers(graph), dict.new())
+  let existing = case dict.get(acc, core) {
+    Ok(nodes) -> nodes
+    Error(_) -> []
+  }
+  dict.insert(acc, core, [node, ..existing])
+}
