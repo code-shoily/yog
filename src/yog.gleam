@@ -116,7 +116,6 @@
 //// - **Efficient**: Optimal data structures (pairing heaps, union-find)
 //// - **Documented**: Every function has examples
 
-import gleam/list
 import yog/model
 import yog/property/cyclicity
 import yog/transform
@@ -471,11 +470,7 @@ pub fn from_edges(
   graph_type: GraphType,
   edges: List(#(NodeId, NodeId, e)),
 ) -> Graph(Nil, e) {
-  list.fold(edges, new(graph_type), fn(g, edge) {
-    let #(src, dst, weight) = edge
-    g
-    |> add_edge_ensure(from: src, to: dst, with: weight, default: Nil)
-  })
+  model.from_edges(graph_type, edges)
 }
 
 /// Creates a graph from a list of unweighted edges #(src, dst).
@@ -489,11 +484,7 @@ pub fn from_unweighted_edges(
   graph_type: GraphType,
   edges: List(#(NodeId, NodeId)),
 ) -> Graph(Nil, Nil) {
-  list.fold(edges, new(graph_type), fn(g, edge) {
-    let #(src, dst) = edge
-    g
-    |> add_edge_ensure(from: src, to: dst, with: Nil, default: Nil)
-  })
+  model.from_unweighted_edges(graph_type, edges)
 }
 
 /// Creates a graph from an adjacency list #(src, List(#(dst, weight))).
@@ -507,17 +498,7 @@ pub fn from_adjacency_list(
   graph_type: GraphType,
   adj_list: List(#(NodeId, List(#(NodeId, e)))),
 ) -> Graph(Nil, e) {
-  list.fold(adj_list, new(graph_type), fn(g, entry) {
-    let #(src, edges) = entry
-    // First, ensure the source node exists
-    let g = add_node(g, src, Nil)
-    // Then add all edges
-    list.fold(edges, g, fn(acc, edge) {
-      let #(dst, weight) = edge
-      acc
-      |> add_edge_ensure(from: src, to: dst, with: weight, default: Nil)
-    })
-  })
+  model.from_adjacency_list(graph_type, adj_list)
 }
 
 /// Returns just the NodeIds of successors (without edge data).
