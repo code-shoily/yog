@@ -6,6 +6,16 @@ import yog/builder/grid
 import yog/model
 import yog/traversal.{BreadthFirst}
 
+// Helper for platform-dependent dict ordering.
+// Erlang and JavaScript use different hash-based dict implementations,
+// so edge iteration order can differ. Both orders are valid.
+fn assert_one_of(actual: a, expected_erl: a, expected_js: a) -> Nil {
+  case actual == expected_erl || actual == expected_js {
+    True -> Nil
+    False -> should.fail()
+  }
+}
+
 // Basic grid building tests
 
 pub fn from_2d_list_creates_grid_test() {
@@ -93,10 +103,10 @@ pub fn can_move_constraint_applied_test() {
 
   let graph = grid.to_graph(grid_result)
 
-  // From (0,0)=1, can move to (0,1)=2 (diff=1) and (1,0)=2 (diff=1)
+  // From (0,0)=1, can move to (0,1)=2 (diff=1) and (1,0)=2 (diff=1).
+  // Successor order depends on dict iteration (platform-specific).
   let successors = yog.successors(graph, grid.coord_to_id(0, 0, 3))
-  successors
-  |> should.equal([#(1, 1), #(3, 1)])
+  assert_one_of(successors, [#(1, 1), #(3, 1)], [#(3, 1), #(1, 1)])
 
   // From (0,1)=2, cannot move to (0,2)=5 (diff=3)
   // But can move to (1,1)=3 (diff=1)
