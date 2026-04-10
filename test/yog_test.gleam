@@ -1,3 +1,5 @@
+import gleam/int
+import gleam/list
 import gleeunit
 import gleeunit/should
 import yog
@@ -61,10 +63,14 @@ pub fn directed_equivalent_to_new_directed_test() {
 
   // Both should have same structure
   yog.successors(graph1, 1)
-  |> should.equal(yog.successors(graph2, 1))
+  |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
+  |> should.equal(
+    yog.successors(graph2, 1) |> list.sort(fn(a, b) { int.compare(a.0, b.0) }),
+  )
 
   yog.all_nodes(graph1)
-  |> should.equal(yog.all_nodes(graph2))
+  |> list.sort(int.compare)
+  |> should.equal(yog.all_nodes(graph2) |> list.sort(int.compare))
 }
 
 pub fn undirected_equivalent_to_new_undirected_test() {
@@ -82,10 +88,14 @@ pub fn undirected_equivalent_to_new_undirected_test() {
 
   // Both should have same structure
   yog.successors(graph1, 1)
-  |> should.equal(yog.successors(graph2, 1))
+  |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
+  |> should.equal(
+    yog.successors(graph2, 1) |> list.sort(fn(a, b) { int.compare(a.0, b.0) }),
+  )
 
   yog.all_nodes(graph1)
-  |> should.equal(yog.all_nodes(graph2))
+  |> list.sort(int.compare)
+  |> should.equal(yog.all_nodes(graph2) |> list.sort(int.compare))
 }
 
 pub fn add_unweighted_edge_test() {
@@ -151,10 +161,12 @@ pub fn from_edges_directed_test() {
 
   // Should have all nodes
   yog.all_nodes(graph)
+  |> list.sort(int.compare)
   |> should.equal([1, 2, 3])
 
   // Should have correct edges
   yog.successors(graph, 1)
+  |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
   |> should.equal([#(2, 10), #(3, 20)])
 
   yog.successors(graph, 2)
@@ -176,6 +188,7 @@ pub fn from_edges_empty_test() {
   let graph = yog.from_edges(model.Directed, [])
 
   yog.all_nodes(graph)
+  |> list.sort(int.compare)
   |> should.equal([])
 }
 
@@ -184,6 +197,7 @@ pub fn from_unweighted_edges_test() {
 
   // Should have all nodes
   yog.all_nodes(graph)
+  |> list.sort(int.compare)
   |> should.equal([1, 2, 3])
 
   // Edges should have Nil weight
@@ -202,6 +216,7 @@ pub fn from_unweighted_edges_undirected_test() {
   |> should.equal([#(2, Nil)])
 
   yog.successors(graph, 2)
+  |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
   |> should.equal([#(1, Nil), #(3, Nil)])
 }
 
@@ -214,10 +229,12 @@ pub fn from_adjacency_list_test() {
 
   // Should have all nodes
   yog.all_nodes(graph)
+  |> list.sort(int.compare)
   |> should.equal([1, 2, 3])
 
   // Should have correct edges
   yog.successors(graph, 1)
+  |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
   |> should.equal([#(2, 10), #(3, 5)])
 
   yog.successors(graph, 2)
@@ -257,6 +274,7 @@ pub fn from_adjacency_list_undirected_test() {
   |> should.equal([#(2, 5)])
 
   yog.successors(graph, 2)
+  |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
   |> should.equal([#(1, 5), #(3, 3)])
 
   yog.successors(graph, 3)

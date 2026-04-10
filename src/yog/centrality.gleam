@@ -290,6 +290,10 @@ fn apply_undirected_scaling(
   }
 }
 
+// =============================================================================
+// PageRank
+// =============================================================================
+
 /// Configuration options for the PageRank algorithm.
 ///
 /// PageRank models a "random surfer" who follows links with probability
@@ -309,10 +313,6 @@ fn apply_undirected_scaling(
 /// - damping: 0.85
 /// - max_iterations: 100
 /// - tolerance: 0.0001
-// =============================================================================
-// PageRank
-// =============================================================================
-
 pub type PageRankOptions {
   PageRankOptions(damping: Float, max_iterations: Int, tolerance: Float)
 }
