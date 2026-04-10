@@ -36,7 +36,7 @@
 //// - [CP-Algorithms: DFS/BFS](https://cp-algorithms.com/graph/breadth-first-search.html)
 //// - [Wikipedia: Topological Sorting](https://en.wikipedia.org/wiki/Topological_sorting)
 
-import gleam/dict.{type Dict}
+import gleam/dict
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
@@ -76,21 +76,6 @@ pub type WalkMetadata(nid) {
 }
 
 /// Walks the graph starting from the given node, visiting all reachable nodes.
-///
-/// Returns a list of NodeIds in the order they were visited.
-/// Uses successors to follow directed paths.
-///
-/// ## Example
-///
-/// ```gleam
-/// // BFS traversal
-/// traversal.walk(graph, from: 1, using: BreadthFirst)
-/// // => [1, 2, 3, 4, 5]
-///
-/// // DFS traversal
-/// traversal.walk(graph, from: 1, using: DepthFirst)
-/// // => [1, 2, 4, 5, 3]
-/// ```
 pub fn walk(
   in graph: Graph(n, e),
   from start_id: NodeId,
@@ -107,21 +92,6 @@ pub fn walk(
 }
 
 /// Walks the graph but stops early when a condition is met.
-///
-/// Traverses the graph until `should_stop` returns True for a node.
-/// Returns all nodes visited including the one that stopped traversal.
-///
-/// ## Example
-///
-/// ```gleam
-/// // Stop when we find node 5
-/// traversal.walk_until(
-///   graph,
-///   from: 1,
-///   using: BreadthFirst,
-///   until: fn(node) { node == 5 }
-/// )
-/// ```
 pub fn walk_until(
   in graph: Graph(n, e),
   from start_id: NodeId,
@@ -145,92 +115,6 @@ pub fn walk_until(
 }
 
 /// Folds over nodes during graph traversal, accumulating state with metadata.
-///
-/// This function combines traversal with state accumulation, providing metadata
-/// about each visited node (depth and parent). The folder function controls the
-/// traversal flow:
-///
-/// - `Continue`: Explore successors of the current node normally
-/// - `Stop`: Skip successors of this node, but continue processing other queued nodes
-/// - `Halt`: Stop the entire traversal immediately and return the accumulator
-///
-/// **Time Complexity:** O(V + E) for both BFS and DFS
-///
-/// ## Parameters
-///
-/// - `folder`: Called for each visited node with (accumulator, node_id, metadata).
-///   Returns `#(WalkControl, new_accumulator)`.
-///
-/// ## Examples
-///
-/// ```gleam
-/// import gleam/dict
-/// import yog/traversal.{BreadthFirst, Continue, Halt, Stop, WalkMetadata}
-///
-/// // Find all nodes within distance 3 from start
-/// let nearby = traversal.fold_walk(
-///   graph,
-///   from: 1,
-///   using: BreadthFirst,
-///   initial: dict.new(),
-///   with: fn(acc, node_id, meta) {
-///     case meta.depth <= 3 {
-///       True -> #(Continue, dict.insert(acc, node_id, meta.depth))
-///       False -> #(Stop, acc)  // Don't explore beyond depth 3
-///     }
-///   }
-/// )
-///
-/// // Stop immediately when target is found (like walk_until)
-/// let path_to_target = traversal.fold_walk(
-///   graph,
-///   from: start,
-///   using: BreadthFirst,
-///   initial: [],
-///   with: fn(acc, node_id, _meta) {
-///     let new_acc = [node_id, ..acc]
-///     case node_id == target {
-///       True -> #(Halt, new_acc)   // Stop entire traversal
-///       False -> #(Continue, new_acc)
-///     }
-///   }
-/// )
-///
-/// // Build a parent map for path reconstruction
-/// let parents = traversal.fold_walk(
-///   graph,
-///   from: start,
-///   using: BreadthFirst,
-///   initial: dict.new(),
-///   with: fn(acc, node_id, meta) {
-///     let new_acc = case meta.parent {
-///       Some(p) -> dict.insert(acc, node_id, p)
-///       None -> acc
-///     }
-///     #(Continue, new_acc)
-///   }
-/// )
-///
-/// // Count nodes at each depth level
-/// let depth_counts = traversal.fold_walk(
-///   graph,
-///   from: root,
-///   using: BreadthFirst,
-///   initial: dict.new(),
-///   with: fn(acc, _node_id, meta) {
-///     let count = dict.get(acc, meta.depth) |> result.unwrap(0)
-///     #(Continue, dict.insert(acc, meta.depth, count + 1))
-///   }
-/// )
-/// ```
-///
-/// ## Use Cases
-///
-/// - Finding nodes within a certain distance
-/// - Building shortest path trees (parent pointers)
-/// - Collecting nodes with custom filtering logic
-/// - Computing statistics during traversal (depth distribution, etc.)
-/// - BFS/DFS with early termination based on accumulated state
 pub fn fold_walk(
   over graph: Graph(n, e),
   from start: NodeId,
@@ -238,53 +122,17 @@ pub fn fold_walk(
   initial acc: a,
   with folder: fn(a, NodeId, WalkMetadata(NodeId)) -> #(WalkControl, a),
 ) -> a {
-  let start_metadata = WalkMetadata(depth: 0, parent: None)
-
-  case order {
-    BreadthFirst ->
-      do_fold_walk_bfs(
-        graph,
-        queue.new() |> queue.push(#(start, start_metadata)),
-        set.new(),
-        acc,
-        folder,
-      )
-    DepthFirst ->
-      do_fold_walk_dfs(
-        graph,
-        [#(start, start_metadata)],
-        set.new(),
-        acc,
-        folder,
-      )
-  }
+  implicit_fold_by(
+    from: start,
+    using: order,
+    initial: acc,
+    successors_of: fn(id) { model.successor_ids(graph, id) },
+    visited_by: fn(id) { id },
+    with: folder,
+  )
 }
 
-/// Traverses an *implicit* graph using BFS or DFS,
-/// folding over visited nodes with metadata.
-///
-/// Unlike `fold_walk`, this does not require a materialised `Graph` value.
-/// Instead, you supply a `successors_of` function that computes neighbours
-/// on the fly — ideal for infinite grids, state-space search, or any
-/// graph that is too large or expensive to build upfront.
-///
-/// ## Example
-///
-/// ```gleam
-/// // BFS shortest path in an implicit maze
-/// traversal.implicit_fold(
-///   from: #(1, 1),
-///   using: BreadthFirst,
-///   initial: -1,
-///   successors_of: fn(pos) { open_neighbours(pos, fav) },
-///   with: fn(acc, pos, meta) {
-///     case pos == target {
-///       True -> #(Halt, meta.depth)
-///       False -> #(Continue, acc)
-///     }
-///   },
-/// )
-/// ```
+/// Traverses an *implicit* graph using BFS or DFS, folding over visited nodes.
 pub fn implicit_fold(
   from start: nid,
   using order: Order,
@@ -292,83 +140,17 @@ pub fn implicit_fold(
   successors_of successors: fn(nid) -> List(nid),
   with folder: fn(a, nid, WalkMetadata(nid)) -> #(WalkControl, a),
 ) -> a {
-  let start_meta = WalkMetadata(depth: 0, parent: None)
-  case order {
-    BreadthFirst ->
-      do_implicit_bfs(
-        queue.new() |> queue.push(#(start, start_meta)),
-        set.new(),
-        acc,
-        successors,
-        folder,
-      )
-    DepthFirst ->
-      do_implicit_dfs(
-        [#(start, start_meta)],
-        set.new(),
-        acc,
-        successors,
-        folder,
-      )
-  }
+  implicit_fold_by(
+    from: start,
+    using: order,
+    initial: acc,
+    successors_of: successors,
+    visited_by: fn(id) { id },
+    with: folder,
+  )
 }
 
 /// Like `implicit_fold`, but deduplicates visited nodes by a custom key.
-///
-/// This is essential when your node type carries extra state beyond what
-/// defines "identity". For example, in state-space search you might have
-/// `#(Position, Mask)` nodes, but only want to visit each `Position` once —
-/// the `Mask` is just carried state, not part of the identity.
-///
-/// The `visited_by` function extracts the deduplication key from each node.
-/// Internally, a `Set(key)` tracks which keys have been visited, but the
-/// full `nid` value (with all its state) is still passed to your folder.
-///
-/// **Time Complexity:** O(V + E) for both BFS and DFS, where V and E are
-/// measured in terms of unique *keys* (not unique nodes).
-///
-/// ## Example
-///
-/// ```gleam
-/// // Search a maze where nodes carry both position and step count
-/// // but we only want to visit each position once (first-visit wins)
-/// type State {
-///   State(pos: #(Int, Int), steps: Int)
-/// }
-///
-/// traversal.implicit_fold_by(
-///   from: State(#(0, 0), 0),
-///   using: BreadthFirst,
-///   initial: None,
-///   successors_of: fn(state) {
-///     neighbors(state.pos)
-///     |> list.map(fn(next_pos) {
-///       State(next_pos, state.steps + 1)
-///     })
-///   },
-///   visited_by: fn(state) { state.pos },  // Dedupe by position only
-///   with: fn(acc, state, _meta) {
-///     case state.pos == target {
-///       True -> #(Halt, Some(state.steps))
-///       False -> #(Continue, acc)
-///     }
-///   },
-/// )
-/// ```
-///
-/// ## Use Cases
-///
-/// - **Puzzle solving**: `#(board_state, moves)` → dedupe by `board_state`
-/// - **Path finding with budget**: `#(pos, fuel_left)` → dedupe by `pos`
-/// - **Game state search**: `#(position, inventory)` → dedupe by `position`
-/// - **Graph search with metadata**: `#(node_id, path_history)` → dedupe by `node_id`
-///
-/// ## Comparison to `implicit_fold`
-///
-/// - `implicit_fold`: Deduplicates by the entire node value `nid`
-/// - `implicit_fold_by`: Deduplicates by `visited_by(nid)` but keeps full `nid`
-///
-/// Similar to SQL's `DISTINCT ON(key)` or Python's `key=` parameter.
 pub fn implicit_fold_by(
   from start: nid,
   using order: Order,
@@ -377,208 +159,19 @@ pub fn implicit_fold_by(
   visited_by key_fn: fn(nid) -> key,
   with folder: fn(a, nid, WalkMetadata(nid)) -> #(WalkControl, a),
 ) -> a {
-  let start_meta = WalkMetadata(depth: 0, parent: None)
+  let meta = WalkMetadata(depth: 0, parent: None)
   case order {
-    BreadthFirst ->
-      do_implicit_bfs_by(
-        queue.new() |> queue.push(#(start, start_meta)),
-        set.new(),
-        acc,
-        successors,
-        key_fn,
-        folder,
-      )
-    DepthFirst ->
-      do_implicit_dfs_by(
-        [#(start, start_meta)],
-        set.new(),
-        acc,
-        successors,
-        key_fn,
-        folder,
-      )
-  }
-}
-
-// BFS with fold and metadata
-fn do_fold_walk_bfs(
-  graph: Graph(n, e),
-  q: queue.Queue(#(NodeId, WalkMetadata(NodeId))),
-  visited: Set(NodeId),
-  acc: a,
-  folder: fn(a, NodeId, WalkMetadata(NodeId)) -> #(WalkControl, a),
-) -> a {
-  case queue.pop(q) {
-    Error(Nil) -> acc
-    Ok(#(#(node_id, metadata), rest)) -> {
-      case set.contains(visited, node_id) {
-        True -> do_fold_walk_bfs(graph, rest, visited, acc, folder)
-        False -> {
-          // Call folder with current node
-          let #(control, new_acc) = folder(acc, node_id, metadata)
-          let new_visited = set.insert(visited, node_id)
-
-          case control {
-            Halt -> new_acc
-            Stop -> do_fold_walk_bfs(graph, rest, new_visited, new_acc, folder)
-            Continue -> {
-              // Add successors to queue with updated metadata
-              let next_nodes = model.successor_ids(graph, node_id)
-              let next_queue =
-                list.fold(next_nodes, rest, fn(current_queue, next_id) {
-                  let next_meta =
-                    WalkMetadata(
-                      depth: metadata.depth + 1,
-                      parent: Some(node_id),
-                    )
-                  queue.push(current_queue, #(next_id, next_meta))
-                })
-
-              do_fold_walk_bfs(graph, next_queue, new_visited, new_acc, folder)
-            }
-          }
-        }
-      }
+    BreadthFirst -> {
+      let q = queue.new() |> queue.push(#(start, meta))
+      do_walk_bfs(q, set.new(), acc, successors, key_fn, folder)
+    }
+    DepthFirst -> {
+      do_walk_dfs([#(start, meta)], set.new(), acc, successors, key_fn, folder)
     }
   }
 }
 
-// DFS with fold and metadata
-fn do_fold_walk_dfs(
-  graph: Graph(n, e),
-  stack: List(#(NodeId, WalkMetadata(NodeId))),
-  visited: Set(NodeId),
-  acc: a,
-  folder: fn(a, NodeId, WalkMetadata(NodeId)) -> #(WalkControl, a),
-) -> a {
-  case stack {
-    [] -> acc
-    [#(node_id, metadata), ..tail] -> {
-      case set.contains(visited, node_id) {
-        True -> do_fold_walk_dfs(graph, tail, visited, acc, folder)
-        False -> {
-          let #(control, new_acc) = folder(acc, node_id, metadata)
-          let new_visited = set.insert(visited, node_id)
-          case control {
-            Halt -> new_acc
-            Stop -> do_fold_walk_dfs(graph, tail, new_visited, new_acc, folder)
-            Continue -> {
-              let next_nodes = model.successor_ids(graph, node_id)
-              let next_stack =
-                list.fold_right(next_nodes, tail, fn(current_stack, next_id) {
-                  let next_meta =
-                    WalkMetadata(
-                      depth: metadata.depth + 1,
-                      parent: Some(node_id),
-                    )
-                  [#(next_id, next_meta), ..current_stack]
-                })
-              do_fold_walk_dfs(graph, next_stack, new_visited, new_acc, folder)
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-// Implicit BFS: same as do_fold_walk_bfs but uses a successors function
-// instead of querying a Graph.
-fn do_implicit_bfs(
-  q: queue.Queue(#(nid, WalkMetadata(nid))),
-  visited: Set(nid),
-  acc: a,
-  successors: fn(nid) -> List(nid),
-  folder: fn(a, nid, WalkMetadata(nid)) -> #(WalkControl, a),
-) -> a {
-  case queue.pop(q) {
-    Error(Nil) -> acc
-    Ok(#(#(node_id, metadata), rest)) ->
-      case set.contains(visited, node_id) {
-        True -> do_implicit_bfs(rest, visited, acc, successors, folder)
-        False -> {
-          let #(control, new_acc) = folder(acc, node_id, metadata)
-          let new_visited = set.insert(visited, node_id)
-          case control {
-            Halt -> new_acc
-            Stop ->
-              do_implicit_bfs(rest, new_visited, new_acc, successors, folder)
-            Continue -> {
-              let next_queue =
-                list.fold(successors(node_id), rest, fn(q2, next_id) {
-                  queue.push(q2, #(
-                    next_id,
-                    WalkMetadata(
-                      depth: metadata.depth + 1,
-                      parent: Some(node_id),
-                    ),
-                  ))
-                })
-              do_implicit_bfs(
-                next_queue,
-                new_visited,
-                new_acc,
-                successors,
-                folder,
-              )
-            }
-          }
-        }
-      }
-  }
-}
-
-// Implicit DFS: same as do_fold_walk_dfs but uses a successors function.
-fn do_implicit_dfs(
-  stack: List(#(nid, WalkMetadata(nid))),
-  visited: Set(nid),
-  acc: a,
-  successors: fn(nid) -> List(nid),
-  folder: fn(a, nid, WalkMetadata(nid)) -> #(WalkControl, a),
-) -> a {
-  case stack {
-    [] -> acc
-    [#(node_id, metadata), ..tail] ->
-      case set.contains(visited, node_id) {
-        True -> do_implicit_dfs(tail, visited, acc, successors, folder)
-        False -> {
-          let #(control, new_acc) = folder(acc, node_id, metadata)
-          let new_visited = set.insert(visited, node_id)
-          case control {
-            Halt -> new_acc
-            Stop ->
-              do_implicit_dfs(tail, new_visited, new_acc, successors, folder)
-            Continue -> {
-              let next_stack =
-                list.fold_right(successors(node_id), tail, fn(stk, next_id) {
-                  [
-                    #(
-                      next_id,
-                      WalkMetadata(
-                        depth: metadata.depth + 1,
-                        parent: Some(node_id),
-                      ),
-                    ),
-                    ..stk
-                  ]
-                })
-              do_implicit_dfs(
-                next_stack,
-                new_visited,
-                new_acc,
-                successors,
-                folder,
-              )
-            }
-          }
-        }
-      }
-  }
-}
-
-// Implicit BFS with custom key function for deduplication.
-// Same as do_implicit_bfs but checks visited by key_fn(node_id).
-fn do_implicit_bfs_by(
+fn do_walk_bfs(
   q: queue.Queue(#(nid, WalkMetadata(nid))),
   visited: Set(key),
   acc: a,
@@ -588,18 +181,17 @@ fn do_implicit_bfs_by(
 ) -> a {
   case queue.pop(q) {
     Error(Nil) -> acc
-    Ok(#(#(node_id, metadata), rest)) -> {
-      let node_key = key_fn(node_id)
-      case set.contains(visited, node_key) {
-        True ->
-          do_implicit_bfs_by(rest, visited, acc, successors, key_fn, folder)
+    Ok(#(#(node, meta), rest)) -> {
+      let key = key_fn(node)
+      case set.contains(visited, key) {
+        True -> do_walk_bfs(rest, visited, acc, successors, key_fn, folder)
         False -> {
-          let #(control, new_acc) = folder(acc, node_id, metadata)
-          let new_visited = set.insert(visited, node_key)
+          let #(control, new_acc) = folder(acc, node, meta)
+          let new_visited = set.insert(visited, key)
           case control {
             Halt -> new_acc
             Stop ->
-              do_implicit_bfs_by(
+              do_walk_bfs(
                 rest,
                 new_visited,
                 new_acc,
@@ -608,24 +200,14 @@ fn do_implicit_bfs_by(
                 folder,
               )
             Continue -> {
-              let next_queue =
-                list.fold(successors(node_id), rest, fn(q2, next_id) {
-                  queue.push(q2, #(
-                    next_id,
-                    WalkMetadata(
-                      depth: metadata.depth + 1,
-                      parent: Some(node_id),
-                    ),
-                  ))
+              let next_meta = fn(_n) {
+                WalkMetadata(depth: meta.depth + 1, parent: Some(node))
+              }
+              let q =
+                list.fold(successors(node), rest, fn(q, n) {
+                  queue.push(q, #(n, next_meta(n)))
                 })
-              do_implicit_bfs_by(
-                next_queue,
-                new_visited,
-                new_acc,
-                successors,
-                key_fn,
-                folder,
-              )
+              do_walk_bfs(q, new_visited, new_acc, successors, key_fn, folder)
             }
           }
         }
@@ -634,9 +216,7 @@ fn do_implicit_bfs_by(
   }
 }
 
-// Implicit DFS with custom key function for deduplication.
-// Same as do_implicit_dfs but checks visited by key_fn(node_id).
-fn do_implicit_dfs_by(
+fn do_walk_dfs(
   stack: List(#(nid, WalkMetadata(nid))),
   visited: Set(key),
   acc: a,
@@ -646,18 +226,17 @@ fn do_implicit_dfs_by(
 ) -> a {
   case stack {
     [] -> acc
-    [#(node_id, metadata), ..tail] -> {
-      let node_key = key_fn(node_id)
-      case set.contains(visited, node_key) {
-        True ->
-          do_implicit_dfs_by(tail, visited, acc, successors, key_fn, folder)
+    [#(node, meta), ..tail] -> {
+      let key = key_fn(node)
+      case set.contains(visited, key) {
+        True -> do_walk_dfs(tail, visited, acc, successors, key_fn, folder)
         False -> {
-          let #(control, new_acc) = folder(acc, node_id, metadata)
-          let new_visited = set.insert(visited, node_key)
+          let #(control, new_acc) = folder(acc, node, meta)
+          let new_visited = set.insert(visited, key)
           case control {
             Halt -> new_acc
             Stop ->
-              do_implicit_dfs_by(
+              do_walk_dfs(
                 tail,
                 new_visited,
                 new_acc,
@@ -666,21 +245,15 @@ fn do_implicit_dfs_by(
                 folder,
               )
             Continue -> {
-              let next_stack =
-                list.fold_right(successors(node_id), tail, fn(stk, next_id) {
-                  [
-                    #(
-                      next_id,
-                      WalkMetadata(
-                        depth: metadata.depth + 1,
-                        parent: Some(node_id),
-                      ),
-                    ),
-                    ..stk
-                  ]
+              let next_meta = fn(_n) {
+                WalkMetadata(depth: meta.depth + 1, parent: Some(node))
+              }
+              let stack =
+                list.fold_right(successors(node), tail, fn(s, n) {
+                  [#(n, next_meta(n)), ..s]
                 })
-              do_implicit_dfs_by(
-                next_stack,
+              do_walk_dfs(
+                stack,
                 new_visited,
                 new_acc,
                 successors,
@@ -695,42 +268,7 @@ fn do_implicit_dfs_by(
   }
 }
 
-/// Traverses an *implicit* weighted graph using Dijkstra's algorithm,
-/// folding over visited nodes in order of increasing cost.
-///
-/// Like `implicit_fold` but uses a priority queue so nodes are visited
-/// cheapest-first. Ideal for shortest-path problems on implicit state spaces
-/// where edge costs vary — e.g., state-space search with Manhattan moves, or
-/// multi-robot coordination where multiple robots share a key-bitmask state.
-///
-/// - `successors_of`: Given a node, return `List(#(neighbor, edge_cost))`.
-///   Include only valid transitions (filtering here avoids dead states).
-/// - `folder`: Called once per node, with `(acc, node, cost_so_far)`.
-///   Return `#(Halt, result)` to stop immediately, `#(Stop, acc)` to skip
-///   expanding this node's successors, or `#(Continue, acc)` to continue.
-///
-/// Internally maintains a `Dict(nid, Int)` of best-known costs;
-/// stale priority-queue entries are automatically skipped.
-///
-/// ## Example
-///
-/// ```gleam
-/// // Shortest path in an implicit maze with uniform cost
-/// traversal.implicit_dijkstra(
-///   from: start,
-///   initial: -1,
-///   successors_of: fn(pos) {
-///     neighbours(pos)
-///     |> list.map(fn(nb) { #(nb, 1) })  // uniform cost
-///   },
-///   with: fn(acc, pos, cost) {
-///     case pos == target {
-///       True -> #(Halt, cost)
-///       False -> #(Continue, acc)
-///     }
-///   },
-/// )
-/// ```
+/// Traverses an *implicit* weighted graph using Dijkstra's algorithm.
 pub fn implicit_dijkstra(
   from start: nid,
   initial acc: a,
@@ -745,19 +283,12 @@ pub fn implicit_dijkstra(
   do_implicit_dijkstra(frontier, dict.new(), acc, successors, folder)
 }
 
-fn do_implicit_dijkstra(
-  frontier: priority_queue.Queue(#(Int, nid)),
-  best: Dict(nid, Int),
-  acc: a,
-  successors: fn(nid) -> List(#(nid, Int)),
-  folder: fn(a, nid, Int) -> #(WalkControl, a),
-) -> a {
+fn do_implicit_dijkstra(frontier, best, acc, successors, folder) {
   case priority_queue.pop(frontier) {
     Error(Nil) -> acc
     Ok(#(#(cost, node), rest)) ->
       case dict.get(best, node) {
         Ok(prev) if prev < cost ->
-          // Stale priority-queue entry — a cheaper path already processed
           do_implicit_dijkstra(rest, best, acc, successors, folder)
         _ -> {
           let new_best = dict.insert(best, node, cost)
@@ -791,170 +322,106 @@ fn do_implicit_dijkstra(
 }
 
 /// Performs a topological sort on a directed graph using Kahn's algorithm.
-///
-/// Returns a linear ordering of nodes such that for every directed edge (u, v),
-/// node u comes before node v in the ordering.
-///
-/// Returns `Error(Nil)` if the graph contains a cycle.
-///
-/// **Time Complexity:** O(V + E) where V is vertices and E is edges
-///
-/// ## Example
-///
-/// ```gleam
-/// traversal.topological_sort(graph)
-/// // => Ok([1, 2, 3, 4])  // Valid ordering
-/// // or Error(Nil)         // Cycle detected
-/// ```
 pub fn topological_sort(graph: Graph(n, e)) -> Result(List(NodeId), Nil) {
   let all_nodes = model.all_nodes(graph)
-
   let in_degrees =
     all_nodes
-    |> list.map(fn(id) {
-      let degree =
-        dict.get(graph.in_edges, id)
-        |> result.map(dict.size)
-        |> result.unwrap(0)
-      #(id, degree)
-    })
+    |> list.map(fn(id) { #(id, model.in_degree(graph, id)) })
     |> dict.from_list()
 
   let queue =
     dict.to_list(in_degrees)
-    |> list.filter(fn(pair) { pair.1 == 0 })
-    |> list.map(fn(pair) { pair.0 })
+    |> list.filter_map(fn(p) {
+      case p.1 {
+        0 -> Ok(p.0)
+        _ -> Error(Nil)
+      }
+    })
 
   do_kahn(graph, queue, in_degrees, [], list.length(all_nodes))
 }
 
-/// Performs a topological sort that returns the lexicographically smallest sequence.
-///
-/// Uses a heap-based version of Kahn's algorithm to ensure that when multiple
-/// nodes have in-degree 0, the smallest one (according to `compare_nodes`) is chosen first.
-///
-/// The comparison function operates on **node data**, not node IDs, allowing intuitive
-/// comparisons like `string.compare` for alphabetical ordering.
-///
-/// Returns `Error(Nil)` if the graph contains a cycle.
-///
-/// **Time Complexity:** O(V log V + E) due to heap operations
-///
-/// ## Example
-///
-/// ```gleam
-/// // Get alphabetical ordering by node data
-/// traversal.lexicographical_topological_sort(graph, string.compare)
-/// // => Ok([0, 1, 2])  // Node IDs ordered by their string data
-///
-/// // Custom comparison by priority
-/// traversal.lexicographical_topological_sort(graph, fn(a, b) {
-///   int.compare(a.priority, b.priority)
-/// })
-/// ```
+fn do_kahn(graph, queue, in_degrees, acc, total_count) {
+  case queue {
+    [] ->
+      case list.length(acc) == total_count {
+        True -> Ok(list.reverse(acc))
+        False -> Error(Nil)
+      }
+    [head, ..tail] -> {
+      let #(next_q, next_degrees) =
+        list.fold(
+          model.successor_ids(graph, head),
+          #(tail, in_degrees),
+          fn(state, nb) {
+            let #(q, degrees) = state
+            let new_deg = { dict.get(degrees, nb) |> result.unwrap(0) } - 1
+            let q = case new_deg == 0 {
+              True -> [nb, ..q]
+              False -> q
+            }
+            #(q, dict.insert(degrees, nb, new_deg))
+          },
+        )
+      do_kahn(graph, next_q, next_degrees, [head, ..acc], total_count)
+    }
+  }
+}
+
+/// Performs a lexicographical topological sort.
 pub fn lexicographical_topological_sort(
   graph: Graph(n, e),
   compare_nodes: fn(n, n) -> order.Order,
 ) -> Result(List(NodeId), Nil) {
   let all_nodes = model.all_nodes(graph)
-
   let in_degrees =
     all_nodes
-    |> list.map(fn(id) {
-      let degree =
-        dict.get(graph.in_edges, id)
-        |> result.map(dict.size)
-        |> result.unwrap(0)
-      #(id, degree)
-    })
+    |> list.map(fn(id) { #(id, model.in_degree(graph, id)) })
     |> dict.from_list()
 
-  let compare_by_data = fn(id_a: NodeId, id_b: NodeId) -> order.Order {
-    case dict.get(graph.nodes, id_a), dict.get(graph.nodes, id_b) {
-      Ok(data_a), Ok(data_b) -> compare_nodes(data_a, data_b)
+  let compare_by_data = fn(a, b) {
+    case dict.get(graph.nodes, a), dict.get(graph.nodes, b) {
+      Ok(da), Ok(db) -> compare_nodes(da, db)
       _, _ -> order.Eq
     }
   }
 
-  let initial_queue =
+  let q =
     dict.to_list(in_degrees)
-    |> list.filter(fn(pair) { pair.1 == 0 })
-    |> list.map(fn(pair) { pair.0 })
-    |> list.fold(priority_queue.new(compare_by_data), fn(q, id) {
-      priority_queue.push(q, id)
+    |> list.filter_map(fn(p) {
+      case p.1 {
+        0 -> Ok(p.0)
+        _ -> Error(Nil)
+      }
     })
+    |> list.fold(priority_queue.new(compare_by_data), priority_queue.push)
 
-  do_lexical_kahn(graph, initial_queue, in_degrees, [], list.length(all_nodes))
+  do_lexical_kahn(graph, q, in_degrees, [], list.length(all_nodes))
 }
 
 fn do_lexical_kahn(graph, q, in_degrees, acc, total_count) {
   case priority_queue.pop(q) {
-    Error(Nil) -> {
+    Error(Nil) ->
       case list.length(acc) == total_count {
         True -> Ok(list.reverse(acc))
         False -> Error(Nil)
       }
-    }
-    Ok(#(head, rest_q)) -> {
-      let neighbors = model.successor_ids(graph, head)
-
-      let #(next_q, next_in_degrees) =
-        list.fold(neighbors, #(rest_q, in_degrees), fn(state, neighbor) {
-          let #(current_q, degrees) = state
-          let current_degree = dict.get(degrees, neighbor) |> result.unwrap(0)
-          let new_degree = current_degree - 1
-
-          let new_degrees = dict.insert(degrees, neighbor, new_degree)
-          let updated_q = case new_degree == 0 {
-            True -> priority_queue.push(current_q, neighbor)
-            False -> current_q
-          }
-          #(updated_q, new_degrees)
-        })
-
-      do_lexical_kahn(
-        graph,
-        next_q,
-        next_in_degrees,
-        [head, ..acc],
-        total_count,
-      )
-    }
-  }
-}
-
-fn do_kahn(graph, queue, in_degrees, acc, total_node_count) {
-  case queue {
-    [] -> {
-      case list.length(acc) == total_node_count {
-        True -> Ok(list.reverse(acc))
-        False -> Error(Nil)
-      }
-    }
-    [head, ..tail] -> {
-      let neighbors = model.successor_ids(graph, head)
-
-      let #(next_queue, next_in_degrees) =
-        list.fold(neighbors, #(tail, in_degrees), fn(state, neighbor) {
-          let #(q, degrees) = state
-          let current_degree = dict.get(degrees, neighbor) |> result.unwrap(0)
-          let new_degree = current_degree - 1
-
-          let new_degrees = dict.insert(degrees, neighbor, new_degree)
-          let new_q = case new_degree == 0 {
-            True -> [neighbor, ..q]
-            False -> q
-          }
-          #(new_q, new_degrees)
-        })
-
-      do_kahn(
-        graph,
-        next_queue,
-        next_in_degrees,
-        [head, ..acc],
-        total_node_count,
-      )
+    Ok(#(head, rest)) -> {
+      let #(next_q, next_degrees) =
+        list.fold(
+          model.successor_ids(graph, head),
+          #(rest, in_degrees),
+          fn(state, nb) {
+            let #(q, degrees) = state
+            let new_deg = { dict.get(degrees, nb) |> result.unwrap(0) } - 1
+            let q = case new_deg == 0 {
+              True -> priority_queue.push(q, nb)
+              False -> q
+            }
+            #(q, dict.insert(degrees, nb, new_deg))
+          },
+        )
+      do_lexical_kahn(graph, next_q, next_degrees, [head, ..acc], total_count)
     }
   }
 }
