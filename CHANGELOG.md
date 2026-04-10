@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed `implicit_dijkstra` from the generic traversal module. This function has been relocated to `yog/pathfinding/dijkstra` as `fold` to better align with the library's module-based organization of algorithms.
 
 ### Added
+- **New Traversal Algorithms** (`yog/traversal`):
+  - Added `best_first_walk` and `best_first_fold` for Greedy Best-First Search exploration using custom node-based scoring functions.
+  - Added `random_walk` for stochastic path simulation, with support for seeded reproducible walks.
+  - Introduced internal `Rng` state for deterministic random operations.
 
 - **High-Performance Set Operations** (`yog/operation`):
   - Re-implemented `union`, `intersection`, `difference`, and `symmetric_difference` as declarative pipelines for $O(V+E)$ complexity and improved readability.

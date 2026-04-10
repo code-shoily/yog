@@ -37,6 +37,7 @@
 //// - [Wikipedia: Topological Sorting](https://en.wikipedia.org/wiki/Topological_sorting)
 
 import gleam/dict
+import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/order
@@ -44,6 +45,7 @@ import gleam/result
 import gleam/set.{type Set}
 import yog/internal/priority_queue
 import yog/internal/queue
+import yog/internal/random.{type Rng}
 import yog/model.{type Graph, type NodeId}
 
 // =============================================================================
@@ -113,6 +115,82 @@ pub fn walk(
   |> list.reverse()
 }
 
+/// Performs a Greedy Best-First Walk starting from the given node.
+///
+/// Visits nodes in order of their score as determined by `score_of`.
+/// Lower scores are visited first. Unlike Dijkstra, scores are not cumulative.
+///
+/// ## Example
+///
+/// ```gleam
+/// traversal.best_first_walk(
+///   graph,
+///   from: 1,
+///   scored_by: fn(node_id) { get_priority(node_id) }
+/// )
+/// ```
+pub fn best_first_walk(
+  in graph: Graph(n, e),
+  from start_id: NodeId,
+  scored_by score_of: fn(NodeId) -> Int,
+) -> List(NodeId) {
+  best_first_fold(
+    over: graph,
+    from: start_id,
+    initial: [],
+    scored_by: score_of,
+    with: fn(acc, node_id) { #(Continue, [node_id, ..acc]) },
+  )
+  |> list.reverse()
+}
+
+/// Simulates a random walk on the graph for a specified number of steps.
+///
+/// At each step, one of the current node's neighbors is chosen uniformly
+/// at random. Returns the sequence of node IDs visited.
+///
+/// ## Parameters
+///
+/// - `steps`: Maximum number of steps to take.
+/// - `seed`: Optional seed for reproducibility.
+///
+/// ## Example
+///
+/// ```gleam
+/// traversal.random_walk(graph, from: 1, steps: 10, seed: Some(42))
+/// // => [1, 2, 5, 2, 3, 1, ...]
+/// ```
+pub fn random_walk(
+  in graph: Graph(n, e),
+  from start_id: NodeId,
+  steps limit: Int,
+  seed seed: Option(Int),
+) -> List(NodeId) {
+  let rng = random.new(seed)
+  do_random_walk(graph, start_id, limit, rng, [start_id])
+  |> list.reverse()
+}
+
+fn do_random_walk(graph, current, remaining, rng, acc) {
+  case remaining <= 0 {
+    True -> acc
+    False -> {
+      let neighbors = model.successor_ids(graph, current)
+      case neighbors {
+        [] -> acc
+        _ -> {
+          let n = list.length(neighbors)
+          let #(idx, next_rng) = random.next_int(rng, n)
+          let assert Ok(next) =
+            list.drop(neighbors, idx)
+            |> list.first
+          do_random_walk(graph, next, remaining - 1, next_rng, [next, ..acc])
+        }
+      }
+    }
+  }
+}
+
 /// Walks the graph but stops early when a condition is met.
 ///
 /// Traverses the graph until `until` returns True for a node.
@@ -149,6 +227,71 @@ pub fn walk_until(
     },
   )
   |> list.reverse()
+}
+
+/// Folds over nodes in Best-First order using a priority queue.
+///
+/// Nodes are explored according to the score returned by `score_of` (cheapest first).
+/// This is a Greedy Best-First Search — if you need cumulative edge costs,
+/// use `dijkstra.fold` instead.
+pub fn best_first_fold(
+  over graph: Graph(n, e),
+  from start: NodeId,
+  initial acc: a,
+  scored_by score_of: fn(NodeId) -> Int,
+  with folder: fn(a, NodeId) -> #(WalkControl, a),
+) -> a {
+  let q =
+    priority_queue.new(fn(a: #(Int, NodeId), b: #(Int, NodeId)) {
+      int.compare(a.0, b.0)
+    })
+    |> priority_queue.push(#(score_of(start), start))
+
+  do_best_first_fold(graph, q, set.new(), acc, score_of, folder)
+}
+
+fn do_best_first_fold(graph, q, visited, acc, score_of, folder) {
+  case priority_queue.pop(q) {
+    Error(Nil) -> acc
+    Ok(#(#(_score, node), rest)) -> {
+      case set.contains(visited, node) {
+        True -> do_best_first_fold(graph, rest, visited, acc, score_of, folder)
+        False -> {
+          let #(control, new_acc) = folder(acc, node)
+          let new_visited = set.insert(visited, node)
+          case control {
+            Halt -> new_acc
+            Stop ->
+              do_best_first_fold(
+                graph,
+                rest,
+                new_visited,
+                new_acc,
+                score_of,
+                folder,
+              )
+            Continue -> {
+              let next_q =
+                list.fold(model.successor_ids(graph, node), rest, fn(q_acc, nb) {
+                  case set.contains(new_visited, nb) {
+                    True -> q_acc
+                    False -> priority_queue.push(q_acc, #(score_of(nb), nb))
+                  }
+                })
+              do_best_first_fold(
+                graph,
+                next_q,
+                new_visited,
+                new_acc,
+                score_of,
+                folder,
+              )
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 /// Folds over nodes during graph traversal, accumulating state with metadata.
