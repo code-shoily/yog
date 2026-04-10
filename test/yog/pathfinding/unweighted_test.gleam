@@ -1,6 +1,5 @@
 import gleam/dict
 import gleam/option.{Some}
-import gleam/result
 import gleeunit/should
 import yog
 import yog/generator/classic

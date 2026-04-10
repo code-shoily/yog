@@ -1,6 +1,5 @@
 //// Unit tests for Best-First and Random walks in yog/traversal.gleam.
 
-import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleeunit/should

@@ -45,7 +45,7 @@ import gleam/result
 import gleam/set.{type Set}
 import yog/internal/priority_queue
 import yog/internal/queue
-import yog/internal/random.{type Rng}
+import yog/internal/random
 import yog/model.{type Graph, type NodeId}
 
 // =============================================================================
