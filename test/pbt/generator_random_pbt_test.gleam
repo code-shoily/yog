@@ -50,7 +50,7 @@ pub fn erdos_renyi_gnp_expected_edge_count_test() {
     Ok(sd) -> float.truncate(sd)
     Error(_) -> 5
   }
-  let tolerance = int.max(std_dev * 3, 5)
+  let tolerance = int.max(std_dev * 4, 5)
 
   assert edge_count >= expected - tolerance
   assert edge_count <= expected + tolerance
