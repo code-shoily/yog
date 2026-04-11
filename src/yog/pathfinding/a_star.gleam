@@ -111,58 +111,37 @@ fn do_a_star(
   h,
 ) -> Option(#(e, List(NodeId))) {
   case priority_queue.pop(frontier) {
-    Error(Nil) -> None
-    Ok(#(#(_, dist, [current, ..] as path), rest_frontier)) -> {
-      case current == goal {
-        True -> Some(#(dist, path))
-        False -> {
-          let should_explore =
-            should_explore_node(visited, current, dist, compare)
+    Ok(#(#(_, dist, [current, ..] as path), _)) if current == goal ->
+      Some(#(dist, path))
 
-          case should_explore {
-            False ->
-              do_a_star(graph, goal, rest_frontier, visited, add, compare, h)
-            True -> {
-              let new_visited = dict.insert(visited, current, dist)
-              let next_frontier =
-                model.successors(graph, current)
-                |> list.fold(rest_frontier, fn(acc_h, neighbor) {
-                  let #(next_id, weight) = neighbor
-                  let next_dist = add(dist, weight)
+    Ok(#(#(_, dist, [current, ..] as path), rest_frontier)) ->
+      case should_explore_node(visited, current, dist, compare) {
+        False -> do_a_star(graph, goal, rest_frontier, visited, add, compare, h)
+        True -> {
+          let new_visited = dict.insert(visited, current, dist)
+          let successors = model.successors(graph, current)
 
-                  // Only add to frontier if not visited or if this is a better path
-                  case
-                    should_explore_node(
-                      new_visited,
-                      next_id,
-                      next_dist,
-                      compare,
-                    )
-                  {
-                    True -> {
-                      let f_score = add(next_dist, h(next_id, goal))
-                      priority_queue.push(
-                        acc_h,
-                        #(f_score, next_dist, [next_id, ..path]),
-                      )
-                    }
-                    False -> acc_h
-                  }
-                })
-              do_a_star(
-                graph,
-                goal,
-                next_frontier,
-                new_visited,
-                add,
-                compare,
-                h,
-              )
+          let next_frontier = {
+            use acc_h, neighbor <- list.fold(successors, rest_frontier)
+            let #(next_id, weight) = neighbor
+            let next_dist = add(dist, weight)
+
+            case should_explore_node(new_visited, next_id, next_dist, compare) {
+              True -> {
+                let f_score = add(next_dist, h(next_id, goal))
+                priority_queue.push(
+                  acc_h,
+                  #(f_score, next_dist, [next_id, ..path]),
+                )
+              }
+              False -> acc_h
             }
           }
+
+          do_a_star(graph, goal, next_frontier, new_visited, add, compare, h)
         }
       }
-    }
+
     _ -> None
   }
 }
@@ -187,90 +166,16 @@ pub fn implicit_a_star(
   with_add add: fn(cost, cost) -> cost,
   with_compare compare: fn(cost, cost) -> Order,
 ) -> Option(cost) {
-  let initial_f = h(start)
-  let frontier =
-    priority_queue.new(fn(a: #(cost, cost, state), b: #(cost, cost, state)) {
-      compare(a.0, b.0)
-    })
-    |> priority_queue.push(#(initial_f, zero, start))
-
-  do_implicit_a_star(frontier, dict.new(), successors, is_goal, h, add, compare)
-}
-
-fn do_implicit_a_star(
-  frontier: priority_queue.Queue(#(cost, cost, state)),
-  distances: Dict(state, cost),
-  successors: fn(state) -> List(#(state, cost)),
-  is_goal: fn(state) -> Bool,
-  h: fn(state) -> cost,
-  add: fn(cost, cost) -> cost,
-  compare: fn(cost, cost) -> Order,
-) -> Option(cost) {
-  case priority_queue.pop(frontier) {
-    Error(Nil) -> None
-    Ok(#(#(_, dist, current), rest_frontier)) -> {
-      case is_goal(current) {
-        True -> Some(dist)
-        False -> {
-          let should_explore =
-            should_explore_node(distances, current, dist, compare)
-
-          case should_explore {
-            False ->
-              do_implicit_a_star(
-                rest_frontier,
-                distances,
-                successors,
-                is_goal,
-                h,
-                add,
-                compare,
-              )
-            True -> {
-              let new_distances = dict.insert(distances, current, dist)
-
-              let next_frontier =
-                successors(current)
-                |> list.fold(rest_frontier, fn(frontier_acc, neighbor) {
-                  let #(next_state, edge_cost) = neighbor
-                  let next_dist = add(dist, edge_cost)
-
-                  // Only add to frontier if not visited or if this is a better path
-                  case
-                    should_explore_node(
-                      new_distances,
-                      next_state,
-                      next_dist,
-                      compare,
-                    )
-                  {
-                    True -> {
-                      let f_score = add(next_dist, h(next_state))
-                      priority_queue.push(frontier_acc, #(
-                        f_score,
-                        next_dist,
-                        next_state,
-                      ))
-                    }
-                    False -> frontier_acc
-                  }
-                })
-
-              do_implicit_a_star(
-                next_frontier,
-                new_distances,
-                successors,
-                is_goal,
-                h,
-                add,
-                compare,
-              )
-            }
-          }
-        }
-      }
-    }
-  }
+  implicit_a_star_by(
+    from: start,
+    successors_with_cost: successors,
+    visited_by: fn(s) { s },
+    is_goal: is_goal,
+    with_heuristic: h,
+    with_zero: zero,
+    with_add: add,
+    with_compare: compare,
+  )
 }
 
 /// Like `implicit_a_star`, but deduplicates visited states by a custom key.
@@ -319,16 +224,12 @@ fn do_implicit_a_star_by(
   compare: fn(cost, cost) -> Order,
 ) -> Option(cost) {
   case priority_queue.pop(frontier) {
-    Error(Nil) -> None
     Ok(#(#(_, dist, current), rest_frontier)) -> {
       case is_goal(current) {
         True -> Some(dist)
         False -> {
           let current_key = key_fn(current)
-          let should_explore =
-            should_explore_node(distances, current_key, dist, compare)
-
-          case should_explore {
+          case should_explore_node(distances, current_key, dist, compare) {
             False ->
               do_implicit_a_star_by(
                 rest_frontier,
@@ -343,33 +244,34 @@ fn do_implicit_a_star_by(
             True -> {
               let new_distances = dict.insert(distances, current_key, dist)
 
-              let next_frontier =
-                successors(current)
-                |> list.fold(rest_frontier, fn(frontier_acc, neighbor) {
-                  let #(next_state, edge_cost) = neighbor
-                  let next_dist = add(dist, edge_cost)
-                  let next_key = key_fn(next_state)
+              let next_frontier = {
+                use frontier_acc, neighbor <- list.fold(
+                  successors(current),
+                  rest_frontier,
+                )
+                let #(next_state, edge_cost) = neighbor
+                let next_dist = add(dist, edge_cost)
+                let next_key = key_fn(next_state)
 
-                  // Only add to frontier if not visited or if this is a better path
-                  case
-                    should_explore_node(
-                      new_distances,
-                      next_key,
+                case
+                  should_explore_node(
+                    new_distances,
+                    next_key,
+                    next_dist,
+                    compare,
+                  )
+                {
+                  True -> {
+                    let f_score = add(next_dist, h(next_state))
+                    priority_queue.push(frontier_acc, #(
+                      f_score,
                       next_dist,
-                      compare,
-                    )
-                  {
-                    True -> {
-                      let f_score = add(next_dist, h(next_state))
-                      priority_queue.push(frontier_acc, #(
-                        f_score,
-                        next_dist,
-                        next_state,
-                      ))
-                    }
-                    False -> frontier_acc
+                      next_state,
+                    ))
                   }
-                })
+                  False -> frontier_acc
+                }
+              }
 
               do_implicit_a_star_by(
                 next_frontier,
@@ -386,12 +288,14 @@ fn do_implicit_a_star_by(
         }
       }
     }
+
+    _ -> None
   }
 }
 
-// -----------------------------------------------------------------------------
+// ============================================================================
 // CONVENIENCE WRAPPERS FOR COMMON TYPES
-// -----------------------------------------------------------------------------
+// ============================================================================
 
 /// Finds the shortest path using A* with **integer weights**.
 ///
@@ -421,9 +325,9 @@ pub fn a_star_int(
   with_heuristic h: fn(NodeId, NodeId) -> Int,
 ) -> Option(Path(Int)) {
   a_star(
-    graph,
-    start,
-    goal,
+    in: graph,
+    from: start,
+    to: goal,
     with_zero: 0,
     with_add: int.add,
     with_compare: int.compare,
@@ -446,9 +350,9 @@ pub fn a_star_float(
   with_heuristic h: fn(NodeId, NodeId) -> Float,
 ) -> Option(Path(Float)) {
   a_star(
-    graph,
-    start,
-    goal,
+    in: graph,
+    from: start,
+    to: goal,
     with_zero: 0.0,
     with_add: float.add,
     with_compare: float.compare,
