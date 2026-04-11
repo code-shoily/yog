@@ -39,6 +39,24 @@ pub fn push_list(queue: Queue(a), items: List(a)) -> Queue(a) {
 ///
 /// Returns `Ok(#(item, new_queue))` if the queue is not empty,
 /// or `Error(Nil)` if the queue is empty.
+/// Returns the front item from the queue without removing it. O(1) amortized.
+///
+/// Returns `Ok(item)` if the queue is not empty, or `Error(Nil)` if empty.
+pub fn peek(queue: Queue(a)) -> Result(a, Nil) {
+  case queue.front {
+    [item, ..] -> Ok(item)
+    [] ->
+      case list.reverse(queue.back) {
+        [item, ..] -> Ok(item)
+        [] -> Error(Nil)
+      }
+  }
+}
+
+/// Removes and returns the front item from the queue. O(1) amortized.
+///
+/// Returns `Ok(#(item, new_queue))` if the queue is not empty,
+/// or `Error(Nil)` if the queue is empty.
 pub fn pop(queue: Queue(a)) -> Result(#(a, Queue(a)), Nil) {
   case queue.front {
     [item, ..rest] -> Ok(#(item, Queue(front: rest, back: queue.back)))

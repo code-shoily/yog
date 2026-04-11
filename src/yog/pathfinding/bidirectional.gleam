@@ -138,8 +138,8 @@ fn get_queue_min_dist(
   q: queue.Queue(NodeId),
   dists: dict.Dict(NodeId, Int),
 ) -> Option(Int) {
-  case queue.pop(q) {
-    Ok(#(node, _)) ->
+  case queue.peek(q) {
+    Ok(node) ->
       dict.get(dists, node)
       |> option.from_result
     Error(Nil) -> option.None
