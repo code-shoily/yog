@@ -1,6 +1,5 @@
 import gleam/int
 import gleam/io
-import gleam/list
 import yog
 import yog/model
 import yog/mst
@@ -22,8 +21,8 @@ pub fn main() {
     ])
 
   // Find minimum cost to connect all buildings
-  let cables = mst.kruskal(in: buildings, with_compare: int.compare)
-  let total_cost = list.fold(cables, 0, fn(sum, edge) { sum + edge.weight })
+  let cables = mst.kruskal_int(buildings)
+  let total_cost = cables.total_weight
   // => 250 (connects all buildings with minimum cable cost)
   // Prints: Minimum cable cost is 250
   io.println("Minimum cable cost is " <> int.to_string(total_cost))

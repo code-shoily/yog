@@ -365,7 +365,7 @@ pub fn to_simple_graph(
 /// // MST on multigraph  
 /// graph
 /// |> multi.to_simple_graph_min_edges(int.compare)
-/// |> mst.kruskal(with_compare: int.compare)
+/// |> mst.kruskal_int()
 /// ```
 pub fn to_simple_graph_min_edges(
   graph: MultiGraph(n, e),
