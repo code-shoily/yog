@@ -628,7 +628,22 @@ fn wcc_dfs_collect(
 // K-CORE DECOMPOSITION
 // =============================================================================
 
-/// Returns the maximal subgraph where every node has at least degree k.
+/// Returns the maximal subgraph where every node has at least degree `k`.
+///
+/// A [k-core](https://en.wikipedia.org/wiki/Degeneracy_(graph_theory)) is obtained
+/// by repeatedly removing all nodes with degree less than `k` until no such nodes
+/// remain. It is useful for identifying the most resilient/connected part of a
+/// network and for pruning peripheral nodes before expensive analysis.
+///
+/// ## Example
+///
+/// ```gleam
+/// // A square (cycle of 4) has a 2-core containing all nodes, but no 3-core.
+/// let core_2 = connectivity.k_core(graph, 2)
+/// let core_3 = connectivity.k_core(graph, 3)
+/// ```
+///
+/// **Time Complexity:** O(V + E)
 pub fn k_core(graph: Graph(n, e), k: Int) -> Graph(n, e) {
   let nodes = model.all_nodes(graph)
   let degrees = initial_degrees(graph, nodes)
@@ -705,7 +720,21 @@ fn do_prune_k_core(
   }
 }
 
-/// Returns the core number of every node (largest k such that v is in a k-core).
+/// Returns the core number of every node.
+///
+/// The core number of a node is the largest `k` such that the node belongs to a
+/// k-core. This is computed using the Batagelj–Zaversnik O(V + E) bucket
+/// elimination algorithm.
+///
+/// ## Example
+///
+/// ```gleam
+/// // In a triangle, every node has core number 2.
+/// let cores = connectivity.core_numbers(triangle_graph)
+/// // cores == dict.from_list([#(1, 2), #(2, 2), #(3, 2)])
+/// ```
+///
+/// **Time Complexity:** O(V + E)
 pub fn core_numbers(graph: Graph(n, e)) -> Dict(NodeId, Int) {
   let nodes = model.all_nodes(graph)
   let degrees = initial_degrees(graph, nodes)
@@ -813,7 +842,14 @@ fn process_bucket(
   }
 }
 
-/// Returns the degeneracy of the graph (maximum core number).
+/// Returns the [degeneracy](https://en.wikipedia.org/wiki/Degeneracy_(graph_theory))
+/// of the graph.
+///
+/// Degeneracy is the maximum core number found in the graph. It measures how
+/// sparse or dense the graph is and provides an upper bound on many graph
+/// parameters such as chromatic number.
+///
+/// **Time Complexity:** O(V + E)
 pub fn degeneracy(graph: Graph(n, e)) -> Int {
   let cores = core_numbers(graph)
   case dict.values(cores) {
@@ -823,6 +859,20 @@ pub fn degeneracy(graph: Graph(n, e)) -> Int {
 }
 
 /// Groups nodes by their core number (k-shell decomposition).
+///
+/// A k-shell contains all nodes that have a core number of exactly `k`. This
+/// decomposition is useful for visualising the layered structure of a network
+/// and for identifying core-periphery patterns.
+///
+/// ## Example
+///
+/// ```gleam
+/// // A star graph with 4 leaves has a 1-shell (the leaves) and no higher shells.
+/// let shells = connectivity.shell_decomposition(star_graph)
+/// // shells == dict.from_list([#(1, [2, 3, 4, 5])])
+/// ```
+///
+/// **Time Complexity:** O(V + E)
 pub fn shell_decomposition(graph: Graph(n, e)) -> Dict(Int, List(NodeId)) {
   use acc, node, core <- dict.fold(core_numbers(graph), dict.new())
   let existing = case dict.get(acc, core) {

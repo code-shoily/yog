@@ -13,17 +13,25 @@
 ////
 //// ## Core Functions
 ////
-//// - `bfs/2` / `dfs/2`: Simple traversals returning visited nodes in order
-//// - `walk/4`: Generic traversal with custom fold function
-//// - `topological_sort/1`: Ordering for DAGs (uses DFS internally)
-//// - `lexicographical_topological_sort/2`: Ordering with custom priority
+//// | Function | Description |
+//// |----------|-------------|
+//// | `walk/3` | Simple traversal returning visited nodes in order |
+//// | `walk_until/4` | Traversal until a predicate is satisfied |
+//// | `fold_walk/5` | Generic traversal with custom fold and `WalkControl` |
+//// | `implicit_fold/6` | `fold_walk` for implicit graphs (no materialised `Graph`) |
+//// | `implicit_fold_by/7` | `implicit_fold` with custom visited-key function |
+//// | `best_first_walk/3` | Greedy Best-First Search traversal |
+//// | `best_first_fold/5` | Greedy Best-First Search with fold control |
+//// | `random_walk/4` | Stochastic traversal for simulation |
+//// | `topological_sort/1` | Ordering for DAGs (uses DFS internally) |
+//// | `lexicographical_topological_sort/2` | Ordering with custom priority |
 ////
 //// ## Walk Control
 ////
-//// The `fold_walk` function provides fine-grained control:
+//// The `fold_walk` and `best_first_fold` functions provide fine-grained control:
 //// - `Continue`: Explore this node's neighbors normally
 //// - `Stop`: Skip this node's neighbors but continue traversal
-//// - `Halt`: Stop the entire traversal immediately
+//// - `Halt`: Stop the entire traversal immediately and return the accumulator
 ////
 //// ## Time Complexity
 ////
