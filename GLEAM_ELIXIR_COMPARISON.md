@@ -102,9 +102,9 @@ This document compares the Gleam and Elixir (YogEx) implementations of the Yog g
 | **Kruskal's MST** | ✅ | ✅ | O(E log E) |
 | **Prim's MST** | ✅ | ✅ | O(E log V) |
 | **MaxST Wrappers** | ❌ | ✅ | **Elixir only** – `kruskal_max`, `prim_max`, `maximum_spanning_tree` |
-| **Borůvka's MST** | ❌ | ✅ | **Elixir only** – Parallel component-merging MST |
-| **Wilson's UST** | ❌ | ✅ | **Elixir only** – Uniform random spanning tree |
-| **Edmonds' Arborescence** | ❌ | ✅ | **Elixir only** – Directed MST (Chu-Liu/Edmonds) |
+| **Borůvka's MST** | ✅ | ✅ | Parallel (For Elixir only) component-merging MST |
+| **Wilson's UST** | ✅ | ✅ | Uniform random spanning tree |
+| **Edmonds' Arborescence** | ✅ | ✅ | Directed MST (Chu-Liu/Edmonds) |
 
 **API Differences**:
 - **Elixir** returns `{:ok, %Yog.MST.Result{}}` with `total_weight`, `edge_count`, and `edges`; enforces `{:error, :undirected_only}` for Kruskal/Prim/Borůvka on directed graphs.
@@ -168,14 +168,14 @@ This document compares the Gleam and Elixir (YogEx) implementations of the Yog g
 
 | Operation | Gleam | Elixir | Notes |
 | -------- | ------- | ----- | ------- |
-| **Union** | ✅ | ❌ | Set-theoretic union (Gleam only) |
-| **Intersection** | ✅ | ❌ | Set-theoretic intersection (Gleam only) |
-| **Difference** | ✅ | ❌ | Relative complement (Gleam only) |
-| **Symmetric Difference** | ✅ | ❌ | XOR of edge sets (Gleam only) |
-| **Cartesian Product** | ✅ | ❌ | Graph Cartesian product (Gleam only) |
-| **Disjoint Union** | ✅ | ❌ | Component-wise union (Gleam only) |
-| **Composition** | ✅ | ❌ | Graph lexicographic product (Gleam only) |
-| **Power Graph** | ✅ | ❌ | k-th power of a graph (Gleam only) |
+| **Union** | ✅ | ✅ | Set-theoretic union |
+| **Intersection** | ✅ | ✅ | Set-theoretic intersection |
+| **Difference** | ✅ | ✅ | Relative complement |
+| **Symmetric Difference** | ✅ | ✅ | XOR of edge sets |
+| **Cartesian Product** | ✅ | ✅ | Graph Cartesian product |
+| **Disjoint Union** | ✅ | ✅ | Component-wise union |
+| **Composition** | ✅ | ✅ | Graph lexicographic product |
+| **Power Graph** | ✅ | ✅ | k-th power of a graph |
 | **Subgraph Check** | ✅ | ✅ | `is_subgraph` (Gleam) / `subgraph?` (Elixir) |
 | **Isomorphism Check** | ✅ | ✅ | `is_isomorphic` (Gleam) / `isomorphic?` (Elixir) |
 
