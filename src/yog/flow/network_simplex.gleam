@@ -81,7 +81,7 @@
 ////   reads and updates O(n) rather than O(1). Networks with 1000+ nodes/edges may
 ////   experience significantly reduced performance.
 //// - **Cycle timeout**: If the algorithm fails to converge within `max(500, 5·E)` pivots,
-////   it **panics** rather than returning a graceful error.
+////   it returns `Error(Timeout)`.
 //// - **No convenience wrappers**: Unlike `yog/mst`, this module does not yet provide
 ////   pre-baked `*_int` or `*_record` variants; you must supply extractor functions.
 //// - **Integer only**: Costs, capacities, and flows are all `Int`. Float weights are
@@ -124,6 +124,8 @@ pub type NetworkSimplexError {
   Unbounded
   /// The sum of all node demands does not equal 0.
   UnbalancedDemands
+  /// The algorithm did not converge within the allowed number of pivots.
+  Timeout
 }
 
 /// A unified state object passed recursively through the pivot loop.
@@ -236,7 +238,10 @@ pub fn min_cost_flow(
         |> pivot_loop(max_pivots)
 
       // Remove super source and extract flows
-      summarize(ans, graph)
+      case ans {
+        Error(err) -> Error(err)
+        Ok(final_omni) -> summarize(final_omni, graph)
+      }
     }
   }
 }
@@ -910,12 +915,15 @@ fn do_add_tree_edge_thread(omni: OmniState, t: Int, s: Int) -> OmniState {
   )
 }
 
-fn pivot_loop(omni: OmniState, max_iter: Int) -> OmniState {
+fn pivot_loop(
+  omni: OmniState,
+  max_iter: Int,
+) -> Result(OmniState, NetworkSimplexError) {
   case max_iter <= 0 {
-    True -> panic as "Network Simplex Cycle Timeout Error!"
+    True -> Error(Timeout)
     False -> {
       case find_entering_edges(omni) {
-        option.None -> omni
+        option.None -> Ok(omni)
         option.Some(ee) -> {
           let next_omni = pivot(omni, ee)
           pivot_loop(next_omni, max_iter - 1)

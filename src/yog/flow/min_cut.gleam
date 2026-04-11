@@ -44,6 +44,7 @@
 import gleam/dict
 import gleam/int
 import gleam/list
+import gleam/option.{type Option, None, Some}
 import gleam/order
 import gleam/set.{type Set}
 import yog/internal/priority_queue
@@ -70,15 +71,16 @@ pub fn global_min_cut(in graph: Graph(n, Int)) -> MinCut {
   // Start every node with a weight of 1 (representing itself)
   // This tracks how many original nodes have been merged together
   let graph = transform.map_nodes(graph, fn(_, _) { 1 })
-  do_min_cut(
-    graph,
-    MinCut(weight: 999_999_999, group_a_size: 0, group_b_size: 0),
-  )
+  do_min_cut(graph, None)
 }
 
-fn do_min_cut(graph: Graph(Int, Int), best: MinCut) -> MinCut {
+fn do_min_cut(graph: Graph(Int, Int), best: Option(MinCut)) -> MinCut {
   case model.order(graph) <= 1 {
-    True -> best
+    True ->
+      case best {
+        Some(cut) -> cut
+        None -> MinCut(weight: 0, group_a_size: 0, group_b_size: 0)
+      }
     False -> {
       let #(s, t, cut_weight) = maximum_adjacency_search(graph)
 
@@ -93,9 +95,13 @@ fn do_min_cut(graph: Graph(Int, Int), best: MinCut) -> MinCut {
           group_b_size: total_nodes - t_size,
         )
 
-      let best = case current_cut.weight < best.weight {
-        True -> current_cut
-        False -> best
+      let best = case best {
+        None -> current_cut
+        Some(existing) ->
+          case current_cut.weight < existing.weight {
+            True -> current_cut
+            False -> existing
+          }
       }
 
       let next_graph =
@@ -108,7 +114,7 @@ fn do_min_cut(graph: Graph(Int, Int), best: MinCut) -> MinCut {
 
       let next_graph = model.add_node(next_graph, s, s_size + t_size)
 
-      do_min_cut(next_graph, best)
+      do_min_cut(next_graph, Some(best))
     }
   }
 }

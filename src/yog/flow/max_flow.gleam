@@ -40,6 +40,7 @@
 //// - [CP-Algorithms: Maximum Flow](https://cp-algorithms.com/graph/edmonds_karp.html)
 
 import gleam/dict.{type Dict}
+import gleam/float
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
@@ -590,5 +591,37 @@ pub fn edmonds_karp_int(
     with_subtract: int.subtract,
     with_compare: int.compare,
     with_min: int.min,
+  )
+}
+
+/// Finds maximum flow with **float capacities**.
+///
+/// This is a convenience wrapper around `edmonds_karp` that uses:
+/// - `0.0` as the zero element
+/// - `float.add` for addition
+/// - `float.subtract` for subtraction
+/// - `float.compare` for comparison
+/// - `float.min` for minimum
+///
+/// ## Example
+///
+/// ```gleam
+/// let result = max_flow.edmonds_karp_float(network, from: 0, to: 5)
+/// // => MaxFlowResult(max_flow: 25.5, ...)
+/// ```
+pub fn edmonds_karp_float(
+  in graph: Graph(n, Float),
+  from source: NodeId,
+  to sink: NodeId,
+) -> MaxFlowResult(Float) {
+  edmonds_karp(
+    graph,
+    source,
+    sink,
+    with_zero: 0.0,
+    with_add: float.add,
+    with_subtract: float.subtract,
+    with_compare: float.compare,
+    with_min: float.min,
   )
 }
