@@ -193,6 +193,7 @@ gleam run -m examples/gps_navigation
 - `src/yog/` - Core graph library modules
 - `test/` - Unit tests and property-based tests
 - `test/examples/` - Real-world usage examples
+- `test/pbt/` - Property-based tests
 - `test/bench/` - Performance benchmarks
 
 ## AI Assistance
