@@ -1,5 +1,10 @@
 //// Network Simplex algorithm for minimum cost flow optimization.
 ////
+//// > [!CAUTION]
+//// > **Experimental**: This module has not been extensively tested against edge cases,
+//// > large networks, or adversarial inputs. The API and error behavior may change in
+//// > future releases. Use with caution in production.
+////
 //// This module solves the [minimum cost flow problem](https://en.wikipedia.org/wiki/Minimum-cost_flow_problem):
 //// find the cheapest way to send a given amount of flow through a network where
 //// edges have both capacities and costs per unit of flow.
@@ -8,7 +13,7 @@
 ////
 //// | Algorithm | Function | Complexity | Best For |
 //// |-----------|----------|------------|----------|
-//// | [Network Simplex](https://en.wikipedia.org/wiki/Network_simplex_algorithm) | `min_cost_flow/5` | O(V²E) practical | Large sparse networks |
+//// | [Network Simplex](https://en.wikipedia.org/wiki/Network_simplex_algorithm) | `min_cost_flow/4` | O(V²E) practical | Large sparse networks |
 ////
 //// The Network Simplex is a specialized version of the [simplex algorithm](https://en.wikipedia.org/wiki/Simplex_algorithm)
 //// for network flow problems. It maintains a spanning tree of basic edges and
@@ -35,6 +40,33 @@
 //// - Subject to: 0 ≤ f(e) ≤ u(e)  (capacity constraints)
 //// - And: flow conservation at each node
 ////
+//// ## Example
+////
+//// ```gleam
+//// import yog
+//// import yog/flow/network_simplex
+////
+//// let graph =
+////   yog.directed()
+////   |> yog.add_node(1, 10)   // supply 10
+////   |> yog.add_node(2, 0)    // transshipment
+////   |> yog.add_node(3, -10)  // demand 10
+////   |> yog.add_edges([
+////     #(1, 2, #(5, 2)),   // capacity 5, cost 2
+////     #(1, 3, #(10, 5)),  // capacity 10, cost 5
+////     #(2, 3, #(5, 1)),   // capacity 5, cost 1
+////   ])
+////
+//// let result = network_simplex.min_cost_flow(
+////   graph,
+////   get_demand: fn(d) { d },
+////   get_capacity: fn(e) { e.0 },
+////   get_cost: fn(e) { e.1 },
+//// )
+////
+//// // result = Ok(MinCostFlowResult(cost: 40, flow: [#(1, 2, 5), #(1, 3, 5), #(2, 3, 5)]))
+//// ```
+////
 //// ## Use Cases
 ////
 //// - **Transportation planning**: Minimize shipping costs with vehicle capacities
@@ -43,15 +75,19 @@
 //// - **Workforce scheduling**: Assign workers to shifts minimizing total cost
 //// - **Circulation problems**: Fleet management and inventory routing
 ////
-//// ## Performance Notes
+//// ## Known Limitations
 ////
-//// > This implementation uses list-based data structures for the internal spanning
-//// > tree representation. While algorithmically correct, random access and updates
-//// > are O(n) rather than O(1). For large flow networks (1000+ nodes/edges), this
-//// > may impact performance. Consider using alternative approaches for very
-//// > large-scale problems:
-//// > - Erlang FFI to `:digraph` or optimized C libraries
-//// > - Specialized MCF solvers for production-scale optimization
+//// - **List-based internals**: The spanning tree uses `List` for random access, making
+////   reads and updates O(n) rather than O(1). Networks with 1000+ nodes/edges may
+////   experience significantly reduced performance.
+//// - **Cycle timeout**: If the algorithm fails to converge within `max(500, 5·E)` pivots,
+////   it **panics** rather than returning a graceful error.
+//// - **No convenience wrappers**: Unlike `yog/mst`, this module does not yet provide
+////   pre-baked `*_int` or `*_record` variants; you must supply extractor functions.
+//// - **Integer only**: Costs, capacities, and flows are all `Int`. Float weights are
+////   not supported.
+//// - **No Elixir equivalent**: `yog_ex` provides Successive Shortest Path for min-cost
+////   flow instead of Network Simplex.
 ////
 //// ## References
 ////
@@ -715,7 +751,7 @@ fn update_potentials(omni: OmniState, i: Int, p: Int, q: Int) -> OmniState {
 // PIVOT LOGIC
 // ============================================================================
 
-pub type EnteringEdge =
+type EnteringEdge =
   #(Int, Int, Int, Int)
 
 // (i, p, q, f)
