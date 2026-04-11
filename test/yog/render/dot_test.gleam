@@ -1,6 +1,9 @@
+import gleam/float
+import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
 import gleeunit/should
+import yog/internal/util
 import yog/model.{Directed, Undirected}
 import yog/pathfinding/path.{Path}
 import yog/render/dot
@@ -869,4 +872,34 @@ pub fn custom_shape_string_dot_test() {
   output
   |> string.contains("node [shape=star")
   |> should.be_true()
+}
+
+pub fn dot_quote_escaping_test() {
+  let graph =
+    model.new(model.Directed) |> model.add_node(1, "Node \"With\" Quotes")
+  let options =
+    dot.default_dot_options_with(
+      node_label: fn(_, data) { data },
+      edge_label: fn(w) { w },
+    )
+  let result = dot.to_dot(graph, options)
+
+  // Should contain escaped quotes: \"
+  string.contains(result, "label=\"Node \\\"With\\\" Quotes\"")
+  |> should.be_true()
+}
+
+pub fn dot_path_to_edges_large_test() {
+  // Generate a long path to check tail recursion 
+  let nodes = util.range(0, 1000)
+  let edges =
+    dot.path_to_dot_options(
+      Path(nodes: nodes, total_weight: 0.0),
+      dot.default_dot_options_with_edge_formatter(float.to_string),
+    ).highlighted_edges
+
+  case edges {
+    Some(e) -> list.length(e) |> should.equal(1000)
+    _ -> panic
+  }
 }

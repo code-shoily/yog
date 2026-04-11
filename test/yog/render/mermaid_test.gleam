@@ -478,6 +478,20 @@ pub fn complex_graph_test() {
   |> string.contains("3 -->|1| 4")
   |> should.be_true()
 }
-// =============================================================================
-// DOT (Graphviz) Rendering Tests
-// =============================================================================
+
+pub fn mermaid_quote_escaping_test() {
+  let graph =
+    model.new(model.Directed)
+    |> model.add_node(1, "Node \"With\" Quotes")
+    |> model.add_node(2, "Ok")
+
+  let options =
+    mermaid.MermaidOptions(..mermaid.default_options(), node_label: fn(_, data) {
+      data
+    })
+  let result = mermaid.to_mermaid(graph, options)
+
+  // Our implementation uses #quot;
+  string.contains(result, "Node #quot;With#quot; Quotes")
+  |> should.be_true()
+}

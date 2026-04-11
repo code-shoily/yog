@@ -73,9 +73,9 @@ pub type MultiGraph(node_data, edge_data) {
   )
 }
 
-// ---------------------------------------------------------------------------
+// =============================================================================
 // Construction
-// ---------------------------------------------------------------------------
+// =============================================================================
 
 /// Creates a new, empty multigraph of the given type.
 pub fn new(graph_type: GraphType) -> MultiGraph(n, e) {
@@ -99,9 +99,9 @@ pub fn undirected() -> MultiGraph(n, e) {
   new(Undirected)
 }
 
-// ---------------------------------------------------------------------------
+// =============================================================================
 // Nodes
-// ---------------------------------------------------------------------------
+// =============================================================================
 
 /// Adds a node with the given ID and data.
 /// If the node already exists its data is replaced (edges are unaffected).
@@ -115,7 +115,6 @@ pub fn add_node(
 
 /// Removes a node and **all** edges connected to it.
 pub fn remove_node(graph: MultiGraph(n, e), id: NodeId) -> MultiGraph(n, e) {
-  // Collect edge IDs to remove: all out- and in-edge IDs for this node
   let out_ids = dict.get(graph.out_edge_ids, id) |> result.unwrap([])
   let in_ids = dict.get(graph.in_edge_ids, id) |> result.unwrap([])
   let ids_to_remove = list.append(out_ids, in_ids) |> list.unique()
@@ -141,9 +140,9 @@ pub fn order(graph: MultiGraph(n, e)) -> Int {
   dict.size(graph.nodes)
 }
 
-// ---------------------------------------------------------------------------
+// =============================================================================
 // Edges
-// ---------------------------------------------------------------------------
+// =============================================================================
 
 /// Adds an edge from `from` to `to` with the given data.
 ///
@@ -258,9 +257,9 @@ pub fn edges_between(
   })
 }
 
-// ---------------------------------------------------------------------------
+// =============================================================================
 // Traversal helpers
-// ---------------------------------------------------------------------------
+// =============================================================================
 
 /// Returns all outgoing edges from `id` as `List(#(NodeId, EdgeId, e))`.
 pub fn successors(
@@ -314,9 +313,9 @@ pub fn in_degree(graph: MultiGraph(n, e), id: NodeId) -> Int {
   list.length(predecessors(graph, id))
 }
 
-// ---------------------------------------------------------------------------
+// =============================================================================
 // Conversion
-// ---------------------------------------------------------------------------
+// =============================================================================
 
 /// Collapses the multigraph into a simple `yog/model.Graph` by combining
 /// parallel edges with `combine_fn(existing, new)`.
@@ -404,9 +403,9 @@ pub fn to_simple_graph_sum_edges(
   to_simple_graph(graph, add)
 }
 
-// ---------------------------------------------------------------------------
+// =============================================================================
 // Internal helpers
-// ---------------------------------------------------------------------------
+// =============================================================================
 
 fn do_remove_edge(graph: MultiGraph(n, e), eid: EdgeId) -> MultiGraph(n, e) {
   case dict.get(graph.edges, eid) {

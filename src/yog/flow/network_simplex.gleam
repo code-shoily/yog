@@ -166,9 +166,9 @@ fn seq(start: Int, end: Int) -> List(Int) {
   seq_do(start, end, [])
 }
 
-// ----------
+// ============================================================================
 // INITIALIZATION
-// ----------
+// ============================================================================
 
 /// Solves the Minimum Cost Flow problem using the Network Simplex algorithm.
 ///
@@ -406,9 +406,9 @@ fn init_spanning_tree(omni: OmniState) -> OmniState {
   )
 }
 
-// ----------
+// ============================================================================
 // HELPERS
-// ----------
+// ============================================================================
 
 fn reduced_cost(omni: OmniState, i: Int) -> Int {
   let c = wget(omni.edge_costs, i)
@@ -711,9 +711,9 @@ fn update_potentials(omni: OmniState, i: Int, p: Int, q: Int) -> OmniState {
   })
 }
 
-// ----------
+// ============================================================================
 // PIVOT LOGIC
-// ----------
+// ============================================================================
 
 pub type EnteringEdge =
   #(Int, Int, Int, Int)
