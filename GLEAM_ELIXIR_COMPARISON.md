@@ -25,7 +25,7 @@ This document compares the Gleam and Elixir (YogEx) implementations of the Yog g
 | **MultiGraph** | ✅ | ✅ | Parallel edges between nodes |
 | **DAG (Directed Acyclic Graph)** | ✅ | ✅ | Type-safe wrapper with cycle prevention |
 | **Disjoint Set (Union-Find)** | ✅ | ✅ | Path compression and union by rank |
-| **Functional Graphs (FGL)** | ❌ | ✅ | **Elixir only** - Pure inductive graph library with graph transformations and traversals |
+| **Functional Graphs (FGL)** | ❌ | ✅ | **Elixir only** - Pure inductive graph library with graph transformations and traversals WONTDO for Gleam |
 
 ## Pathfinding Algorithms
 
@@ -39,6 +39,7 @@ This document compares the Gleam and Elixir (YogEx) implementations of the Yog g
 | **Bidirectional Search** | ✅ | ✅ | O(b^(d/2)) |
 | **Shortest Path (Unweighted)** | ✅ | ✅¹ | O(V+E) |
 | **Implicit Pathfinding** | ✅ | ✅ | State-space search |
+| **Widest Path** | ❌  | ✅ | **Elixir only** - Widest via Dijkstra WONTDO for Gleam |
 
 ¹ In Gleam this lives in `yog/pathfinding/unweighted`; in Elixir it is exposed via `Yog.Traversal.find_path/3`.
 
@@ -62,7 +63,7 @@ This document compares the Gleam and Elixir (YogEx) implementations of the Yog g
 | ----------- | ------- | ----- | -------- |
 | **Edmonds-Karp** (Max Flow) | ✅ | ✅ | Both fully functional |
 | **Stoer-Wagner** (Global Min Cut) | ✅ | ✅ | Both fully functional |
-| **Network Simplex** (Min Cost Flow) | ✅ | ❌ | Gleam only |
+| **Network Simplex** (Min Cost Flow) | ✅ | ❌ | Gleam only (Experimental) |
 | **Successive Shortest Path** | ❌ | ✅ | **Elixir only** - Min-cost flow with potentials |
 
 ## Centrality Measures
@@ -101,7 +102,7 @@ This document compares the Gleam and Elixir (YogEx) implementations of the Yog g
 | ----------- | ------- | ----- | ------- |
 | **Kruskal's MST** | ✅ | ✅ | O(E log E) |
 | **Prim's MST** | ✅ | ✅ | O(E log V) |
-| **MaxST Wrappers** | ❌ | ✅ | **Elixir only** – `kruskal_max`, `prim_max`, `maximum_spanning_tree` |
+| **MaxST Wrappers** | ❌ | ✅ | **Elixir only** – `kruskal_max`, `prim_max`, `maximum_spanning_tree` WONTDO for Gleam |
 | **Borůvka's MST** | ✅ | ✅ | Parallel (For Elixir only) component-merging MST |
 | **Wilson's UST** | ✅ | ✅ | Uniform random spanning tree |
 | **Edmonds' Arborescence** | ✅ | ✅ | Directed MST (Chu-Liu/Edmonds) |
