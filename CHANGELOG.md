@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Edge Addition API Changes**: `add_edge()` and `add_edge_with_combine()` now return `Result(Graph, String)` instead of `Graph` to prevent "ghost nodes". For auto-creation of missing nodes, use `add_edge_ensure()` or `add_edge_with()`.
 
+- **MST API Unification** (`yog/mst`):
+  - `kruskal/2` and `prim/2` now return `MstResult(e)` instead of `List(Edge(e))`.
+  - `MstResult(e)` is a new record type containing `edges`, `total_weight`, `node_count`, `edge_count`, `algorithm`, and `root`.
+  - This unifies the MST API and provides richer metadata for all spanning tree computations.
+  - Use the convenience wrappers (`kruskal_int`, `kruskal_float`, `prim_int`, `prim_float`) to avoid supplying arithmetic operators manually.
+
 ### Added
 
 - **Stochastic Graph Generators** (`yog/generator/random`): Added full parity with Elixir implementation:
@@ -56,6 +62,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `core_numbers/1` - Returns the largest core number for each node (Batagelj-Zaversnik O(V+E) algorithm).
   - `degeneracy/1` - Returns the maximum core number in the graph.
   - `shell_decomposition/1` - Groups nodes by their core number (k-shells).
+
+- **MST Suite Expansion** (`yog/mst`): The MST module is now complete with all major algorithms, achieving parity with Elixir:
+  - `boruvka/4` - Borůvka's algorithm for parallel-friendly MST computation.
+  - `edmonds/6` - Chu-Liu/Edmonds algorithm for finding Minimum Spanning Arborescences (MSA) in directed graphs.
+  - `wilson/2` and `wilson_with_seed/3` - Wilson's algorithm for generating Uniform Spanning Trees (UST) via loop-erased random walks.
+  - Added `MstResult(e)` wrapper type and `Algorithm` enum (`Kruskal`, `Prim`, `Boruvka`, `ChuLiuEdmonds`, `Wilson`).
+  - Added convenience wrappers for all algorithms: `*_int` and `*_float` variants.
 
 - **Path Hydration** (`yog/pathfinding/path`): Added `hydrate_path/2` to reconstruct a sequence of edges from a list of node IDs.
   - Given a path like `[1, 2, 3]`, returns `[#(1, 2, edge_data), #(2, 3, edge_data)]`.
