@@ -347,6 +347,10 @@ fn pop_stack_until(
   }
 }
 
+// =============================================================================
+// Kosaraju's Algorithm
+// =============================================================================
+
 /// Finds Strongly Connected Components (SCC) using Kosaraju's Algorithm.
 ///
 /// Returns a list of components, where each component is a list of NodeIds.
@@ -383,10 +387,6 @@ fn pop_stack_until(
 /// Both have the same O(V + E) time complexity, but Kosaraju may be preferred when:
 /// - The graph is already stored in a format supporting fast transposition
 /// - Simplicity and clarity are prioritized over single-pass execution
-// =============================================================================
-// Kosaraju's Algorithm
-// =============================================================================
-
 pub fn kosaraju(graph: Graph(n, e)) -> List(List(NodeId)) {
   let nodes = model.all_nodes(graph)
 

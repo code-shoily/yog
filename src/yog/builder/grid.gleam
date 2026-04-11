@@ -469,6 +469,10 @@ pub fn find_node(
   })
 }
 
+// =============================================================================
+// Movement Predicates
+// =============================================================================
+
 /// Allows movement between any cells except the specified wall value.
 ///
 /// Useful for maze-style grids where `"#"` or similar marks a wall.
@@ -487,10 +491,6 @@ pub fn find_node(
 /// let g = grid.from_2d_list(maze, model.Directed, can_move: grid.avoiding("#"))
 /// // Edges only connect non-wall cells
 /// ```
-// =============================================================================
-// Movement Predicates
-// =============================================================================
-
 pub fn avoiding(wall_value: cell_data) -> fn(cell_data, cell_data) -> Bool {
   fn(from, to) { from != wall_value && to != wall_value }
 }
