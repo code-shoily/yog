@@ -91,71 +91,48 @@ pub fn floyd_warshall(
 ) -> Result(Dict(#(NodeId, NodeId), e), Nil) {
   let nodes = dict.keys(graph.nodes)
 
-  let initial_distances =
-    nodes
-    |> list.fold(dict.new(), fn(distances, i) {
-      nodes
-      |> list.fold(distances, fn(distances, j) {
-        case i == j {
-          True -> {
-            case dict.get(graph.out_edges, i) {
-              Ok(neighbors) ->
-                case dict.get(neighbors, j) {
-                  Ok(weight) -> {
-                    case compare(weight, zero) {
-                      Lt -> dict.insert(distances, #(i, j), weight)
-                      _ -> dict.insert(distances, #(i, j), zero)
-                    }
-                  }
-                  Error(Nil) -> dict.insert(distances, #(i, j), zero)
-                }
-              Error(Nil) -> dict.insert(distances, #(i, j), zero)
-            }
-          }
-          False -> {
-            case dict.get(graph.out_edges, i) {
-              Ok(neighbors) ->
-                case dict.get(neighbors, j) {
-                  Ok(weight) -> dict.insert(distances, #(i, j), weight)
-                  Error(Nil) -> distances
-                }
-              Error(Nil) -> distances
-            }
-          }
-        }
-      })
-    })
+  let initial_distances = {
+    use dists, i <- list.fold(nodes, dict.new())
+    // 1. Every node has distance zero to itself
+    let dists = dict.insert(dists, #(i, i), zero)
 
-  let final_distances =
-    nodes
-    |> list.fold(initial_distances, fn(distances, k) {
-      nodes
-      |> list.fold(distances, fn(distances, i) {
-        nodes
-        |> list.fold(distances, fn(distances, j) {
-          case dict.get(distances, #(i, k)) {
-            Error(Nil) -> distances
-            Ok(dist_ik) -> {
-              case dict.get(distances, #(k, j)) {
-                Error(Nil) -> distances
-                Ok(dist_kj) -> {
-                  let new_dist = add(dist_ik, dist_kj)
-                  case dict.get(distances, #(i, j)) {
-                    Error(Nil) -> dict.insert(distances, #(i, j), new_dist)
-                    Ok(current_dist) -> {
-                      case compare(new_dist, current_dist) {
-                        Lt -> dict.insert(distances, #(i, j), new_dist)
-                        _ -> distances
-                      }
-                    }
-                  }
-                }
-              }
+    // 2. Initialize with actual edge weights
+    use dists, neighbor <- list.fold(model.successors(graph, i), dists)
+    let #(j, weight) = neighbor
+
+    case dict.get(dists, #(i, j)) {
+      Ok(curr) ->
+        case compare(weight, curr) {
+          Lt -> dict.insert(dists, #(i, j), weight)
+          _ -> dists
+        }
+      Error(_) -> dict.insert(dists, #(i, j), weight)
+    }
+  }
+
+  let final_distances = {
+    use distances, k <- list.fold(nodes, initial_distances)
+    use distances, i <- list.fold(nodes, distances)
+    use distances, j <- list.fold(nodes, distances)
+
+    let maybe_ik = dict.get(distances, #(i, k))
+    let maybe_kj = dict.get(distances, #(k, j))
+
+    case maybe_ik, maybe_kj {
+      Ok(ik), Ok(kj) -> {
+        let new_dist = add(ik, kj)
+        case dict.get(distances, #(i, j)) {
+          Ok(curr) ->
+            case compare(new_dist, curr) {
+              Lt -> dict.insert(distances, #(i, j), new_dist)
+              _ -> distances
             }
-          }
-        })
-      })
-    })
+          Error(_) -> dict.insert(distances, #(i, j), new_dist)
+        }
+      }
+      _, _ -> distances
+    }
+  }
 
   case detect_negative_cycle(final_distances, nodes, zero, compare) {
     True -> Error(Nil)
@@ -163,29 +140,23 @@ pub fn floyd_warshall(
   }
 }
 
-/// Detects if there's a negative cycle by checking if any node has negative distance to itself
+/// Detects if there's a negative cycle by checking if any node has negative distance to itself.
 pub fn detect_negative_cycle(
   distances: Dict(#(NodeId, NodeId), e),
   nodes: List(NodeId),
   zero: e,
   compare: fn(e, e) -> Order,
 ) -> Bool {
-  nodes
-  |> list.any(fn(i) {
-    case dict.get(distances, #(i, i)) {
-      Ok(dist) ->
-        case compare(dist, zero) {
-          Lt -> True
-          _ -> False
-        }
-      Error(Nil) -> False
-    }
-  })
+  use i <- list.any(nodes)
+  case dict.get(distances, #(i, i)) {
+    Ok(dist) -> compare(dist, zero) == Lt
+    Error(_) -> False
+  }
 }
 
-// -----------------------------------------------------------------------------
+// ============================================================================
 // CONVENIENCE WRAPPERS FOR COMMON TYPES
-// -----------------------------------------------------------------------------
+// ============================================================================
 
 /// Computes all-pairs shortest paths with **integer weights**.
 ///
@@ -210,7 +181,7 @@ pub fn floyd_warshall_int(
   in graph: Graph(n, Int),
 ) -> Result(Dict(#(NodeId, NodeId), Int), Nil) {
   floyd_warshall(
-    graph,
+    in: graph,
     with_zero: 0,
     with_add: int.add,
     with_compare: int.compare,
@@ -232,7 +203,7 @@ pub fn floyd_warshall_float(
   in graph: Graph(n, Float),
 ) -> Result(Dict(#(NodeId, NodeId), Float), Nil) {
   floyd_warshall(
-    graph,
+    in: graph,
     with_zero: 0.0,
     with_add: float.add,
     with_compare: float.compare,
