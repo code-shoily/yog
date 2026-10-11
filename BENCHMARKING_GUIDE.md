@@ -21,10 +21,12 @@ gleam run -m bench/my_benchmark
 ### Basic Template
 
 ```gleam
+import bench/bench_util
 import gleam/int
+import gleam/io
 import gleamy/bench
-import yog/internal/bench/bench_utils
-import yog/pathfinding
+import yog/model.{type Graph}
+import yog/pathfinding/dijkstra as pathfinding
 
 pub fn main() {
   // 1. Create test graphs
@@ -89,28 +91,28 @@ bench_utils.XLarge     // 100,000 nodes
 ### Densities
 
 ```gleam
-bench_utils.Sparse         // ~1% edges
-bench_utils.MediumDensity  // ~5% edges
-bench_utils.Dense          // ~20% edges
+bench_util.Sparse         // ~1% edges
+bench_util.MediumDensity  // ~5% edges
+bench_util.Dense          // ~20% edges
 ```
 
 ### Graph Types
 
 ```gleam
 // Random graph
-bench_utils.random_graph(size, density, seed)
+bench_util.random_graph(size, density, seed)
 
 // Grid (great for pathfinding)
-bench_utils.grid_graph(50, 50)
+bench_util.grid_graph(50, 50)
 
 // Complete graph (worst case)
-bench_utils.complete_graph(100)
+bench_util.complete_graph(100)
 
 // DAG (topological sort)
-bench_utils.random_dag(100, seed)
+bench_util.random_dag(100, seed)
 
 // Bipartite (matching)
-bench_utils.bipartite_graph(50, 50)
+bench_util.bipartite_graph(50, 50)
 ```
 
 ## Configuration

@@ -1,4 +1,3 @@
-import gleam/dict
 import gleam/float
 import gleam/int
 import gleam/list
@@ -142,24 +141,7 @@ fn float_to_string(f: Float) -> String {
 
 /// Extract graph statistics for reporting
 pub fn graph_stats(graph: Graph(a, b)) -> #(Int, Int) {
-  let nodes = yog.all_nodes(graph) |> list.length
-
-  // Count edges by iterating through out_edges
-  let edge_count = case graph {
-    model.Graph(out_edges: out_edges, kind: kind, ..) -> {
-      dict.fold(out_edges, 0, fn(count, _from, to_edges) {
-        count + dict.size(to_edges)
-      })
-      |> fn(c) {
-        // For undirected graphs, each edge is stored once
-        // For directed graphs, edges are already counted correctly
-        case kind {
-          model.Undirected -> c
-          model.Directed -> c
-        }
-      }
-    }
-  }
-
-  #(nodes, edge_count)
+  let nodes = model.node_count(graph)
+  let edges = model.edge_count(graph)
+  #(nodes, edges)
 }
