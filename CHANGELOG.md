@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 7.0.0 - 2026-10-11
 
 ### Breaking Changes
 
@@ -50,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking Changes
 
 - **Unified Transformation API** (`yog/transform`, `yog`):
-  - Consolidated `map_nodes`, `map_edges`, and `filter_nodes` to always include node and edge identifiers in their callbacks by default. This provides 
+  - Consolidated `map_nodes`, `map_edges`, and `filter_nodes` to always include node and edge identifiers in their callbacks by default. This provides
     immediate topological context to all transformation operations.
   - Removed redundant `_indexed` variants: `map_nodes_indexed`, `map_edges_indexed`, and `filter_nodes_indexed` are now fully merged into their base functions.
   - Updated signatures:
